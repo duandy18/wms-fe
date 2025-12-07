@@ -1,0 +1,197 @@
+// src/features/diagnostics/trace/TraceEventsView.tsx
+//
+// TraceEventsView：Trace 事件视图模块
+// - 接收 traceId / warehouseId / focusRef 作为 props
+// - 内部负责：调用 fetchTrace、管理 loading/error/viewMode/sourceFilter/data
+// - 不自己读 URL，不自己处理 tab，只作为 Studio 的子模块
+
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchTrace } from "./api";
+import type { TraceEvent, TraceResponse } from "./types";
+import { TraceTimeline } from "./TraceTimeline";
+import { TraceHeader } from "./TraceHeader";
+import { TraceFilters, type ViewMode } from "./TraceFilters";
+import {
+  TraceSourceFilter,
+  type SourceFilter,
+} from "./TraceSourceFilter";
+import {
+  TraceGroupedView,
+  type GroupedByRef,
+} from "./TraceGroupedView";
+
+type Props = {
+  traceId: string;
+  warehouseId: string;
+  focusRef?: string | null;
+  onChangeTraceId: (v: string) => void;
+  onChangeWarehouseId: (v: string) => void;
+  /** 初次挂载时是否自动根据 traceId 调用一次查询（来源于 URL） */
+  autoRunOnMount?: boolean;
+};
+
+export const TraceEventsView: React.FC<Props> = ({
+  traceId,
+  warehouseId,
+  focusRef,
+  onChangeTraceId,
+  onChangeWarehouseId,
+  autoRunOnMount = false,
+}) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<TraceResponse | null>(null);
+
+  // 视图状态：时间线 / 分组，source 过滤，展开行
+  const [viewMode, setViewMode] = useState<ViewMode>("timeline");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("ALL");
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+
+  // 基础事件数组（用 useMemo 包一层，避免每次 render 都 new 数组，触发 useMemo 依赖警告）
+  const baseEvents: TraceEvent[] = useMemo(
+    () => data?.events ?? [],
+    [data],
+  );
+
+  // source 列表
+  const sources = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of baseEvents) {
+      if (e.source) set.add(e.source);
+    }
+    return Array.from(set).sort();
+  }, [baseEvents]);
+
+  // 按 sourceFilter 过滤后的事件
+  const filteredEvents = useMemo(() => {
+    if (sourceFilter === "ALL") return baseEvents;
+    return baseEvents.filter((e) => e.source === sourceFilter);
+  }, [baseEvents, sourceFilter]);
+
+  // 分组视图的数据（按 ref）
+  const groupedByRef: GroupedByRef[] = useMemo(() => {
+    const map = new Map<string, TraceEvent[]>();
+    for (const e of filteredEvents) {
+      const key = e.ref || "(无 ref)";
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(e);
+    }
+
+    const groups: GroupedByRef[] = [];
+    for (const [ref, evs] of map.entries()) {
+      const sorted = [...evs].sort((a, b) => {
+        const ta = a.ts ? Date.parse(a.ts) : 0;
+        const tb = b.ts ? Date.parse(b.ts) : 0;
+        return ta - tb;
+      });
+      groups.push({ ref, events: sorted });
+    }
+
+    groups.sort((a, b) => a.ref.localeCompare(b.ref));
+    return groups;
+  }, [filteredEvents]);
+
+  // 查询 trace
+  async function handleQuery() {
+    setError(null);
+    setData(null);
+    setExpanded({});
+
+    const tid = traceId.trim();
+    if (!tid) {
+      setError("trace_id 必填");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const widRaw = warehouseId.trim();
+      const wid = widRaw ? Number(widRaw) : undefined;
+      const res = await fetchTrace(tid, wid);
+
+      // 按 ts 排序，空 ts 放前面
+      res.events.sort((a, b) => {
+        const ta = a.ts ? Date.parse(a.ts) : 0;
+        const tb = b.ts ? Date.parse(b.ts) : 0;
+        return ta - tb;
+      });
+
+      setData(res);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "查询失败";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 展开 / 收起某个索引（组头或 raw 行）
+  function handleToggleExpand(idx: number) {
+    setExpanded((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  }
+
+  function formatTs(ts: string | null): string {
+    if (!ts) return "-";
+    return ts.replace("T", " ").replace("Z", "");
+  }
+
+  const metaText =
+    data && data.events
+      ? `共 ${data.events.length} 条事件 · trace_id: ${data.trace_id}${
+          data.warehouse_id != null ? ` · 仓过滤: ${data.warehouse_id}` : ""
+        }${focusRef ? ` · focus_ref: ${focusRef}` : ""}`
+      : null;
+
+  // 初次挂载：如果指定了 autoRunOnMount，则根据现有 traceId 执行一次查询
+  useEffect(() => {
+    if (autoRunOnMount && traceId.trim()) {
+      void handleQuery();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <TraceHeader />
+
+      <TraceFilters
+        traceId={traceId}
+        warehouseId={warehouseId}
+        viewMode={viewMode}
+        loading={loading}
+        error={error}
+        metaText={metaText}
+        onChangeTraceId={onChangeTraceId}
+        onChangeWarehouseId={onChangeWarehouseId}
+        onChangeViewMode={setViewMode}
+        onSubmit={() => {
+          void handleQuery();
+        }}
+      />
+
+      <TraceSourceFilter
+        sources={sources}
+        value={sourceFilter}
+        onChange={setSourceFilter}
+      />
+
+      {viewMode === "timeline" ? (
+        <TraceTimeline
+          events={filteredEvents}
+          focusRef={focusRef ?? undefined}
+        />
+      ) : (
+        <TraceGroupedView
+          groups={groupedByRef}
+          expanded={expanded}
+          onToggle={handleToggleExpand}
+          formatTs={formatTs}
+          focusRef={focusRef ?? undefined}
+        />
+      )}
+    </div>
+  );
+};
