@@ -1,0 +1,31 @@
+# Node / pnpm
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+coverage/
+*.log
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Env files（根据需要调整）
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Mac / system
+.DS_Store
+Thumbs.db
