@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+coverage/
 *.log
 
 # Editor / OS
@@ -9,9 +10,10 @@ build/
 .DS_Store
 Thumbs.db
 
-# TypeScript
+# TypeScript build info
 *.tsbuildinfo
 
 # Local env files
 .env.development
 .env.local
+.env.*.local
