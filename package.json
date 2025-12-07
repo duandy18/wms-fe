@@ -13,7 +13,10 @@
 
     "test": "vitest",
     "test:run": "vitest run",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+
+    "storybook": "storybook dev -p 6006",
+    "storybook:build": "storybook build"
   },
 
   "dependencies": {
@@ -40,6 +43,11 @@
 
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+
+    "@storybook/addon-essentials": "8.6.14",
+    "@storybook/addon-interactions": "8.6.14",
+    "@storybook/react-vite": "8.6.14",
+
     "@tailwindcss/vite": "^4.1.14",
 
     "@testing-library/jest-dom": "^6.9.1",
@@ -63,7 +71,11 @@
     "globals": "^16.4.0",
     "jsdom": "^27.2.0",
     "msw": "^2.11.5",
+
     "postcss": "^8.5.6",
+
+    "storybook": "8.6.14",
+
     "tailwindcss": "^4.1.14",
 
     "typescript": "~5.9.3",
