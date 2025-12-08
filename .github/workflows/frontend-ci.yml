@@ -14,25 +14,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 🟩 必须先装 pnpm，否则 setup-node 会报 "Unable to locate pnpm"
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
-
-      # 🟦 再装 node，就能正确启用 pnpm 缓存
-      - name: Setup Node
+      # ⬇️ 只用 setup-node 安装 pnpm，避免 pnpm/action-setup 的 workspace bug
+      - name: Setup Node + pnpm
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
 
-      # 🟧 Install dependencies
+      # 安装 pnpm（setup-node 支持）
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      # 🟨 Lint（存在即运行）
       - name: Lint
         run: |
           if pnpm run | grep -q "lint"; then
@@ -41,7 +36,6 @@ jobs:
             echo "[FE CI] skip lint (no lint script)"
           fi
 
-      # 🟥 Test（存在即运行）
       - name: Test
         run: |
           if pnpm run | grep -q "test"; then
@@ -50,7 +44,6 @@ jobs:
             echo "[FE CI] skip test (no test script)"
           fi
 
-      # 🟩 Build
       - name: Build
         run: |
           if pnpm run | grep -q "build"; then
