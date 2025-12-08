@@ -14,20 +14,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ⬇️ 只用 setup-node 安装 pnpm，避免 pnpm/action-setup 的 workspace bug
-      - name: Setup Node + pnpm
+      # 1) 安装 Node（不要用 pnpm 缓存，先把 pnpm 装起来再说）
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
 
-      # 安装 pnpm（setup-node 支持）
+      # 2) 全局安装 pnpm
       - name: Install pnpm
         run: npm install -g pnpm@9
 
+      # 3) 安装依赖
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
+      # 4) Lint（如果有 lint 脚本就跑）
       - name: Lint
         run: |
           if pnpm run | grep -q "lint"; then
@@ -36,6 +37,7 @@ jobs:
             echo "[FE CI] skip lint (no lint script)"
           fi
 
+      # 5) Test（如果有 test 脚本就跑）
       - name: Test
         run: |
           if pnpm run | grep -q "test"; then
@@ -44,6 +46,7 @@ jobs:
             echo "[FE CI] skip test (no test script)"
           fi
 
+      # 6) Build（如果有 build 脚本就跑）
       - name: Build
         run: |
           if pnpm run | grep -q "build"; then
