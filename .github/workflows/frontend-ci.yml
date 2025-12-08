@@ -1,9 +1,9 @@
 name: Frontend CI
 
 on:
-  pull_request:
-    branches: [ main ]
   push:
+    branches: [ main ]
+  pull_request:
     branches: [ main ]
 
 jobs:
@@ -14,20 +14,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 安装 pnpm（必须放在 setup-node 前或后都可，但要先保证 pnpm 可执行）
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      # 安装 Node 并启用 pnpm 缓存
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
+      # 安装依赖
       - name: Install deps
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
+      # Lint（如存在 lint 指令）
       - name: Lint
         run: |
           if pnpm run | grep -q "lint"; then
@@ -36,6 +41,7 @@ jobs:
             echo "[FE CI] skip lint (no lint script)"
           fi
 
+      # Test（如存在测试）
       - name: Test
         run: |
           if pnpm run | grep -q "test"; then
@@ -44,6 +50,7 @@ jobs:
             echo "[FE CI] skip test (no test script)"
           fi
 
+      # Build
       - name: Build
         run: |
           if pnpm run | grep -q "build"; then
