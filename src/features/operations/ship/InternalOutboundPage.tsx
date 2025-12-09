@@ -28,7 +28,7 @@ type InternalOutboundLine = {
   confirmed_qty: number | null;
   uom: string | null;
   note: string | null;
-  extra_meta: any | null;
+  extra_meta: Record<string, unknown> | null;
 };
 
 type InternalOutboundDoc = {
@@ -59,6 +59,30 @@ type StockHint = {
   batches: number | null;
 };
 
+// 对 /inventory/snapshot 返回行的最小结构假设
+type InventorySnapshotRow = {
+  available_qty?: number | null;
+  qty?: number | null;
+  onhand_qty?: number | null;
+};
+
+function extractErrorMessage(err: unknown): string {
+  if (typeof err === "string") return err;
+  if (err && typeof err === "object") {
+    const maybeAny = err as { body?: unknown; message?: unknown };
+    if (
+      maybeAny.body &&
+      typeof maybeAny.body === "object" &&
+      "detail" in maybeAny.body
+    ) {
+      const detail = (maybeAny.body as { detail?: unknown }).detail;
+      if (typeof detail === "string") return detail;
+    }
+    if (typeof maybeAny.message === "string") return maybeAny.message;
+  }
+  return "操作失败";
+}
+
 export const InternalOutboundPage: React.FC = () => {
   // 单据头表单
   const [warehouseId, setWarehouseId] = useState<number>(1);
@@ -82,8 +106,7 @@ export const InternalOutboundPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // SKU 选择器
-  const [itemSelectorOpen, setItemSelectorOpen] =
-    useState<boolean>(false);
+  const [itemSelectorOpen, setItemSelectorOpen] = useState<boolean>(false);
 
   // 简单库存提示
   const [stockHint, setStockHint] = useState<StockHint>({
@@ -114,8 +137,8 @@ export const InternalOutboundPage: React.FC = () => {
         payload,
       );
       setDoc(data);
-    } catch (e: any) {
-      setError(e?.body?.detail || e?.message || "创建内部出库单失败");
+    } catch (err) {
+      setError(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -132,7 +155,7 @@ export const InternalOutboundPage: React.FC = () => {
 
     setStockHint((prev) => ({ ...prev, loading: true }));
     try {
-      const res = await apiGet<any>(
+      const res = await apiGet<InventorySnapshotRow[]>(
         "/inventory/snapshot",
         {
           warehouse_id: warehouseIdVal,
@@ -146,7 +169,7 @@ export const InternalOutboundPage: React.FC = () => {
 
       if (Array.isArray(res) && res.length > 0) {
         batches = res.length;
-        const first = res[0] as Record<string, any>;
+        const first = res[0];
         qty =
           first.available_qty ??
           first.qty ??
@@ -159,7 +182,7 @@ export const InternalOutboundPage: React.FC = () => {
         qty,
         batches,
       });
-    } catch (_e) {
+    } catch (_err) {
       setStockHint({ loading: false, qty: null, batches: null });
       // 不把错误抛到 UI，避免打断出库流程
     }
@@ -200,8 +223,8 @@ export const InternalOutboundPage: React.FC = () => {
       // 重置数量和备注，保留 item 与单位，方便连续录入
       setQtyInput("1");
       setLineNoteInput("");
-    } catch (e: any) {
-      setError(e?.body?.detail || e?.message || "添加行失败");
+    } catch (err) {
+      setError(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -218,11 +241,11 @@ export const InternalOutboundPage: React.FC = () => {
     try {
       const res = await apiPost<InternalOutboundDoc>(
         `/internal-outbound/docs/${doc.id}/confirm`,
-        { trace_id: null },
+        { trace_id: null as string | null },
       );
       setDoc(res);
-    } catch (e: any) {
-      setError(e?.body?.detail || e?.message || "确认内部出库失败");
+    } catch (err) {
+      setError(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -238,9 +261,9 @@ export const InternalOutboundPage: React.FC = () => {
   };
 
   const handleItemIdBlur: React.FocusEventHandler<HTMLInputElement> = (
-    e,
+    event,
   ) => {
-    const val = Number(e.target.value);
+    const val = Number(event.target.value);
     if (!Number.isFinite(val) || val <= 0) {
       setStockHint({ loading: false, qty: null, batches: null });
       return;
@@ -259,17 +282,17 @@ export const InternalOutboundPage: React.FC = () => {
       )}
 
       {/* 单据头 */}
-      <section className="rounded-xl border bg白 p-4 space-y-3">
+      <section className="space-y-3 rounded-xl border bg-white p-4">
         <h2 className="text-base font-semibold">单据头</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 text-sm">
+        <div className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-600">仓库 ID</label>
             <input
               type="number"
               className="rounded-lg border px-3 py-2"
               value={warehouseId}
-              onChange={(e) => {
-                const v = Number(e.target.value) || 1;
+              onChange={(event) => {
+                const v = Number(event.target.value) || 1;
                 setWarehouseId(v);
                 // 仓库变化时，更新库存提示
                 const itemVal = Number(itemIdInput);
@@ -286,7 +309,7 @@ export const InternalOutboundPage: React.FC = () => {
             <select
               className="rounded-lg border px-3 py-2"
               value={docType}
-              onChange={(e) => setDocType(e.target.value)}
+              onChange={(event) => setDocType(event.target.value)}
               disabled={!!doc || disabled}
             >
               {DOC_TYPES.map((t) => (
@@ -302,7 +325,7 @@ export const InternalOutboundPage: React.FC = () => {
             <input
               className="rounded-lg border px-3 py-2"
               value={recipientName}
-              onChange={(e) => setRecipientName(e.target.value)}
+              onChange={(event) => setRecipientName(event.target.value)}
               disabled={!!doc || disabled}
             />
           </div>
@@ -312,7 +335,7 @@ export const InternalOutboundPage: React.FC = () => {
             <select
               className="rounded-lg border px-3 py-2"
               value={recipientType}
-              onChange={(e) => setRecipientType(e.target.value)}
+              onChange={(event) => setRecipientType(event.target.value)}
               disabled={!!doc || disabled}
             >
               <option value="EMPLOYEE">员工</option>
@@ -326,7 +349,7 @@ export const InternalOutboundPage: React.FC = () => {
             <input
               className="rounded-lg border px-3 py-2"
               value={recipientNote}
-              onChange={(e) => setRecipientNote(e.target.value)}
+              onChange={(event) => setRecipientNote(event.target.value)}
               disabled={!!doc || disabled}
             />
           </div>
@@ -336,7 +359,7 @@ export const InternalOutboundPage: React.FC = () => {
             <input
               className="rounded-lg border px-3 py-2"
               value={docNote}
-              onChange={(e) => setDocNote(e.target.value)}
+              onChange={(event) => setDocNote(event.target.value)}
               disabled={!!doc || disabled}
             />
           </div>
@@ -364,18 +387,18 @@ export const InternalOutboundPage: React.FC = () => {
 
       {/* 行编辑 & 列表 */}
       {doc && (
-        <section className="rounded-xl border bg-white p-4 space-y-3 text-sm">
+        <section className="space-y-3 rounded-xl border bg-white p-4 text-sm">
           <h2 className="text-base font-semibold">明细行</h2>
 
           {/* 行表单 + SKU选择 + 库存提示 */}
           <div className="flex flex-col gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3">
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+            <div className="grid gap-3 md:grid-cols-6">
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-600">Item ID</label>
                 <input
                   className="rounded-lg border px-3 py-2"
                   value={itemIdInput}
-                  onChange={(e) => setItemIdInput(e.target.value)}
+                  onChange={(event) => setItemIdInput(event.target.value)}
                   onBlur={handleItemIdBlur}
                   disabled={disabled}
                 />
@@ -393,7 +416,7 @@ export const InternalOutboundPage: React.FC = () => {
                   />
                   <button
                     type="button"
-                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                    className="rounded-md border border-slate-300 bg白 px-3 py-2 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-60"
                     onClick={() => setItemSelectorOpen(true)}
                     disabled={disabled}
                   >
@@ -406,7 +429,7 @@ export const InternalOutboundPage: React.FC = () => {
                 <input
                   className="rounded-lg border px-3 py-2"
                   value={qtyInput}
-                  onChange={(e) => setQtyInput(e.target.value)}
+                  onChange={(event) => setQtyInput(event.target.value)}
                   disabled={disabled}
                 />
               </div>
@@ -417,7 +440,7 @@ export const InternalOutboundPage: React.FC = () => {
                 <input
                   className="rounded-lg border px-3 py-2"
                   value={batchCodeInput}
-                  onChange={(e) => setBatchCodeInput(e.target.value)}
+                  onChange={(event) => setBatchCodeInput(event.target.value)}
                   disabled={disabled}
                 />
               </div>
@@ -426,19 +449,19 @@ export const InternalOutboundPage: React.FC = () => {
                 <input
                   className="rounded-lg border px-3 py-2"
                   value={uomInput}
-                  onChange={(e) => setUomInput(e.target.value)}
+                  onChange={(event) => setUomInput(event.target.value)}
                   disabled={disabled}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid gap-3 md:grid-cols-2">
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-600">行备注</label>
                 <input
                   className="rounded-lg border px-3 py-2"
                   value={lineNoteInput}
-                  onChange={(e) => setLineNoteInput(e.target.value)}
+                  onChange={(event) => setLineNoteInput(event.target.value)}
                   disabled={disabled}
                 />
               </div>
@@ -489,7 +512,7 @@ export const InternalOutboundPage: React.FC = () => {
               </div>
             ) : (
               <table className="min-w-full text-xs">
-                <thead className="bg-slate-50 border-b">
+                <thead className="border-b bg-slate-50">
                   <tr>
                     <th className="px-2 py-1 text-left">行号</th>
                     <th className="px-2 py-1 text-left">Item ID</th>
@@ -501,7 +524,10 @@ export const InternalOutboundPage: React.FC = () => {
                 </thead>
                 <tbody>
                   {doc.lines.map((ln) => (
-                    <tr key={ln.id} className="border-b hover:bg-slate-50">
+                    <tr
+                      key={ln.id}
+                      className="border-b hover:bg-slate-50"
+                    >
                       <td className="px-2 py-1">{ln.line_no}</td>
                       <td className="px-2 py-1">{ln.item_id}</td>
                       <td className="px-2 py-1">
