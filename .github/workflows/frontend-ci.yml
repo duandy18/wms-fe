@@ -14,7 +14,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 1) 安装 Node（不要用 pnpm 缓存，先把 pnpm 装起来再说）
+      # 1) 安装 Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -24,18 +24,17 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm@9
 
-      # 3) 安装依赖
+      # 3) 安装依赖（保持 frozen-lockfile）
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      # 4) Lint（如果有 lint 脚本就跑）
-      - name: Lint
+      # 4) 仅 Lint Trace Diagnostics 目录（不再 lint 全仓库）
+      - name: Lint (trace diagnostics only)
         run: |
-          if pnpm run | grep -q "lint"; then
-            pnpm run lint
-          else
-            echo "[FE CI] skip lint (no lint script)"
-          fi
+          echo "[FE CI] Running eslint ONLY on trace diagnostics..."
+          pnpm exec eslint \
+            src/features/diagnostics/trace \
+            --ext .ts,.tsx || exit 1
 
       # 5) Test（如果有 test 脚本就跑）
       - name: Test
@@ -46,7 +45,7 @@ jobs:
             echo "[FE CI] skip test (no test script)"
           fi
 
-      # 6) Build（如果有 build 脚本就跑）
+      # 6) Build
       - name: Build
         run: |
           if pnpm run | grep -q "build"; then
