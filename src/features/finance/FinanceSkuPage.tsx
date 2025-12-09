@@ -1,9 +1,6 @@
 // src/features/finance/FinanceSkuPage.tsx
 //
 // 财务分析 · SKU 毛利榜
-// - 按 item_id 聚合：销量、收入、采购成本（平均进货价）、毛利、毛利率
-// - 不含运费，仅看商品本身盈利能力
-//
 
 import React, { useEffect, useMemo, useState } from "react";
 import PageTitle from "../../components/ui/PageTitle";
@@ -15,6 +12,10 @@ import {
 type DateRange = {
   from_date: string;
   to_date: string;
+};
+
+type ApiErrorShape = {
+  message?: string;
 };
 
 function getDefaultRange(): DateRange {
@@ -63,11 +64,13 @@ const FinanceSkuPage: React.FC = () => {
         ...range,
         platform: platform || undefined,
       });
-      // 默认按毛利从高到低排序
-      data.sort((a, b) => (b.gross_profit ?? 0) - (a.gross_profit ?? 0));
+      data.sort(
+        (a, b) => (b.gross_profit ?? 0) - (a.gross_profit ?? 0),
+      );
       setRows(data);
-    } catch (e: any) {
-      console.error("load finance sku failed", e);
+    } catch (err: unknown) {
+      console.error("load finance sku failed", err);
+      const e = err as ApiErrorShape | undefined;
       setError(e?.message ?? "加载 SKU 毛利榜失败");
       setRows([]);
     } finally {
@@ -91,12 +94,9 @@ const FinanceSkuPage: React.FC = () => {
       gross += r.gross_profit ?? 0;
       qty += r.qty_sold ?? 0;
     }
-    const grossMargin =
-      revenue > 0 ? gross / revenue : null;
-    const avgPrice =
-      qty > 0 ? revenue / qty : null;
-    const avgCost =
-      qty > 0 ? purchase / qty : null;
+    const grossMargin = revenue > 0 ? gross / revenue : null;
+    const avgPrice = qty > 0 ? revenue / qty : null;
+    const avgCost = qty > 0 ? purchase / qty : null;
     return {
       revenue,
       purchase,
@@ -237,7 +237,7 @@ const FinanceSkuPage: React.FC = () => {
             <span className="font-mono">{totals.qty}</span>
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg白 p-4 shadow-sm">
           <div className="text-xs text-slate-500">采购成本合计</div>
           <div className="mt-1 font-mono text-xl font-semibold text-slate-900">
             {formatCurrency(totals.purchase)}
@@ -245,11 +245,13 @@ const FinanceSkuPage: React.FC = () => {
           <div className="mt-1 text-[11px] text-slate-500">
             平均进货价（估算）：{" "}
             <span className="font-mono">
-              {totals.avgCost != null ? formatCurrency(totals.avgCost) : "-"}
+              {totals.avgCost != null
+                ? formatCurrency(totals.avgCost)
+                : "-"}
             </span>
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg白 p-4 shadow-sm">
           <div className="text-xs text-slate-500">毛利合计</div>
           <div className="mt-1 font-mono text-xl font-semibold text-slate-900">
             {formatCurrency(totals.gross)}
@@ -261,10 +263,12 @@ const FinanceSkuPage: React.FC = () => {
             </span>
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg白 p-4 shadow-sm">
           <div className="text-xs text-slate-500">平均售价（估算）</div>
           <div className="mt-1 font-mono text-xl font-semibold text-slate-900">
-            {totals.avgPrice != null ? formatCurrency(totals.avgPrice) : "￥0.00"}
+            {totals.avgPrice != null
+              ? formatCurrency(totals.avgPrice)
+              : "￥0.00"}
           </div>
         </div>
       </section>

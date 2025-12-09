@@ -1,6 +1,5 @@
 // src/features/orders/OrdersPage.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import PageTitle from "../../components/ui/PageTitle";
 import {
   StandardTable,
@@ -46,8 +45,6 @@ function renderStatus(status?: string | null) {
 }
 
 const OrdersPage: React.FC = () => {
-  const navigate = useNavigate();
-
   // 列表过滤器
   const [platform, setPlatform] = useState("PDD");
   const [shopId, setShopId] = useState("");
@@ -74,7 +71,7 @@ const OrdersPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const params: any = { limit };
+      const params: Record<string, unknown> = { limit };
       if (platform.trim()) params.platform = platform.trim();
       if (shopId.trim()) params.shopId = shopId.trim();
       if (status.trim()) params.status = status.trim();
@@ -96,9 +93,11 @@ const OrdersPage: React.FC = () => {
         setSelectedFacts(null);
         setDetailError(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("fetchOrdersList failed", err);
-      setError(err?.message ?? "加载订单列表失败");
+      const msg =
+        err instanceof Error ? err.message : "加载订单列表失败";
+      setError(msg);
       setRows([]);
     } finally {
       setLoading(false);
@@ -132,9 +131,11 @@ const OrdersPage: React.FC = () => {
         extOrderNo: summary.ext_order_no,
       });
       setSelectedFacts(of);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("load order detail failed", err);
-      setDetailError(err?.message ?? "加载订单详情失败");
+      const msg =
+        err instanceof Error ? err.message : "加载订单详情失败";
+      setDetailError(msg);
       setSelectedView(null);
       setSelectedFacts(null);
     } finally {
@@ -206,7 +207,12 @@ const OrdersPage: React.FC = () => {
 
   // 选中订单的一些派生量
   const detailOrder = selectedView?.order ?? null;
-  const detailFacts = selectedFacts?.items ?? [];
+
+  // 用 useMemo 固定 detailFacts 引用，避免 eslint 对依赖发警告
+  const detailFacts = useMemo(
+    () => selectedFacts?.items ?? [],
+    [selectedFacts],
+  );
 
   const detailTotals = useMemo(() => {
     if (!detailFacts.length) {
@@ -235,7 +241,7 @@ const OrdersPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4 p-6">
       <PageTitle
         title="订单管理"
         description="按平台 / 店铺 / 状态 / 时间窗口浏览订单。在下方列表中选择一行，在列表下方查看详情；更深入的退货、对账、Trace 在 DevConsole 中完成。"
@@ -384,7 +390,7 @@ const OrdersPage: React.FC = () => {
 
           {detailOrder && (
             <>
-              <div className="grid grid-cols-1 gap-y-2 md:grid-cols-3 md:gap-x-8 text-xs">
+              <div className="grid grid-cols-1 gap-y-2 text-xs md:grid-cols-3 md:gap-x-8">
                 <div>
                   <div className="text-[11px] text-slate-500">
                     平台 / 店铺
@@ -448,9 +454,13 @@ const OrdersPage: React.FC = () => {
                     <table className="min-w-full text-[11px]">
                       <thead className="bg-slate-50 text-[11px] font-semibold text-slate-600">
                         <tr>
-                          <th className="px-2 py-1 text-left">Item ID</th>
+                          <th className="px-2 py-1 text-left">
+                            Item ID
+                          </th>
                           <th className="px-2 py-1 text-left">标题</th>
-                          <th className="px-2 py-1 text-right">下单</th>
+                          <th className="px-2 py-1 text-right">
+                            下单
+                          </th>
                           <th className="px-2 py-1 text-right">
                             已发货
                           </th>

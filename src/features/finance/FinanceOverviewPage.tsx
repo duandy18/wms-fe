@@ -1,10 +1,6 @@
 // src/features/finance/FinanceOverviewPage.tsx
 //
 // 财务分析 · 收入 / 成本 / 毛利趋势（v1）
-// - 按日汇总：收入 / 采购成本 / 发货成本 / 毛利 / 毛利率 / 履约成本占比
-// - 默认最近 7 天，可切换 7/30 天或自定义日期
-// - 当前只做整体视角（不按店铺/SKU拆分），后续可以在其他页面细化
-//
 
 import React, { useEffect, useMemo, useState } from "react";
 import PageTitle from "../../components/ui/PageTitle";
@@ -16,6 +12,10 @@ import {
 type DateRange = {
   from_date: string;
   to_date: string;
+};
+
+type ApiErrorShape = {
+  message?: string;
 };
 
 function getDefaultRange(): DateRange {
@@ -62,8 +62,9 @@ const FinanceOverviewPage: React.FC = () => {
     try {
       const data = await fetchFinanceDaily(range);
       setRows(data);
-    } catch (e: any) {
-      console.error("load finance daily failed", e);
+    } catch (err: unknown) {
+      console.error("load finance daily failed", err);
+      const e = err as ApiErrorShape | undefined;
       setError(e?.message ?? "加载财务总览失败");
       setRows([]);
     } finally {
@@ -87,10 +88,8 @@ const FinanceOverviewPage: React.FC = () => {
       shipping += r.shipping_cost ?? 0;
       gross += r.gross_profit ?? 0;
     }
-    const grossMargin =
-      revenue > 0 ? gross / revenue : null;
-    const fulfillRatio =
-      revenue > 0 ? shipping / revenue : null;
+    const grossMargin = revenue > 0 ? gross / revenue : null;
+    const fulfillRatio = revenue > 0 ? shipping / revenue : null;
     return {
       revenue,
       purchase,
@@ -238,7 +237,7 @@ const FinanceOverviewPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 按天明细表（趋势粗版） */}
+      {/* 按天明细表 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-800">

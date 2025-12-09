@@ -7,7 +7,10 @@
 // - Snapshot 批次视图（当前任务第一个商品）
 
 import React from "react";
-import type { ItemDetailResponse } from "../../inventory/snapshot/api";
+import type {
+  ItemDetailResponse,
+  ItemSlice,
+} from "../../inventory/snapshot/api";
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import type { LedgerRow } from "../../diagnostics/ledger-tool/types";
 
@@ -22,6 +25,21 @@ type Props = {
   info: PickPostCommitInfo | null;
   loading: boolean;
   error: string | null;
+};
+
+type SliceWithExpire = ItemSlice & {
+  expire_at?: string | null;
+};
+
+const formatTsValue = (ts: string | Date | null | undefined): string => {
+  if (!ts) return "-";
+  if (ts instanceof Date) {
+    return ts.toISOString().replace("T", " ").replace("Z", "");
+  }
+  if (typeof ts === "string") {
+    return ts.replace("T", " ").replace("Z", "");
+  }
+  return "-";
 };
 
 export const PickTaskPostCommitPanel: React.FC<Props> = ({
@@ -40,7 +58,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
       <div className="space-y-1">
         <div className="text-[11px] text-slate-500">trace_id</div>
         {traceId ? (
-          <div className="font-mono text-[11px] break-all">
+          <div className="break-all font-mono text-[11px]">
             {traceId}
           </div>
         ) : (
@@ -80,7 +98,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                 未查询到 Trace 事件。
               </div>
             ) : (
-              <div className="max-h-40 overflow-auto border border-slate-100 rounded bg-slate-50">
+              <div className="max-h-40 overflow-auto rounded border border-slate-100 bg-slate-50">
                 <table className="min-w-full border-collapse text-[11px]">
                   <thead>
                     <tr className="bg-slate-100 text-slate-600">
@@ -92,7 +110,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                   </thead>
                   <tbody>
                     {traceEvents.slice(-20).map((ev, idx) => {
-                      const ts = ev.ts;
+                      const ts = formatTsValue(ev.ts ?? null);
                       const source = ev.source || "-";
                       const kind = ev.kind || "-";
                       const summary = ev.summary || ev.message || "";
@@ -102,17 +120,13 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                           key={idx}
                           className="border-t border-slate-100 align-top"
                         >
-                          <td className="px-2 py-1 whitespace-nowrap">
-                            {typeof ts === "string"
-                              ? ts.replace("T", " ").replace("Z", "")
-                              : ts instanceof Date
-                              ? ts.toISOString().replace("T", " ").replace("Z", "")
-                              : "-"}
+                          <td className="whitespace-nowrap px-2 py-1">
+                            {ts}
                           </td>
-                          <td className="px-2 py-1 whitespace-nowrap">
+                          <td className="whitespace-nowrap px-2 py-1">
                             {source}
                           </td>
-                          <td className="px-2 py-1 whitespace-nowrap">
+                          <td className="whitespace-nowrap px-2 py-1">
                             {kind}
                           </td>
                           <td className="px-2 py-1">
@@ -141,7 +155,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                 未查询到与该 trace_id 对应的台账记录。
               </div>
             ) : (
-              <div className="max-h-40 overflow-auto border border-slate-100 rounded bg-slate-50">
+              <div className="max-h-40 overflow-auto rounded border border-slate-100 bg-slate-50">
                 <table className="min-w-full border-collapse text-[11px]">
                   <thead>
                     <tr className="bg-slate-100 text-slate-600">
@@ -156,21 +170,19 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                   </thead>
                   <tbody>
                     {ledgerRows.map((r) => {
-                      const ts =
+                      const ts = formatTsValue(
                         (r as LedgerRow).occurred_at ??
-                        (r as LedgerRow).created_at;
+                          (r as LedgerRow).created_at ??
+                          null,
+                      );
 
                       return (
                         <tr
                           key={r.id}
                           className="border-t border-slate-100 align-top"
                         >
-                          <td className="px-2 py-1 whitespace-nowrap">
-                            {typeof ts === "string"
-                              ? ts.replace("T", " ").replace("Z", "")
-                              : ts instanceof Date
-                              ? ts.toISOString().replace("T", " ").replace("Z", "")
-                              : "-"}
+                          <td className="whitespace-nowrap px-2 py-1">
+                            {ts}
                           </td>
                           <td className="px-2 py-1 text-right font-mono">
                             {r.warehouse_id ?? "-"}
@@ -219,7 +231,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                   {snapshot.totals?.on_hand_qty ?? 0}，可用=
                   {snapshot.totals?.available_qty ?? 0}
                 </div>
-                <div className="max-h-40 overflow-auto border border-slate-100 rounded bg-slate-50">
+                <div className="max-h-40 overflow-auto rounded border border-slate-100 bg-slate-50">
                   <table className="min-w-full border-collapse text-[11px]">
                     <thead>
                       <tr className="bg-slate-100 text-slate-600">
@@ -232,31 +244,33 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {(snapshot.slices || []).map((s, idx: number) => (
-                        <tr
-                          key={idx}
-                          className="border-t border-slate-100 align-top"
-                        >
-                          <td className="px-2 py-1">
-                            {s.warehouse_name ?? s.warehouse_id ?? "-"}
-                          </td>
-                          <td className="px-2 py-1 font-mono">
-                            {s.batch_code ?? "-"}
-                          </td>
-                          <td className="px-2 py-1">
-                            {s.expiry_date ?? s.expire_at ?? "-"}
-                          </td>
-                          <td className="px-2 py-1 text-right font-mono">
-                            {s.on_hand_qty}
-                          </td>
-                          <td className="px-2 py-1 text-right font-mono">
-                            {s.reserved_qty}
-                          </td>
-                          <td className="px-2 py-1 text-right font-mono">
-                            {s.available_qty}
-                          </td>
-                        </tr>
-                      ))}
+                      {(snapshot.slices || []).map(
+                        (s: SliceWithExpire, idx: number) => (
+                          <tr
+                            key={idx}
+                            className="border-t border-slate-100 align-top"
+                          >
+                            <td className="px-2 py-1">
+                              {s.warehouse_name ?? s.warehouse_id ?? "-"}
+                            </td>
+                            <td className="px-2 py-1 font-mono">
+                              {s.batch_code ?? "-"}
+                            </td>
+                            <td className="px-2 py-1">
+                              {s.expiry_date ?? s.expire_at ?? "-"}
+                            </td>
+                            <td className="px-2 py-1 text-right font-mono">
+                              {s.on_hand_qty}
+                            </td>
+                            <td className="px-2 py-1 text-right font-mono">
+                              {s.reserved_qty}
+                            </td>
+                            <td className="px-2 py-1 text-right font-mono">
+                              {s.available_qty}
+                            </td>
+                          </tr>
+                        ),
+                      )}
                     </tbody>
                   </table>
                 </div>

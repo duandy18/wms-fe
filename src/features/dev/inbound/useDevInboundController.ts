@@ -2,7 +2,7 @@
 // ======================================================================
 //  Inbound Debug Panel - 核心中控 Orchestrator（v2）
 //  - Demo 采购单 + 收货任务
-//  - 从 PO/ORDER 创建收货任务
+//  - 从 PO 创建收货任务
 //  - 扫码 → recordReceiveScan（含批次 + 日期）
 //  - commit → InboundService.receive → Ledger/Stocks
 //  - commit 后自动拉 Trace / Ledger / Snapshot 情报
@@ -27,7 +27,10 @@ import {
 } from "../../receive-tasks/api";
 
 import { fetchLedgerList } from "../../diagnostics/ledger-tool/api";
-import { fetchItemDetail } from "../../inventory/snapshot/api";
+import {
+  fetchItemDetail,
+  type ItemDetailResponse,
+} from "../../inventory/snapshot/api";
 import { apiGet } from "../../../lib/api";
 
 import {
@@ -39,7 +42,6 @@ import {
 } from "./types";
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import type { LedgerRow } from "../../diagnostics/ledger-tool/types";
-import type { SnapshotRow } from "../../inventory/snapshot/types";
 
 let nextHistoryId = 1;
 const fmt = (d: Date) => d.toISOString().replace("T", " ").slice(0, 19);
@@ -241,12 +243,10 @@ export function useDevInboundController(): DevInboundController {
     setPoError(null);
     setTaskError(null);
     try {
-      // 1) 创建 demo 采购单
       const po = await createDemoPurchaseOrder();
       setCurrentPo(po);
       setPoIdInput(String(po.id));
 
-      // 2) 基于该 PO 创建收货任务（expected 有值，scanned 全 0）
       const task = await createReceiveTaskFromPo(po.id, {
         warehouse_id: po.warehouse_id,
         include_fully_received: false,
@@ -266,7 +266,7 @@ export function useDevInboundController(): DevInboundController {
     }
   }
 
-  // ===== 扫码 =====
+  // ===== 扫码（记录收货） =====
   function handleScan(barcode: string) {
     const now = new Date();
     const entry: InboundScanHistoryEntry = {
@@ -414,7 +414,7 @@ export function useDevInboundController(): DevInboundController {
         console.error("loadPostCommit: fetchLedgerList failed", err);
       }
 
-      let snapshot: SnapshotRow | null = null;
+      let snapshot: ItemDetailResponse | null = null;
       try {
         if (task.lines && task.lines.length > 0) {
           const itemId = task.lines[0].item_id;

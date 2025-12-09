@@ -9,16 +9,19 @@ on:
 jobs:
   fe-ci:
     runs-on: ubuntu-latest
+    env:
+      CI: true
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 1) 安装 Node
+      # 1) 安装 Node（带 pnpm 缓存）
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "pnpm"
 
       # 2) 全局安装 pnpm
       - name: Install pnpm
@@ -28,25 +31,46 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      # 4) 仅对 trace diagnostics 目录做 Lint
-      - name: Lint (trace diagnostics only)
+      # 4) 全量 Lint：对整个 src（和配置）做 ESLint
+      - name: Lint (full project)
         run: |
-          echo "[FE CI] Running eslint ONLY on trace diagnostics..."
+          echo "[FE CI] Running eslint on full frontend project..."
           pnpm exec eslint \
-            src/features/diagnostics/trace \
-            --ext .ts,.tsx
+            src \
+            --ext .ts,.tsx \
+            --max-warnings=0
 
-      # 5) Test（如果有 test 脚本就跑）
+      # 5) Typecheck：如果定义了 typecheck / typecheck:core，就在 CI 跑
+      - name: Typecheck (tsc, if script exists)
+        run: |
+          if pnpm run | grep -qE "^\s*typecheck(:core)?\b"; then
+            if pnpm run | grep -q "typecheck:core"; then
+              echo "[FE CI] Running pnpm typecheck:core..."
+              pnpm run typecheck:core
+            else
+              echo "[FE CI] Running pnpm typecheck..."
+              pnpm run typecheck
+            fi
+          else
+            echo "[FE CI] skip typecheck (no typecheck script)"
+          fi
+
+      # 6) Test：有 test 脚本就跑，没有就跳过
       - name: Test
         run: |
-          if pnpm run | grep -q "test"; then
-            pnpm run test -- --runInBand || pnpm run test
+          if pnpm run | grep -qE "^\s*test\b"; then
+            echo "[FE CI] Running pnpm test..."
+            pnpm test
           else
             echo "[FE CI] skip test (no test script)"
           fi
 
-      # 6) Build：在 CI 中跳过 tsc -b，只跑 vite build
-      - name: Build (vite only, skip tsc -b)
+      # 7) Build：走 package.json 里的 build（通常是 vite build）
+      - name: Build
         run: |
-          echo "[FE CI] Running vite build (without full tsc -b typecheck)..."
-          pnpm exec vite build
+          if pnpm run | grep -qE "^\s*build\b"; then
+            echo "[FE CI] Running pnpm build..."
+            pnpm build
+          else
+            echo "[FE CI] skip build (no build script)"
+          fi

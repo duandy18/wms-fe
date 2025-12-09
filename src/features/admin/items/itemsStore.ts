@@ -6,6 +6,26 @@ import { fetchItemBarcodes } from "./barcodesApi";
 
 export type EnabledFilter = "all" | "enabled" | "disabled";
 
+type ScanProbeError = {
+  stage?: string;
+  error?: string;
+};
+
+type ScanProbeResult =
+  | {
+      ok: boolean;
+      committed: boolean;
+      scan_ref: string;
+      event_id?: number | null;
+      source?: string | null;
+      item_id?: number | null;
+      qty?: number | null;
+      batch_code?: string | null;
+      evidence?: Array<Record<string, unknown>>;
+      errors?: ScanProbeError[];
+    }
+  | null;
+
 type ItemsState = {
   items: Item[];
   loading: boolean;
@@ -14,35 +34,25 @@ type ItemsState = {
   scannedBarcode: string | null;
   selectedItem: Item | null;
 
-  // 控制右侧条码面板展开
   panelOpen: boolean;
 
-  // item → 主条码
   primaryBarcodes: Record<number, string>;
-
-  // item → 条码数量
   barcodeCounts: Record<number, number>;
-
-  // barcode → [item_ids]
   barcodeOwners: Record<string, number[]>;
-
-  // barcode → item_id（唯一绑定时）
   barcodeIndex: Record<string, number>;
 
   filter: EnabledFilter;
 
-  // 体检：后端 /scan probe 结果
-  probeResult: any | null;
+  probeResult: ScanProbeResult;
   probeLoading: boolean;
   probeError: string | null;
 
-  // setters
   setScannedBarcode: (code: string | null) => void;
   setSelectedItem: (item: Item | null) => void;
   setPanelOpen: (v: boolean) => void;
 
   setProbeState: (data: {
-    result?: any | null;
+    result?: ScanProbeResult;
     loading?: boolean;
     error?: string | null;
   }) => void;
@@ -55,7 +65,11 @@ type ItemsState = {
   loadItems: () => Promise<void>;
 };
 
-export const useItemsStore = create<ItemsState>((set, get) => ({
+type ApiErrorShape = {
+  message?: string;
+};
+
+export const useItemsStore = create<ItemsState>((set) => ({
   items: [],
   loading: false,
   error: null,
@@ -78,9 +92,11 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
 
   setProbeState: ({ result, loading, error }) =>
     set((s) => ({
-      probeResult: result ?? s.probeResult,
-      probeLoading: loading ?? s.probeLoading,
-      probeError: error ?? s.probeError,
+      probeResult:
+        result !== undefined ? result : s.probeResult,
+      probeLoading:
+        loading !== undefined ? loading : s.probeLoading,
+      probeError: error !== undefined ? error : s.probeError,
     })),
 
   setScannedBarcode: (code) => set({ scannedBarcode: code }),
@@ -90,7 +106,8 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
   setPrimaryBarcodeLocal: (itemId, barcode) =>
     set((state) => {
       const next = { ...state.primaryBarcodes };
-      if (barcode && barcode.trim()) next[itemId] = barcode.trim();
+      const trimmed = barcode?.trim();
+      if (trimmed) next[itemId] = trimmed;
       else delete next[itemId];
       return { primaryBarcodes: next };
     }),
@@ -107,7 +124,6 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
       const countMap: Record<number, number> = {};
       const ownersMap: Record<string, number[]> = {};
 
-      // 构建所有条码绑定
       for (const it of data) {
         try {
           const bcs = await fetchItemBarcodes(it.id);
@@ -128,7 +144,6 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
         }
       }
 
-      // barcodeIndex（唯一绑定）
       const idx: Record<string, number> = {};
       for (const [code, owners] of Object.entries(ownersMap)) {
         if (owners.length === 1) idx[code] = owners[0];
@@ -141,8 +156,9 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
         barcodeOwners: ownersMap,
         barcodeIndex: idx,
       });
-    } catch (e: any) {
-      set({ error: e?.message || "加载商品失败" });
+    } catch (e: unknown) {
+      const err = e as ApiErrorShape;
+      set({ error: err?.message ?? "加载商品失败" });
     } finally {
       set({ loading: false });
     }

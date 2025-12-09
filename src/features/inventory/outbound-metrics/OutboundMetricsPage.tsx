@@ -14,18 +14,23 @@ import { Calendar } from "../../../components/ui/calendar";
 import { cn } from "../../../lib/utils";
 import { format } from "date-fns";
 
+// ==== 公共错误工具 ===================
+
+const getErrorMessage = (err: unknown, fallback: string): string =>
+  err instanceof Error ? err.message : fallback;
+
 // ==== API 封装（自动拼上 platform） ===================
 
 async function fetchOutboundTodayApi(platform: string) {
   const data = await apiGet<OutboundMetrics>(
-    `/metrics/outbound/today?platform=${platform}`
+    `/metrics/outbound/today?platform=${platform}`,
   );
   return { data };
 }
 
 async function fetchOutboundByDayApi(day: string, platform: string) {
   const path = `/metrics/outbound/by-day/${encodeURIComponent(
-    day
+    day,
   )}?platform=${platform}`;
   const data = await apiGet<OutboundMetrics>(path);
   return { data };
@@ -34,7 +39,9 @@ async function fetchOutboundByDayApi(day: string, platform: string) {
 // ========== 页面主体 ===================================
 
 export default function OutboundMetricsPage() {
-  const [todayMetrics, setTodayMetrics] = useState<OutboundMetrics | null>(null);
+  const [todayMetrics, setTodayMetrics] = useState<OutboundMetrics | null>(
+    null,
+  );
   const [dayMetrics, setDayMetrics] = useState<OutboundMetrics | null>(null);
 
   const [platform, setPlatform] = useState("PDD");
@@ -53,8 +60,8 @@ export default function OutboundMetricsPage() {
     try {
       const res = await fetchOutboundTodayApi(platform);
       setTodayMetrics(res.data);
-    } catch (err: any) {
-      setError(err?.message ?? "加载今日出库指标失败");
+    } catch (err) {
+      setError(getErrorMessage(err, "加载今日出库指标失败"));
     } finally {
       setLoadingToday(false);
     }
@@ -71,8 +78,8 @@ export default function OutboundMetricsPage() {
     try {
       const res = await fetchOutboundByDayApi(dayStr, platform);
       setDayMetrics(res.data);
-    } catch (err: any) {
-      setError(err?.message ?? "加载出库指标失败");
+    } catch (err) {
+      setError(getErrorMessage(err, "加载出库指标失败"));
     } finally {
       setLoadingDay(false);
     }
@@ -81,11 +88,12 @@ export default function OutboundMetricsPage() {
   // 平台切换 → 自动刷新今日
   useEffect(() => {
     void loadToday();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform]);
 
   if (!canRead) {
     return (
-      <div className="text-sm text-slate-500 mt-4">
+      <div className="mt-4 text-sm text-slate-500">
         你没有 metrics.outbound.read 权限。
       </div>
     );
@@ -105,7 +113,7 @@ export default function OutboundMetricsPage() {
 
       {/* 错误提示 */}
       {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
           {error}
         </div>
       )}
@@ -116,7 +124,7 @@ export default function OutboundMetricsPage() {
         <select
           value={platform}
           onChange={(e) => setPlatform(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm"
+          className="rounded-lg border px-3 py-2 text-sm"
         >
           <option value="PDD">PDD</option>
           <option value="TB">TB</option>
@@ -125,7 +133,7 @@ export default function OutboundMetricsPage() {
       </section>
 
       {/* 今日指标 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">
           今日出库（Today）
         </h2>
@@ -140,8 +148,10 @@ export default function OutboundMetricsPage() {
       </section>
 
       {/* 按日期查询 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-800">按日期查询</h2>
+      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-slate-800">
+          按日期查询
+        </h2>
 
         <div className="flex items-center gap-3">
           {/* 日期选择器（shadcn Calendar） */}
@@ -151,7 +161,7 @@ export default function OutboundMetricsPage() {
                 variant="outline"
                 className={cn(
                   "w-[200px] justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
+                  !selectedDate && "text-muted-foreground",
                 )}
               >
                 {selectedDate
@@ -170,7 +180,11 @@ export default function OutboundMetricsPage() {
             </PopoverContent>
           </Popover>
 
-          <Button onClick={loadByDay} disabled={loadingDay} className="text-sm">
+          <Button
+            onClick={() => void loadByDay()}
+            disabled={loadingDay}
+            className="text-sm"
+          >
             {loadingDay ? "加载中…" : "查询"}
           </Button>
         </div>
@@ -191,7 +205,7 @@ export default function OutboundMetricsPage() {
 
 function MetricsBlock({ metrics }: { metrics: OutboundMetrics }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+    <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
       <div>总单量：{metrics.total_orders}</div>
       <div>成功量：{metrics.success_orders}</div>
       <div>成功率：{metrics.success_rate}%</div>

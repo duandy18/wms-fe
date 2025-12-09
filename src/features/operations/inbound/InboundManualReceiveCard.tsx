@@ -31,7 +31,7 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
 
   if (!task) {
     return (
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+      <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">
           采购单行收货（手工录入）
         </h2>
@@ -69,7 +69,6 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
       return;
     }
 
-    // 批次/日期必须先在收货明细中维护好，这里只使用已有值
     if (!line.batch_code) {
       setError(
         `行 item_id=${line.item_id} 尚未设置批次，请先在收货明细中通过“编辑批次/日期”填写后再收货。`,
@@ -85,11 +84,9 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
 
     setSavingItemId(line.item_id);
     try {
-      await c.manualReceiveLine(line.item_id, qty, {
-        batch_code: line.batch_code ?? undefined,
-        production_date: line.production_date ?? undefined,
-        expiry_date: line.expiry_date ?? undefined,
-      });
+      // 批次/日期已经在行里维护，这里只递交数量即可
+      await c.manualReceiveLine(line.item_id, qty);
+
       // 成功后清空数量输入
       setQtyInputs((prev) => {
         const next = { ...prev };
@@ -105,7 +102,7 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
   };
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+    <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-slate-800">
           采购单行收货（手工录入）
@@ -120,7 +117,7 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
         <div className="text-[11px] text-red-600">{error}</div>
       )}
 
-      <div className="max-h-60 overflow-y-auto border border-slate-100 rounded bg-slate-50">
+      <div className="max-h-60 overflow-y-auto rounded bg-slate-50 border border-slate-100">
         <table className="min-w-full border-collapse text-[11px]">
           <thead>
             <tr className="bg-slate-100 text-slate-600">
@@ -209,7 +206,7 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
                         type="button"
                         disabled={savingItemId === l.item_id}
                         onClick={() => void handleReceive(l)}
-                        className="px-2 py-0.5 rounded border border-emerald-500 bg-emerald-50 text-emerald-700 disabled:opacity-60"
+                        className="rounded border border-emerald-500 bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 disabled:opacity-60"
                       >
                         {savingItemId === l.item_id
                           ? "保存中…"

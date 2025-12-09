@@ -1,36 +1,81 @@
-import React, { useEffect, useState } from 'react'
+// src/components/common/ApiBadge.tsx
+import React, { useEffect, useState } from "react";
 
-export default function ApiBadge() {
-  const api = import.meta.env.VITE_API_URL || '—'
-  const [msw, setMsw] = useState<'on'|'off'|'starting'>(() => {
-    const s = (window as any).__MSW_ENABLED__
-    return s === true ? 'on' : s === 'starting' ? 'starting' : 'off'
-  })
+type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+type MswStatus = "on" | "off" | "starting";
+
+interface ApiBadgeProps {
+  method: ApiMethod;
+  path: string;
+}
+
+function readMswStatusFromWindow(): MswStatus {
+  if (typeof window === "undefined") return "off";
+
+  const global = window as Window & {
+    __MSW_ENABLED__?: boolean | "starting";
+  };
+
+  const flag = global.__MSW_ENABLED__;
+  if (flag === true) return "on";
+  if (flag === "starting") return "starting";
+
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    return "on";
+  }
+
+  return "off";
+}
+
+const ApiBadge: React.FC<ApiBadgeProps> = ({ method, path }) => {
+  const [msw, setMsw] = useState<MswStatus>(() => readMswStatusFromWindow());
+
+  const api =
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    "—";
 
   useEffect(() => {
     const update = () => {
-      const s = (window as any).__MSW_ENABLED__
-      if (s === true || navigator.serviceWorker?.controller) setMsw('on')
-      else if (s === 'starting') setMsw('starting')
-      else setMsw('off')
-    }
-    update()
-    const t = setInterval(update, 500)       // 轮询首屏异步完成
-    window.addEventListener('MSW_READY', update)
-    return () => { clearInterval(t); window.removeEventListener('MSW_READY', update) }
-  }, [])
+      setMsw(readMswStatusFromWindow());
+    };
 
-  const chip =
-    msw === 'on' ? 'bg-emerald-200' :
-    msw === 'starting' ? 'bg-amber-200' : 'bg-neutral-200'
+    update();
+
+    const timer = window.setInterval(update, 500);
+    window.addEventListener("MSW_READY", update as EventListener);
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("MSW_READY", update as EventListener);
+    };
+  }, []);
+
+  const chipClass =
+    msw === "on"
+      ? "bg-emerald-200 text-emerald-900"
+      : msw === "starting"
+      ? "bg-amber-200 text-amber-900"
+      : "bg-neutral-200 text-neutral-700";
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-2xl px-3 py-1 text-sm shadow bg-neutral-100">
-      <span className="font-medium">API:</span>
-      <code>{api}</code>
-      <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${chip}`}>
-        {msw === 'on' ? 'MSW: on' : msw === 'starting' ? 'MSW: starting' : 'MSW: off'}
+    <span className="inline-flex items-center gap-2 rounded-2xl bg-neutral-100 px-3 py-1 text-xs shadow-sm">
+      <span className="rounded-md bg-neutral-900 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-50">
+        {method}
       </span>
-    </div>
-  )
-}
+      <span className="font-mono text-[11px] text-neutral-700">{path}</span>
+      <span className="font-mono text-[10px] text-neutral-400">
+        {api}
+      </span>
+      <span className={`ml-1 rounded-full px-2 py-0.5 font-medium ${chipClass}`}>
+        {msw === "on"
+          ? "MSW on"
+          : msw === "starting"
+          ? "MSW starting"
+          : "MSW off"}
+      </span>
+    </span>
+  );
+};
+
+export default ApiBadge;

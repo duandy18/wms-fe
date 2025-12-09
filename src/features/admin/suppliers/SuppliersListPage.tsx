@@ -9,16 +9,23 @@ import {
   type Supplier,
 } from "./api";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape | undefined;
+  return e?.message ?? fallback;
+};
+
 const SuppliersListPage: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 过滤
   const [onlyActive, setOnlyActive] = useState(true);
   const [search, setSearch] = useState("");
 
-  // 新建表单
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [contactName, setContactName] = useState("");
@@ -37,9 +44,9 @@ const SuppliersListPage: React.FC = () => {
         q: search.trim() || undefined,
       });
       setSuppliers(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("fetchSuppliers failed", err);
-      setError(err?.message ?? "加载供应商失败");
+      setError(getErrorMessage(err, "加载供应商失败"));
       setSuppliers([]);
     } finally {
       setLoading(false);
@@ -73,7 +80,6 @@ const SuppliersListPage: React.FC = () => {
         active: true,
       });
 
-      // 清表单
       setName("");
       setCode("");
       setContactName("");
@@ -82,9 +88,9 @@ const SuppliersListPage: React.FC = () => {
       setWechat("");
 
       await loadSuppliers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("createSupplier failed", err);
-      setCreateError(err?.message ?? "创建供应商失败");
+      setCreateError(getErrorMessage(err, "创建供应商失败"));
     } finally {
       setCreating(false);
     }
@@ -92,25 +98,26 @@ const SuppliersListPage: React.FC = () => {
 
   async function toggleActive(s: Supplier) {
     try {
-      const updated = await updateSupplier(s.id, { active: !s.active });
+      const updated = await updateSupplier(s.id, {
+        active: !s.active,
+      });
       setSuppliers((prev) =>
         prev.map((x) => (x.id === s.id ? updated : x)),
       );
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("updateSupplier failed", err);
-      // 不弹窗，控制台看
     }
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       <PageTitle
         title="供应商主数据"
         description="维护供应商档案（公司名称、联系人、电话、邮箱、微信、启用状态），供采购单等业务引用。"
       />
 
       {/* 新建供应商表单 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-800">
             新建供应商
@@ -122,10 +129,12 @@ const SuppliersListPage: React.FC = () => {
 
         <form
           onSubmit={handleCreate}
-          className="grid grid-cols-1 md:grid-cols-6 gap-3 text-sm"
+          className="grid grid-cols-1 gap-3 text-sm md:grid-cols-6"
         >
           <div className="flex flex-col">
-            <label className="text-xs text-slate-500">公司名称 *</label>
+            <label className="text-xs text-slate-500">
+              公司名称 *
+            </label>
             <input
               className="mt-1 rounded-md border border-slate-300 px-2 py-1 text-sm"
               value={name}
@@ -194,8 +203,8 @@ const SuppliersListPage: React.FC = () => {
       </section>
 
       {/* 筛选 + 列表 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-sm font-semibold text-slate-800">
             供应商列表
           </h2>
@@ -268,7 +277,9 @@ const SuppliersListPage: React.FC = () => {
                   </td>
                   <td className="px-2 py-1">{s.name}</td>
                   <td className="px-2 py-1">{s.code ?? "-"}</td>
-                  <td className="px-2 py-1">{s.contact_name ?? "-"}</td>
+                  <td className="px-2 py-1">
+                    {s.contact_name ?? "-"}
+                  </td>
                   <td className="px-2 py-1">{s.phone ?? "-"}</td>
                   <td className="px-2 py-1">{s.email ?? "-"}</td>
                   <td className="px-2 py-1">{s.wechat ?? "-"}</td>

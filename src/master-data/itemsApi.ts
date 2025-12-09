@@ -1,13 +1,25 @@
+// src/master-data/itemsApi.ts
 import { apiGet } from "../lib/api";
 
 export interface ItemBasic {
   id: number;
   sku: string;
   name: string;
-  spec: string | null; // 规格，例如 1.5kg*8入
-  uom: string | null;  // 最小单位，例如 PCS / 袋 / 包
+  spec: string | null;
+  uom: string | null;
   enabled: boolean;
 }
+
+type ItemsApiRow = {
+  id: number;
+  sku?: string | null;
+  name?: string | null;
+  spec?: string | null;
+  spec_text?: string | null;
+  uom?: string | null;
+  base_uom?: string | null;
+  enabled?: boolean;
+};
 
 /**
  * 商品主数据基础列表：
@@ -15,21 +27,23 @@ export interface ItemBasic {
  * - 兼容后端 ItemOut 的 spec / uom 字段。
  */
 export async function fetchItemsBasic(): Promise<ItemBasic[]> {
-  const raw = await apiGet<any[]>("/items");
+  const raw = await apiGet<unknown>("/items");
 
   if (!Array.isArray(raw)) {
     return [];
   }
 
-  return raw.map((it) => {
+  return raw.map((row) => {
+    const it = row as ItemsApiRow;
+
     const spec =
-      (it.spec as string | null | undefined) ??
-      (it.spec_text as string | null | undefined) ??
+      it.spec ??
+      it.spec_text ??
       null;
 
     const uom =
-      (it.uom as string | null | undefined) ??
-      (it.base_uom as string | null | undefined) ??
+      it.uom ??
+      it.base_uom ??
       null;
 
     return {

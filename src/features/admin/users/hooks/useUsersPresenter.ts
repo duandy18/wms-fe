@@ -9,6 +9,10 @@ import {
 } from "../api";
 import type { RoleDTO, UserDTO } from "../types";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
 export function useUsersPresenter() {
   const [users, setUsers] = useState<UserDTO[]>([]);
   const [roles, setRoles] = useState<RoleDTO[]>([]);
@@ -24,8 +28,9 @@ export function useUsersPresenter() {
       const [u, r] = await Promise.all([fetchUsers(), fetchRoles()]);
       setUsers(u);
       setRoles(r);
-    } catch (err: any) {
-      setError(err?.message ?? "加载用户/角色失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "加载用户/角色失败");
     } finally {
       setLoading(false);
     }
@@ -48,8 +53,9 @@ export function useUsersPresenter() {
     try {
       await createUser(payload);
       await load();
-    } catch (err: any) {
-      setError(err?.message ?? "创建用户失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "创建用户失败");
     } finally {
       setCreating(false);
     }
@@ -70,8 +76,9 @@ export function useUsersPresenter() {
     try {
       await apiUpdateUser(userId, payload);
       await load();
-    } catch (err: any) {
-      setError(err?.message ?? "更新用户失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "更新用户失败");
       throw err;
     } finally {
       setMutating(false);
@@ -84,8 +91,9 @@ export function useUsersPresenter() {
     try {
       await resetUserPassword(userId);
       await load();
-    } catch (err: any) {
-      setError(err?.message ?? "重置密码失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "重置密码失败");
       throw err;
     } finally {
       setMutating(false);

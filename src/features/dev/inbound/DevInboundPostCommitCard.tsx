@@ -5,7 +5,7 @@ import React from "react";
 import type { DevInboundController } from "./types";
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import type { LedgerRow } from "../../diagnostics/ledger-tool/types";
-import type { SnapshotRow } from "../../inventory/snapshot/types";
+import type { ItemDetailResponse, ItemSlice } from "../../inventory/snapshot/api";
 
 interface Props {
   c: DevInboundController;
@@ -19,7 +19,6 @@ type TraceEventView = TraceEvent & {
   module?: string | null;
   service?: string | null;
   event_type?: string | null;
-  message?: string | null;
 };
 
 type LedgerRowView = LedgerRow & {
@@ -28,24 +27,20 @@ type LedgerRowView = LedgerRow & {
   ts?: string | null;
 };
 
-type SnapshotSliceView = {
-  warehouse_name?: string | null;
-  warehouse_id?: number | null;
-  pool?: string | null;
-  batch_code?: string | null;
-  expire_at?: string | null;
-  on_hand_qty: number;
-  reserved_qty: number;
-  available_qty: number;
+type SnapshotSliceView = ItemSlice & {
+  expire_at?: string | null; // 兼容 exp 字段名
 };
 
-type SnapshotRowView = SnapshotRow & {
+type SnapshotRowView = ItemDetailResponse & {
   slices?: SnapshotSliceView[];
-  item_name?: string | null;
-  totals?: {
-    on_hand_qty?: number;
-    available_qty?: number;
-  };
+};
+
+const formatTsValue = (ts: string | Date | null | undefined): string => {
+  if (!ts) return "-";
+  if (ts instanceof Date) {
+    return ts.toISOString().replace("T", " ").replace("Z", "");
+  }
+  return ts.replace("T", " ").replace("Z", "");
 };
 
 export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
@@ -57,10 +52,9 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
     []) as LedgerRowView[];
   const snapshot = (info?.snapshot ?? null) as SnapshotRowView | null;
 
-  // 处理 Snapshot FEFO 排序
   const slices: SnapshotSliceView[] = Array.isArray(snapshot?.slices)
     ? [...(snapshot.slices as SnapshotSliceView[])].sort(
-        (a: SnapshotSliceView, b: SnapshotSliceView) => {
+        (a, b) => {
           const da = a.expire_at
             ? Date.parse(a.expire_at)
             : Number.POSITIVE_INFINITY;
@@ -73,7 +67,7 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
     : [];
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+    <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-slate-800">
           落账情报（Trace / Ledger / Snapshot）
@@ -88,7 +82,7 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
       {!info ? (
         <div className="text-xs text-slate-500">
           还没有可展示的落账信息。执行一次 commit 后，这里会展示
-          <span className="font-mono mx-1">Trace / Ledger / Snapshot</span>
+          <span className="mx-1 font-mono">Trace / Ledger / Snapshot</span>
           的摘要。
         </div>
       ) : (
@@ -98,7 +92,7 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
             <div className="text-xs text-slate-600">
               当前 trace_id：
               {c.traceId ? (
-                <span className="font-mono ml-1">{c.traceId}</span>
+                <span className="ml-1 font-mono">{c.traceId}</span>
               ) : (
                 <span className="ml-1 text-slate-400">(未知)</span>
               )}
@@ -108,7 +102,7 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                 Trace 中暂未查询到事件。可前往 Trace 页面进一步确认。
               </div>
             ) : (
-              <div className="max-h-40 overflow-y-auto border border-slate-100 rounded bg-slate-50">
+              <div className="max-h-40 overflow-y-auto rounded border border-slate-100 bg-slate-50">
                 <table className="min-w-full border-collapse text-[11px]">
                   <thead>
                     <tr className="bg-slate-100 text-slate-600">
@@ -119,17 +113,14 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {traceEvents.slice(-20).map((ev, idx: number) => {
+                    {traceEvents.slice(-20).map((ev, idx) => {
                       const tsRaw =
                         ev.ts ??
                         ev.timestamp ??
                         ev.created_at ??
                         ev.time ??
                         null;
-                      const ts =
-                        typeof tsRaw === "string"
-                          ? tsRaw.replace("T", " ").replace("Z", "")
-                          : "-";
+                      const ts = formatTsValue(tsRaw);
                       const source = ev.source ?? ev.module ?? ev.service ?? "-";
                       const kind =
                         ev.kind ?? ev.event_type ?? ev.type ?? "UNKNOWN";
@@ -140,11 +131,13 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                           key={idx}
                           className="border-t border-slate-100 align-top"
                         >
-                          <td className="px-2 py-1 whitespace-nowrap">{ts}</td>
-                          <td className="px-2 py-1 whitespace-nowrap">
+                          <td className="whitespace-nowrap px-2 py-1">
+                            {ts}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-1">
                             {source}
                           </td>
-                          <td className="px-2 py-1 whitespace-nowrap">
+                          <td className="whitespace-nowrap px-2 py-1">
                             {kind}
                           </td>
                           <td className="px-2 py-1">
@@ -171,7 +164,7 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                 未查询到与该 trace_id 对应的台账记录。
               </div>
             ) : (
-              <div className="max-h-40 overflow-y-auto border border-slate-100 rounded bg-slate-50">
+              <div className="max-h-40 overflow-y-auto rounded border border-slate-100 bg-slate-50">
                 <table className="min-w-full border-collapse text-[11px]">
                   <thead>
                     <tr className="bg-slate-100 text-slate-600">
@@ -186,19 +179,17 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                   </thead>
                   <tbody>
                     {ledgerRows.map((r) => {
-                      const tsRaw =
-                        r.occurred_at ?? r.created_at ?? r.ts ?? null;
-                      const ts =
-                        typeof tsRaw === "string"
-                          ? tsRaw.replace("T", " ").replace("Z", "")
-                          : "-";
+                      const tsRaw = r.occurred_at ?? r.created_at ?? r.ts;
+                      const ts = formatTsValue(tsRaw);
 
                       return (
                         <tr
                           key={r.id}
                           className="border-t border-slate-100 align-top"
                         >
-                          <td className="px-2 py-1 whitespace-nowrap">{ts}</td>
+                          <td className="whitespace-nowrap px-2 py-1">
+                            {ts}
+                          </td>
                           <td className="px-2 py-1 text-right font-mono">
                             {r.warehouse_id ?? "-"}
                           </td>
@@ -243,15 +234,15 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                     #{snapshot.item_id} {snapshot.item_name ?? ""}
                   </span>
                   ，总库存 on_hand=
-                  {snapshot.totals?.on_hand_qty ?? 0}，可用=
-                  {snapshot.totals?.available_qty ?? 0}
+                  {snapshot.totals.on_hand_qty}，可用=
+                  {snapshot.totals.available_qty}
                 </div>
                 {slices.length === 0 ? (
                   <div className="text-xs text-slate-500">
                     未查询到任何批次切片。
                   </div>
                 ) : (
-                  <div className="max-h-40 overflow-y-auto border border-slate-100 rounded bg-slate-50">
+                  <div className="max-h-40 overflow-y-auto rounded border border-slate-100 bg-slate-50">
                     <table className="min-w-full border-collapse text-[11px]">
                       <thead>
                         <tr className="bg-slate-100 text-slate-600">
@@ -261,11 +252,13 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                           <th className="px-2 py-1 text-left">expire</th>
                           <th className="px-2 py-1 text-right">on_hand</th>
                           <th className="px-2 py-1 text-right">reserved</th>
-                          <th className="px-2 py-1 text-right">available</th>
+                          <th className="px-2 py-1 text-right">
+                            available
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {slices.map((s, idx: number) => (
+                        {slices.map((s, idx) => (
                           <tr
                             key={idx}
                             className="border-t border-slate-100 align-top"

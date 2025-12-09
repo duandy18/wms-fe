@@ -7,8 +7,11 @@ import type { StoreListItem, RouteMode } from "./types";
 
 export type SortKey = "id" | "platform" | "shop_id" | "name";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
 export function useStoresListPresenter() {
-  // 当前阶段：只区分“已登录 / 未登录”，暂不做细粒度权限控制
   const { isAuthenticated } = useAuth();
 
   const [stores, setStores] = useState<StoreListItem[]>([]);
@@ -16,19 +19,15 @@ export function useStoresListPresenter() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 新建店铺表单
   const [plat, setPlat] = useState("PDD");
   const [shopId, setShopId] = useState("");
   const [name, setName] = useState("");
 
-  // 排序
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortAsc, setSortAsc] = useState<boolean>(true);
 
-  // 是否显示停用店铺（inactive）
   const [showInactive, setShowInactive] = useState(false);
 
-  // 权限：目前只要登录就可以读/写店铺配置，后续可以接 RBAC 再细化
   const canRead = isAuthenticated;
   const canWrite = isAuthenticated;
 
@@ -39,8 +38,9 @@ export function useStoresListPresenter() {
     try {
       const res = await fetchStores();
       setStores(res.data);
-    } catch (err: any) {
-      setError(err?.message ?? "加载店铺列表失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "加载店铺列表失败");
     } finally {
       setLoading(false);
     }
@@ -59,15 +59,14 @@ export function useStoresListPresenter() {
       const willBeActive = !store.active;
       await updateStore(store.id, { active: willBeActive });
 
-      // 如果是从「启用 → 禁用」，自动打开 showInactive，
-      // 让你立刻看到这条变成灰色（软删除的反馈更直观）
       if (!willBeActive) {
         setShowInactive(true);
       }
 
       await load();
-    } catch (err: any) {
-      setError(err?.message ?? "更新店铺状态失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "更新店铺状态失败");
     } finally {
       setSaving(false);
     }
@@ -80,8 +79,9 @@ export function useStoresListPresenter() {
     try {
       await updateStore(store.id, { route_mode: mode });
       await load();
-    } catch (err: any) {
-      setError(err?.message ?? "更新出库路由模式失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "更新出库路由模式失败");
     } finally {
       setSaving(false);
     }
@@ -110,8 +110,9 @@ export function useStoresListPresenter() {
       setShopId("");
       setName("");
       await load();
-    } catch (err: any) {
-      setError(err?.message ?? "创建店铺失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "创建店铺失败");
     } finally {
       setSaving(false);
     }
@@ -164,7 +165,6 @@ export function useStoresListPresenter() {
     return list;
   }, [stores, sortKey, sortAsc]);
 
-  // 默认只看 active；勾选“显示停用”后才包括 inactive
   const visibleStores = useMemo(
     () =>
       showInactive
@@ -174,14 +174,12 @@ export function useStoresListPresenter() {
   );
 
   return {
-    // 权限 / 状态
     canRead,
     canWrite,
     loading,
     saving,
     error,
 
-    // 新建表单
     plat,
     shopId,
     name,
@@ -190,7 +188,6 @@ export function useStoresListPresenter() {
     setName,
     handleCreate,
 
-    // 列表 & 排序 & 过滤
     visibleStores,
     showInactive,
     setShowInactive,
@@ -198,7 +195,6 @@ export function useStoresListPresenter() {
     sortAsc,
     handleSort,
 
-    // 行操作
     handleToggleActive,
     handleRouteModeChange,
   };

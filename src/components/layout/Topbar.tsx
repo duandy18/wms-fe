@@ -11,17 +11,19 @@ export function Topbar() {
     location.pathname.startsWith(r.path),
   );
 
+  const username = user?.username ?? "未登录";
+
   return (
-    <header className="h-12 border-b border-slate-200 flex items-center justify-between px-4 bg-white/80 backdrop-blur">
-      <div className="flex items-center gap-2 text-sm text-slate-700">
+    <header className="flex h-12 items-center justify-between border-b border-slate-200 bg-white/80 px-4 text-sm text-slate-700 backdrop-blur">
+      <div className="flex items-center gap-2">
         {/* 简易面包屑：先不做多级，只展示当前页面 */}
         <span className="font-medium">作业台 / 库存 / 管理 …</span>
         <span className="text-slate-400">/</span>
         <span>{currentRoute?.label ?? "首页"}</span>
       </div>
-      <div className="flex items-center gap-3 text-sm text-slate-600">
+      <div className="flex items-center gap-3 text-slate-600">
         <span className="text-slate-400">当前用户</span>
-        <span className="font-medium">{user.username}</span>
+        <span className="font-medium">{username}</span>
       </div>
     </header>
   );

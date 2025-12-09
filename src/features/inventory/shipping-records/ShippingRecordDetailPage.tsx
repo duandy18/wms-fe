@@ -51,6 +51,9 @@ const statusBadgeClass = (status: string | null | undefined) => {
   }
 };
 
+const getErrorMessage = (err: unknown, fallback: string): string =>
+  err instanceof Error ? err.message : fallback;
+
 const ShippingRecordDetailPage: React.FC = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -83,9 +86,9 @@ const ShippingRecordDetailPage: React.FC = () => {
       if (data.length === 0) {
         setError("未找到对应的发货记录。");
       }
-    } catch (e: any) {
-      console.error("fetchShippingRecordsByRef failed", e);
-      setError(e?.message ?? "查询失败");
+    } catch (err) {
+      console.error("fetchShippingRecordsByRef failed", err);
+      setError(getErrorMessage(err, "查询失败"));
       setRecords([]);
     } finally {
       setLoading(false);
@@ -104,9 +107,9 @@ const ShippingRecordDetailPage: React.FC = () => {
     try {
       const rec = await fetchShippingRecordById(id);
       setRecords([rec]);
-    } catch (e: any) {
-      console.error("fetchShippingRecordById failed", e);
-      setError(e?.message ?? "查询失败");
+    } catch (err) {
+      console.error("fetchShippingRecordById failed", err);
+      setError(getErrorMessage(err, "查询失败"));
       setRecords([]);
     } finally {
       setLoading(false);
@@ -125,7 +128,9 @@ const ShippingRecordDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const latestStatusLabel = primary ? statusToLabel(primary.status ?? null) : "-";
+  const latestStatusLabel = primary
+    ? statusToLabel(primary.status ?? null)
+    : "-";
   const latestDeliveryTime = primary?.delivery_time ?? null;
 
   return (
@@ -248,7 +253,7 @@ const ShippingRecordDetailPage: React.FC = () => {
             暂无记录。请先通过上方表单进行查询。
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 text-xs text-slate-700">
+          <div className="grid grid-cols-1 gap-4 text-xs text-slate-700 md:grid-cols-2">
             <div className="space-y-1">
               <div>
                 <span className="font-semibold">订单引用：</span>

@@ -11,13 +11,16 @@ import type { PermissionDTO } from "./types";
 
 type TabKey = "users" | "roles" | "perms";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
 export default function UsersAdminPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("users");
 
   const usersPresenter = useUsersPresenter();
   const rolesPresenter = useRolesPresenter();
 
-  // ⭐ permissions 作为单一数据源
   const [permissions, setPermissions] = useState<PermissionDTO[]>([]);
   const [permLoading, setPermLoading] = useState(false);
   const [permError, setPermError] = useState<string | null>(null);
@@ -28,8 +31,9 @@ export default function UsersAdminPage() {
     try {
       const p = await fetchPermissions();
       setPermissions(p);
-    } catch (err: any) {
-      setPermError(err?.message ?? "加载权限列表失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setPermError(e?.message ?? "加载权限列表失败");
     } finally {
       setPermLoading(false);
     }
@@ -39,7 +43,6 @@ export default function UsersAdminPage() {
     void reloadPermissions();
   }, []);
 
-  // ⭐ PermissionsPresenter 只负责创建权限 + 错误状态，真正的列表由上层维护
   const permsPresenter = usePermissionsPresenter(reloadPermissions);
 
   const tabs: { key: TabKey; label: string }[] = [
@@ -50,17 +53,15 @@ export default function UsersAdminPage() {
 
   return (
     <div className="space-y-4">
-      {/* 顶部总标题 */}
       <header className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold">用户 & 权限管理</h1>
-          <p className="text-xs text-slate-600 mt-1">
+          <p className="mt-1 text-xs text-slate-600">
             统一管理系统用户、角色与权限。用户只关心角色，角色与权限映射由管理员在此维护。
           </p>
         </div>
       </header>
 
-      {/* Tab 切换 */}
       <div className="flex gap-2 border-b border-slate-200 pb-1">
         {tabs.map((tab) => (
           <button
@@ -78,9 +79,10 @@ export default function UsersAdminPage() {
         ))}
       </div>
 
-      {/* 面板区 */}
       <div>
-        {activeTab === "users" && <UsersPanel presenter={usersPresenter} />}
+        {activeTab === "users" && (
+          <UsersPanel presenter={usersPresenter} />
+        )}
 
         {activeTab === "roles" && (
           <RolesPanel

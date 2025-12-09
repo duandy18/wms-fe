@@ -56,6 +56,11 @@ type ApiErrorShape = {
 // 直接从 scanCountV2 推导 payload 类型，避免 any
 type ScanCountPayload = Parameters<typeof scanCountV2>[0];
 
+// 扩展 ItemSlice：允许存在 expire_at
+type SliceWithExpire = ItemSlice & {
+  expire_at?: string | null;
+};
+
 let nextId = 1;
 
 const CountPage: React.FC = () => {
@@ -252,19 +257,21 @@ const CountPage: React.FC = () => {
     setLastScanRef(null);
   }
 
-  // FEFO 排序
+  // FEFO 排序（容忍 ItemSlice 上没有 expire_at 字段）
   function sortFEFO(slices: ItemSlice[]) {
     return [...slices].sort((a, b) => {
-      const da = a.expire_at ? Date.parse(a.expire_at) : Infinity;
-      const db = b.expire_at ? Date.parse(b.expire_at) : Infinity;
+      const sa = a as SliceWithExpire;
+      const sb = b as SliceWithExpire;
+      const da = sa.expire_at ? Date.parse(sa.expire_at) : Infinity;
+      const db = sb.expire_at ? Date.parse(sb.expire_at) : Infinity;
       return da - db;
     });
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       {/* 头部 */}
-      <header className="flex items-center justify-betweengap-4">
+      <header className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
             盘点 / 库存校正（v2 /scan count）
@@ -278,21 +285,21 @@ const CountPage: React.FC = () => {
         <ApiBadge method="POST" path="/scan" />
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-6 items-start">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         {/* 左侧：表单 + 扫码台 + 响应 + 历史 */}
         <div className="space-y-4">
           {/* 表单 */}
-          <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-800">
               手工盘点（按 item + batch + actual）
             </h2>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-slate-600">item_id</label>
                   <input
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={form.item_id || ""}
                     onChange={(e) =>
                       update("item_id", Number(e.target.value || 0))
@@ -305,7 +312,7 @@ const CountPage: React.FC = () => {
                     actual（盘点后的最终数量）
                   </label>
                   <input
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={form.actual}
                     onChange={(e) =>
                       update("actual", Number(e.target.value || 0))
@@ -318,7 +325,7 @@ const CountPage: React.FC = () => {
                     warehouse_id
                   </label>
                   <input
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={form.warehouse_id ?? ""}
                     onChange={(e) =>
                       update("warehouse_id", Number(e.target.value || 0))
@@ -328,11 +335,11 @@ const CountPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-slate-600">batch_code</label>
                   <input
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={form.batch_code}
                     onChange={(e) => update("batch_code", e.target.value)}
                     placeholder="批次编码"
@@ -340,14 +347,14 @@ const CountPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-slate-600">
                     production_date（选一）
                   </label>
                   <input
                     type="date"
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={form.production_date || ""}
                     onChange={(e) =>
                       update(
@@ -363,7 +370,7 @@ const CountPage: React.FC = () => {
                   </label>
                   <input
                     type="date"
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={form.expiry_date || ""}
                     onChange={(e) =>
                       update("expiry_date", e.target.value || undefined)
@@ -372,18 +379,18 @@ const CountPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 mt-2">
+              <div className="mt-2 flex items-center gap-4">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2 rounded-lg bg-slate-900 text-white text-sm disabled:opacity-60"
+                  className="rounded-lg bg-slate-900 px-5 py-2 text-sm text-white disabled:opacity-60"
                 >
                   {loading ? "提交中…" : "提交盘点结果"}
                 </button>
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="px-4 py-2 rounded-lg bg-slate-100 text-xs text-slate-700"
+                  className="rounded-lg bg-slate-100 px-4 py-2 text-xs text-slate-700"
                 >
                   重置
                 </button>
@@ -395,7 +402,7 @@ const CountPage: React.FC = () => {
           </section>
 
           {/* 扫码台 */}
-          <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+          <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-800">
               盘点扫码台（mode=count）
             </h2>
@@ -403,9 +410,9 @@ const CountPage: React.FC = () => {
               扫码将以 mode=count 调用 /scan，按当前仓库和批次进行盘点。
             </p>
 
-            <div className="flex items-center gap-3 mb-2 text-xs">
+            <div className="mb-2 flex items-center gap-3 text-xs">
               <span className="text-slate-600">扫码模式：</span>
-              <label className="flex items-center gap-1 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-1">
                 <input
                   type="radio"
                   name="scan-mode-count"
@@ -415,7 +422,7 @@ const CountPage: React.FC = () => {
                 />
                 扫描填表
               </label>
-              <label className="flex items-center gap-1 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-1">
                 <input
                   type="radio"
                   name="scan-mode-count"
@@ -427,7 +434,7 @@ const CountPage: React.FC = () => {
               </label>
             </div>
 
-            <div className="border border-dashed border-slate-300 rounded-lg p-2">
+            <div className="rounded-lg border border-dashed border-slate-300 p-2">
               <ScanConsole
                 title="盘点扫码台"
                 modeLabel="盘点（count）"
@@ -439,7 +446,7 @@ const CountPage: React.FC = () => {
           </section>
 
           {/* 最近响应 */}
-          <section className="bg白 border border-slate-200 rounded-xl p-4 space-y-2">
+          <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-800">
               最近一次 ScanResponse
             </h2>
@@ -451,7 +458,7 @@ const CountPage: React.FC = () => {
                   · ok={String(result.ok)} · committed=
                   {String(result.committed)} · source={result.source}
                 </div>
-                <pre className="bg-slate-50 p-3 rounded text-[11px] whitespace-pre-wrap break-all max-h-64 overflow-auto mt-2">
+                <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded bg-slate-50 p-3 text-[11px]">
                   {JSON.stringify(result, null, 2)}
                 </pre>
               </>
@@ -463,7 +470,7 @@ const CountPage: React.FC = () => {
           </section>
 
           {/* 历史 */}
-          <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-1">
+          <section className="space-y-1 rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-800">
               最近盘点记录（最多 10 条）
             </h2>
@@ -491,7 +498,7 @@ const CountPage: React.FC = () => {
         {/* 右侧：库存 snapshot + TraceTimeline */}
         <div className="space-y-6">
           {/* 库存 snapshot */}
-          <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+          <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-800">
               库存与批次（FEFO）
             </h2>
@@ -512,22 +519,24 @@ const CountPage: React.FC = () => {
                   {itemDetail.totals.on_hand_qty}）
                 </div>
                 <div className="space-y-2">
-                  {sortFEFO(itemDetail.slices).map((s, idx) => (
-                    <div
-                      key={idx}
-                      className="border border-slate-200 rounded-lg p-2 text-xs bg-slate-50"
-                    >
-                      <div className="flex justify-between">
-                        <span className="font-mono">{s.batch_code}</span>
-                        <span className="font-semibold">
-                          可用：{s.available_qty}
-                        </span>
+                  {sortFEFO(itemDetail.slices).map(
+                    (s: SliceWithExpire, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs"
+                      >
+                        <div className="flex justify-between">
+                          <span className="font-mono">{s.batch_code}</span>
+                          <span className="font-semibold">
+                            可用：{s.available_qty}
+                          </span>
+                        </div>
+                        <div className="text-slate-600">
+                          expire: {s.expire_at ?? "-"}
+                        </div>
                       </div>
-                      <div className="text-slate-600">
-                        expire: {s.expire_at ?? "-"}
-                      </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               </>
             ) : (
@@ -538,13 +547,13 @@ const CountPage: React.FC = () => {
           </section>
 
           {/* Trace 时间线 */}
-          <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+          <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-800">
               Trace 事件时间线
             </h2>
 
             {lastScanRef && (
-              <div className="text-[11px] font-mono text-slate-500">
+              <div className="font-mono text-[11px] text-slate-500">
                 {lastScanRef}
               </div>
             )}

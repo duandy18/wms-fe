@@ -14,10 +14,22 @@ const todayYmd = () => new Date().toISOString().slice(0, 10);
 const formatDate = (s: string) =>
   s.length >= 10 ? s.slice(0, 10) : s;
 
+type ApiErrorShape = {
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 // 计算 SLA 窗口（默认 7 天，以当前选中日期为结束）
-function buildSlaWindow(dateStr: string): { time_from: string; time_to: string } {
+function buildSlaWindow(dateStr: string): {
+  time_from: string;
+  time_to: string;
+} {
   const end = new Date(dateStr + "T23:59:59Z");
-  const start = new Date(end.getTime() - 6 * 24 * 60 * 60 * 1000); // 近 7 天
+  const start = new Date(end.getTime() - 6 * 24 * 60 * 60 * 1000);
   return {
     time_from: start.toISOString(),
     time_to: end.toISOString(),
@@ -56,16 +68,16 @@ const OrdersStatsPage: React.FC = () => {
         fetchOrdersSlaStats({
           ...slaWindow,
           ...base,
-          sla_hours: 24, // 默认 SLA = 24 小时
+          sla_hours: 24,
         }),
       ]);
 
       setDaily(dailyRes);
       setTrend(trendRes.days || []);
       setSla(slaRes);
-    } catch (err: any) {
+    } catch (err) {
       console.error("load orders stats failed", err);
-      setError(err?.message ?? "加载订单统计失败");
+      setError(getErrorMessage(err, "加载订单统计失败"));
       setDaily(null);
       setTrend([]);
       setSla(null);
@@ -81,7 +93,8 @@ const OrdersStatsPage: React.FC = () => {
 
   const avgReturnRate =
     trend.length > 0
-      ? trend.reduce((acc, d) => acc + d.return_rate, 0) / trend.length
+      ? trend.reduce((acc, d) => acc + d.return_rate, 0) /
+        trend.length
       : 0;
 
   const cards = [
@@ -195,7 +208,7 @@ const OrdersStatsPage: React.FC = () => {
       </section>
 
       {/* 近 7 天趋势表 */}
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm text-sm text-slate-700">
+      <section className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-800">
           近 7 天订单趋势
         </h2>

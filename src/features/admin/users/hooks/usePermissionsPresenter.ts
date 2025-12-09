@@ -2,6 +2,10 @@
 import { useState } from "react";
 import { createPermission } from "../api";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
 export function usePermissionsPresenter(
   reloadPermissions: () => Promise<void>,
 ) {
@@ -17,8 +21,9 @@ export function usePermissionsPresenter(
     try {
       await createPermission(payload);
       await reloadPermissions();
-    } catch (err: any) {
-      setError(err?.message ?? "创建权限失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "创建权限失败");
     } finally {
       setCreating(false);
     }
@@ -32,4 +37,6 @@ export function usePermissionsPresenter(
   };
 }
 
-export type PermissionsPresenter = ReturnType<typeof usePermissionsPresenter>;
+export type PermissionsPresenter = ReturnType<
+  typeof usePermissionsPresenter
+>;

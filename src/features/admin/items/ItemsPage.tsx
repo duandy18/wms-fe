@@ -12,7 +12,7 @@
 // - ItemsStore 中的 barcodeIndex 用于条码 → item_id 唯一反查
 // - 若条码唯一绑定：自动选中商品行 + 滚动定位 + 展开条码管理面板
 
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useItemsStore } from "./itemsStore";
 import ItemsFormSection from "./ItemsFormSection";
@@ -20,6 +20,11 @@ import { ItemsTable } from "./ItemsTable";
 import { ItemBarcodesPanel } from "./ItemBarcodesPanel";
 import { ScanConsole } from "../../../components/scan/ScanConsole";
 import { useScanProbe } from "../../operations/scan/useScanProbe";
+
+type ScanProbeError = {
+  stage?: string;
+  error?: string;
+};
 
 interface ScanProbeResponse {
   ok: boolean;
@@ -31,7 +36,7 @@ interface ScanProbeResponse {
   qty?: number | null;
   batch_code?: string | null;
   evidence?: Array<Record<string, unknown>>;
-  errors?: Array<{ stage?: string; error?: string }>;
+  errors?: ScanProbeError[];
 }
 
 const ItemsPage: React.FC = () => {
@@ -76,29 +81,34 @@ const ItemsPage: React.FC = () => {
   }, [loadItems]);
 
   // --- 3. 调用 /scan 做条码体检（通过 useScanProbe 实现） ---
-  async function runProbe(barcode: string) {
-    const trimmed = barcode.trim();
-    if (!trimmed) return;
+  const runProbe = useCallback(
+    async (barcode: string) => {
+      const trimmed = barcode.trim();
+      if (!trimmed) return;
 
-    setProbeState({ loading: true, error: null, result: null });
+      setProbeState({ loading: true, error: null, result: null });
 
-    try {
-      const std = await probe({
-        barcode: trimmed,
-        warehouseId: 1,
-        ctx: { device_id: "items-page" },
-      });
+      try {
+        const std = await probe({
+          barcode: trimmed,
+          warehouseId: 1,
+          ctx: { device_id: "items-page" },
+        });
 
-      const res: ScanProbeResponse = std.raw;
-      setProbeState({ loading: false, result: res });
-    } catch (err: any) {
-      setProbeState({
-        loading: false,
-        result: null,
-        error: err?.message || "调用 /scan 失败",
-      });
-    }
-  }
+        const res: ScanProbeResponse = std.raw;
+        setProbeState({ loading: false, result: res });
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : "调用 /scan 失败";
+        setProbeState({
+          loading: false,
+          result: null,
+          error: message,
+        });
+      }
+    },
+    [probe, setProbeState],
+  );
 
   // --- 4. 当 scannedBarcode 变化时：做体检 ---
   useEffect(() => {
@@ -107,7 +117,7 @@ const ItemsPage: React.FC = () => {
       return;
     }
     void runProbe(scannedBarcode);
-  }, [scannedBarcode, setProbeState]);
+  }, [scannedBarcode, runProbe, setProbeState]);
 
   // --- 4.1 扫码后：若条码在主数据中唯一绑定 → 自动选中该商品 + 展开条码管理面板 ---
   useEffect(() => {
@@ -206,13 +216,13 @@ const ItemsPage: React.FC = () => {
   }, [scannedBarcode, probeResult, barcodeOwners]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       {/* 头部 */}
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">
           商品主数据（Items）
         </h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="mt-1 text-sm text-slate-500">
           Items 是全系统统一的商品来源：入库、出库、库存、批次、订单都只认{" "}
           <span className="font-mono">item_id</span> /{" "}
           <span className="font-mono">sku</span>。
@@ -221,7 +231,7 @@ const ItemsPage: React.FC = () => {
       </header>
 
       {/* 顶部统计 */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
           <div className="text-[11px] text-slate-500">商品总数</div>
           <div className="mt-1 text-xl font-semibold text-slate-900">
@@ -245,7 +255,7 @@ const ItemsPage: React.FC = () => {
       </section>
 
       {/* 条码扫描台 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">
           Items 条码扫描台
         </h2>
@@ -265,7 +275,7 @@ const ItemsPage: React.FC = () => {
       {scannedBarcode && (
         <section className="space-y-2">
           {/* 当前条码 + 绑定提示 */}
-          <div className="border border-sky-200 bg-sky-50 text-[11px] text-sky-800 px-3 py-2 rounded-lg space-y-1">
+          <div className="space-y-1 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] text-sky-800">
             <div>
               当前条码：{" "}
               <span className="font-mono">{scannedBarcode}</span>
@@ -274,7 +284,7 @@ const ItemsPage: React.FC = () => {
           </div>
 
           {/* 条码体检卡片 */}
-          <div className="border border-slate-200 bg-white text-[11px] text-slate-700 px-3 py-2 rounded-lg space-y-1">
+          <div className="space-y-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-700">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-slate-800">
                 条码体检（/scan probe）
@@ -287,7 +297,7 @@ const ItemsPage: React.FC = () => {
             </div>
 
             {probeError && (
-              <div className="text-[11px] text-red-600 mt-1">
+              <div className="mt-1 text-[11px] text-red-600">
                 {probeError}
               </div>
             )}
@@ -326,18 +336,20 @@ const ItemsPage: React.FC = () => {
                   probeResult.errors.length > 0 && (
                     <div className="mt-1 text-[11px] text-red-600">
                       /scan 报告错误：
-                      {probeResult.errors.map((e, idx) => (
-                        <div key={idx}>
-                          [{e.stage ?? "stage"}] {e.error ?? ""}
-                        </div>
-                      ))}
+                      {probeResult.errors.map(
+                        (e: ScanProbeError, idx: number) => (
+                          <div key={idx}>
+                            [{e.stage ?? "stage"}] {e.error ?? ""}
+                          </div>
+                        ),
+                      )}
                     </div>
                   )}
               </>
             )}
 
             {!probeError && !probeResult && !probeLoading && (
-              <div className="text-[11px] text-slate-500 mt-1">
+              <div className="mt-1 text-[11px] text-slate-500">
                 尚未拿到 /scan 体检结果。
               </div>
             )}
@@ -347,7 +359,7 @@ const ItemsPage: React.FC = () => {
 
       {/* 错误提示 */}
       {error && (
-        <div className="text-sm text-red-600 border border-red-200 bg-red-50 px-3 py-2 rounded-lg">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
           {error}
         </div>
       )}
@@ -356,19 +368,18 @@ const ItemsPage: React.FC = () => {
       <ItemsFormSection />
 
       {/* 商品列表 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-800">
             商品列表
           </h2>
 
-          {/* 启用状态筛选 */}
           <div className="flex items-center gap-2 text-[11px] text-slate-600">
             <span>状态筛选：</span>
             <button
               type="button"
               className={
-                "px-2 py-1 rounded border " +
+                "rounded px-2 py-1 border " +
                 (filter === "all"
                   ? "border-slate-900 text-slate-900"
                   : "border-slate-300 text-slate-500")
@@ -380,7 +391,7 @@ const ItemsPage: React.FC = () => {
             <button
               type="button"
               className={
-                "px-2 py-1 rounded border " +
+                "rounded px-2 py-1 border " +
                 (filter === "enabled"
                   ? "border-emerald-500 text-emerald-700"
                   : "border-slate-300 text-slate-500")
@@ -392,7 +403,7 @@ const ItemsPage: React.FC = () => {
             <button
               type="button"
               className={
-                "px-2 py-1 rounded border " +
+                "rounded px-2 py-1 border " +
                 (filter === "disabled"
                   ? "border-slate-500 text-slate-800"
                   : "border-slate-300 text-slate-500")
@@ -408,7 +419,7 @@ const ItemsPage: React.FC = () => {
       </section>
 
       {/* 当前商品条码管理 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+      <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">
           当前商品的条码管理
         </h2>

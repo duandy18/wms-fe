@@ -9,22 +9,20 @@ import { StoreDefaultWarehouseCard } from "./StoreDefaultWarehouseCard";
 import { StoreBindingsTable } from "./StoreBindingsTable";
 import { StoreBindWarehouseForm } from "./StoreBindWarehouseForm";
 import { useStoreDetailPresenter } from "./useStoreDetailPresenter";
-import { useAuth } from "../../../app/auth/useAuth";
 import { updateStore } from "./api";
 
 export default function StoreDetailPage() {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
-  const { can } = useAuth();
-  const canWrite = can("admin.stores");
 
   // 解析 id，但不要用来控制 Hook 是否调用
   const parsedId = storeId ? Number(storeId) : NaN;
   const invalidId = !storeId || Number.isNaN(parsedId);
 
-  // Presenter 一律调用，避免 Hooks 条件执行
-  // 对于非法 id，只是 presenter 返回的 detail 会是空/报错状态
   const p = useStoreDetailPresenter(Number.isNaN(parsedId) ? 0 : parsedId);
+
+  // 简化：前端不再做 can("admin.stores")，交给后端接口权限控制
+  const canWrite = true;
 
   // 主数据编辑字段
   const [name, setName] = useState("");
@@ -36,7 +34,6 @@ export default function StoreDetailPage() {
   const [metaJustSaved, setMetaJustSaved] = useState(false);
   const [metaInitialized, setMetaInitialized] = useState(false);
 
-  // 首次加载 detail 后，同步一份到本地表单状态
   useEffect(() => {
     if (!p.detail || metaInitialized) return;
     setName(p.detail.name);
@@ -82,7 +79,6 @@ export default function StoreDetailPage() {
     }
   }
 
-  // 如果路由本身就没带 storeId，直接报参数错误
   if (invalidId) {
     return (
       <div className="p-4 text-sm text-red-600">
@@ -92,10 +88,9 @@ export default function StoreDetailPage() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4 p-4">
       <PageTitle title="商铺详情" description="平台商铺 · 仓库绑定关系" />
 
-      {/* 返回商铺管理 */}
       <button
         type="button"
         className="text-sm text-sky-700 underline"
@@ -104,26 +99,23 @@ export default function StoreDetailPage() {
         ← 返回商铺管理
       </button>
 
-      {/* 顶层错误（绑定、平台授权等） */}
       {p.error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-md px-3 py-2">
+        <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
           {p.error}
         </div>
       )}
 
-      {/* 店铺主数据编辑错误 & 提示 */}
       {metaError && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-md px-3 py-2">
+        <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
           {metaError}
         </div>
       )}
       {metaJustSaved && !metaError && (
-        <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded px-3 py-1">
+        <div className="rounded border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
           店铺基础信息已保存。
         </div>
       )}
 
-      {/* 手工凭据小卡片（内部环境用） */}
       {p.credentialsOpen && p.detail && (
         <CredentialsPanel
           platform={p.detail.platform}
@@ -145,25 +137,25 @@ export default function StoreDetailPage() {
       ) : (
         <>
           {/* 店铺基础信息编辑区 */}
-          <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
             <div className="text-base font-semibold text-slate-900">
               店铺基础信息
             </div>
 
             <div className="text-xs text-slate-500">
-              ID: {p.detail.store_id} · {p.detail.platform}/{p.detail.shop_id}
+              ID: {p.detail.store_id} · {p.detail.platform}/
+              {p.detail.shop_id}
             </div>
 
             {canWrite ? (
               <form
-                className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"
+                className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2"
                 onSubmit={handleSaveMeta}
               >
-                {/* 名称 */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-slate-500">名称</label>
                   <input
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={name}
                     onChange={(e) => {
                       setName(e.target.value);
@@ -173,13 +165,12 @@ export default function StoreDetailPage() {
                   />
                 </div>
 
-                {/* Email */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-slate-500">
                     Email（可选）
                   </label>
                   <input
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
@@ -189,13 +180,12 @@ export default function StoreDetailPage() {
                   />
                 </div>
 
-                {/* 联系人 */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-slate-500">
                     联系人（可选）
                   </label>
                   <input
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={contactName}
                     onChange={(e) => {
                       setContactName(e.target.value);
@@ -205,13 +195,12 @@ export default function StoreDetailPage() {
                   />
                 </div>
 
-                {/* 联系电话 */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-slate-500">
                     联系电话（可选）
                   </label>
                   <input
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="rounded-lg border px-3 py-2 text-sm"
                     value={contactPhone}
                     onChange={(e) => {
                       setContactPhone(e.target.value);
@@ -225,13 +214,13 @@ export default function StoreDetailPage() {
                   <button
                     type="submit"
                     disabled={savingMeta}
-                    className="px-5 py-2 rounded-lg bg-slate-900 text-white text-sm disabled:opacity-60"
+                    className="rounded-lg bg-slate-900 px-5 py-2 text-sm text-white disabled:opacity-60"
                   >
                     {savingMeta
                       ? "保存中…"
                       : metaJustSaved
-                        ? "已保存"
-                        : "保存修改"}
+                      ? "已保存"
+                      : "保存修改"}
                   </button>
                 </div>
               </form>
@@ -251,7 +240,8 @@ export default function StoreDetailPage() {
             loading={p.authLoading}
             onManualCredentialsClick={p.openCredentials}
             onOAuthClick={() => {
-              // TODO：/oauth/{platform}/start
+              // TODO: /oauth/{platform}/start
+               
               console.log("oauth clicked");
             }}
             onViewChannelInventory={p.viewChannelInventory}
@@ -311,8 +301,8 @@ const CredentialsPanel: React.FC<CredentialsPanelProps> = ({
   onSubmit,
 }) => {
   return (
-    <section className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
-      <div className="flex justify-between items-center gap-2">
+    <section className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <div className="flex items-center justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-amber-900">
             手工录入平台凭据（模拟环境）
@@ -332,19 +322,19 @@ const CredentialsPanel: React.FC<CredentialsPanelProps> = ({
       </div>
 
       {error && (
-        <div className="text-xs text-red-700 bg-red-50 border border-red-100 rounded px-2 py-1">
+        <div className="rounded border border-red-100 bg-red-50 px-2 py-1 text-xs text-red-700">
           {error}
         </div>
       )}
 
       <form
-        className="flex flex-col sm:flex-row gap-2 items-start sm:items-end"
+        className="flex flex-col items-start gap-2 sm:flex-row sm:items-end"
         onSubmit={onSubmit}
       >
-        <label className="text-xs text-slate-700 w-full sm:flex-1">
+        <label className="w-full text-xs text-slate-700 sm:flex-1">
           access_token
           <input
-            className="mt-1 border border-slate-300 rounded px-2 py-1 text-sm w-full"
+            className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm"
             value={token}
             onChange={(e) => onChangeToken(e.target.value)}
             placeholder="例如 PASS-XXXXXX"
@@ -353,7 +343,7 @@ const CredentialsPanel: React.FC<CredentialsPanelProps> = ({
         <button
           type="submit"
           disabled={saving}
-          className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm disabled:opacity-60"
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
         >
           {saving ? "保存中…" : "保存凭据"}
         </button>

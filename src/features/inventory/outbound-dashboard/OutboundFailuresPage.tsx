@@ -25,6 +25,13 @@ type FailuresResponse = {
   details: FailureDetail[];
 };
 
+type ApiErrorShape = { message?: string };
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 export default function OutboundFailuresPage() {
   const [platform, setPlatform] = useState("PDD");
   const [day, setDay] = useState<string>("");
@@ -38,11 +45,11 @@ export default function OutboundFailuresPage() {
     setError(null);
     try {
       const res = await apiGet<FailuresResponse>(
-        `/metrics/outbound/failures?platform=${platform}&day=${day}`
+        `/metrics/outbound/failures?platform=${platform}&day=${day}`,
       );
       setData(res);
-    } catch (err: any) {
-      setError(err?.message ?? "加载出库失败指标失败");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "加载出库失败指标失败"));
     } finally {
       setLoading(false);
     }
@@ -50,6 +57,7 @@ export default function OutboundFailuresPage() {
 
   useEffect(() => {
     if (day) void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform, day]);
 
   const summaryRows = data
@@ -94,7 +102,7 @@ export default function OutboundFailuresPage() {
         <select
           value={platform}
           onChange={(e) => setPlatform(e.target.value)}
-          className="border rounded-lg px-3 py-1.5 text-xs"
+          className="rounded-lg border px-3 py-1.5 text-xs"
         >
           <option value="PDD">PDD</option>
           <option value="TB">TB</option>
@@ -103,7 +111,7 @@ export default function OutboundFailuresPage() {
 
         <span className="text-xs text-slate-600">日期：</span>
         <input
-          className="border rounded-lg px-3 py-1.5 text-xs"
+          className="rounded-lg border px-3 py-1.5 text-xs"
           type="date"
           value={day}
           onChange={(e) => setDay(e.target.value)}
@@ -113,14 +121,14 @@ export default function OutboundFailuresPage() {
           type="button"
           onClick={() => void load()}
           disabled={loading || !day}
-          className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs disabled:opacity-60"
+          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-60"
         >
           {loading ? "加载中…" : "查询"}
         </button>
       </div>
 
       {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
           {error}
         </div>
       )}
@@ -137,7 +145,7 @@ export default function OutboundFailuresPage() {
                   "flex items-center justify-between rounded-lg border px-2 py-1",
                   r.value > 0
                     ? "border-rose-300 bg-rose-50 text-rose-700"
-                    : "border-slate-200 bg-slate-50 text-slate-500"
+                    : "border-slate-200 bg-slate-50 text-slate-500",
                 )}
               >
                 <span>{r.label}</span>

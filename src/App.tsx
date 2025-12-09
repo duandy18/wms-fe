@@ -1,7 +1,19 @@
 // src/App.tsx
-import React from "react";
-import { AppRoutes } from "./app/router";
+import React, { Suspense } from "react";
+import AppRouter from "./app/router";
 
-export default function App() {
-  return <AppRoutes />;
-}
+const App: React.FC = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">
+          前端加载中，请稍候…
+        </div>
+      }
+    >
+      <AppRouter />
+    </Suspense>
+  );
+};
+
+export default App;

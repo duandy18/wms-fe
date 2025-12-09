@@ -4,37 +4,25 @@ import React from "react";
 type Align = "left" | "right" | "center";
 
 export type ColumnDef<T> = {
-  /** 列唯一标识，用于 key / 自定义 class */
-  key: keyof T & string;
-  /** 表头显示文本 */
+  key: string;
   header: React.ReactNode;
-  /** 自定义单元格渲染，不传则默认渲染 row[key] */
   render?: (row: T, rowIndex: number) => React.ReactNode;
-  /** 对齐方式：默认 left；数字列建议设置为 "right" */
   align?: Align;
-  /** 附加 className（如隐藏列等） */
   className?: string;
 };
 
 export type StandardTableProps<T> = {
   columns: ColumnDef<T>[];
   data: T[];
-  /** 行 key，默认为 index */
   getRowKey?: (row: T, index: number) => React.Key;
-  /** 空数据时的占位文案 */
   emptyText?: React.ReactNode;
-  /** 是否紧凑模式（行高更小） */
   dense?: boolean;
-  /** 可选的标题区域（卡片顶部） */
   title?: React.ReactNode;
-  /** 右侧操作区域（标题行右侧） */
   actions?: React.ReactNode;
-  /** 可选 footer（比如合计行），会自动用统一样式包裹 */
   footer?: React.ReactNode;
-  /** 行点击（比如列表 → 详情） */
   onRowClick?: (row: T, index: number) => void;
-  /** 当前选中行的 key，用于高亮 */
   selectedKey?: React.Key | null;
+  rowClassName?: (row: T, index: number) => string;
 };
 
 /**
@@ -57,6 +45,7 @@ export function StandardTable<T>({
   footer,
   onRowClick,
   selectedKey = null,
+  rowClassName,
 }: StandardTableProps<T>) {
   const rowKey = getRowKey ?? ((_row, idx) => idx);
 
@@ -83,9 +72,9 @@ export function StandardTable<T>({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       {(title || actions) && (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50/80">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-4 py-3">
           <div className="text-sm font-semibold text-slate-800">
             {title}
           </div>
@@ -135,6 +124,9 @@ export function StandardTable<T>({
                 const isSelected =
                   selectedKey != null && selectedKey === key;
 
+                const extraRowClass =
+                  rowClassName?.(row, rowIndex) ?? "";
+
                 return (
                   <tr
                     key={key}
@@ -147,9 +139,8 @@ export function StandardTable<T>({
                       onRowClick
                         ? "cursor-pointer hover:bg-sky-50"
                         : "hover:bg-slate-50",
-                      isSelected
-                        ? "bg-sky-50/70"
-                        : "",
+                      isSelected ? "bg-sky-50/70" : "",
+                      extraRowClass,
                     ]
                       .join(" ")
                       .trim()}
@@ -161,11 +152,11 @@ export function StandardTable<T>({
                   >
                     {columns.map((col) => {
                       const raw =
-                        col.render?.(row, rowIndex) ?? row[col.key];
+                        col.render?.(row, rowIndex) ??
+                        (row as Record<string, unknown>)[col.key];
 
                       const isNumeric =
-                        col.align === "right" ||
-                        typeof raw === "number";
+                        col.align === "right" || typeof raw === "number";
 
                       const baseClass = [
                         tdBase,
@@ -199,7 +190,7 @@ export function StandardTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-2.5 bg-slate-50 border-t border-slate-200 text-sm font-semibold text-slate-800"
+                  className="px-4 py-2.5 border-t border-slate-200 bg-slate-50 text-sm font-semibold text-slate-800"
                 >
                   {footer}
                 </td>

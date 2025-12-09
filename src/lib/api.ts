@@ -60,8 +60,10 @@ export class ApiError extends Error {
 
 type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
-// 简单的 query 参数类型
-type QueryParams = Record<string, string | number | boolean | null | undefined>;
+type QueryParams = Record<
+  string,
+  string | number | boolean | null | undefined
+>;
 
 // 把 query params 拼到 path 上（不包含 API_BASE_URL）
 function buildPathWithQuery(path: string, params?: QueryParams): string {
@@ -89,8 +91,8 @@ async function request<T>(
 ): Promise<T> {
   const token = getAccessToken();
 
-  const headers: HeadersInit = {
-    ...(options.headers || {}),
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> | undefined),
   };
 
   if (body !== undefined && body !== null) {
@@ -151,29 +153,28 @@ async function request<T>(
  */
 export async function apiGet<T>(
   path: string,
-  paramsOrOptions?: QueryParams | RequestInit,
-  maybeOptions: RequestInit = {},
+  paramsOrOptions?: unknown,
+  maybeOptions?: RequestInit,
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
 
-  if (Object.keys(maybeOptions || {}).length > 0) {
+  if (maybeOptions) {
     // 三参形式：apiGet(path, params, options)
     params = paramsOrOptions as QueryParams;
     options = maybeOptions;
   } else if (
     paramsOrOptions &&
-    (typeof (paramsOrOptions as RequestInit).headers !== "undefined" ||
-      typeof (paramsOrOptions as RequestInit).credentials !== "undefined" ||
-      typeof (paramsOrOptions as RequestInit).mode !== "undefined")
+    typeof paramsOrOptions === "object" &&
+    ("headers" in (paramsOrOptions as RequestInit) ||
+      "credentials" in (paramsOrOptions as RequestInit) ||
+      "mode" in (paramsOrOptions as RequestInit))
   ) {
     // 二参形式且第二个参数看起来像 RequestInit
-    params = undefined;
     options = paramsOrOptions as RequestInit;
   } else {
     // 二参形式且第二个参数不是 RequestInit → 当成 query params
     params = paramsOrOptions as QueryParams | undefined;
-    options = {};
   }
 
   const finalPath = buildPathWithQuery(path, params);

@@ -3,7 +3,10 @@
 // 右侧 Sidebar：库存 FEFO 批次 + Trace Timeline
 
 import React from "react";
-import type { ItemDetailResponse, ItemSlice } from "../../inventory/snapshot/api";
+import type {
+  ItemDetailResponse,
+  ItemSlice,
+} from "../../inventory/snapshot/api";
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import { TraceTimeline } from "../../diagnostics/trace/TraceTimeline";
 
@@ -18,12 +21,18 @@ type Props = {
   lastScanRef: string | null;
 };
 
+type SliceWithExpire = ItemSlice & {
+  expire_at?: string | null;
+};
+
 function sortFEFO(slices: ItemSlice[]) {
-  return [...slices].sort((a, b) => {
-    const da = a.expire_at ? Date.parse(a.expire_at) : Infinity;
-    const db = b.expire_at ? Date.parse(b.expire_at) : Infinity;
-    return da - db;
-  });
+  return [...slices]
+    .map((s) => s as SliceWithExpire)
+    .sort((a, b) => {
+      const da = a.expire_at ? Date.parse(a.expire_at) : Infinity;
+      const db = b.expire_at ? Date.parse(b.expire_at) : Infinity;
+      return da - db;
+    });
 }
 
 export const OutboundPickSidebar: React.FC<Props> = ({
@@ -38,7 +47,7 @@ export const OutboundPickSidebar: React.FC<Props> = ({
   return (
     <div className="space-y-6">
       {/* 库存 snapshot */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">
           库存与批次（FEFO）
         </h2>
@@ -57,22 +66,24 @@ export const OutboundPickSidebar: React.FC<Props> = ({
             </div>
 
             <div className="space-y-2">
-              {sortFEFO(itemDetail.slices).map((slice, idx) => (
-                <div
-                  key={idx}
-                  className="border border-slate-200 rounded-lg p-2 text-xs bg-slate-50"
-                >
-                  <div className="flex justify-between">
-                    <span className="font-mono">{slice.batch_code}</span>
-                    <span className="font-semibold">
-                      可用：{slice.available_qty}
-                    </span>
+              {sortFEFO(itemDetail.slices).map(
+                (slice: SliceWithExpire, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs"
+                  >
+                    <div className="flex justify-between">
+                      <span className="font-mono">{slice.batch_code}</span>
+                      <span className="font-semibold">
+                        可用：{slice.available_qty}
+                      </span>
+                    </div>
+                    <div className="text-slate-600">
+                      expire: {slice.expire_at ?? "-"}
+                    </div>
                   </div>
-                  <div className="text-slate-600">
-                    expire: {slice.expire_at ?? "-"}
-                  </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </>
         ) : (
@@ -81,13 +92,13 @@ export const OutboundPickSidebar: React.FC<Props> = ({
       </section>
 
       {/* TraceTimeline */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">
           Trace 事件时间线
         </h2>
 
         {lastScanRef && (
-          <div className="text-[11px] font-mono text-slate-500">
+          <div className="font-mono text-[11px] text-slate-500">
             {lastScanRef}
           </div>
         )}

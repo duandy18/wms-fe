@@ -6,12 +6,18 @@ import { buildDiagnosticUrl } from "../diagNavigation";
 
 type Props = {
   events: TraceEvent[];
-  /** 从 URL 或上游传入的 focus_ref，用于高亮 & 自动滚动 */
   focusRef?: string | null;
 };
 
+const formatTsValue = (ts: string | Date | null | undefined): string => {
+  if (!ts) return "-";
+  if (ts instanceof Date) {
+    return ts.toISOString().replace("T", " ").replace("Z", "");
+  }
+  return ts.replace("T", " ").replace("Z", "");
+};
+
 export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
-  // 当有 focus_ref 时，自动滚动到第一条匹配的事件
   useEffect(() => {
     if (!focusRef) return;
     const el = document.querySelector<HTMLElement>(
@@ -24,14 +30,14 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
 
   if (!events || events.length === 0) {
     return (
-      <section className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+      <section className="rounded-xl border border-slate-200 bg白 p-4 text-sm text-slate-500">
         暂无事件，请输入有效的 trace_id 并执行查询。
       </section>
     );
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="rounded-xl border border-slate-200 bg白 p-4 shadow-sm">
       <div className="mb-3 text-xs text-slate-500">
         按时间顺序展示事件，可按 Source 过滤。点击操作可跳转到 Ledger / 库存 / 批次生命周期等工具。
       </div>
@@ -69,9 +75,7 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
               })
             : null;
 
-          const tsText = ev.ts
-            ? ev.ts.replace("T", " ").replace("Z", "")
-            : "-";
+          const tsText = formatTsValue(ev.ts ?? null);
 
           const badgeEl = (
             <span className={styled.badgeClassName}>
@@ -87,11 +91,10 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
                 "flex items-start gap-3 rounded-lg border px-3 py-2 text-sm " +
                 (isFocused
                   ? "border-slate-900 bg-slate-900/5"
-                  : "border-slate-200 bg-white")
+                  : "border-slate-200 bg白")
               }
               data-trace-focused={isFocused ? "true" : "false"}
             >
-              {/* 左侧：时间 + 类型 + movement_type */}
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2 text-xs text-slate-600">
                   <span className="font-mono">{tsText}</span>
@@ -102,22 +105,20 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
                     </span>
                   )}
                   {isFocused && (
-                    <span className="rounded-full bg-slate-900 text-white px-2 py-0.5 text-[10px]">
+                    <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] text-white">
                       focus_ref 命中
                     </span>
                   )}
                 </div>
 
-                {/* 事件摘要（业务向解释） */}
                 <div className="text-xs text-slate-700">
                   {explainTraceEvent(ev)}
                 </div>
 
-                {/* WH / ITEM / BATCH 维度展示 */}
                 {(ev.warehouse_id != null ||
                   ev.item_id != null ||
                   ev.batch_code) && (
-                  <div className="mt-0.5 text-[11px] text-slate-500 space-x-3">
+                  <div className="mt-0.5 space-x-3 text-[11px] text-slate-500">
                     {ev.warehouse_id != null && (
                       <span>
                         WH:
@@ -145,7 +146,6 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
                   </div>
                 )}
 
-                {/* ref / trace_id 展示 */}
                 {(ev.ref || ev.trace_id) && (
                   <div className="mt-0.5 text-[11px] text-slate-500">
                     {ev.ref && (
@@ -168,7 +168,6 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
                 )}
               </div>
 
-              {/* 右侧：操作区（跳转库存 / 批次生命周期） */}
               {(stockUrl || lifelineUrl) && (
                 <div className="flex flex-col items-end gap-1 text-[11px]">
                   {stockUrl && (

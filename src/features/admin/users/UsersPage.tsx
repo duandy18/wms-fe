@@ -1,7 +1,6 @@
 // src/features/admin/users/UsersPage.tsx
 import React, { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../../../lib/api";
-import { useAuth } from "../../../app/auth/useAuth";
 
 type UserOut = {
   id: number;
@@ -16,7 +15,6 @@ type RoleOut = {
 };
 
 export default function UsersPage() {
-  const { can } = useAuth();
   const [users, setUsers] = useState<UserOut[]>([]);
   const [roles, setRoles] = useState<RoleOut[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,15 +35,16 @@ export default function UsersPage() {
       ]);
       setUsers(usersRes);
       setRoles(rolesRes);
-    } catch (err: any) {
-      setError(err?.message ?? "加载用户列表失败");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message ?? "加载用户列表失败");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   async function handleCreate(e: React.FormEvent) {
@@ -67,8 +66,9 @@ export default function UsersPage() {
       setNewPassword("");
       setNewRoleId("");
       await load();
-    } catch (err: any) {
-      setError(err?.message ?? "创建用户失败");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message ?? "创建用户失败");
     } finally {
       setCreating(false);
     }
@@ -79,37 +79,38 @@ export default function UsersPage() {
     return r?.name ?? `#${role_id}`;
   }
 
-  const canCreateUser = can("create_user"); // 你可以在后端创建对应权限；否则就是菜单级控制
+  // 简化：既然能进页面，就允许创建用户（权限控制交给后端）
+  const canCreateUser = true;
 
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold">用户管理</h1>
-          <p className="text-xs text-slate-600 mt-1">
+          <p className="mt-1 text-xs text-slate-600">
             管理系统用户与其主角色（primary_role_id），后续权限由角色控制。
           </p>
         </div>
       </header>
 
       {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">
+        <div className="rounded border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-600">
           {error}
         </div>
       )}
 
       {/* 创建用户 */}
       {canCreateUser && (
-        <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+        <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-slate-800">创建用户</h2>
           <form
-            className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm"
+            className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3"
             onSubmit={handleCreate}
           >
             <div className="flex flex-col gap-1">
               <label className="text-xs text-slate-500">用户名</label>
               <input
-                className="border rounded-lg px-3 py-2 text-sm"
+                className="rounded-lg border px-3 py-2 text-sm"
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
                 placeholder="用户名（3-64 字符）"
@@ -119,7 +120,7 @@ export default function UsersPage() {
               <label className="text-xs text-slate-500">密码</label>
               <input
                 type="password"
-                className="border rounded-lg px-3 py-2 text-sm"
+                className="rounded-lg border px-3 py-2 text-sm"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="密码（>=6）"
@@ -128,7 +129,7 @@ export default function UsersPage() {
             <div className="flex flex-col gap-1">
               <label className="text-xs text-slate-500">角色</label>
               <select
-                className="border rounded-lg px-3 py-2 text-sm"
+                className="rounded-lg border px-3 py-2 text-sm"
                 value={newRoleId}
                 onChange={(e) => setNewRoleId(e.target.value)}
               >
@@ -144,7 +145,7 @@ export default function UsersPage() {
               <button
                 type="submit"
                 disabled={creating}
-                className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm disabled:opacity-60"
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
               >
                 {creating ? "创建中…" : "创建"}
               </button>
@@ -154,16 +155,16 @@ export default function UsersPage() {
       )}
 
       {/* 用户列表 */}
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         {loading ? (
           <div className="px-4 py-6 text-sm text-slate-600">加载中…</div>
         ) : users.length === 0 ? (
           <div className="px-4 py-6 text-sm text-slate-500">暂无用户。</div>
         ) : (
           <table className="min-w-full text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
-                <th className="px-3 py-2 text-left w-16">ID</th>
+                <th className="w-16 px-3 py-2 text-left">ID</th>
                 <th className="px-3 py-2 text-left">用户名</th>
                 <th className="px-3 py-2 text-left">角色</th>
               </tr>

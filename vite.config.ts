@@ -6,11 +6,13 @@ import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+
   server: {
     port: 5173,
     strictPort: true,
@@ -82,7 +84,54 @@ export default defineConfig({
       },
     },
   },
-  // ================== Vitest 配置（新增） ==================
+
+  build: {
+    // 1) 提高 chunk 大小告警阈值（不再啰嗦）
+    chunkSizeWarningLimit: 2000, // kB，= 2MB
+
+    // 2) 手动切块：按 vendor / features 维度拆
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          // node_modules 先大致拆三类：React 栈 / router / 其它 vendor
+          if (id.includes("node_modules")) {
+            if (id.includes("react-router")) {
+              return "vendor-react-router";
+            }
+            if (id.includes("react")) {
+              return "vendor-react";
+            }
+            return "vendor";
+          }
+
+          // 按功能目录拆：诊断工具、DevConsole、Admin、作业区、库存
+          if (id.includes("/src/features/diagnostics/")) {
+            return "diagnostics";
+          }
+          if (id.includes("/src/features/dev/")) {
+            return "devconsole";
+          }
+          if (id.includes("/src/features/admin/")) {
+            return "admin";
+          }
+          if (id.includes("/src/features/operations/")) {
+            return "operations";
+          }
+          if (id.includes("/src/features/inventory/")) {
+            return "inventory";
+          }
+          if (id.includes("/src/features/finance/")) {
+            return "finance";
+          }
+
+          // 其它走默认策略（打进入口 chunk）
+          return undefined;
+        },
+      },
+    },
+  },
+
+  // ================== Vitest 配置 ==================
   test: {
     globals: true,
     environment: "jsdom",

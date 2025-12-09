@@ -1,3 +1,4 @@
+// src/features/receive-tasks/ReceiveTaskSelect.tsx
 import React, { useEffect, useState } from "react";
 import { apiGet } from "../../lib/api";
 
@@ -17,6 +18,15 @@ interface Props {
   onChange: (taskId: number | null) => void;
 }
 
+type ApiErrorShape = {
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 export const ReceiveTaskSelect: React.FC<Props> = ({
   value,
   onChange,
@@ -29,14 +39,13 @@ export const ReceiveTaskSelect: React.FC<Props> = ({
     setLoading(true);
     setError(null);
     try {
-      // 后端需要加：GET /receive-tasks?status=DRAFT
       const data = await apiGet<ReceiveTaskOption[]>(
         "/receive-tasks?status=DRAFT",
       );
       setOptions(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error("loadTasks failed:", err);
-      setError(err?.message ?? "加载收货任务失败");
+      setError(getErrorMessage(err, "加载收货任务失败"));
     } finally {
       setLoading(false);
     }
@@ -74,7 +83,9 @@ export const ReceiveTaskSelect: React.FC<Props> = ({
         })}
       </select>
 
-      {error && <span className="text-xs text-red-600">{error}</span>}
+      {error && (
+        <span className="text-xs text-red-600">{error}</span>
+      )}
     </div>
   );
 };

@@ -1,10 +1,6 @@
 // src/features/finance/FinanceOrderUnitPage.tsx
 //
 // 财务分析 · 客单价 & 贡献度分析
-// - 汇总：订单数 / 总收入 / 平均客单价 / 中位客单价
-// - 贡献度：前 20% / 40% / 60% / 80% / 100% 订单贡献的收入占比
-// - Top 订单列表：按金额从大到小列出前 N 笔订单
-//
 
 import React, { useEffect, useState } from "react";
 import PageTitle from "../../components/ui/PageTitle";
@@ -17,6 +13,10 @@ import {
 type DateRange = {
   from_date: string;
   to_date: string;
+};
+
+type ApiErrorShape = {
+  message?: string;
 };
 
 function getDefaultRange(): DateRange {
@@ -65,8 +65,9 @@ const FinanceOrderUnitPage: React.FC = () => {
       };
       const res = await fetchFinanceOrderUnit(query);
       setData(res);
-    } catch (e: any) {
-      console.error("load finance order-unit failed", e);
+    } catch (err: unknown) {
+      console.error("load finance order-unit failed", err);
+      const e = err as ApiErrorShape | undefined;
       setError(e?.message ?? "加载客单价分析失败");
       setData(null);
     } finally {
@@ -209,19 +210,19 @@ const FinanceOrderUnitPage: React.FC = () => {
             {summary?.order_count ?? 0}
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg白 p-4 shadow-sm">
           <div className="text-xs text-slate-500">总收入</div>
           <div className="mt-1 font-mono text-xl font-semibold text-slate-900">
             {formatCurrency(summary?.revenue ?? 0)}
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg白 p-4 shadow-sm">
           <div className="text-xs text-slate-500">平均客单价</div>
           <div className="mt-1 font-mono text-xl font-semibold text-slate-900">
             {formatCurrency(summary?.avg_order_value ?? 0)}
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg白 p-4 shadow-sm">
           <div className="text-xs text-slate-500">中位客单价</div>
           <div className="mt-1 font-mono text-xl font-semibold text-slate-900">
             {formatCurrency(summary?.median_order_value ?? 0)}

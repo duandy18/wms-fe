@@ -9,6 +9,23 @@ import {
   type ShippingProvider,
 } from "./api";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
+type ByWeightPricingModel = {
+  type?: string;
+  base_weight?: number;
+  base_cost?: number;
+  extra_unit?: number;
+  extra_cost?: number;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape | undefined;
+  return e?.message ?? fallback;
+};
+
 const ShippingProvidersListPage: React.FC = () => {
   const [providers, setProviders] = useState<ShippingProvider[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,9 +68,9 @@ const ShippingProvidersListPage: React.FC = () => {
       if (selectedId && !data.some((p) => p.id === selectedId)) {
         setSelectedId(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("fetchShippingProviders failed", err);
-      setError(err?.message ?? "加载物流/快递公司失败");
+      setError(getErrorMessage(err, "加载物流/快递公司失败"));
       setProviders([]);
     } finally {
       setLoading(false);
@@ -96,9 +113,9 @@ const ShippingProvidersListPage: React.FC = () => {
       setWechat("");
 
       await loadProviders();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("createShippingProvider failed", err);
-      setCreateError(err?.message ?? "创建物流/快递公司失败");
+      setCreateError(getErrorMessage(err, "创建物流/快递公司失败"));
     } finally {
       setCreating(false);
     }
@@ -112,7 +129,7 @@ const ShippingProvidersListPage: React.FC = () => {
       setProviders((prev) =>
         prev.map((x) => (x.id === p.id ? updated : x)),
       );
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("updateShippingProvider failed", err);
     }
   }
@@ -123,10 +140,10 @@ const ShippingProvidersListPage: React.FC = () => {
     const p = providers.find((x) => x.id === id);
     if (!p) return;
 
-    const pm = (p.pricing_model as any) || {};
-    const type = (pm.type || "by_weight") as string;
+    const pm = (p.pricing_model ?? {}) as ByWeightPricingModel;
+    const type = pm.type ?? "by_weight";
+
     if (type !== "by_weight") {
-      // 非 by_weight 先不支持，保持 UI 简单
       setPricingBaseWeight("1.0");
       setPricingBaseCost("0.0");
       setPricingExtraUnit("1.0");
@@ -174,16 +191,18 @@ const ShippingProvidersListPage: React.FC = () => {
     let regionRules: Record<string, unknown> | null = null;
     if (regionRulesJson.trim()) {
       try {
-        const parsed = JSON.parse(regionRulesJson) as Record<string, unknown>;
+        const parsed = JSON.parse(
+          regionRulesJson,
+        ) as Record<string, unknown>;
         regionRules = parsed;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("parse region_rules JSON failed", err);
         setPricingError("区域规则 JSON 解析失败，请检查格式");
         return;
       }
     }
 
-    const pricingModel: Record<string, unknown> = {
+    const pricingModel: ByWeightPricingModel = {
       type: "by_weight",
       base_weight: baseWeight,
       base_cost: baseCost,
@@ -204,9 +223,9 @@ const ShippingProvidersListPage: React.FC = () => {
       );
       // 更新本地回填
       handleSelectForPricing(updated.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("updateShippingProvider (pricing) failed", err);
-      setPricingError(err?.message ?? "保存计费模型失败");
+      setPricingError(getErrorMessage(err, "保存计费模型失败"));
     } finally {
       setPricingSaving(false);
     }
@@ -217,14 +236,14 @@ const ShippingProvidersListPage: React.FC = () => {
     : null;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       <PageTitle
         title="物流 / 快递公司"
         description="维护物流/快递公司主数据，并配置计费模型（用于发货 Cockpit 和成本计算）。"
       />
 
       {/* 新建公司 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-800">
             新建物流/快递公司
@@ -236,10 +255,12 @@ const ShippingProvidersListPage: React.FC = () => {
 
         <form
           onSubmit={handleCreate}
-          className="grid grid-cols-1 md:grid-cols-6 gap-3 text-sm"
+          className="grid grid-cols-1 gap-3 text-sm md:grid-cols-6"
         >
           <div className="flex flex-col">
-            <label className="text-xs text-slate-500">公司名称 *</label>
+            <label className="text-xs text-slate-500">
+              公司名称 *
+            </label>
             <input
               className="mt-1 rounded-md border border-slate-300 px-2 py-1 text-sm"
               value={name}
@@ -308,8 +329,8 @@ const ShippingProvidersListPage: React.FC = () => {
       </section>
 
       {/* 列表 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-sm font-semibold text-slate-800">
             物流/快递公司列表
           </h2>
@@ -386,10 +407,13 @@ const ShippingProvidersListPage: React.FC = () => {
                     </td>
                     <td className="px-2 py-1">{p.name}</td>
                     <td className="px-2 py-1">{p.code ?? "-"}</td>
-                    <td className="px-2 py-1">{p.contact_name ?? "-"}</td>
+                    <td className="px-2 py-1">
+                      {p.contact_name ?? "-"}
+                    </td>
                     <td className="px-2 py-1">{p.phone ?? "-"}</td>
                     <td className="px-2 py-1">{p.email ?? "-"}</td>
-                    <td className="px-2 py-1">{p.wechat ?? "-"}</td>
+                    <td className="px-2 py-1">{p.wechat ?? "-"}
+                    </td>
                     <td className="px-2 py-1 font-mono">
                       {p.priority ?? 100}
                     </td>
@@ -412,7 +436,7 @@ const ShippingProvidersListPage: React.FC = () => {
                         type="button"
                         onClick={() => handleSelectForPricing(p.id)}
                         className={
-                          "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] border " +
+                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] " +
                           (selectedId === p.id
                             ? "border-sky-600 bg-sky-50 text-sky-700"
                             : "border-slate-300 bg-white text-slate-700 hover:border-sky-400")
@@ -430,13 +454,15 @@ const ShippingProvidersListPage: React.FC = () => {
       </section>
 
       {/* 计费模型配置 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-800">
             计费模型配置（by_weight）
           </h2>
           {pricingError && (
-            <div className="text-xs text-red-600">{pricingError}</div>
+            <div className="text-xs text-red-600">
+              {pricingError}
+            </div>
           )}
         </div>
 

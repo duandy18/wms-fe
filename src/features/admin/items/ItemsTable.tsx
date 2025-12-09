@@ -13,6 +13,10 @@ import {
   type SupplierBasic,
 } from "../../../master-data/suppliersApi";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
 export const ItemsTable: React.FC = () => {
   const items = useItemsStore((s) => s.items);
   const loading = useItemsStore((s) => s.loading);
@@ -36,7 +40,7 @@ export const ItemsTable: React.FC = () => {
   const [draftUom, setDraftUom] = useState("");
   const [draftEnabled, setDraftEnabled] = useState(true);
   const [draftSupplierId, setDraftSupplierId] = useState<number | null>(null);
-  const [draftWeightKg, setDraftWeightKg] = useState<string>(""); // ⭐ 新增
+  const [draftWeightKg, setDraftWeightKg] = useState<string>("");
 
   const [savingId, setSavingId] = useState<number | null>(null);
 
@@ -62,7 +66,7 @@ export const ItemsTable: React.FC = () => {
   }, [selectedItem]);
 
   const displayItems = items.filter((it: Item) => {
-    const enabled = (it as any).enabled ?? true;
+    const enabled = it.enabled ?? true;
     if (filter === "enabled") return !!enabled;
     if (filter === "disabled") return !enabled;
     return true;
@@ -71,11 +75,11 @@ export const ItemsTable: React.FC = () => {
   const startEdit = (it: Item) => {
     setEditingId(it.id);
     setDraftName(it.name);
-    setDraftSpec(((it as any).spec as string | null) ?? "");
-    setDraftUom(((it as any).uom as string | null) ?? "");
-    setDraftEnabled((it as any).enabled ?? true);
-    setDraftSupplierId(((it as any).supplier_id as number | null) ?? null);
-    const w = (it as any).weight_kg as number | null | undefined;
+    setDraftSpec(it.spec ?? "");
+    setDraftUom(it.uom ?? "");
+    setDraftEnabled(it.enabled ?? true);
+    setDraftSupplierId(it.supplier_id ?? null);
+    const w = it.weight_kg;
     setDraftWeightKg(
       w !== null && w !== undefined ? String(w) : "",
     );
@@ -90,7 +94,6 @@ export const ItemsTable: React.FC = () => {
     setSavingId(id);
     setError(null);
 
-    // 解析重量
     let weight_kg: number | null = null;
     const trimmed = draftWeightKg.trim();
     if (trimmed) {
@@ -109,13 +112,14 @@ export const ItemsTable: React.FC = () => {
         spec: draftSpec || null,
         uom: draftUom || null,
         enabled: draftEnabled,
-        supplier_id: draftSupplierId ?? undefined,
+        supplier_id: draftSupplierId ?? null,
         weight_kg,
       });
       await loadItems();
       setEditingId(null);
-    } catch (e: any) {
-      setError(e?.message || "更新商品失败");
+    } catch (e: unknown) {
+      const err = e as ApiErrorShape;
+      setError(err?.message ?? "更新商品失败");
     } finally {
       setSavingId(null);
     }
@@ -129,34 +133,34 @@ export const ItemsTable: React.FC = () => {
   }
 
   return (
-    <div className="border border-slate-200 rounded-lg overflow-hidden">
-      <div className="max-h-[520px] overflow-y-auto overflow-x-auto">
-        <table className="min-w-full text-sm border-collapse">
-          <thead className="bg-slate-50 sticky top-0 z-10">
+    <div className="overflow-hidden rounded-lg border border-slate-200">
+      <div className="max-h-[520px] overflow-x-auto overflow-y-auto">
+        <table className="min-w-full border-collapse text-sm">
+          <thead className="sticky top-0 z-10 bg-slate-50">
             <tr>
-              <th className="px-3 py-2 text-left border-b">ID</th>
-              <th className="px-3 py-2 text-left border-b">SKU</th>
-              <th className="px-3 py-2 text-left border-b">名称</th>
-              <th className="px-3 py-2 text-left border-b">规格</th>
-              <th className="px-3 py-2 text-left border-b">单位</th>
-              <th className="px-3 py-2 text-left border-b">重量(kg)</th>
-              <th className="px-3 py-2 text-left border-b">供应商</th>
-              <th className="px-3 py-2 text-left border-b">主条码</th>
-              <th className="px-3 py-2 text-left border-b">条码数</th>
-              <th className="px-3 py-2 text-left border-b">状态</th>
-              <th className="px-3 py-2 text-left border-b">创建时间</th>
-              <th className="px-3 py-2 text-left border-b">操作</th>
+              <th className="border-b px-3 py-2 text-left">ID</th>
+              <th className="border-b px-3 py-2 text-left">SKU</th>
+              <th className="border-b px-3 py-2 text-left">名称</th>
+              <th className="border-b px-3 py-2 text-left">规格</th>
+              <th className="border-b px-3 py-2 text-left">单位</th>
+              <th className="border-b px-3 py-2 text-left">重量(kg)</th>
+              <th className="border-b px-3 py-2 text-left">供应商</th>
+              <th className="border-b px-3 py-2 text-left">主条码</th>
+              <th className="border-b px-3 py-2 text-left">条码数</th>
+              <th className="border-b px-3 py-2 text-left">状态</th>
+              <th className="border-b px-3 py-2 text-left">创建时间</th>
+              <th className="border-b px-3 py-2 text-left">操作</th>
             </tr>
           </thead>
 
           <tbody>
             {displayItems.map((it: Item) => {
-              const enabled = (it as any).enabled ?? true;
-              const createdAt = (it as any).created_at;
+              const enabled = it.enabled ?? true;
+              const createdAt = it.created_at ?? "";
               const isEditing = editingId === it.id;
 
               const supplierName =
-                (it as any).supplier_name || (it as any).supplier || "";
+                it.supplier_name ?? it.supplier ?? "";
 
               const primary = primaryBarcodes[it.id] || "-";
               const count = barcodeCounts[it.id] ?? 0;
@@ -164,10 +168,7 @@ export const ItemsTable: React.FC = () => {
               const isActiveRow =
                 selectedItem && selectedItem.id === it.id;
 
-              const weightVal = (it as any).weight_kg as
-                | number
-                | null
-                | undefined;
+              const weightVal = it.weight_kg;
 
               return (
                 <tr
@@ -186,7 +187,7 @@ export const ItemsTable: React.FC = () => {
                 >
                   <td className="px-3 py-2">{it.id}</td>
 
-                  <td className="px-3 py-2 font-mono whitespace-nowrap">
+                  <td className="whitespace-nowrap px-3 py-2 font-mono">
                     {it.sku}
                   </td>
 
@@ -194,7 +195,7 @@ export const ItemsTable: React.FC = () => {
                   <td className="px-3 py-2">
                     {isEditing ? (
                       <input
-                        className="border rounded px-2 py-1 text-sm w-48"
+                        className="w-48 rounded border px-2 py-1 text-sm"
                         value={draftName}
                         onChange={(e) => setDraftName(e.target.value)}
                       />
@@ -207,38 +208,45 @@ export const ItemsTable: React.FC = () => {
                   <td className="px-3 py-2">
                     {isEditing ? (
                       <input
-                        className="border rounded px-2 py-1 text-sm w-40"
+                        className="w-40 rounded border px-2 py-1 text-sm"
                         value={draftSpec}
                         onChange={(e) => setDraftSpec(e.target.value)}
                       />
-                    ) : (it as any).spec || "-"}
+                    ) : (
+                      it.spec || "-"
+                    )}
                   </td>
 
                   {/* 单位 */}
                   <td className="px-3 py-2">
                     {isEditing ? (
                       <input
-                        className="border rounded px-2 py-1 text-sm w-20"
+                        className="w-20 rounded border px-2 py-1 text-sm"
                         value={draftUom}
                         onChange={(e) => setDraftUom(e.target.value)}
                       />
-                    ) : (it as any).uom || "-"}
+                    ) : (
+                      it.uom || "-"
+                    )}
                   </td>
 
                   {/* 重量(kg) */}
                   <td className="px-3 py-2 text-right">
                     {isEditing ? (
                       <input
-                        className="border rounded px-2 py-1 text-sm w-24 text-right font-mono"
+                        className="w-24 rounded border px-2 py-1 text-right text-sm font-mono"
                         value={draftWeightKg}
-                        onChange={(e) => setDraftWeightKg(e.target.value)}
+                        onChange={(e) =>
+                          setDraftWeightKg(e.target.value)
+                        }
                         placeholder={
                           weightVal !== null && weightVal !== undefined
                             ? String(weightVal)
                             : ""
                         }
                       />
-                    ) : weightVal !== null && weightVal !== undefined ? (
+                    ) : weightVal !== null &&
+                      weightVal !== undefined ? (
                       <span className="font-mono">{weightVal}</span>
                     ) : (
                       "-"
@@ -249,12 +257,14 @@ export const ItemsTable: React.FC = () => {
                   <td className="px-3 py-2">
                     {isEditing ? (
                       <select
-                        className="border rounded px-2 py-1 text-sm w-48"
+                        className="w-48 rounded border px-2 py-1 text-sm"
                         value={draftSupplierId ?? ""}
                         disabled={suppliersLoading}
                         onChange={(e) =>
                           setDraftSupplierId(
-                            e.target.value ? Number(e.target.value) : null,
+                            e.target.value
+                              ? Number(e.target.value)
+                              : null,
                           )
                         }
                       >
@@ -265,7 +275,9 @@ export const ItemsTable: React.FC = () => {
                           </option>
                         ))}
                       </select>
-                    ) : supplierName || "-"}
+                    ) : (
+                      supplierName || "-"
+                    )}
                   </td>
 
                   {/* 主条码 */}
@@ -277,26 +289,26 @@ export const ItemsTable: React.FC = () => {
                   {/* 状态 */}
                   <td className="px-3 py-2">
                     {enabled ? (
-                      <span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
                         启用
                       </span>
                     ) : (
-                      <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-300 text-xs">
+                      <span className="rounded-full border border-slate-300 bg-slate-100 px-2 py-1 text-xs text-slate-500">
                         已停用
                       </span>
                     )}
                   </td>
 
                   {/* 创建时间 */}
-                  <td className="px-3 py-2 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-3 py-2">
                     {createdAt}
                   </td>
 
                   {/* 操作 */}
-                  <td className="px-3 py-2 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-3 py-2">
                     <button
                       type="button"
-                      className="px-3 py-1 rounded border text-sm border-slate-300 hover:bg-slate-50 mr-2"
+                      className="mr-2 rounded border border-slate-300 px-3 py-1 text-sm hover:bg-slate-50"
                       onClick={() => {
                         setSelectedItem(it);
                         setPanelOpen(true);
@@ -309,7 +321,7 @@ export const ItemsTable: React.FC = () => {
                       <>
                         <button
                           type="button"
-                          className="px-3 py-1 rounded border text-sm border-emerald-500 text-emerald-700 bg-emerald-50 mr-2"
+                          className="mr-2 rounded border border-emerald-500 bg-emerald-50 px-3 py-1 text-sm text-emerald-700 disabled:opacity-60"
                           disabled={savingId === it.id}
                           onClick={() => void handleSave(it.id)}
                         >
@@ -317,7 +329,7 @@ export const ItemsTable: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          className="px-3 py-1 rounded border text-sm border-slate-300 text-slate-600 hover:bg-slate-50"
+                          className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-50"
                           onClick={cancelEdit}
                         >
                           取消
@@ -326,7 +338,7 @@ export const ItemsTable: React.FC = () => {
                     ) : (
                       <button
                         type="button"
-                        className="px-3 py-1 rounded border text-sm border-slate-300 text-slate-700 hover:bg-slate-50"
+                        className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50"
                         onClick={() => startEdit(it)}
                       >
                         编辑商品

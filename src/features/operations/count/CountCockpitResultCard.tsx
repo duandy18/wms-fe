@@ -3,16 +3,27 @@
 
 import React from "react";
 import type { CountCockpitController } from "./types";
-import type { ScanResponse } from "../scan/api";
+import type { ScanResponse as BaseScanResponse } from "../scan/api";
+
+type ExtendedScanResponse = BaseScanResponse & {
+  before?: number | null;
+  before_qty?: number | null;
+  after?: number | null;
+  after_qty?: number | null;
+  delta?: number | null;
+  production_date?: string | null;
+  expiry_date?: string | null;
+  warehouse_id?: number | null;
+};
 
 export const CountCockpitResultCard: React.FC<{ c: CountCockpitController }> = ({
   c,
 }) => {
-  const result = c.lastResult;
+  const result = c.lastResult as ExtendedScanResponse | null;
 
   if (!result) {
     return (
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+      <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">
           最近一次盘点结果（ScanResponse）
         </h2>
@@ -32,7 +43,7 @@ export const CountCockpitResultCard: React.FC<{ c: CountCockpitController }> = (
     production_date,
     expiry_date,
     warehouse_id,
-  } = result as ScanResponse;
+  } = result;
 
   const beforeDisplay = before ?? before_qty ?? "-";
   const deltaDisplay = delta ?? "-";
@@ -55,13 +66,13 @@ export const CountCockpitResultCard: React.FC<{ c: CountCockpitController }> = (
       : null;
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
       <h2 className="text-sm font-semibold text-slate-800">
         最近一次盘点结果（ScanResponse）
       </h2>
 
       {/* 顶部状态区域 */}
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs space-y-1">
+      <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
         <div>
           <span className="font-semibold">scan_ref：</span>
           <span className="font-mono">{result.scan_ref}</span>
@@ -83,8 +94,8 @@ export const CountCockpitResultCard: React.FC<{ c: CountCockpitController }> = (
         </div>
 
         {/* 基本信息 */}
-        <div className="pt-2 border-t border-slate-200">
-          <div className="font-semibold mb-1">基本信息</div>
+        <div className="border-t border-slate-200 pt-2">
+          <div className="mb-1 font-semibold">基本信息</div>
           <div className="flex flex-wrap gap-4">
             {result.item_id && (
               <span>
@@ -107,8 +118,8 @@ export const CountCockpitResultCard: React.FC<{ c: CountCockpitController }> = (
         </div>
 
         {/* 数量变化 */}
-        <div className="pt-2 border-t border-slate-200">
-          <div className="font-semibold mb-1">数量变化</div>
+        <div className="border-t border-slate-200 pt-2">
+          <div className="mb-1 font-semibold">数量变化</div>
           <div className="flex flex-wrap gap-4">
             <span>
               before：<span className="font-mono">{beforeDisplay}</span>
@@ -123,8 +134,8 @@ export const CountCockpitResultCard: React.FC<{ c: CountCockpitController }> = (
         </div>
 
         {/* 日期 */}
-        <div className="pt-2 border-t border-slate-200">
-          <div className="font-semibold mb-1">日期信息</div>
+        <div className="border-t border-slate-200 pt-2">
+          <div className="mb-1 font-semibold">日期信息</div>
           <div className="flex flex-wrap gap-4">
             <span>
               production_date：
@@ -138,7 +149,7 @@ export const CountCockpitResultCard: React.FC<{ c: CountCockpitController }> = (
         </div>
 
         {/* 按钮区 */}
-        <div className="pt-3 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 pt-3">
           {traceLink && (
             <a
               href={traceLink}
@@ -160,7 +171,7 @@ export const CountCockpitResultCard: React.FC<{ c: CountCockpitController }> = (
       </div>
 
       {/* JSON 原文 */}
-      <pre className="bg-slate-50 p-3 rounded text-[11px] whitespace-pre-wrap break-all max-h-64 overflow-auto">
+      <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded bg-slate-50 p-3 text-[11px]">
         {JSON.stringify(result, null, 2)}
       </pre>
     </section>

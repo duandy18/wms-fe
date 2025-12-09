@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../app/auth/useAuth";
 import {
   fetchStoreDetail,
   fetchDefaultWarehouse,
@@ -18,11 +17,16 @@ import type {
   StorePlatformAuthStatus,
 } from "./types";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
 export function useStoreDetailPresenter(storeId: number) {
   const id = storeId;
   const navigate = useNavigate();
-  const { can } = useAuth();
-  const canWrite = can("admin.stores");
+
+  // 简化：前端不查 can("admin.stores")，后端自己兜权限
+  const canWrite = true;
 
   const [detail, setDetail] = useState<StoreDetailData | null>(null);
   const [defaultWarehouseId, setDefaultWarehouseId] =
@@ -42,9 +46,6 @@ export function useStoreDetailPresenter(storeId: number) {
   const [credentialsError, setCredentialsError] = useState<string | null>(null);
   const [credentialsSaving, setCredentialsSaving] = useState(false);
 
-  // ------------------------------
-  // 加载店铺详情 + 默认仓
-  // ------------------------------
   async function loadDetail() {
     if (!id) return;
 
@@ -58,17 +59,18 @@ export function useStoreDetailPresenter(storeId: number) {
       ]);
       setDetail(detailResp.data);
       setDefaultWarehouseId(defResp.data.warehouse_id);
-    } catch (err: any) {
+    } catch (err: unknown) {
+       
       console.error("loadDetail failed", err);
+      const e = err as ApiErrorShape;
       setDetail(null);
       setDefaultWarehouseId(null);
-      setError(err?.message ?? "加载失败");
+      setError(e?.message ?? "加载失败");
     } finally {
       setLoading(false);
     }
   }
 
-  // 切换 storeId 时，先清空状态再加载，避免串店
   useEffect(() => {
     if (!id) return;
 
@@ -85,9 +87,6 @@ export function useStoreDetailPresenter(storeId: number) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // ------------------------------
-  // 加载平台授权状态
-  // ------------------------------
   useEffect(() => {
     if (!id) return;
 
@@ -100,6 +99,7 @@ export function useStoreDetailPresenter(storeId: number) {
         if (!cancelled) setPlatformAuth(data);
       })
       .catch((err) => {
+         
         console.warn("load platform-auth failed", err);
         if (!cancelled) setPlatformAuth(null);
       })
@@ -119,6 +119,7 @@ export function useStoreDetailPresenter(storeId: number) {
       const data = await fetchStorePlatformAuth(id);
       setPlatformAuth(data);
     } catch (err) {
+       
       console.warn("reload platform-auth failed", err);
       setPlatformAuth(null);
     } finally {
@@ -126,9 +127,6 @@ export function useStoreDetailPresenter(storeId: number) {
     }
   }
 
-  // ------------------------------
-  // 事件：新增绑定（含前端重复绑定拦截）
-  // ------------------------------
   async function handleBindSubmit(payload: {
     warehouseId: number;
     isTop: boolean;
@@ -136,7 +134,6 @@ export function useStoreDetailPresenter(storeId: number) {
   }) {
     if (!detail || !canWrite) return;
 
-    // 前端快速重复拦截：同一仓库已绑定时，不再提交请求
     const duplicated = detail.bindings.some(
       (b: StoreBinding) => b.warehouse_id === payload.warehouseId,
     );
@@ -155,17 +152,16 @@ export function useStoreDetailPresenter(storeId: number) {
         priority: payload.priority,
       });
       await loadDetail();
-    } catch (err: any) {
+    } catch (err: unknown) {
+       
       console.error(err);
-      setError(err?.message ?? "绑定失败");
+      const e = err as ApiErrorShape;
+      setError(e?.message ?? "绑定失败");
     } finally {
       setSaving(false);
     }
   }
 
-  // ------------------------------
-  // 事件：切换主/备 / 删除绑定
-  // ------------------------------
   async function handleToggleTop(binding: StoreBinding) {
     if (!detail || !canWrite) return;
 
@@ -178,9 +174,11 @@ export function useStoreDetailPresenter(storeId: number) {
         priority: binding.priority,
       });
       await loadDetail();
-    } catch (err: any) {
+    } catch (err: unknown) {
+       
       console.error(err);
-      setError(err?.message ?? "更新失败");
+      const e = err as ApiErrorShape;
+      setError(e?.message ?? "更新失败");
     } finally {
       setSaving(false);
     }
@@ -195,17 +193,16 @@ export function useStoreDetailPresenter(storeId: number) {
     try {
       await deleteBinding(detail.store_id, binding.warehouse_id);
       await loadDetail();
-    } catch (err: any) {
+    } catch (err: unknown) {
+       
       console.error(err);
-      setError(err?.message ?? "删除失败");
+      const e = err as ApiErrorShape;
+      setError(e?.message ?? "删除失败");
     } finally {
       setSaving(false);
     }
   }
 
-  // ------------------------------
-  // 手工凭据表单
-  // ------------------------------
   function openCredentials() {
     if (!detail) return;
     setCredentialsOpen(true);
@@ -239,17 +236,16 @@ export function useStoreDetailPresenter(storeId: number) {
       await reloadPlatformAuth();
       setCredentialsOpen(false);
       setCredentialsToken("");
-    } catch (err: any) {
+    } catch (err: unknown) {
+       
       console.error("save credentials failed", err);
-      setCredentialsError(err?.message ?? "保存凭据失败");
+      const e = err as ApiErrorShape;
+      setCredentialsError(e?.message ?? "保存凭据失败");
     } finally {
       setCredentialsSaving(false);
     }
   }
 
-  // ------------------------------
-  // 查看渠道库存：带 platform / shop_id 跳转
-  // ------------------------------
   function viewChannelInventory() {
     if (!detail) return;
     const search = new URLSearchParams({
@@ -270,7 +266,6 @@ export function useStoreDetailPresenter(storeId: number) {
     saving,
     error,
 
-    // 手工凭据表单 state + handler
     credentialsOpen,
     credentialsToken,
     credentialsError,
@@ -280,12 +275,10 @@ export function useStoreDetailPresenter(storeId: number) {
     closeCredentials,
     submitCredentials,
 
-    // 绑定相关 handler
     handleBindSubmit,
     handleToggleTop,
     handleDelete,
 
-    // 其它动作
     viewChannelInventory,
   };
 }

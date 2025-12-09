@@ -1,18 +1,15 @@
 // src/features/dev/inbound/types.ts
-// ================================================================
-//  Inbound Debug Panel - 数据结构定义（v2）
-//  目标：统一使用核心类型层级（TraceEvent / LedgerRow / SnapshotRow）
-// ================================================================
 
 import type { ReceiveTask } from "../../receive-tasks/api";
 import type { PurchaseOrderWithLines } from "../../purchase-orders/api";
-import type { ParsedBarcode } from "../../operations/scan/barcodeParser";
-
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import type { LedgerRow } from "../../diagnostics/ledger-tool/types";
-import type { SnapshotRow } from "../../inventory/snapshot/types";
+import type { ItemDetailResponse } from "../../inventory/snapshot/api";
+import type { ParsedBarcode } from "../../operations/scan/barcodeParser";
 
-// 扫码历史记录
+/**
+ * 单次扫码历史记录（Inbound）
+ */
 export interface InboundScanHistoryEntry {
   id: number;
   ts: string;
@@ -23,27 +20,35 @@ export interface InboundScanHistoryEntry {
   error?: string | null;
 }
 
-// 差异汇总
+/**
+ * 收货任务整体差异汇总
+ */
 export interface InboundVarianceSummary {
   totalExpected: number;
   totalScanned: number;
   totalVariance: number;
 }
 
-// commit 后的 trace/ledger/snapshot 汇总展示
+/**
+ * commit 后情报：Trace / Ledger / Snapshot
+ */
 export interface InboundPostCommitInfo {
-  // 对齐 Diagnostics 统一模型
-  traceEvents: TraceEvent[]; // 来自 /debug/trace
-  ledgerRows: LedgerRow[]; // stock_ledger 行
-  snapshot: SnapshotRow | null; // snapshot v2 单品详情
+  traceEvents: TraceEvent[];
+  ledgerRows: LedgerRow[];
+  snapshot: ItemDetailResponse | null; // snapshot v2 单品详情
 }
 
-// Demo 场景类型
+/**
+ * Demo 收货场景配置
+ * 与 createReceiveTaskDemoFromPo 的枚举保持一致
+ */
 export type InboundDemoScenario = "normal" | "under" | "over";
 
-// 中控状态
-export interface DevInboundState {
-  // PO
+/**
+ * Inbound 调试中控：暴露给 DevInboundPanel 用的接口
+ */
+export interface DevInboundController {
+  // PO 输入与状态
   poIdInput: string;
   currentPo: PurchaseOrderWithLines | null;
   loadingPo: boolean;
@@ -56,42 +61,37 @@ export interface DevInboundState {
   creatingTask: boolean;
   taskError: string | null;
 
-  // 扫码
+  // 最近一次条码解析结果 + 历史
   lastParsed: ParsedBarcode | null;
   history: InboundScanHistoryEntry[];
 
-  // commit
+  // commit 状态
   committing: boolean;
   commitError: string | null;
   traceId: string;
 
-  // diff
   varianceSummary: InboundVarianceSummary;
 
-  // post-commit 情报
+  // commit 后情报
   postCommit: InboundPostCommitInfo | null;
   loadingPostCommit: boolean;
-}
 
-// 中控方法（controller）
-export interface DevInboundController extends DevInboundState {
-  setPoIdInput(v: string): void;
-  setTaskIdInput(v: string): void;
-  setTraceId(v: string): void;
+  // --- 输入控制 ---
+  setPoIdInput: (v: string) => void;
+  setTaskIdInput: (v: string) => void;
+  setTraceId: (v: string) => void;
 
-  loadPoById(): Promise<void>;
-  createTaskFromPo(): Promise<void>;
-  bindTaskById(): Promise<void>;
-  reloadTask(): Promise<void>;
+  // --- 行为 ---
+  loadPoById: () => Promise<void>;
+  createTaskFromPo: () => Promise<void>;
+  bindTaskById: () => Promise<void>;
+  reloadTask: () => Promise<void>;
 
-  // Dev：基于当前 PO 生成 demo 收货任务
-  createDemoTask(s: InboundDemoScenario): Promise<void>;
+  createDemoTask: (scenario: InboundDemoScenario) => Promise<void>;
+  createDemoPoAndTask: () => Promise<void>;
 
-  // Dev：一键生成 demo PO + 收货任务（normal 场景）
-  createDemoPoAndTask(): Promise<void>;
+  handleScan: (barcode: string) => void;
+  handleScanParsed: (parsed: ParsedBarcode) => Promise<void>;
 
-  handleScan(barcode: string): void;
-  handleScanParsed(parsed: ParsedBarcode): Promise<void>;
-
-  commit(): Promise<void>;
+  commit: () => Promise<void>;
 }
