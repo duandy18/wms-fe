@@ -1,22 +1,27 @@
 // src/features/operations/ship/InternalOutboundPage.tsx
 //
 // 内部出库 Cockpit（样品 / 内部领用 / 报废等非订单出库）
-//
-// 功能：
-//  1) 填写单据头（仓库 / 类型 / 领取人 / 备注）→ 创建内部出库单
-//  2) 通过 Item ID 或「选择商品」添加/累加行（item_id + qty + 批次 + 单位 + 行备注）
-//  3) 显示简单可用库存提示（从 /inventory/snapshot 查询）
-//  4) 一键确认 → 调 /internal-outbound/docs/{id}/confirm 扣库存
+// -----------------------------------------------------------
+// 提供基本操作能力：
+//  1) 创建内部出库单（单据头）
+//  2) 增加 / 累加明细行
+//  3) 查询可用库存（简化版）
+//  4) 确认出库（扣库存）
 //
 // 说明：
-//  - 这里不接扫码链路，只提供最小可用 Cockpit；
-//  - 批次留空时，后端按 FEFO 扣减；填了批次则按指定批次扣。
+//  - 不接扫码链路，只提供最小可用 Cockpit；
+//  - 批次为空时后端自动走 FEFO；
+//  - 整个文件已清理所有 ESLint 报错：无 any / 无 unused vars。
 
 import React, { useState } from "react";
 import { apiPost, apiGet } from "@/lib/api";
 import PageTitle from "@/components/ui/PageTitle";
 import { ItemSelectorDialog } from "@/features/common/ItemSelectorDialog";
 import type { Item } from "@/features/admin/items/api";
+
+// ===============================
+// 类型定义
+// ===============================
 
 type InternalOutboundLine = {
   id: number;
@@ -59,32 +64,36 @@ type StockHint = {
   batches: number | null;
 };
 
-// 对 /inventory/snapshot 返回行的最小结构假设
 type InventorySnapshotRow = {
   available_qty?: number | null;
   qty?: number | null;
   onhand_qty?: number | null;
 };
 
+// 统一错误信息提取函数
 function extractErrorMessage(err: unknown): string {
   if (typeof err === "string") return err;
   if (err && typeof err === "object") {
-    const maybeAny = err as { body?: unknown; message?: unknown };
+    const eObj = err as { body?: unknown; message?: unknown };
     if (
-      maybeAny.body &&
-      typeof maybeAny.body === "object" &&
-      "detail" in maybeAny.body
+      eObj.body &&
+      typeof eObj.body === "object" &&
+      "detail" in eObj.body
     ) {
-      const detail = (maybeAny.body as { detail?: unknown }).detail;
+      const detail = (eObj.body as { detail?: unknown }).detail;
       if (typeof detail === "string") return detail;
     }
-    if (typeof maybeAny.message === "string") return maybeAny.message;
+    if (typeof eObj.message === "string") return eObj.message;
   }
   return "操作失败";
 }
 
+// ============================================================
+// 组件主体
+// ============================================================
+
 export const InternalOutboundPage: React.FC = () => {
-  // 单据头表单
+  // 单据头字段
   const [warehouseId, setWarehouseId] = useState<number>(1);
   const [docType, setDocType] = useState<string>("SAMPLE_OUT");
   const [recipientName, setRecipientName] = useState<string>("");
@@ -92,7 +101,7 @@ export const InternalOutboundPage: React.FC = () => {
   const [recipientNote, setRecipientNote] = useState<string>("");
   const [docNote, setDocNote] = useState<string>("");
 
-  // 行表单
+  // 行表单字段
   const [itemIdInput, setItemIdInput] = useState<string>("");
   const [selectedItemName, setSelectedItemName] = useState<string>("");
   const [qtyInput, setQtyInput] = useState<string>("1");
@@ -102,11 +111,13 @@ export const InternalOutboundPage: React.FC = () => {
 
   // 当前单据
   const [doc, setDoc] = useState<InternalOutboundDoc | null>(null);
+
+  // UI 状态
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // SKU 选择器
-  const [itemSelectorOpen, setItemSelectorOpen] = useState<boolean>(false);
+  const [itemSelectorOpen, setItemSelectorOpen] = useState(false);
 
   // 简单库存提示
   const [stockHint, setStockHint] = useState<StockHint>({
@@ -115,8 +126,12 @@ export const InternalOutboundPage: React.FC = () => {
     batches: null,
   });
 
+  // ============================================================
+  // API：创建内部出库单
+  // ============================================================
   async function createDoc() {
     setError(null);
+
     if (!recipientName.trim()) {
       setError("请填写领取人姓名");
       return;
@@ -144,22 +159,23 @@ export const InternalOutboundPage: React.FC = () => {
     }
   }
 
-  async function loadStockHint(
-    warehouseIdVal: number,
-    itemIdVal: number,
-  ) {
-    if (!warehouseIdVal || !itemIdVal) {
+  // ============================================================
+  // API：可用库存提示
+  // ============================================================
+  async function loadStockHint(warehouseIdValue: number, itemIdValue: number) {
+    if (!warehouseIdValue || !itemIdValue) {
       setStockHint({ loading: false, qty: null, batches: null });
       return;
     }
 
     setStockHint((prev) => ({ ...prev, loading: true }));
+
     try {
-      const res = await apiGet<InventorySnapshotRow[]>(
+      const rows = await apiGet<InventorySnapshotRow[]>(
         "/inventory/snapshot",
         {
-          warehouse_id: warehouseIdVal,
-          item_id: itemIdVal,
+          warehouse_id: warehouseIdValue,
+          item_id: itemIdValue,
           limit: 50,
         },
       );
@@ -167,9 +183,9 @@ export const InternalOutboundPage: React.FC = () => {
       let qty: number | null = null;
       let batches: number | null = null;
 
-      if (Array.isArray(res) && res.length > 0) {
-        batches = res.length;
-        const first = res[0];
+      if (Array.isArray(rows) && rows.length > 0) {
+        batches = rows.length;
+        const first = rows[0];
         qty =
           first.available_qty ??
           first.qty ??
@@ -177,17 +193,16 @@ export const InternalOutboundPage: React.FC = () => {
           null;
       }
 
-      setStockHint({
-        loading: false,
-        qty,
-        batches,
-      });
-    } catch (_err) {
+      setStockHint({ loading: false, qty, batches });
+    } catch {
+      // ignore 错误，不打断流程
       setStockHint({ loading: false, qty: null, batches: null });
-      // 不把错误抛到 UI，避免打断出库流程
     }
   }
 
+  // ============================================================
+  // API：添加 / 累加明细行
+  // ============================================================
   async function addLine() {
     if (!doc) {
       setError("请先创建内部出库单");
@@ -197,8 +212,9 @@ export const InternalOutboundPage: React.FC = () => {
 
     const itemId = Number(itemIdInput);
     const qty = Number(qtyInput);
+
     if (!itemId || !Number.isFinite(itemId)) {
-      setError("请填写有效的 item_id（整数）或通过选择商品填充");
+      setError("请填写有效的 item_id 或通过选择商品填充");
       return;
     }
     if (!qty || !Number.isFinite(qty)) {
@@ -220,7 +236,7 @@ export const InternalOutboundPage: React.FC = () => {
       );
       setDoc(updated);
 
-      // 重置数量和备注，保留 item 与单位，方便连续录入
+      // 清理部分字段，方便连续录入
       setQtyInput("1");
       setLineNoteInput("");
     } catch (err) {
@@ -230,20 +246,24 @@ export const InternalOutboundPage: React.FC = () => {
     }
   }
 
+  // ============================================================
+  // API：确认出库
+  // ============================================================
   async function confirmDoc() {
     if (!doc) {
       setError("请先创建内部出库单并添加行");
       return;
     }
-    setError(null);
 
+    setError(null);
     setLoading(true);
+
     try {
-      const res = await apiPost<InternalOutboundDoc>(
+      const updated = await apiPost<InternalOutboundDoc>(
         `/internal-outbound/docs/${doc.id}/confirm`,
         { trace_id: null as string | null },
       );
-      setDoc(res);
+      setDoc(updated);
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
@@ -251,15 +271,16 @@ export const InternalOutboundPage: React.FC = () => {
     }
   }
 
-  const disabled = loading;
-
-  // 选择器回调
+  // ============================================================
+  // 事件：选择器回调
+  // ============================================================
   const handleSelectItem = (item: Item) => {
     setItemIdInput(String(item.id));
     setSelectedItemName(item.name ?? item.sku ?? String(item.id));
     void loadStockHint(warehouseId, item.id);
   };
 
+  // 输入 item_id 时自动查询库存
   const handleItemIdBlur: React.FocusEventHandler<HTMLInputElement> = (
     event,
   ) => {
@@ -270,6 +291,12 @@ export const InternalOutboundPage: React.FC = () => {
     }
     void loadStockHint(warehouseId, val);
   };
+
+  const disabled = loading;
+
+  // ============================================================
+  // 渲染
+  // ============================================================
 
   return (
     <div className="space-y-4">
@@ -284,7 +311,9 @@ export const InternalOutboundPage: React.FC = () => {
       {/* 单据头 */}
       <section className="space-y-3 rounded-xl border bg-white p-4">
         <h2 className="text-base font-semibold">单据头</h2>
+
         <div className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
+          {/* 仓库 ID */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-600">仓库 ID</label>
             <input
@@ -294,16 +323,14 @@ export const InternalOutboundPage: React.FC = () => {
               onChange={(event) => {
                 const v = Number(event.target.value) || 1;
                 setWarehouseId(v);
-                // 仓库变化时，更新库存提示
-                const itemVal = Number(itemIdInput);
-                if (itemVal) {
-                  void loadStockHint(v, itemVal);
-                }
+                const parsedItem = Number(itemIdInput);
+                if (parsedItem) void loadStockHint(v, parsedItem);
               }}
               disabled={!!doc || disabled}
             />
           </div>
 
+          {/* 出库类型 */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-600">出库类型</label>
             <select
@@ -320,6 +347,7 @@ export const InternalOutboundPage: React.FC = () => {
             </select>
           </div>
 
+          {/* 领取人姓名 */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-600">领取人姓名 *</label>
             <input
@@ -330,6 +358,7 @@ export const InternalOutboundPage: React.FC = () => {
             />
           </div>
 
+          {/* 领取人类型 */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-600">领取人类型</label>
             <select
@@ -344,6 +373,7 @@ export const InternalOutboundPage: React.FC = () => {
             </select>
           </div>
 
+          {/* 领取人备注 */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-600">领取人备注 / 部门</label>
             <input
@@ -354,6 +384,7 @@ export const InternalOutboundPage: React.FC = () => {
             />
           </div>
 
+          {/* 单据备注 */}
           <div className="flex flex-col gap-1 md:col-span-2 xl:col-span-1">
             <label className="text-xs text-slate-600">单据备注</label>
             <input
@@ -366,15 +397,14 @@ export const InternalOutboundPage: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-between pt-2 text-sm">
-          <div className="space-x-3">
-            <button
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
-              onClick={createDoc}
-              disabled={!!doc || disabled}
-            >
-              {doc ? "单据已创建" : "创建内部出库单"}
-            </button>
-          </div>
+          <button
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
+            onClick={createDoc}
+            disabled={!!doc || disabled}
+          >
+            {doc ? "单据已创建" : "创建内部出库单"}
+          </button>
+
           {doc && (
             <div className="text-xs text-slate-600">
               <div>单号：{doc.doc_no}</div>
@@ -385,14 +415,16 @@ export const InternalOutboundPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 行编辑 & 列表 */}
+      {/* 明细行 */}
       {doc && (
         <section className="space-y-3 rounded-xl border bg-white p-4 text-sm">
           <h2 className="text-base font-semibold">明细行</h2>
 
-          {/* 行表单 + SKU选择 + 库存提示 */}
+          {/* 行录入区 */}
           <div className="flex flex-col gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3">
+            {/* Item ID + SKU选择 + 库存提示 */}
             <div className="grid gap-3 md:grid-cols-6">
+              {/* item_id */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-600">Item ID</label>
                 <input
@@ -403,20 +435,19 @@ export const InternalOutboundPage: React.FC = () => {
                   disabled={disabled}
                 />
               </div>
+
+              {/* 已选商品名称 */}
               <div className="flex flex-col gap-1 md:col-span-2">
-                <label className="text-xs text-slate-600">
-                  已选商品名称
-                </label>
+                <label className="text-xs text-slate-600">已选商品名称</label>
                 <div className="flex items-center gap-2">
                   <input
-                    className="flex-1 rounded-lg border px-3 py-2 text-xs text-slate-700"
+                    className="flex-1 rounded-lg border px-3 py-2 text-xs"
                     value={selectedItemName}
                     readOnly
                     placeholder="尚未选择商品"
                   />
                   <button
-                    type="button"
-                    className="rounded-md border border-slate-300 bg白 px-3 py-2 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs hover:bg-slate-100 disabled:opacity-60"
                     onClick={() => setItemSelectorOpen(true)}
                     disabled={disabled}
                   >
@@ -424,6 +455,8 @@ export const InternalOutboundPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+              {/* 数量 */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-600">数量</label>
                 <input
@@ -433,9 +466,11 @@ export const InternalOutboundPage: React.FC = () => {
                   disabled={disabled}
                 />
               </div>
+
+              {/* 批次 */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-600">
-                  批次（空=FEFO）
+                  批次（空 = FEFO）
                 </label>
                 <input
                   className="rounded-lg border px-3 py-2"
@@ -444,6 +479,8 @@ export const InternalOutboundPage: React.FC = () => {
                   disabled={disabled}
                 />
               </div>
+
+              {/* 单位 */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-600">单位</label>
                 <input
@@ -455,7 +492,9 @@ export const InternalOutboundPage: React.FC = () => {
               </div>
             </div>
 
+            {/* 行备注 + 库存提示 */}
             <div className="grid gap-3 md:grid-cols-2">
+              {/* 行备注 */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-600">行备注</label>
                 <input
@@ -465,10 +504,10 @@ export const InternalOutboundPage: React.FC = () => {
                   disabled={disabled}
                 />
               </div>
+
+              {/* 库存提示 */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-600">
-                  可用库存提示
-                </label>
+                <label className="text-xs text-slate-600">可用库存提示</label>
                 <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
                   {stockHint.loading ? (
                     <span>查询中…</span>
