@@ -2,14 +2,6 @@
 //
 // 订单退货 → 生成收货任务（ReceiveTask, source_type=ORDER）面板
 //
-// 用法（在 OrderDetailPage 中）：
-//   <OrderReturnTaskPanel orderId={Number(orderIdFromRoute)} />
-//
-// 功能：
-// - 拉取 /orders/{orderId} 详情（只用到 id / warehouse_id / lines）
-// - 对每个订单行允许输入“本次退货数量”
-// - 点击按钮调用 /receive-tasks/from-order/{orderId} 创建退货收货任务
-// - 任务创建成功后显示 task_id，并提示到 Inbound Cockpit 「订单退货」模式按任务 ID 绑定
 
 import React, { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../../lib/api";
@@ -47,6 +39,15 @@ type ReceiveTaskFromOrderResponse = {
   }>;
 };
 
+type ApiErrorShape = {
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
@@ -58,7 +59,6 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
   const [createdTask, setCreatedTask] =
     useState<ReceiveTaskFromOrderResponse | null>(null);
 
-  // 仓库 ID：优先使用订单上的 warehouse_id，否则默认为 1
   const [warehouseIdInput, setWarehouseIdInput] = useState<string>("1");
 
   useEffect(() => {
@@ -72,10 +72,10 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
         if (data.warehouse_id != null) {
           setWarehouseIdInput(String(data.warehouse_id));
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error("OrderReturnTaskPanel: load order failed", err);
         setOrder(null);
-        setOrderError(err?.message ?? "加载订单详情失败");
+        setOrderError(getErrorMessage(err, "加载订单详情失败"));
       } finally {
         setLoadingOrder(false);
       }
@@ -122,13 +122,6 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
     setCreatedTask(null);
 
     try {
-      // payload 与 ReceiveTaskCreateFromOrder 对齐：
-      // {
-      //   "warehouse_id": int,
-      //   "lines": [
-      //     {"item_id": int, "item_name": str | None, "qty": int, "batch_code": str | None}
-      //   ]
-      // }
       const payload = {
         warehouse_id: whId,
         lines: lines.map((l) => ({
@@ -144,9 +137,9 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
         payload,
       );
       setCreatedTask(resp);
-    } catch (err: any) {
+    } catch (err) {
       console.error("OrderReturnTaskPanel: create return task failed", err);
-      setCreateError(err?.message ?? "创建退货收货任务失败");
+      setCreateError(getErrorMessage(err, "创建退货收货任务失败"));
     } finally {
       setCreatingTask(false);
     }
@@ -157,7 +150,7 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
   }
 
   return (
-    <section className="mt-6 border border-slate-200 rounded-xl bg-white p-4 space-y-3">
+    <section className="mt-6 space-y-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-slate-800">
           订单退货收货任务
@@ -177,14 +170,14 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
           订单 ID：
           <span className="font-mono">{order.id}</span>，建议仓库：
           <input
-            className="inline-block w-16 ml-1 rounded border border-slate-300 px-1 py-0.5 text-[11px] font-mono"
+            className="ml-1 inline-block w-16 rounded border border-slate-300 px-1 py-0.5 text-[11px] font-mono"
             value={warehouseIdInput}
             onChange={(e) => setWarehouseIdInput(e.target.value)}
           />
         </div>
       )}
 
-      <div className="border border-slate-100 rounded bg-slate-50 max-h-64 overflow-y-auto">
+      <div className="max-h-64 overflow-y-auto rounded bg-slate-50 border border-slate-100">
         <table className="min-w-full border-collapse text-[11px]">
           <thead>
             <tr className="bg-slate-100 text-slate-600">
@@ -256,7 +249,7 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
           type="button"
           disabled={creatingTask || !order}
           onClick={handleCreateTask}
-          className="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-[11px] font-medium disabled:opacity-60"
+          className="rounded-md bg-emerald-600 px-3 py-1.5 text-[11px] font-medium text-white disabled:opacity-60"
         >
           {creatingTask ? "创建中…" : "创建退货收货任务"}
         </button>

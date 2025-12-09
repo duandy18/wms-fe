@@ -22,6 +22,13 @@ type FefoRiskResponse = {
   items: FefoItemRisk[];
 };
 
+type ApiErrorShape = { message?: string };
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 export default function OutboundFefoRiskPage() {
   const [days, setDays] = useState(7);
   const [data, setData] = useState<FefoRiskResponse | null>(null);
@@ -33,11 +40,11 @@ export default function OutboundFefoRiskPage() {
     setLoading(true);
     try {
       const res = await apiGet<FefoRiskResponse>(
-        `/metrics/fefo-risk?days=${days}`
+        `/metrics/fefo-risk?days=${days}`,
       );
       setData(res);
-    } catch (err: any) {
-      setError(err?.message ?? "加载 FEFO 风险失败");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "加载 FEFO 风险失败"));
     } finally {
       setLoading(false);
     }
@@ -45,6 +52,7 @@ export default function OutboundFefoRiskPage() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days]);
 
   const rows = data?.items ?? [];
@@ -92,7 +100,7 @@ export default function OutboundFefoRiskPage() {
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value) || 7)}
-          className="border rounded-lg px-3 py-1.5 text-xs"
+          className="rounded-lg border px-3 py-1.5 text-xs"
         >
           <option value={7}>7</option>
           <option value={14}>14</option>
@@ -103,14 +111,14 @@ export default function OutboundFefoRiskPage() {
           type="button"
           onClick={() => void load()}
           disabled={loading}
-          className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs disabled:opacity-60"
+          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-60"
         >
           {loading ? "加载中…" : "刷新"}
         </button>
       </div>
 
       {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
           {error}
         </div>
       )}

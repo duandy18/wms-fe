@@ -6,7 +6,12 @@ import {
   type PurchaseOrderWithLines,
 } from "./api";
 
-export type StatusFilter = "ALL" | "CREATED" | "PARTIAL" | "RECEIVED" | "CLOSED";
+export type StatusFilter =
+  | "ALL"
+  | "CREATED"
+  | "PARTIAL"
+  | "RECEIVED"
+  | "CLOSED";
 
 export interface PurchaseOrdersListState {
   orders: PurchaseOrderWithLines[];
@@ -22,12 +27,22 @@ export interface PurchaseOrdersListActions {
   reload: () => void;
 }
 
-/**
- * 采购单列表 Presenter：
- * - 管理过滤条件 / 列表数据 / 加载状态 / 错误；
- * - 提供 reload 方法；
- * - 默认首次挂载自动加载一次。
- */
+type PurchaseOrdersQuery = {
+  limit: number;
+  skip: number;
+  supplier?: string;
+  status?: StatusFilter;
+};
+
+type ApiErrorShape = {
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 export function usePurchaseOrdersListPresenter(): [
   PurchaseOrdersListState,
   PurchaseOrdersListActions,
@@ -37,28 +52,32 @@ export function usePurchaseOrdersListPresenter(): [
   const [listError, setListError] = useState<string | null>(null);
 
   const [supplierFilter, setSupplierFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [statusFilter, setStatusFilter] =
+    useState<StatusFilter>("ALL");
 
   const loadOrders = useCallback(async () => {
     setLoadingList(true);
     setListError(null);
     try {
-      const params: any = { limit: 50, skip: 0 };
-      if (supplierFilter.trim()) params.supplier = supplierFilter.trim();
-      if (statusFilter !== "ALL") params.status = statusFilter;
+      const params: PurchaseOrdersQuery = { limit: 50, skip: 0 };
+      if (supplierFilter.trim()) {
+        params.supplier = supplierFilter.trim();
+      }
+      if (statusFilter !== "ALL") {
+        params.status = statusFilter;
+      }
 
       const data = await fetchPurchaseOrders(params);
       setOrders(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error("loadOrders failed", err);
-      setListError(err?.message ?? "加载采购单失败");
+      setListError(getErrorMessage(err, "加载采购单失败"));
       setOrders([]);
     } finally {
       setLoadingList(false);
     }
   }, [supplierFilter, statusFilter]);
 
-  // 首次挂载自动加载一次；过滤条件变化时，可以手点“刷新”
   useEffect(() => {
     void loadOrders();
   }, [loadOrders]);

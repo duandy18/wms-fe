@@ -21,7 +21,12 @@ type Props = {
   setWarehouseId: (v: string) => void;
   loading: boolean;
   error: string | null;
-  dataSummary: { platform?: string; shop_id?: string; item_id?: number; whCount: number };
+  dataSummary: {
+    platform?: string;
+    shop_id?: string;
+    item_id?: number;
+    whCount: number;
+  };
 
   // 店铺选择
   stores: StoreListItem[];
@@ -62,11 +67,9 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
   warehousesLoading,
   onQuery,
 }) => {
-  // 本地 SKU 搜索状态
   const [skuKeyword, setSkuKeyword] = useState("");
   const [skuFocused, setSkuFocused] = useState(false);
 
-  // 平台下拉：从店铺列表抽 distinct platform
   const platformOptions = useMemo(
     () =>
       Array.from(new Set(stores.map((s) => s.platform))).sort((a, b) =>
@@ -75,7 +78,6 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
     [stores],
   );
 
-  // 店铺下拉：受 platform 过滤
   const storeOptions = useMemo(
     () =>
       stores.filter((s) =>
@@ -84,7 +86,6 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
     [stores, platform],
   );
 
-  // SKU 搜索建议：只在有关键字时出现
   const suggestions = useMemo(() => {
     if (!items.length) return [];
     const kw = skuKeyword.trim().toLowerCase();
@@ -101,16 +102,12 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
   const showSkuSuggestions =
     skuFocused && !itemsLoading && suggestions.length > 0;
 
-  // 当 SKU 文本变化时，尝试自动联动 item_id：
-  // - 如果唯一匹配一个 SKU 完全相等，直接把对应 item_id 写入
-  // - 或者唯一匹配一个名称完全相等时，也自动带出
   function handleSkuChange(next: string) {
     setSkuKeyword(next);
 
     const kw = next.trim().toLowerCase();
     if (!kw) return;
 
-    // 精确匹配 SKU
     const exactSkuMatches = items.filter(
       (it) => (it.sku ?? "").toLowerCase() === kw,
     );
@@ -119,7 +116,6 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
       return;
     }
 
-    // 精确匹配名称
     const exactNameMatches = items.filter(
       (it) => (it.name ?? "").toLowerCase() === kw,
     );
@@ -130,14 +126,14 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
 
   return (
     <section className="space-y-3">
-      {/* 店铺选择（先选平台，再选店铺） */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+      {/* 店铺选择 */}
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-col gap-2 text-sm">
           {/* 平台下拉 */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 w-20">平台</span>
+            <span className="w-20 text-xs text-slate-500">平台</span>
             <select
-              className="flex-1 border rounded-lg px-3 py-2 text-sm"
+              className="flex-1 rounded-lg border px-3 py-2 text-sm"
               value={platform}
               onChange={(e) => {
                 const v = e.target.value;
@@ -159,11 +155,11 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
             </select>
           </div>
 
-          {/* 店铺下拉：受平台过滤 */}
+          {/* 店铺下拉 */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 w-20">店铺</span>
+            <span className="w-20 text-xs text-slate-500">店铺</span>
             <select
-              className="flex-1 border rounded-lg px-3 py-2 text-sm"
+              className="flex-1 rounded-lg border px-3 py-2 text-sm"
               value={selectedStoreId ?? ""}
               onChange={(e) => {
                 const v = e.target.value;
@@ -197,7 +193,7 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
         </div>
 
         {storeDetail && (
-          <div className="mt-1 text-[11px] text-slate-500 flex flex-wrap gap-2">
+          <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-500">
             <span>
               当前店铺：{storeDetail.platform}/{storeDetail.shop_id} ·{" "}
               {storeDetail.name || "未命名"}
@@ -210,12 +206,12 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
       </section>
 
       {/* 查询条件 + SKU 搜索 + 仓库下拉 */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-4">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-500">platform</label>
             <input
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
               value={platform}
               onChange={(e) => setPlatform(e.target.value)}
               placeholder="平台代码，例如 PDD"
@@ -224,18 +220,17 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-500">shop_id</label>
             <input
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
               value={shopId}
               onChange={(e) => setShopId(e.target.value)}
               placeholder="平台店铺 ID"
             />
           </div>
 
-          {/* item_id 文本（由 SKU 搜索联动） */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-500">item_id</label>
             <input
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
               value={itemId}
               onChange={(e) => setItemId(e.target.value)}
               placeholder="内部 item_id（通过下方 SKU 搜索确定）"
@@ -247,13 +242,12 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
             />
           </div>
 
-          {/* warehouse 下拉 */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-500">
               warehouse_id（可选）
             </label>
             <select
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
               value={warehouseId}
               onChange={(e) => setWarehouseId(e.target.value)}
             >
@@ -271,14 +265,14 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* SKU / 名称 搜索（用来反查 item_id） */}
-        <div className="flex flex-col gap-1 text-sm relative">
+        {/* SKU / 名称 搜索 */}
+        <div className="relative flex flex-col gap-1 text-sm">
           <label className="text-xs text-slate-500">
             SKU / 名称 搜索（输入关键字，从结果中选择，或精确输入 SKU 自动带出
             item_id）
           </label>
           <input
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="rounded-lg border px-3 py-2 text-sm"
             value={skuKeyword}
             onChange={(e) => handleSkuChange(e.target.value)}
             onFocus={() => setSkuFocused(true)}
@@ -292,12 +286,12 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
             }
           />
           {showSkuSuggestions && (
-            <div className="mt-1 max-h-40 overflow-auto border border-slate-200 rounded-lg bg-white shadow-sm z-10">
+            <div className="z-10 mt-1 max-h-40 overflow-auto rounded-lg border border-slate-200 bg-white shadow-sm">
               {suggestions.map((it) => (
                 <button
                   key={it.id}
                   type="button"
-                  className="w-full text-left px-3 py-1.5 text-[11px] hover:bg-slate-50"
+                  className="w-full px-3 py-1.5 text-left text-[11px] hover:bg-slate-50"
                   onClick={() => {
                     setItemId(String(it.id));
                     setSkuKeyword(it.sku);
@@ -317,15 +311,15 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
           <button
             onClick={onQuery}
             disabled={loading}
-            className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm disabled:opacity-60"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
           >
             {loading ? "查询中…" : "查询"}
           </button>
           {error && (
-            <span className="text-xs text-red-600 mt-1">{error}</span>
+            <span className="mt-1 text-xs text-red-600">{error}</span>
           )}
           {dataSummary.platform && (
-            <span className="text-xs text-slate-500 mt-1">
+            <span className="mt-1 text-xs text-slate-500">
               已查询：{dataSummary.platform}/{dataSummary.shop_id} · item_id=
               {dataSummary.item_id} · {dataSummary.whCount} 个仓
             </span>
@@ -334,29 +328,4 @@ export const ChannelInventoryFilters: React.FC<Props> = ({
       </section>
     </section>
   );
-
-  // 下面是局部函数的实现，放在组件内部
-  function handleSkuChange(next: string) {
-    setSkuKeyword(next);
-
-    const kw = next.trim().toLowerCase();
-    if (!kw) return;
-
-    // 精确匹配 SKU
-    const exactSkuMatches = items.filter(
-      (it) => (it.sku ?? "").toLowerCase() === kw,
-    );
-    if (exactSkuMatches.length === 1) {
-      setItemId(String(exactSkuMatches[0].id));
-      return;
-    }
-
-    // 精确匹配名称
-    const exactNameMatches = items.filter(
-      (it) => (it.name ?? "").toLowerCase() === kw,
-    );
-    if (exactNameMatches.length === 1) {
-      setItemId(String(exactNameMatches[0].id));
-    }
-  }
 };

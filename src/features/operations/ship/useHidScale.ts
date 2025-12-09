@@ -36,17 +36,42 @@ export interface HidScaleApi {
   clearLock: () => void;
 }
 
-// ---- WebHID 类型补丁（避免使用 any） ----
+// ---- 本地 WebHID 类型定义（避免引用全局未声明类型） ----
+
+interface HidDeviceInfo {
+  productName?: string;
+  vendorId?: number;
+  productId?: number;
+}
+
+interface HidDevice extends HidDeviceInfo {
+  opened: boolean;
+  open(): Promise<void>;
+  close(): Promise<void>;
+  addEventListener(
+    type: "inputreport",
+    listener: (event: Event) => void,
+  ): void;
+  removeEventListener(
+    type: "inputreport",
+    listener: (event: Event) => void,
+  ): void;
+}
+
+interface HidDeviceFilter {
+  vendorId?: number;
+  productId?: number;
+}
+
+interface HidApi {
+  requestDevice(options: { filters: HidDeviceFilter[] }): Promise<HidDevice[]>;
+}
 
 interface HidNavigator extends Navigator {
-  hid: {
-    requestDevice(options: { filters: HIDDeviceFilter[] }): Promise<HIDDevice[]>;
-  };
+  hid: HidApi;
 }
 
 interface HidInputReportEvent extends Event {
-  device: HIDDevice;
-  reportId: number;
   data?: DataView;
 }
 
@@ -72,24 +97,20 @@ function dataViewToAscii(view: DataView): string {
 function parseWeightFromText(text: string): number | null {
   if (!text) return null;
 
-  // 匹配类似 2.350 / 12.3 / 0.500
   const match = text.match(/([+-]?\d+(?:\.\d+)?)/);
   if (!match) return null;
 
   const n = Number(match[1]);
   if (!Number.isFinite(n)) return null;
 
-  // 防止一些秤用 g：如果后面跟 "g" 再除以 1000（可选，你可以按需要调整）
   const lower = text.toLowerCase();
   if (lower.includes("kg")) {
     return n;
   }
   if (lower.includes(" g") || lower.endsWith("g")) {
-    // 简单假设单位是 g
     return n / 1000;
   }
 
-  // 默认当 kg
   return n;
 }
 
@@ -132,14 +153,14 @@ export function useHidScale(): HidScaleApi {
     deviceInfo: null,
   });
 
-  const deviceRef = useRef<HIDDevice | null>(null);
+  const deviceRef = useRef<HidDevice | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const stableDetectorRef = useRef<StableDetector | null>(null);
   const stableWeightRef = useRef<number | null>(null);
 
   // 连接电子称（弹出系统设备选择框）
   const connect = useCallback(async () => {
-    if (!("hid" in navigator)) {
+    if (typeof navigator === "undefined" || !("hid" in navigator)) {
       setState((prev) => ({
         ...prev,
         supported: false,
@@ -156,12 +177,12 @@ export function useHidScale(): HidScaleApi {
     }));
 
     try {
-      const nav = navigator as unknown as HidNavigator;
+      const nav = navigator as HidNavigator;
 
-      // 不加 filter，先让你肉眼选设备；以后可以根据 vendorId/productId 精细化筛选
       const devices = await nav.hid.requestDevice({
         filters: [],
       });
+
       if (!devices || devices.length === 0) {
         setState((prev) => ({
           ...prev,
@@ -184,7 +205,7 @@ export function useHidScale(): HidScaleApi {
         productId: device.productId,
       };
 
-      const onInputReport: EventListener = (event: Event) => {
+      const onInputReport = (event: Event) => {
         const hidEvent = event as HidInputReportEvent;
         const data = hidEvent.data;
         if (!data) return;
@@ -210,7 +231,6 @@ export function useHidScale(): HidScaleApi {
         setState((prev) => ({
           ...prev,
           liveWeightKg: weight,
-          // 只在已经有 locked 值时保持不动，避免覆盖
           lockedWeightKg: prev.lockedWeightKg ?? null,
           status: "connected",
         }));
@@ -231,12 +251,14 @@ export function useHidScale(): HidScaleApi {
         error: null,
       }));
     } catch (e: unknown) {
-      const err = e as ApiErrorShape;
-      console.error("[HID scale] connect error:", err);
+      const message =
+        e instanceof Error ? e.message : "连接电子称失败。";
+       
+      console.error("[HID scale] connect error:", e);
       setState((prev) => ({
         ...prev,
         status: "error",
-        error: err?.message ?? "连接电子称失败。",
+        error: message,
       }));
     }
   }, []);
@@ -252,6 +274,7 @@ export function useHidScale(): HidScaleApi {
         await dev.close();
       }
     } catch (e) {
+       
       console.warn("[HID scale] disconnect error:", e);
     } finally {
       deviceRef.current = null;
@@ -263,14 +286,12 @@ export function useHidScale(): HidScaleApi {
         status: "idle",
         deviceInfo: null,
         liveWeightKg: null,
-        // lockedWeightKg 保留，方便看历史锁定结果（由调用方决定何时清空）
       }));
     }
   }, []);
 
   const lockWeight = useCallback(() => {
     const stable = stableWeightRef.current;
-    // 没有稳定值就用当前 liveWeight
     const toLock =
       stable != null && Number.isFinite(stable)
         ? stable

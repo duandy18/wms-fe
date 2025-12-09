@@ -23,6 +23,13 @@ type WarehouseOption = {
   active?: boolean;
 };
 
+type WarehouseApiRow = {
+  id: number;
+  name?: string | null;
+  code?: string | null;
+  active?: boolean;
+};
+
 export type ChannelInventoryPresenter = ReturnType<
   typeof useChannelInventoryPresenter
 >;
@@ -68,11 +75,12 @@ export function useChannelInventoryPresenter(params: {
       setStoresLoading(true);
       try {
         const res = await fetchStores();
-        setStores(res.data || []);
+        const list = res.data ?? [];
+        setStores(list);
 
         // URL 已带 platform+shop_id 时，尝试自动定位店铺
         if (initialPlatform && initialShopId) {
-          const match = res.data.find(
+          const match = list.find(
             (s) =>
               s.platform === initialPlatform &&
               s.shop_id === initialShopId,
@@ -81,8 +89,8 @@ export function useChannelInventoryPresenter(params: {
             setSelectedStoreId(match.id);
           }
         }
-      } catch (e) {
-        console.error("loadStores failed", e);
+      } catch (err) {
+        console.error("loadStores failed", err);
       } finally {
         setStoresLoading(false);
       }
@@ -102,13 +110,14 @@ export function useChannelInventoryPresenter(params: {
       setStoreDetailLoading(true);
       try {
         const res = await fetchStoreDetail(selectedStoreId);
-        setStoreDetail(res.data);
+        const detail = res.data;
+        setStoreDetail(detail);
 
         // 同步 platform/shop_id 到查询条件
-        setPlatform(res.data.platform);
-        setShopId(res.data.shop_id);
-      } catch (e) {
-        console.error("loadStoreDetail failed", e);
+        setPlatform(detail.platform);
+        setShopId(detail.shop_id);
+      } catch (err) {
+        console.error("loadStoreDetail failed", err);
         setStoreDetail(null);
       } finally {
         setStoreDetailLoading(false);
@@ -120,19 +129,19 @@ export function useChannelInventoryPresenter(params: {
 
   // ===== 加载 Items 列表，用于 item_id 下拉 =====
   useEffect(() => {
-    async function loadItems() {
+    async function loadItemsInner() {
       setItemsLoading(true);
       try {
         const list = await fetchItems();
         setItems(list);
-      } catch (e) {
-        console.error("loadItems for channel-inventory failed", e);
+      } catch (err) {
+        console.error("loadItems for channel-inventory failed", err);
       } finally {
         setItemsLoading(false);
       }
     }
 
-    void loadItems();
+    void loadItemsInner();
   }, []);
 
   // ===== 加载 Warehouses 列表，用于 warehouse 下拉 =====
@@ -140,22 +149,25 @@ export function useChannelInventoryPresenter(params: {
     async function loadWarehouses() {
       setWarehousesLoading(true);
       try {
-        const raw = await apiGet<any>("/warehouses");
-        const list = Array.isArray(raw)
+        const raw = await apiGet<WarehouseApiRow[] | { data: WarehouseApiRow[] }>(
+          "/warehouses",
+        );
+
+        const list: WarehouseApiRow[] = Array.isArray(raw)
           ? raw
-          : Array.isArray(raw?.data)
+          : Array.isArray(raw.data)
             ? raw.data
             : [];
 
-        const mapped: WarehouseOption[] = list.map((w: any) => ({
+        const mapped: WarehouseOption[] = list.map((w) => ({
           id: w.id,
           name: w.name ?? `WH-${w.id}`,
           code: w.code ?? null,
           active: w.active,
         }));
         setWarehouses(mapped);
-      } catch (e) {
-        console.error("loadWarehouses for channel-inventory failed", e);
+      } catch (err) {
+        console.error("loadWarehouses for channel-inventory failed", err);
       } finally {
         setWarehousesLoading(false);
       }
@@ -170,20 +182,24 @@ export function useChannelInventoryPresenter(params: {
     setData(null);
     setExpanded({});
 
-    if (!platform.trim()) {
+    const platformTrimmed = platform.trim();
+    const shopIdTrimmed = shopId.trim();
+    const itemIdTrimmed = itemId.trim();
+
+    if (!platformTrimmed) {
       setError("platform 必填");
       return;
     }
-    if (!shopId.trim()) {
+    if (!shopIdTrimmed) {
       setError("shop_id 必填");
       return;
     }
-    if (!itemId.trim()) {
+    if (!itemIdTrimmed) {
       setError("item_id 必填");
       return;
     }
 
-    const itemIdNum = Number(itemId);
+    const itemIdNum = Number(itemIdTrimmed);
     if (!Number.isFinite(itemIdNum) || itemIdNum <= 0) {
       setError("item_id 必须为正整数");
       return;
@@ -192,14 +208,16 @@ export function useChannelInventoryPresenter(params: {
     setLoading(true);
     try {
       const baseParams = {
-        platform: platform.trim().toUpperCase(),
-        shopId: shopId.trim(),
+        platform: platformTrimmed.toUpperCase(),
+        shopId: shopIdTrimmed,
       };
 
       let res: ChannelInventoryMultiModel;
 
-      if (warehouseId.trim()) {
-        const whIdNum = Number(warehouseId);
+      const warehouseTrimmed = warehouseId.trim();
+
+      if (warehouseTrimmed) {
+        const whIdNum = Number(warehouseTrimmed);
         if (!Number.isFinite(whIdNum) || whIdNum <= 0) {
           setError("warehouse_id 必须为正整数");
           setLoading(false);
@@ -237,21 +255,27 @@ export function useChannelInventoryPresenter(params: {
       }
 
       setData(res);
-    } catch (err: any) {
-      setError(err?.message ?? "查询失败");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "查询失败";
+      setError(message);
     } finally {
       setLoading(false);
     }
   }
 
-  function toggleExpand(warehouseId: number) {
+  function toggleExpand(targetWarehouseId: number) {
     setExpanded((prev) => ({
       ...prev,
-      [warehouseId]: !prev[warehouseId],
+      [targetWarehouseId]: !prev[targetWarehouseId],
     }));
   }
 
-  const warehousesData: WarehouseInventoryModel[] = data?.warehouses ?? [];
+  const warehousesData: WarehouseInventoryModel[] = useMemo(
+    () => data?.warehouses ?? [],
+    [data],
+  );
+
   const hasData = warehousesData.length > 0;
   const bindings: StoreBinding[] = storeDetail?.bindings ?? [];
 

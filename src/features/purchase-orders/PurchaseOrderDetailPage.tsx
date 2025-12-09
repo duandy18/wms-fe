@@ -6,7 +6,6 @@ import PageTitle from "../../components/ui/PageTitle";
 import {
   fetchPurchaseOrderV2,
   type PurchaseOrderWithLines,
-  type PurchaseOrderLine,
 } from "./api";
 
 import { PurchaseOrderHeaderCard } from "./PurchaseOrderHeaderCard";
@@ -66,9 +65,11 @@ const PurchaseOrderDetailPage: React.FC = () => {
       } else {
         setSelectedLineId(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("fetchPurchaseOrderV2 failed", err);
-      setError(err?.message ?? "加载采购单失败");
+      const msg =
+        err instanceof Error ? err.message : "加载采购单失败";
+      setError(msg);
       setPo(null);
     } finally {
       setLoading(false);
@@ -79,11 +80,6 @@ const PurchaseOrderDetailPage: React.FC = () => {
     void loadPo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poId]);
-
-  const selectedLine: PurchaseOrderLine | null = useMemo(() => {
-    if (!po || !po.lines || selectedLineId == null) return null;
-    return po.lines.find((l) => l.id === selectedLineId) ?? null;
-  }, [po, selectedLineId]);
 
   const totalQtyOrdered = useMemo(() => {
     if (!po) return 0;
@@ -105,9 +101,11 @@ const PurchaseOrderDetailPage: React.FC = () => {
         include_fully_received: false,
       });
       navigate(`/receive-tasks/${task.id}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("createReceiveTaskFromPo failed", err);
-      setCreateReceiveTaskError(err?.message ?? "创建收货任务失败");
+      const msg =
+        err instanceof Error ? err.message : "创建收货任务失败";
+      setCreateReceiveTaskError(msg);
     } finally {
       setCreatingReceiveTask(false);
     }
@@ -123,9 +121,11 @@ const PurchaseOrderDetailPage: React.FC = () => {
         include_zero_received: false,
       });
       navigate(`/return-tasks/${task.id}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("createReturnTaskFromPo failed", err);
-      setCreateReturnTaskError(err?.message ?? "创建退货任务失败");
+      const msg =
+        err instanceof Error ? err.message : "创建退货任务失败";
+      setCreateReturnTaskError(msg);
     } finally {
       setCreatingReturnTask(false);
     }
@@ -198,7 +198,7 @@ const PurchaseOrderDetailPage: React.FC = () => {
           />
 
           {/* 收货任务入口 */}
-          <section className="bg-white border border-emerald-200 rounded-xl p-4 space-y-2">
+          <section className="space-y-2 rounded-xl border border-emerald-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-emerald-800">
                 收货任务（Receive Task）
@@ -212,10 +212,12 @@ const PurchaseOrderDetailPage: React.FC = () => {
                 <button
                   type="button"
                   disabled={creatingReceiveTask}
-                  onClick={handleCreateReceiveTask}
+                  onClick={() => void handleCreateReceiveTask()}
                   className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm disabled:opacity-60"
                 >
-                  {creatingReceiveTask ? "创建收货任务中…" : "创建收货任务并进入收货"}
+                  {creatingReceiveTask
+                    ? "创建收货任务中…"
+                    : "创建收货任务并进入收货"}
                 </button>
               </div>
             </div>
@@ -226,7 +228,7 @@ const PurchaseOrderDetailPage: React.FC = () => {
           </section>
 
           {/* 退货任务入口 */}
-          <section className="bg-white border border-rose-200 rounded-xl p-4 space-y-2">
+          <section className="space-y-2 rounded-xl border border-rose-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-rose-800">
                 采购退货任务（Return Task）
@@ -240,10 +242,12 @@ const PurchaseOrderDetailPage: React.FC = () => {
                 <button
                   type="button"
                   disabled={creatingReturnTask}
-                  onClick={handleCreateReturnTask}
+                  onClick={() => void handleCreateReturnTask()}
                   className="inline-flex items-center rounded-md bg-rose-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm disabled:opacity-60"
                 >
-                  {creatingReturnTask ? "创建退货任务中…" : "创建退货任务并进入退货"}
+                  {creatingReturnTask
+                    ? "创建退货任务中…"
+                    : "创建退货任务并进入退货"}
                 </button>
               </div>
             </div>

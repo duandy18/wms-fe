@@ -36,7 +36,6 @@ const SnapshotTable: React.FC<Props> = ({
     );
   }
 
-  // 更明显的排序箭头
   const renderSortArrow = (key: SortKey) => {
     if (sortKey !== key) {
       return <span className="ml-1 text-[14px] text-slate-300">↕</span>;
@@ -106,8 +105,6 @@ const SnapshotTable: React.FC<Props> = ({
                 ? `WH${second.warehouse_id} · ${second.batch_code} · ${second.qty}`
                 : "";
 
-              const topQty = first ? first.qty : 0;
-
               return (
                 <tr
                   key={row.item_id}
@@ -115,7 +112,7 @@ const SnapshotTable: React.FC<Props> = ({
                   onClick={() => onRowClick?.(row)}
                 >
                   <td className="px-4 py-2">
-                    <div className="font-medium text-slate-900 text-[15px]">
+                    <div className="text-[15px] font-medium text-slate-900">
                       {row.item_name}
                     </div>
                     <div className="text-xs text-slate-400">
@@ -124,7 +121,7 @@ const SnapshotTable: React.FC<Props> = ({
                   </td>
 
                   <td className="px-4 py-2 text-right">
-                    <span className="font-semibold text-slate-900 text-[15px]">
+                    <span className="text-[15px] font-semibold text-slate-900">
                       {row.total_qty}
                     </span>
                   </td>

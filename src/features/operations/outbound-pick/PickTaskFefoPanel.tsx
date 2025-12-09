@@ -19,12 +19,18 @@ type Props = {
   onUseBatch: (batchCode: string) => void;
 };
 
+type SliceWithExpire = ItemSlice & {
+  expire_at?: string | null;
+};
+
 function sortFEFO(slices: ItemSlice[]) {
-  return [...slices].sort((a, b) => {
-    const da = a.expire_at ? Date.parse(a.expire_at) : Infinity;
-    const db = b.expire_at ? Date.parse(b.expire_at) : Infinity;
-    return da - db;
-  });
+  return [...slices]
+    .map((s) => s as SliceWithExpire)
+    .sort((a, b) => {
+      const da = a.expire_at ? Date.parse(a.expire_at) : Infinity;
+      const db = b.expire_at ? Date.parse(b.expire_at) : Infinity;
+      return da - db;
+    });
 }
 
 export const PickTaskFefoPanel: React.FC<Props> = ({
@@ -34,7 +40,7 @@ export const PickTaskFefoPanel: React.FC<Props> = ({
   activeItemMeta,
   onUseBatch,
 }) => {
-  const sortedSlices = useMemo(
+  const sortedSlices: SliceWithExpire[] = useMemo(
     () => (detail ? sortFEFO(detail.slices) : []),
     [detail],
   );
@@ -56,7 +62,7 @@ export const PickTaskFefoPanel: React.FC<Props> = ({
       {activeItemMeta && (
         <div className="text-xs text-slate-700">
           当前商品：
-          <span className="font-mono mr-1">{activeItemMeta.sku}</span>
+          <span className="mr-1 font-mono">{activeItemMeta.sku}</span>
           <span>{activeItemMeta.name}</span>
           {activeItemMeta.spec && ` · ${activeItemMeta.spec}`}
         </div>
@@ -92,7 +98,7 @@ export const PickTaskFefoPanel: React.FC<Props> = ({
             )}
           </div>
 
-          <div className="space-y-2 max-h-32 overflow-auto">
+          <div className="max-h-32 space-y-2 overflow-auto">
             {sortedSlices.map((s, idx) => {
               const isRecommended =
                 recommended && s.batch_code === recommended;
@@ -116,7 +122,7 @@ export const PickTaskFefoPanel: React.FC<Props> = ({
                     expire: {s.expire_at ?? "-"}
                   </div>
                   {isRecommended && (
-                    <div className="text-[11px] text-sky-700 mt-1">
+                    <div className="mt-1 text-[11px] text-sky-700">
                       推荐批次（FEFO 优先，且有可用库存）。
                     </div>
                   )}

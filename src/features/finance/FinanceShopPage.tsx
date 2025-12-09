@@ -1,9 +1,6 @@
 // src/features/finance/FinanceShopPage.tsx
 //
 // 财务分析 · 店铺盈利能力
-// - 按平台 / 店铺聚合：收入、采购成本、发货成本、毛利、毛利率、履约成本占比
-// - 支持日期范围 + 平台 / 店铺过滤
-//
 
 import React, { useEffect, useMemo, useState } from "react";
 import PageTitle from "../../components/ui/PageTitle";
@@ -15,6 +12,10 @@ import {
 type DateRange = {
   from_date: string;
   to_date: string;
+};
+
+type ApiErrorShape = {
+  message?: string;
 };
 
 function getDefaultRange(): DateRange {
@@ -67,11 +68,13 @@ const FinanceShopPage: React.FC = () => {
         platform: platform || undefined,
         shop_id: shopId || undefined,
       });
-      // 默认按毛利从高到低排
-      data.sort((a, b) => (b.gross_profit ?? 0) - (a.gross_profit ?? 0));
+      data.sort(
+        (a, b) => (b.gross_profit ?? 0) - (a.gross_profit ?? 0),
+      );
       setRows(data);
-    } catch (e: any) {
-      console.error("load finance shop failed", e);
+    } catch (err: unknown) {
+      console.error("load finance shop failed", err);
+      const e = err as ApiErrorShape | undefined;
       setError(e?.message ?? "加载店铺盈利报表失败");
       setRows([]);
     } finally {
@@ -95,10 +98,8 @@ const FinanceShopPage: React.FC = () => {
       shipping += r.shipping_cost ?? 0;
       gross += r.gross_profit ?? 0;
     }
-    const grossMargin =
-      revenue > 0 ? gross / revenue : null;
-    const fulfillRatio =
-      revenue > 0 ? shipping / revenue : null;
+    const grossMargin = revenue > 0 ? gross / revenue : null;
+    const fulfillRatio = revenue > 0 ? shipping / revenue : null;
     return {
       revenue,
       purchase,
@@ -282,7 +283,7 @@ const FinanceShopPage: React.FC = () => {
             店铺盈利明细
           </h2>
           <span className="text-[11px] text-slate-500">
-            口径：订单基于创建日期，采购成本按平均成本法估算，发货成本基于发货账本。
+            口径：订单基于创建日期，采购成本按平均成本估算，发货成本基于发货账本。
           </span>
         </div>
 

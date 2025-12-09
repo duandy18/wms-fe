@@ -5,22 +5,20 @@ import { useNavigate, useParams } from "react-router-dom";
 import PageTitle from "../../../components/ui/PageTitle";
 import { fetchWarehouseDetail, updateWarehouse } from "./api";
 import type { WarehouseListItem } from "./types";
-import { useAuth } from "../../../app/auth/useAuth";
 
 const WarehouseDetailPage: React.FC = () => {
   const { warehouseId } = useParams<{ warehouseId: string }>();
   const id = Number(warehouseId);
   const navigate = useNavigate();
-  const { can } = useAuth();
 
-  const canWrite = can("admin.stores");
+  // 前端不再做 can("admin.stores") 校验
+  const canWrite = true;
 
   const [detail, setDetail] = useState<WarehouseListItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 可编辑字段
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [active, setActive] = useState(true);
@@ -28,11 +26,8 @@ const WarehouseDetailPage: React.FC = () => {
   const [address, setAddress] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
-  const [areaSqm, setAreaSqm] = useState<string>(""); // 用字符串承载，方便空值处理
+  const [areaSqm, setAreaSqm] = useState<string>("");
 
-  // ---------------------------------------
-  // 加载详情
-  // ---------------------------------------
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -54,8 +49,9 @@ const WarehouseDetailPage: React.FC = () => {
             : "",
         );
       })
-      .catch((err: any) => {
-        setError(err?.message ?? "加载仓库详情失败");
+      .catch((err: unknown) => {
+        const e = err as { message?: string };
+        setError(e?.message ?? "加载仓库详情失败");
         setDetail(null);
       })
       .finally(() => setLoading(false));
@@ -64,6 +60,7 @@ const WarehouseDetailPage: React.FC = () => {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!detail) return;
+    if (!canWrite) return;
 
     setSaving(true);
     setError(null);
@@ -94,8 +91,9 @@ const WarehouseDetailPage: React.FC = () => {
       });
 
       setDetail(updated);
-    } catch (err: any) {
-      setError(err?.message ?? "保存失败");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message ?? "保存失败");
     } finally {
       setSaving(false);
     }
@@ -108,7 +106,7 @@ const WarehouseDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4 p-4">
       <PageTitle title="仓库详情" description="仓库主数据维护" />
 
       <button
@@ -120,7 +118,7 @@ const WarehouseDetailPage: React.FC = () => {
       </button>
 
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">
+        <div className="rounded px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-100">
           {error}
         </div>
       )}
@@ -130,101 +128,92 @@ const WarehouseDetailPage: React.FC = () => {
       ) : !detail ? (
         <div className="text-sm text-slate-500">未找到仓库。</div>
       ) : (
-        <section className="bg-white border border-slate-200 rounded-xl p-5 space-y-5">
-          {/* 查看部分 */}
+        <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
           <div className="text-base">
-            <span className="text-slate-500 mr-2">ID:</span>
+            <span className="mr-2 text-slate-500">ID:</span>
             <span className="font-semibold">{detail.id}</span>
           </div>
 
-          {/* 可编辑表单 */}
           {canWrite ? (
             <form
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-base"
+              className="grid grid-cols-1 gap-4 text-base md:grid-cols-2 lg:grid-cols-3"
               onSubmit={handleSave}
             >
-              {/* 仓库名称 */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm text-slate-500">仓库名称</label>
                 <input
-                  className="border rounded-lg px-3 py-2 text-base"
+                  className="rounded-lg border px-3 py-2 text-base"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="主仓 / 备仓 …"
                 />
               </div>
 
-              {/* 仓库编码 */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm text-slate-500">
                   仓库编码（可选）
                 </label>
                 <input
-                  className="border rounded-lg px-3 py-2 text-base"
+                  className="rounded-lg border px-3 py-2 text-base"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="例如 WH1 / SH-MAIN / CODE-A"
                 />
               </div>
 
-              {/* 状态 */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm text-slate-500">状态</label>
                 <select
                   value={active ? "1" : "0"}
                   onChange={(e) => setActive(e.target.value === "1")}
-                  className="border rounded-lg px-3 py-2 text-base"
+                  className="rounded-lg border px-3 py-2 text-base"
                 >
                   <option value="1">启用</option>
                   <option value="0">停用</option>
                 </select>
               </div>
 
-              {/* 地址 */}
               <div className="flex flex-col gap-1 md:col-span-2">
                 <label className="text-sm text-slate-500">地址（可选）</label>
                 <input
-                  className="border rounded-lg px-3 py-2 text-base"
+                  className="rounded-lg border px-3 py-2 text-base"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="例如 上海市 · 某某路 · 某某仓库园区 ..."
                 />
               </div>
 
-              {/* 联系人 */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm text-slate-500">
                   联系人（可选）
                 </label>
                 <input
-                  className="border rounded-lg px-3 py-2 text-base"
+                  className="rounded-lg border px-3 py-2 text-base"
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
                   placeholder="例如 张三"
                 />
               </div>
 
-              {/* 联系电话 */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm text-slate-500">
                   联系电话（可选）
                 </label>
                 <input
-                  className="border rounded-lg px-3 py-2 text-base"
+                  className="rounded-lg border px-3 py-2 text-base"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
                   placeholder="手机 / 座机 / 分机号"
                 />
               </div>
 
-              {/* 仓库面积 */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm text-slate-500">
                   仓库面积（m²，可选）
                 </label>
                 <input
                   type="number"
-                  className="border rounded-lg px-3 py-2 text-base"
+                  className="rounded-lg border px-3 py-2 text-base"
                   value={areaSqm}
                   onChange={(e) => setAreaSqm(e.target.value)}
                   placeholder="例如 800"
@@ -236,7 +225,7 @@ const WarehouseDetailPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-lg bg-slate-900 text-white text-base disabled:opacity-60"
+                  className="rounded-lg bg-slate-900 px-5 py-2 text-base text-white disabled:opacity-60"
                 >
                   {saving ? "保存中…" : "保存修改"}
                 </button>

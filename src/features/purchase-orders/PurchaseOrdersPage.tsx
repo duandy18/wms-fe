@@ -27,33 +27,34 @@ type SuppliersApiResponse = {
 const PurchaseOrdersPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // 列表 Presenter：统一管理 orders / loading / error / filter
   const [
     { orders, loadingList, listError, supplierFilter, statusFilter },
     { setSupplierFilter, setStatusFilter, reload },
   ] = usePurchaseOrdersListPresenter();
 
-  // 当前行选中状态（用于高亮）
   const [selectedPoId, setSelectedPoId] = useState<number | null>(null);
 
-  // 供应商下拉选项
-  const [supplierOptions, setSupplierOptions] = useState<SupplierOption[]>([]);
+  const [supplierOptions, setSupplierOptions] = useState<SupplierOption[]>(
+    [],
+  );
 
   useEffect(() => {
     async function loadSuppliers() {
       try {
-        const res = await apiGet<SuppliersApiResponse>(
+        const res = await apiGet<SuppliersApiResponse | SupplierOption[]>(
           "/suppliers?active=true",
         );
-        const list = (res as any)?.data ?? res;
-        const options: SupplierOption[] = (list || []).map((s: any) => ({
-          id: s.id,
-          name: s.name,
-        }));
-        setSupplierOptions(options);
+
+        const list: SupplierOption[] = Array.isArray(res)
+          ? res.map((s) => ({ id: s.id, name: s.name }))
+          : (res.data ?? []).map((s) => ({
+              id: s.id,
+              name: s.name,
+            }));
+
+        setSupplierOptions(list);
       } catch (err) {
         console.error("loadSuppliers failed", err);
-        // 下拉加载失败不阻断页面逻辑
       }
     }
 
@@ -72,16 +73,13 @@ const PurchaseOrdersPage: React.FC = () => {
         description="查看历史采购单，点击记录进入详情页查看采购报告（供应商视图）与行级收货。"
       />
 
-      {/* 列表区（过滤 + 表格） */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-        {/* 过滤工具条 */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-sm font-semibold text-slate-800">
             采购单列表
           </h2>
 
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            {/* 供应商下拉 */}
             <select
               className="w-40 rounded-md border border-slate-300 px-2 py-1"
               value={supplierFilter}
@@ -95,7 +93,6 @@ const PurchaseOrdersPage: React.FC = () => {
               ))}
             </select>
 
-            {/* 状态筛选 */}
             <select
               className="w-32 rounded-md border border-slate-300 px-2 py-1"
               value={statusFilter}
@@ -110,7 +107,6 @@ const PurchaseOrdersPage: React.FC = () => {
               <option value="CLOSED">已关闭</option>
             </select>
 
-            {/* 刷新按钮 */}
             <button
               type="button"
               onClick={reload}
@@ -122,7 +118,6 @@ const PurchaseOrdersPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 表格区（统一用 PurchaseOrdersTable + StandardTable） */}
         <PurchaseOrdersTable
           orders={orders}
           loading={loadingList}

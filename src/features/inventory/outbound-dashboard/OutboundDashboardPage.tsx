@@ -25,8 +25,6 @@ import { ShopTab } from "./tabs/ShopTab";
 import { FailuresTab } from "./tabs/FailuresTab";
 import { FefoTab } from "./tabs/FefoTab";
 
-// --------- API 封装 -----------------------------------
-
 async function fetchToday(platform: string) {
   return apiGet<OutboundToday>(`/metrics/outbound/today?platform=${platform}`);
 }
@@ -58,8 +56,6 @@ async function fetchByShop(platform: string, day: string) {
     `/metrics/outbound/by-shop?platform=${platform}&day=${day}`,
   );
 }
-
-// ------------- 页面主体 -----------------------------------
 
 const OutboundDashboardPage: React.FC = () => {
   const [platform, setPlatform] = useState("PDD");
@@ -103,8 +99,9 @@ const OutboundDashboardPage: React.FC = () => {
       setFailuresData(failRes);
       setFefoRiskData(fefoRes);
       setShopData(shopRes);
-    } catch (err: any) {
-      setError(err?.message ?? "加载出库指标 Dashboard 失败");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message ?? "加载出库指标 Dashboard 失败");
     } finally {
       setLoading(false);
     }
@@ -119,7 +116,6 @@ const OutboundDashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 顶部标题 + 控制器 */}
       <header className="space-y-1">
         <h1 className="text-xl font-semibold text-slate-900">
           出库指标总览（Outbound Dashboard）
@@ -129,14 +125,13 @@ const OutboundDashboardPage: React.FC = () => {
         </p>
       </header>
 
-      {/* 顶栏控制器 */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-600">平台：</span>
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className="border rounded-lg px-3 py-1.5 text-xs"
+            className="rounded-lg border px-3 py-1.5 text-xs"
           >
             <option value="PDD">PDD</option>
             <option value="TB">TB</option>
@@ -152,7 +147,7 @@ const OutboundDashboardPage: React.FC = () => {
               const v = Number(e.target.value) || DEFAULT_RANGE_DAYS;
               setRangeDays(v);
             }}
-            className="border rounded-lg px-3 py-1.5 text-xs"
+            className="rounded-lg border px-3 py-1.5 text-xs"
           >
             <option value={7}>最近 7 天</option>
             <option value={14}>最近 14 天</option>
@@ -162,7 +157,6 @@ const OutboundDashboardPage: React.FC = () => {
 
         <Button
           variant="outline"
-          size="sm"
           disabled={loading}
           onClick={() => void reloadAll()}
           className="text-xs"
@@ -178,15 +172,13 @@ const OutboundDashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* 错误提示 */}
       {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
           {error}
         </div>
       )}
 
-      {/* 顶部 KPI 卡片（所有 Tab 共用） */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
         <MetricCard
           title="今日总单量"
           value={today?.total_orders ?? 0}
@@ -215,10 +207,8 @@ const OutboundDashboardPage: React.FC = () => {
         />
       </section>
 
-      {/* 内部 Tabs */}
       <TabsBar activeTab={activeTab} onChange={setActiveTab} />
 
-      {/* Tab 内容：Page 只做调度，展示交给子模块 */}
       <div>
         {activeTab === "overview" && (
           <OverviewTab

@@ -179,9 +179,15 @@ export async function fetchFinanceSku(
   return raw.map((r) => {
     const revenue = toNum(r.revenue);
     const purchase = toNum(r.purchase_cost);
-    const gross = revenue - purchase;
+    const gross =
+      r.gross_profit != null ? toNum(r.gross_profit) : revenue - purchase;
     const margin =
-      revenue > 0 ? gross / revenue : null;
+      r.gross_margin != null
+        ? toNumOrNull(r.gross_margin)
+        : revenue > 0
+        ? gross / revenue
+        : null;
+
     return {
       item_id: r.item_id,
       sku_id: r.sku_id,
@@ -205,8 +211,8 @@ export interface OrderUnitSummary {
 }
 
 export interface OrderUnitContributionPoint {
-  percent_orders: number;   // 0~1
-  percent_revenue: number;  // 0~1
+  percent_orders: number; // 0~1
+  percent_revenue: number; // 0~1
 }
 
 export interface OrderUnitRow {
@@ -231,6 +237,33 @@ export interface FinanceOrderUnitQuery {
   shop_id?: string;
 }
 
+interface OrderUnitSummaryRaw {
+  order_count?: number | null;
+  revenue?: number | string | null;
+  avg_order_value?: number | string | null;
+  median_order_value?: number | string | null;
+}
+
+interface OrderUnitContributionPointRaw {
+  percent_orders?: number | string | null;
+  percent_revenue?: number | string | null;
+}
+
+interface OrderUnitRowRaw {
+  order_id: number;
+  platform: string;
+  shop_id: string;
+  ext_order_no: string;
+  order_value: number | string | null;
+  created_at: string;
+}
+
+interface OrderUnitResponseRaw {
+  summary?: OrderUnitSummaryRaw;
+  contribution_curve?: OrderUnitContributionPointRaw[];
+  top_orders?: OrderUnitRowRaw[];
+}
+
 /** 客单价 & 贡献度分析（按订单维度） */
 export async function fetchFinanceOrderUnit(
   params: FinanceOrderUnitQuery,
@@ -245,9 +278,9 @@ export async function fetchFinanceOrderUnit(
     ? `/finance/order-unit?${query}`
     : "/finance/order-unit";
 
-  const raw = await apiGet<any>(path);
+  const raw = await apiGet<OrderUnitResponseRaw>(path);
 
-  const summaryRaw = raw.summary ?? {};
+  const summaryRaw: OrderUnitSummaryRaw = raw.summary ?? {};
   const summary: OrderUnitSummary = {
     order_count: summaryRaw.order_count ?? 0,
     revenue: toNum(summaryRaw.revenue),
@@ -261,14 +294,17 @@ export async function fetchFinanceOrderUnit(
         : null,
   };
 
-  const curve: OrderUnitContributionPoint[] = (raw.contribution_curve ?? []).map(
-    (p: any) => ({
-      percent_orders: Number(p.percent_orders ?? 0),
-      percent_revenue: Number(p.percent_revenue ?? 0),
+  const curveRaw: OrderUnitContributionPointRaw[] =
+    raw.contribution_curve ?? [];
+  const contribution_curve: OrderUnitContributionPoint[] = curveRaw.map(
+    (p) => ({
+      percent_orders: toNum(p.percent_orders) || 0,
+      percent_revenue: toNum(p.percent_revenue) || 0,
     }),
   );
 
-  const top_orders: OrderUnitRow[] = (raw.top_orders ?? []).map((o: any) => ({
+  const topOrdersRaw: OrderUnitRowRaw[] = raw.top_orders ?? [];
+  const top_orders: OrderUnitRow[] = topOrdersRaw.map((o) => ({
     order_id: o.order_id,
     platform: o.platform,
     shop_id: o.shop_id,
@@ -279,7 +315,7 @@ export async function fetchFinanceOrderUnit(
 
   return {
     summary,
-    contribution_curve: curve,
+    contribution_curve,
     top_orders,
   };
 }

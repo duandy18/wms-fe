@@ -26,6 +26,20 @@ type NavState =
       extOrderNo?: string;
     };
 
+type ApiErrorShape = {
+  message?: string;
+  response?: {
+    data?: {
+      detail?: string;
+    };
+  };
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.response?.data?.detail ?? e?.message ?? fallback;
+};
+
 const OrderDetailPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const location = useLocation();
@@ -116,9 +130,9 @@ const OrderDetailPage: React.FC = () => {
         extOrderNo: ext,
       });
       setFacts(of);
-    } catch (err: any) {
+    } catch (err) {
       console.error("load order detail failed", err);
-      setError(err?.message ?? "加载订单详情失败");
+      setError(getErrorMessage(err, "加载订单详情失败"));
       setOrderView(null);
       setFacts(null);
     } finally {
@@ -138,9 +152,9 @@ const OrderDetailPage: React.FC = () => {
     try {
       const res = await reconcileOrderById(orderIdNum);
       setReconcile(res);
-    } catch (err: any) {
+    } catch (err) {
       console.error("reconcileOrderById failed", err);
-      setError(err?.message ?? "对账失败");
+      setError(getErrorMessage(err, "对账失败"));
       setReconcile(null);
     } finally {
       setReconcileLoading(false);
@@ -172,16 +186,10 @@ const OrderDetailPage: React.FC = () => {
       };
 
       const task = await createReceiveTaskFromOrder(order.id, payload);
-      // 当前行为：跳到退货收货任务详情
-      // 你也可以改为去 Cockpit 的订单退货模式，通过 task.id 绑定
       navigate(`/receive-tasks/${task.id}`);
-    } catch (err: any) {
+    } catch (err) {
       console.error("createReceiveTaskFromOrder failed", err);
-      setError(
-        err?.response?.data?.detail ??
-          err?.message ??
-          "创建退货任务失败",
-      );
+      setError(getErrorMessage(err, "创建退货任务失败"));
     } finally {
       setCreatingRma(false);
     }
@@ -256,7 +264,7 @@ const OrderDetailPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-y-2 md:grid-cols-3 md:gap-x-8">
+            <div className="grid grid-cols-1 gap-y-2 gap-x-8 md:grid-cols-3">
               <div>
                 <div className="text-[11px] text-slate-500">
                   平台 / 店铺

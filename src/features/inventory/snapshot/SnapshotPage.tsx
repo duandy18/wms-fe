@@ -21,6 +21,10 @@ export type SortKey =
   | "near_expiry"
   | "top_qty";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
 const SnapshotPage: React.FC = () => {
   const [rows, setRows] = useState<InventoryRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,10 +59,11 @@ const SnapshotPage: React.FC = () => {
         if (cancelled) return;
         setRows(res.rows);
         setTotal(res.total);
-      } catch (err: any) {
+      } catch (err) {
         if (cancelled) return;
+        const e = err as ApiErrorShape;
         console.error("Failed to fetch snapshot:", err);
-        setError(err?.message || "加载库存快照失败");
+        setError(e?.message || "加载库存快照失败");
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -98,10 +103,8 @@ const SnapshotPage: React.FC = () => {
         if (da && db) {
           cmp = da.getTime() - db.getTime();
         } else if (da && !db) {
-          // 有日期排前
           cmp = -1;
         } else if (!da && db) {
-          // 无日期排后
           cmp = 1;
         } else {
           cmp = 0;
@@ -109,7 +112,6 @@ const SnapshotPage: React.FC = () => {
       } else if (sortKey === "near_expiry") {
         const av = a.near_expiry ? 1 : 0;
         const bv = b.near_expiry ? 1 : 0;
-        // 默认安全在前，配合 sortDir 控制方向
         cmp = av - bv;
       } else if (sortKey === "top_qty") {
         const aTop = a.top2_locations[0]?.qty ?? 0;
@@ -118,7 +120,6 @@ const SnapshotPage: React.FC = () => {
       }
 
       if (cmp === 0) {
-        // tie-breaker：item_id 升序，保证稳定
         cmp = a.item_id - b.item_id;
       }
 
@@ -138,7 +139,7 @@ const SnapshotPage: React.FC = () => {
     try {
       const data = await fetchItemDetail(row.item_id);
       setDrawerItem(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to fetch item detail:", err);
     } finally {
       setDrawerLoading(false);
@@ -152,11 +153,9 @@ const SnapshotPage: React.FC = () => {
   const handleChangeSort = (key: SortKey) => {
     setSortKey((prevKey) => {
       if (prevKey === key) {
-        // 同一列：切换升/降序
         setSortDir((prevDir) => (prevDir === "asc" ? "desc" : "asc"));
         return prevKey;
       }
-      // 换列：数量类默认降序，其它默认升序
       setSortDir(key === "total_qty" || key === "top_qty" ? "desc" : "asc");
       return key;
     });
@@ -185,7 +184,9 @@ const SnapshotPage: React.FC = () => {
       {/* 主体内容：只有表格 */}
       <div className="mt-2">
         {loading && (
-          <div className="py-6 text-sm text-slate-500">正在加载库存快照…</div>
+          <div className="py-6 text-sm text-slate-500">
+            正在加载库存快照…
+          </div>
         )}
         {error && (
           <div className="rounded-md bg-red-50 p-3 text-xs text-red-700">
@@ -211,7 +212,7 @@ const SnapshotPage: React.FC = () => {
         )}
       </div>
 
-      {/* 分页控制（针对后端返回 total） */}
+      {/* 分页控制 */}
       <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
         <div>
           共 {total} 条记录；每页 {PAGE_SIZE} 条；当前页{" "}
@@ -221,7 +222,9 @@ const SnapshotPage: React.FC = () => {
           <button
             type="button"
             disabled={!canPrev}
-            onClick={() => canPrev && setOffset(Math.max(0, offset - PAGE_SIZE))}
+            onClick={() =>
+              canPrev && setOffset(Math.max(0, offset - PAGE_SIZE))
+            }
             className={`inline-flex h-8 items-center rounded-full px-3 ${
               canPrev
                 ? "bg-slate-100 text-slate-700 hover:bg-slate-200"

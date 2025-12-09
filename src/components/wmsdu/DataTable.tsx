@@ -3,9 +3,9 @@ import React from "react";
 import { cn } from "../../lib/utils";
 
 export type ColumnDef<T> = {
-  key: keyof T & string;
+  key: string;
   header: string;
-  width?: string;
+  width?: string | number;
   align?: "left" | "center" | "right";
   render?: (row: T) => React.ReactNode;
 };
@@ -42,7 +42,7 @@ export function DataTable<T>({
     >
       <table className="min-w-full border-collapse text-sm">
         <thead>
-          <tr className="bg-slate-50 border-b border-slate-200">
+          <tr className="border-b border-slate-200 bg-slate-50">
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -68,7 +68,7 @@ export function DataTable<T>({
               )}
             >
               {columns.map((col) => {
-                const value = row[col.key];
+                const value = (row as Record<string, unknown>)[col.key];
                 return (
                   <td
                     key={col.key}

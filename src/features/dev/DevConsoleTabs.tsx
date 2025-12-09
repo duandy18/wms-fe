@@ -1,16 +1,16 @@
 // src/features/dev/DevConsoleTabs.tsx
-// 简洁版：所有 Tab 一行横向排列（Orders / Pick / Inbound / Count / Platform / Ship）
+// 简洁版：所有 Tab 一行横向排列（Orders / Pick / Inbound / Count / Ship / Platform）
 
 import React from "react";
 import { DevPanelId, type DevTabSpec } from "./DevConsoleTypes";
 
 const TABS: DevTabSpec[] = [
-  { id: DevPanelId.Orders, label: "订单链路调试" },
-  { id: DevPanelId.PickTasks, label: "拣货链路调试" },
-  { id: DevPanelId.Inbound, label: "入库链路调试" },
-  { id: DevPanelId.Count, label: "盘点链路调试" },
-  { id: DevPanelId.Platform, label: "平台 / 店铺" },
-  { id: DevPanelId.Ship, label: "发货成本调试" },
+  { id: DevPanelId.Orders, label: "订单链路调试", group: "flows" },
+  { id: DevPanelId.PickTasks, label: "拣货链路调试", group: "flows" },
+  { id: DevPanelId.Inbound, label: "入库链路调试", group: "flows" },
+  { id: DevPanelId.Count, label: "盘点链路调试", group: "flows" },
+  { id: DevPanelId.Ship, label: "发货成本调试", group: "flows" },
+  { id: DevPanelId.Platform, label: "平台 / 店铺", group: "tools" },
 ];
 
 type Props = {

@@ -3,7 +3,6 @@
 // TraceEventsView：Trace 事件视图模块
 // - 接收 traceId / warehouseId / focusRef 作为 props
 // - 内部负责：调用 fetchTrace、管理 loading/error/viewMode/sourceFilter/data
-// - 不自己读 URL，不自己处理 tab，只作为 Studio 的子模块
 
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchTrace } from "./api";
@@ -42,18 +41,15 @@ export const TraceEventsView: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<TraceResponse | null>(null);
 
-  // 视图状态：时间线 / 分组，source 过滤，展开行
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("ALL");
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
-  // 基础事件数组（用 useMemo 包一层，避免每次 render 都 new 数组，触发 useMemo 依赖警告）
   const baseEvents: TraceEvent[] = useMemo(
     () => data?.events ?? [],
     [data],
   );
 
-  // source 列表
   const sources = useMemo(() => {
     const set = new Set<string>();
     for (const e of baseEvents) {
@@ -62,13 +58,11 @@ export const TraceEventsView: React.FC<Props> = ({
     return Array.from(set).sort();
   }, [baseEvents]);
 
-  // 按 sourceFilter 过滤后的事件
   const filteredEvents = useMemo(() => {
     if (sourceFilter === "ALL") return baseEvents;
     return baseEvents.filter((e) => e.source === sourceFilter);
   }, [baseEvents, sourceFilter]);
 
-  // 分组视图的数据（按 ref）
   const groupedByRef: GroupedByRef[] = useMemo(() => {
     const map = new Map<string, TraceEvent[]>();
     for (const e of filteredEvents) {
@@ -82,8 +76,18 @@ export const TraceEventsView: React.FC<Props> = ({
     const groups: GroupedByRef[] = [];
     for (const [ref, evs] of map.entries()) {
       const sorted = [...evs].sort((a, b) => {
-        const ta = a.ts ? Date.parse(a.ts) : 0;
-        const tb = b.ts ? Date.parse(b.ts) : 0;
+        const ta =
+          a.ts instanceof Date
+            ? a.ts.getTime()
+            : typeof a.ts === "string"
+            ? Date.parse(a.ts)
+            : 0;
+        const tb =
+          b.ts instanceof Date
+            ? b.ts.getTime()
+            : typeof b.ts === "string"
+            ? Date.parse(b.ts)
+            : 0;
         return ta - tb;
       });
       groups.push({ ref, events: sorted });
@@ -93,7 +97,6 @@ export const TraceEventsView: React.FC<Props> = ({
     return groups;
   }, [filteredEvents]);
 
-  // 查询 trace
   async function handleQuery() {
     setError(null);
     setData(null);
@@ -111,10 +114,19 @@ export const TraceEventsView: React.FC<Props> = ({
       const wid = widRaw ? Number(widRaw) : undefined;
       const res = await fetchTrace(tid, wid);
 
-      // 按 ts 排序，空 ts 放前面
       res.events.sort((a, b) => {
-        const ta = a.ts ? Date.parse(a.ts) : 0;
-        const tb = b.ts ? Date.parse(b.ts) : 0;
+        const ta =
+          a.ts instanceof Date
+            ? a.ts.getTime()
+            : typeof a.ts === "string"
+            ? Date.parse(a.ts)
+            : 0;
+        const tb =
+          b.ts instanceof Date
+            ? b.ts.getTime()
+            : typeof b.ts === "string"
+            ? Date.parse(b.ts)
+            : 0;
         return ta - tb;
       });
 
@@ -128,15 +140,17 @@ export const TraceEventsView: React.FC<Props> = ({
     }
   }
 
-  // 展开 / 收起某个索引（组头或 raw 行）
   function handleToggleExpand(idx: number) {
     setExpanded((prev) => ({ ...prev, [idx]: !prev[idx] }));
   }
 
-  function formatTs(ts: string | null): string {
+  const formatTs = (ts: string | Date | null): string => {
     if (!ts) return "-";
+    if (ts instanceof Date) {
+      return ts.toISOString().replace("T", " ").replace("Z", "");
+    }
     return ts.replace("T", " ").replace("Z", "");
-  }
+  };
 
   const metaText =
     data && data.events
@@ -145,7 +159,6 @@ export const TraceEventsView: React.FC<Props> = ({
         }${focusRef ? ` · focus_ref: ${focusRef}` : ""}`
       : null;
 
-  // 初次挂载：如果指定了 autoRunOnMount，则根据现有 traceId 执行一次查询
   useEffect(() => {
     if (autoRunOnMount && traceId.trim()) {
       void handleQuery();

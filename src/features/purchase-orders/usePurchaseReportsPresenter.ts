@@ -25,7 +25,9 @@ export interface PurchaseReportsState {
 
 export interface PurchaseReportsActions {
   setActiveTab: (tab: TabKey) => void;
-  setFilters: (updater: (prev: PurchaseReportFilters) => PurchaseReportFilters) => void;
+  setFilters: (
+    updater: (prev: PurchaseReportFilters) => PurchaseReportFilters,
+  ) => void;
   loadReports: () => Promise<void>;
 }
 
@@ -38,6 +40,15 @@ const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 const DEFAULT_FILTERS: PurchaseReportFilters = {
   dateFrom: toYMD(firstDayOfMonth),
   dateTo: toYMD(today),
+};
+
+type ApiErrorShape = {
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
 };
 
 export function usePurchaseReportsPresenter(): [
@@ -69,9 +80,9 @@ export function usePurchaseReportsPresenter(): [
         const rows = await fetchDailyReport(filters);
         setDailyRows(rows);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("loadReports failed", err);
-      setError(err?.message ?? "加载采购报表失败");
+      setError(getErrorMessage(err, "加载采购报表失败"));
     } finally {
       setLoading(false);
     }
@@ -89,7 +100,8 @@ export function usePurchaseReportsPresenter(): [
     },
     {
       setActiveTab,
-      setFilters: (updater) => setFilters((prev) => updater(prev)),
+      setFilters: (updater) =>
+        setFilters((prev) => updater(prev)),
       loadReports,
     },
   ];

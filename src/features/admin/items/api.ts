@@ -1,4 +1,5 @@
 // src/features/admin/items/api.ts
+// src/features/admin/items/api.ts
 import { apiGet, apiPost, apiPatch } from "../../../lib/api";
 
 export interface Item {
@@ -11,10 +12,12 @@ export interface Item {
   enabled: boolean;
   supplier_id?: number | null;
   supplier_name?: string | null;
+  // 一些接口可能返回原始 supplier 名称
+  supplier?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 
-  // ⭐ 新增：单件净重（kg）
+  // 单件净重（kg）
   weight_kg?: number | null;
 }
 
@@ -26,7 +29,6 @@ export interface ItemCreateInput {
   barcode?: string | null;
   enabled?: boolean;
   supplier_id?: number | null;
-
   weight_kg?: number | null;
 }
 
@@ -36,7 +38,6 @@ export interface ItemUpdateInput {
   uom?: string | null;
   enabled?: boolean;
   supplier_id?: number | null;
-
   weight_kg?: number | null;
 }
 
@@ -47,7 +48,7 @@ export async function fetchItems(): Promise<Item[]> {
 
 // 创建商品（按 SKU）
 export async function createItem(input: ItemCreateInput): Promise<Item> {
-  const body: any = {
+  const body: Record<string, unknown> = {
     sku: input.sku.trim(),
     name: input.name.trim(),
     spec: input.spec?.trim() || undefined,
@@ -55,12 +56,14 @@ export async function createItem(input: ItemCreateInput): Promise<Item> {
     barcode: input.barcode?.trim() || undefined,
     enabled: input.enabled ?? true,
   };
+
   if (input.supplier_id !== undefined) {
     body.supplier_id = input.supplier_id;
   }
   if (input.weight_kg !== undefined && input.weight_kg !== null) {
     body.weight_kg = input.weight_kg;
   }
+
   return apiPost<Item>("/items", body);
 }
 
@@ -69,7 +72,8 @@ export async function updateItem(
   id: number,
   input: ItemUpdateInput,
 ): Promise<Item> {
-  const body: any = {};
+  const body: Record<string, unknown> = {};
+
   if (input.name !== undefined) {
     body.name = input.name?.trim() || "";
   }
@@ -88,5 +92,6 @@ export async function updateItem(
   if (input.weight_kg !== undefined) {
     body.weight_kg = input.weight_kg;
   }
+
   return apiPatch<Item>(`/items/${id}`, body);
 }

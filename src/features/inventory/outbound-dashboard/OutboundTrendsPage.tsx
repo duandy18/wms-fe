@@ -17,6 +17,13 @@ type RangeResponse = {
   days: RangeDaySummary[];
 };
 
+type ApiErrorShape = { message?: string };
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 export default function OutboundTrendsPage() {
   const [platform, setPlatform] = useState("PDD");
   const [days, setDays] = useState(14);
@@ -32,8 +39,8 @@ export default function OutboundTrendsPage() {
         `/metrics/outbound/range?platform=${platform}&days=${days}`,
       );
       setData(res);
-    } catch (err: any) {
-      setError(err?.message ?? "加载趋势数据失败");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "加载趋势数据失败"));
     } finally {
       setLoading(false);
     }
@@ -41,9 +48,11 @@ export default function OutboundTrendsPage() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform, days]);
 
-  const mk = (getter: (d: RangeDaySummary) => number) =>
+  const mk =
+    (getter: (d: RangeDaySummary) => number) =>
     (data?.days ?? []).map((d) => ({
       label: d.day.slice(5),
       value: getter(d),
@@ -65,7 +74,7 @@ export default function OutboundTrendsPage() {
         <select
           value={platform}
           onChange={(e) => setPlatform(e.target.value)}
-          className="border rounded-lg px-3 py-1.5 text-xs"
+          className="rounded-lg border px-3 py-1.5 text-xs"
         >
           <option value="PDD">PDD</option>
           <option value="TB">TB</option>
@@ -76,7 +85,7 @@ export default function OutboundTrendsPage() {
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value) || 7)}
-          className="border rounded-lg px-3 py-1.5 text-xs"
+          className="rounded-lg border px-3 py-1.5 text-xs"
         >
           <option value={7}>7</option>
           <option value={14}>14</option>
@@ -85,7 +94,7 @@ export default function OutboundTrendsPage() {
       </div>
 
       {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
           {error}
         </div>
       )}

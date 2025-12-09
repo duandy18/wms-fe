@@ -9,10 +9,19 @@ type Props = {
   warehouseId: string | null;
 };
 
+type ApiErrorShape = {
+  message?: string;
+};
+
 const parseMoney = (v: string | null | undefined): number => {
   if (!v) return 0;
   const n = Number(v);
   return Number.isNaN(n) ? 0 : n;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
 };
 
 export const PurchaseOrderSupplierReport: React.FC<Props> = ({
@@ -43,11 +52,13 @@ export const PurchaseOrderSupplierReport: React.FC<Props> = ({
 
         if (warehouseId && warehouseId.trim()) {
           const wid = Number(warehouseId.trim());
-          if (!Number.isNaN(wid) && wid > 0) qs.set("warehouse_id", String(wid));
+          if (!Number.isNaN(wid) && wid > 0) {
+            qs.set("warehouse_id", String(wid));
+          }
         }
 
         const data = await apiGet<SupplierReportRow[]>(
-          `/purchase-reports/suppliers?${qs.toString()}`
+          `/purchase-reports/suppliers?${qs.toString()}`,
         );
 
         const list = data || [];
@@ -58,8 +69,8 @@ export const PurchaseOrderSupplierReport: React.FC<Props> = ({
           0,
         );
         setTotalAmount(sum);
-      } catch (err: any) {
-        setError(err?.message || "加载供应商采购报告失败");
+      } catch (err) {
+        setError(getErrorMessage(err, "加载供应商采购报告失败"));
       } finally {
         setLoading(false);
       }
@@ -68,28 +79,26 @@ export const PurchaseOrderSupplierReport: React.FC<Props> = ({
     void load();
   }, [supplierId, warehouseId]);
 
-  // 未选供应商 → 提示
   if (!supplierId) {
     return (
-      <section className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4 text-xs text-slate-500">
+      <section className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-xs text-slate-500">
         请选择供应商后，将在此处显示该供应商的历史采购统计（可导出 CSV）。
       </section>
     );
   }
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-slate-800">
             当前供应商历史采购汇总
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="mt-1 text-xs text-slate-500">
             供应商：{supplierName}；金额计算基于所有历史采购单。
           </p>
         </div>
 
-        {/* CSV 导出 */}
         {rows.length > 0 && (
           <button
             type="button"
@@ -105,46 +114,71 @@ export const PurchaseOrderSupplierReport: React.FC<Props> = ({
         <div className="text-xs text-slate-500">加载中…</div>
       )}
       {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
           {error}
         </div>
       )}
 
-      {/* 无数据 */}
-      {!loading && rows.length === 0 && (
+      {!loading && rows.length === 0 && !error && (
         <div className="text-xs text-slate-500">
           没有找到该供应商的历史采购记录。
         </div>
       )}
 
-      {/* 有数据 → 显示统计表 */}
       {rows.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="min-w-[520px] text-xs border border-slate-200 border-collapse">
+          <table className="min-w-[520px] border-collapse border border-slate-200 text-xs">
             <thead>
               <tr className="bg-slate-50 text-[11px] font-semibold text-slate-600">
-                <th className="border border-slate-200 px-2 py-1 text-left">供应商</th>
-                <th className="border border-slate-200 px-2 py-1 text-right">单据数</th>
-                <th className="border border-slate-200 px-2 py-1 text-right">订购件数</th>
-                <th className="border border-slate-200 px-2 py-1 text-right">最小单位数</th>
-                <th className="border border-slate-200 px-2 py-1 text-right">金额合计</th>
-                <th className="border border-slate-200 px-2 py-1 text-right">平均单价</th>
+                <th className="border border-slate-200 px-2 py-1 text-left">
+                  供应商
+                </th>
+                <th className="border border-slate-200 px-2 py-1 text-right">
+                  单据数
+                </th>
+                <th className="border border-slate-200 px-2 py-1 text-right">
+                  订购件数
+                </th>
+                <th className="border border-slate-200 px-2 py-1 text-right">
+                  最小单位数
+                </th>
+                <th className="border border-slate-200 px-2 py-1 text-right">
+                  金额合计
+                </th>
+                <th className="border border-slate-200 px-2 py-1 text-right">
+                  平均单价
+                </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, idx) => (
                 <tr key={idx} className="border-t border-slate-100">
-                  <td className="border border-slate-200 px-2 py-1">{r.supplier_name}</td>
-                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">{r.order_count}</td>
-                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">{r.total_qty_cases}</td>
-                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">{r.total_units}</td>
-                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">{r.total_amount}</td>
-                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">{r.avg_unit_price ?? "-"}</td>
+                  <td className="border border-slate-200 px-2 py-1">
+                    {r.supplier_name}
+                  </td>
+                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">
+                    {r.order_count}
+                  </td>
+                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">
+                    {r.total_qty_cases}
+                  </td>
+                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">
+                    {r.total_units}
+                  </td>
+                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">
+                    {r.total_amount}
+                  </td>
+                  <td className="border border-slate-200 px-2 py-1 text-right font-mono">
+                    {r.avg_unit_price ?? "-"}
+                  </td>
                 </tr>
               ))}
 
               <tr className="bg-slate-50 font-semibold">
-                <td className="border border-slate-200 px-2 py-1" colSpan={4}>
+                <td
+                  className="border border-slate-200 px-2 py-1"
+                  colSpan={4}
+                >
                   合计金额
                 </td>
                 <td className="border border-slate-200 px-2 py-1 text-right font-mono">
@@ -191,7 +225,9 @@ function exportCsv(rows: SupplierReportRow[], totalAmount: number) {
     )
     .join("\r\n");
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8;",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

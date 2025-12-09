@@ -16,24 +16,18 @@ import {
 } from "../../master-data/itemsApi";
 
 export type LineDraft = {
-  id: number; // 前端本地行 ID
+  id: number;
 
-  // 系统主键（只为系统使用，不给供应商看）
   item_id: string;
-
-  // 供应商视角：商品名称 + 规格
   item_name: string;
   spec_text: string;
 
-  // 单位（现在用“最小单位”，直接来自 ItemBasic.uom）
   purchase_uom: string;
-  units_per_case: string; // 每件包含多少最小单位（可选）
+  units_per_case: string;
 
-  // 数量 & 采购价格
   qty_ordered: string;
-  supply_price: string; // 唯一价格字段：采购价格
+  supply_price: string;
 
-  // 业务分组
   category: string;
 };
 
@@ -49,27 +43,31 @@ const makeEmptyLine = (id: number): LineDraft => ({
   category: "",
 });
 
+type ApiErrorShape = {
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 export interface PurchaseOrderCreateState {
-  // 供应商相关
   supplierId: number | null;
   supplierName: string;
   supplierOptions: SupplierBasic[];
   suppliersLoading: boolean;
   suppliersError: string | null;
 
-  // 商品主数据
   itemOptions: ItemBasic[];
   itemsLoading: boolean;
   itemsError: string | null;
 
-  // 头部其它字段
   warehouseId: string;
   remark: string;
 
-  // 行
   lines: LineDraft[];
 
-  // 最近一次成功创建的采购单（Cockpit 下方报告用）
   lastCreatedPo: PurchaseOrderWithLines | null;
 
   submitting: boolean;
@@ -77,10 +75,7 @@ export interface PurchaseOrderCreateState {
 }
 
 export interface PurchaseOrderCreateActions {
-  // 供应商
   selectSupplier: (id: number | null) => void;
-
-  // 商品
   selectItemForLine: (lineId: number, itemId: number | null) => void;
 
   setWarehouseId: (v: string) => void;
@@ -98,17 +93,10 @@ export interface PurchaseOrderCreateActions {
   submit: (onSuccess?: (poId: number) => void) => Promise<void>;
 }
 
-/**
- * 多行采购单创建 Presenter：
- * - 供应商来源于主数据；
- * - 商品来源于主数据，选 item 后自动联动 item_id + 名称 + 规格 + 最小单位；
- * - 行上仍可以手动微调名称/规格/单位。
- */
 export function usePurchaseOrderCreatePresenter(): [
   PurchaseOrderCreateState,
   PurchaseOrderCreateActions,
 ] {
-  // 供应商主数据
   const [supplierOptions, setSupplierOptions] = useState<SupplierBasic[]>([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
   const [suppliersError, setSuppliersError] = useState<string | null>(null);
@@ -116,30 +104,25 @@ export function usePurchaseOrderCreatePresenter(): [
   const [supplierId, setSupplierId] = useState<number | null>(null);
   const [supplierName, setSupplierName] = useState("");
 
-  // 商品主数据
   const [itemOptions, setItemOptions] = useState<ItemBasic[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [itemsError, setItemsError] = useState<string | null>(null);
 
-  // 头部其它字段
   const [warehouseId, setWarehouseId] = useState("1");
   const [remark, setRemark] = useState("");
 
-  // 行
   const [lines, setLines] = useState<LineDraft[]>([
     makeEmptyLine(1),
     makeEmptyLine(2),
     makeEmptyLine(3),
   ]);
 
-  // 最近一次成功创建的采购单（Cockpit 报告使用）
   const [lastCreatedPo, setLastCreatedPo] =
     useState<PurchaseOrderWithLines | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- 拉供应商 ---
   useEffect(() => {
     const loadSuppliers = async () => {
       setSuppliersLoading(true);
@@ -147,9 +130,11 @@ export function usePurchaseOrderCreatePresenter(): [
       try {
         const data = await fetchSuppliersBasic();
         setSupplierOptions(data);
-      } catch (err: any) {
+      } catch (err) {
         console.error("fetchSuppliersBasic failed", err);
-        setSuppliersError(err?.message ?? "加载供应商列表失败");
+        setSuppliersError(
+          getErrorMessage(err, "加载供应商列表失败"),
+        );
       } finally {
         setSuppliersLoading(false);
       }
@@ -157,7 +142,6 @@ export function usePurchaseOrderCreatePresenter(): [
     void loadSuppliers();
   }, []);
 
-  // --- 拉商品 ---
   useEffect(() => {
     const loadItems = async () => {
       setItemsLoading(true);
@@ -165,9 +149,9 @@ export function usePurchaseOrderCreatePresenter(): [
       try {
         const data = await fetchItemsBasic();
         setItemOptions(data);
-      } catch (err: any) {
+      } catch (err) {
         console.error("fetchItemsBasic failed", err);
-        setItemsError(err?.message ?? "加载商品列表失败");
+        setItemsError(getErrorMessage(err, "加载商品列表失败"));
       } finally {
         setItemsLoading(false);
       }
@@ -187,13 +171,6 @@ export function usePurchaseOrderCreatePresenter(): [
     }
   };
 
-  /**
-   * 选中某一行的系统商品：
-   * - item_id = ItemBasic.id
-   * - item_name = ItemBasic.name
-   * - spec_text = ItemBasic.spec
-   * - purchase_uom = ItemBasic.uom（最小单位）
-   */
   const selectItemForLine = (lineId: number, itemId: number | null) => {
     setLines((prev) =>
       prev.map((l) => {
@@ -211,7 +188,6 @@ export function usePurchaseOrderCreatePresenter(): [
 
         const found = itemOptions.find((it) => it.id === itemId);
         if (!found) {
-          // 找不到就只记 ID
           return {
             ...l,
             item_id: String(itemId),
@@ -260,7 +236,6 @@ export function usePurchaseOrderCreatePresenter(): [
     const normalized: PurchaseOrderLineCreatePayload[] = [];
 
     for (const [idx, l] of lines.entries()) {
-      // 完全空行就跳过
       if (!l.item_id.trim() && !l.qty_ordered.trim() && !l.item_name.trim()) {
         continue;
       }
@@ -268,17 +243,14 @@ export function usePurchaseOrderCreatePresenter(): [
       const itemId = Number(l.item_id.trim());
       const qty = Number(l.qty_ordered.trim());
 
-      // 唯一价格：采购价格
       const supplyPrice = l.supply_price.trim()
         ? Number(l.supply_price.trim())
         : null;
 
-      // 单位换算
       const unitsPerCase = l.units_per_case.trim()
         ? Number(l.units_per_case.trim())
         : null;
 
-      // 校验
       if (Number.isNaN(itemId) || itemId <= 0) {
         throw new Error(`第 ${idx + 1} 行：item_id 非法`);
       }
@@ -300,17 +272,13 @@ export function usePurchaseOrderCreatePresenter(): [
         item_id: itemId,
         category: l.category.trim() || null,
 
-        // 供应商视角快照：商品名称 + 规格 + 单位
-        item_name: l.item_name.trim() || null,
         spec_text: l.spec_text.trim() || null,
         purchase_uom: l.purchase_uom.trim() || null,
         units_per_case: unitsPerCase,
 
-        // 数量体系：默认“件数 = 订购数量”
         qty_cases: qty,
         qty_ordered: qty,
 
-        // 价格体系：唯一的采购价格
         supply_price: supplyPrice,
       });
     }
@@ -321,7 +289,6 @@ export function usePurchaseOrderCreatePresenter(): [
   const submit = async (onSuccess?: (poId: number) => void) => {
     setError(null);
 
-    // 供应商必须选
     if (!supplierId || !supplierName) {
       setError("请选择供应商");
       return;
@@ -336,8 +303,10 @@ export function usePurchaseOrderCreatePresenter(): [
     let normalizedLines: PurchaseOrderLineCreatePayload[];
     try {
       normalizedLines = buildPayloadLines();
-    } catch (e: any) {
-      setError(e?.message ?? "行校验失败");
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : "行校验失败";
+      setError(msg);
       return;
     }
 
@@ -357,10 +326,8 @@ export function usePurchaseOrderCreatePresenter(): [
         lines: normalizedLines,
       });
 
-      // 保存最近一次创建的采购单 → Cockpit 报告使用
       setLastCreatedPo(po);
 
-      // 保留供应商 / 仓库，只清空备注和行，方便同一供应商连开多张单
       setRemark("");
       setLines([
         makeEmptyLine(1),
@@ -369,9 +336,9 @@ export function usePurchaseOrderCreatePresenter(): [
       ]);
 
       onSuccess?.(po.id);
-    } catch (err: any) {
+    } catch (err) {
       console.error("createPurchaseOrderV2 failed", err);
-      setError(err?.message ?? "创建多行采购单失败");
+      setError(getErrorMessage(err, "创建多行采购单失败"));
     } finally {
       setSubmitting(false);
     }

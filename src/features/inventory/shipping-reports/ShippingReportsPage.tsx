@@ -7,6 +7,7 @@
 // - 明细行一键跳转：发货账本详情 / Trace Studio
 // - 状态分布小卡片（当前页）：在途 / 已签收 / 丢失 / 退回
 //
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageTitle from "../../../components/ui/PageTitle";
@@ -66,6 +67,13 @@ const statusLabel = (status: string | null | undefined) => {
     default:
       return "其他";
   }
+};
+
+type ApiErrorShape = { message?: string };
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
 };
 
 const ShippingReportsPage: React.FC = () => {
@@ -145,9 +153,9 @@ const ShippingReportsPage: React.FC = () => {
       setDailyRows(daily.rows ?? []);
       setListRows(list.rows ?? []);
       setListTotal(list.total ?? 0);
-    } catch (e: any) {
-      console.error("load shipping reports failed", e);
-      setError(e?.message ?? "加载发货报表失败");
+    } catch (err: unknown) {
+      console.error("load shipping reports failed", err);
+      setError(getErrorMessage(err, "加载发货报表失败"));
       setCarrierRows([]);
       setProvinceRows([]);
       setShopRows([]);
@@ -168,8 +176,8 @@ const ShippingReportsPage: React.FC = () => {
         warehouse_id: warehouseId ? Number(warehouseId) : undefined,
       });
       setOptions(opts);
-    } catch (e) {
-      console.error("load shipping report options failed", e);
+    } catch (err) {
+      console.error("load shipping report options failed", err);
       // 出错不影响主报表，保留旧 options
     }
   };
@@ -201,7 +209,8 @@ const ShippingReportsPage: React.FC = () => {
     return (last.total_cost - prev.total_cost) / prev.total_cost;
   }, [dailyRows]);
 
-  const currentPage = listTotal === 0 ? 0 : Math.floor(listOffset / pageSize) + 1;
+  const currentPage =
+    listTotal === 0 ? 0 : Math.floor(listOffset / pageSize) + 1;
   const totalPages = listTotal > 0 ? Math.ceil(listTotal / pageSize) : 0;
 
   const handlePageChange = (direction: "prev" | "next") => {
@@ -224,9 +233,12 @@ const ShippingReportsPage: React.FC = () => {
     navigate(`/shipping/record?ref=${encodeURIComponent(ref)}`);
   };
 
-  const getMetaField = (row: ShippingListRow, key: string): string | undefined => {
-    const meta = row.meta ?? {};
-    const v = (meta as any)[key];
+  const getMetaField = (
+    row: ShippingListRow,
+    key: string,
+  ): string | undefined => {
+    const meta = (row.meta ?? {}) as Record<string, unknown>;
+    const v = meta[key];
     return typeof v === "string" ? v : undefined;
   };
 

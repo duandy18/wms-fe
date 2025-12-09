@@ -12,7 +12,7 @@ type Props = {
   groups: GroupedByRef[];
   expanded: Record<number, boolean>;
   onToggle: (i: number) => void;
-  formatTs: (ts: string | null) => string;
+  formatTs: (ts: string | Date | null) => string;
   focusRef?: string | null;
 };
 
@@ -25,14 +25,14 @@ export const TraceGroupedView: React.FC<Props> = ({
 }) => {
   if (!groups || groups.length === 0) {
     return (
-      <section className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+      <section className="rounded-xl border border-slate-200 bg白 p-4 text-sm text-slate-500">
         暂无事件，请先执行查询。
       </section>
     );
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+    <section className="space-y-3 rounded-xl border border-slate-200 bg白 p-4">
       <div className="text-xs text-slate-500">
         按 ref 分组查看事件。支持从每一行跳转到 Ledger / 库存 / 批次生命周期。
       </div>
@@ -45,13 +45,12 @@ export const TraceGroupedView: React.FC<Props> = ({
           <div
             key={g.ref + ":" + idx}
             className={
-              "rounded-lg border mb-2 " +
+              "mb-2 rounded-lg border " +
               (isFocused
                 ? "border-slate-900 bg-slate-900/5"
-                : "border-slate-200 bg-white")
+                : "border-slate-200 bg白")
             }
           >
-            {/* 组头 */}
             <button
               type="button"
               onClick={() => onToggle(idx)}
@@ -78,7 +77,6 @@ export const TraceGroupedView: React.FC<Props> = ({
               </div>
             </button>
 
-            {/* 组内容 */}
             {isOpen && (
               <div className="border-t border-slate-200 px-3 py-2 text-[11px]">
                 {g.events.map((ev, i) => {

@@ -1,17 +1,13 @@
 // src/features/operations/count/useCountCockpitController.ts
 // =====================================================
 //  Count Cockpit - 中控（v2）
-//  核心变化：
-//  - 不再手写 ScanRequest，而是复用 makeCountScanRequest
+//  - 复用 makeCountScanRequest
 //  - 与 ScanCountPage 完全走同一条 /scan(mode='count') 链路
 //  - 前端做最小日期校验：expiry_date >= production_date
 // =====================================================
 
 import { useState } from "react";
-import {
-  scanCountV2,
-  type ScanResponse,
-} from "../scan/api";
+import { scanCountV2, type ScanResponse } from "../scan/api";
 import { makeCountScanRequest } from "../scan/scanRequest";
 
 import type {
@@ -26,7 +22,7 @@ const fmt = (d: Date) => d.toISOString().replace("T", " ").slice(0, 19);
 const initialForm: CountCockpitFormState = {
   item_id: null,
   warehouse_id: 1,
-  qty: null, // 语义：盘点后的“绝对量”（actual）
+  qty: null,
   batch_code: "",
   production_date: undefined,
   expiry_date: undefined,
@@ -66,7 +62,7 @@ export function useCountCockpitController(): CountCockpitController {
   async function submit() {
     const itemId = form.item_id ?? 0;
     const whId = form.warehouse_id ?? 0;
-    const actual = form.qty ?? 0; // 语义上就是“盘点后的绝对量”
+    const actual = form.qty ?? 0;
 
     if (!itemId || itemId <= 0) {
       setError("item_id 必须为正整数");
@@ -81,7 +77,12 @@ export function useCountCockpitController(): CountCockpitController {
       return;
     }
 
-    // ★ 前端最小校验：若同时填写了生产日期和到期日期，则要求到期日 >= 生产日
+    const batchCode = form.batch_code?.trim() ?? "";
+    if (!batchCode) {
+      setError("batch_code 必须为非空字符串");
+      return;
+    }
+
     if (isInvalidDateRange(form.production_date, form.expiry_date)) {
       setError("到期日期（expiry_date）不能早于生产日期（production_date）。");
       return;
@@ -95,20 +96,19 @@ export function useCountCockpitController(): CountCockpitController {
     const baseReq: CountCockpitFormState = { ...form };
 
     try {
-      // ✅ 关键：复用 makeCountScanRequest，与 ScanCountPage 完全对齐
       const scanReq = makeCountScanRequest(
         {
           item_id: itemId,
           actual,
           warehouse_id: whId,
-          batch_code: form.batch_code?.trim() || undefined,
+          batch_code: batchCode,
           production_date: form.production_date || undefined,
           expiry_date: form.expiry_date || undefined,
           ctx: {
             source: "operations/count-cockpit",
           },
         },
-        "count-cockpit", // trace / scan_ref 上的 source，用于后端审计与排错
+        "count-cockpit",
       );
 
       const resp = await scanCountV2(scanReq);

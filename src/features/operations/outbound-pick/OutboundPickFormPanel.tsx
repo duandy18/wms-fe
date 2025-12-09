@@ -23,6 +23,10 @@ type Props = {
   onSubmit: (e: React.FormEvent) => void;
 };
 
+type SliceWithExpire = ItemSlice & {
+  expire_at?: string | null;
+};
+
 export const OutboundPickFormPanel: React.FC<Props> = ({
   form,
   loading,
@@ -32,8 +36,9 @@ export const OutboundPickFormPanel: React.FC<Props> = ({
   onSubmit,
 }) => {
   // FEFO 排序（按 expire_at）
-  const sortedBatches = [...batchSlices]
+  const sortedBatches: SliceWithExpire[] = [...batchSlices]
     .filter((s) => s.batch_code)
+    .map((s) => s as SliceWithExpire)
     .sort((a, b) => {
       const da = a.expire_at ? Date.parse(a.expire_at) : Infinity;
       const db = b.expire_at ? Date.parse(b.expire_at) : Infinity;
@@ -41,11 +46,11 @@ export const OutboundPickFormPanel: React.FC<Props> = ({
     });
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
       <h2 className="text-sm font-semibold text-slate-800">手工拣货</h2>
 
       <form onSubmit={onSubmit} className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label className="block text-xs text-slate-600">
               warehouse_id
@@ -106,7 +111,7 @@ export const OutboundPickFormPanel: React.FC<Props> = ({
           </div>
 
           {sortedBatches.length > 0 && (
-            <div className="text-[11px] text-slate-600 space-y-1">
+            <div className="space-y-1 text-[11px] text-slate-600">
               <div className="flex items-center justify-between">
                 <span>从现有批次中选择：</span>
               </div>

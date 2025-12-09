@@ -22,6 +22,8 @@ export const DevOrderLifecycleCard: React.FC<Props> = ({
   loading,
   error,
 }) => {
+  const issues = summary?.issues ?? [];
+
   return (
     <div className="rounded-md border border-slate-200 bg-white p-3 text-xs">
       <div className="font-semibold text-slate-800">
@@ -53,9 +55,9 @@ export const DevOrderLifecycleCard: React.FC<Props> = ({
         </div>
       )}
 
-      {summary?.issues?.length > 0 && (
+      {issues.length > 0 && (
         <ul className="mt-1 list-disc pl-4 text-[11px] text-amber-700">
-          {summary.issues.map((i, idx) => (
+          {issues.map((i, idx) => (
             <li key={idx}>{i}</li>
           ))}
         </ul>
@@ -84,7 +86,7 @@ export const DevOrderLifecycleCard: React.FC<Props> = ({
                     "h-3 w-3 rounded-full " +
                     (s.present
                       ? "bg-emerald-500"
-                      : "bg-white border border-slate-300")
+                      : "bg白 border border-slate-300")
                   }
                 />
                 <div>

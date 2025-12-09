@@ -18,6 +18,15 @@ import {
 const formatTs = (ts: string | null | undefined) =>
   ts ? ts.replace("T", " ").replace("Z", "") : "-";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 const ReceiveTaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
@@ -46,9 +55,9 @@ const ReceiveTaskDetailPage: React.FC = () => {
     try {
       const data = await fetchReceiveTask(idNum);
       setTask(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error("fetchReceiveTask failed", err);
-      setError(err?.message ?? "加载收货任务失败");
+      setError(getErrorMessage(err, "加载收货任务失败"));
       setTask(null);
     } finally {
       setLoading(false);
@@ -63,7 +72,13 @@ const ReceiveTaskDetailPage: React.FC = () => {
   const isCommitted = task?.status === "COMMITTED";
 
   const varianceSummary = useMemo(() => {
-    if (!task) return { totalExpected: 0, totalScanned: 0, totalVariance: 0 };
+    if (!task) {
+      return {
+        totalExpected: 0,
+        totalScanned: 0,
+        totalVariance: 0,
+      };
+    }
     let totalExpected = 0;
     let totalScanned = 0;
     for (const l of task.lines) {
@@ -79,13 +94,11 @@ const ReceiveTaskDetailPage: React.FC = () => {
     };
   }, [task]);
 
-  // 把 scanned 修改为目标值：调用 scan 接口增量调整
   async function handleChangeScanned(
     line: ReceiveTaskLine,
     nextScanned: number,
   ) {
-    if (!task) return;
-    if (isCommitted) return;
+    if (!task || isCommitted) return;
 
     const normalized = Math.max(0, Math.floor(nextScanned));
     const delta = normalized - line.scanned_qty;
@@ -99,25 +112,24 @@ const ReceiveTaskDetailPage: React.FC = () => {
         batch_code: line.batch_code ?? undefined,
       });
       setTask(updated);
-    } catch (err: any) {
+    } catch (err) {
       console.error("recordReceiveScan failed", err);
-      setError(err?.message ?? "更新实收数量失败");
+      setError(getErrorMessage(err, "更新实收数量失败"));
     } finally {
       setUpdatingLineId(null);
     }
   }
 
   async function handleCommit() {
-    if (!task) return;
-    if (isCommitted) return;
+    if (!task || isCommitted) return;
     setCommitting(true);
     setCommitError(null);
     try {
       const updated = await commitReceiveTask(task.id, {});
       setTask(updated);
-    } catch (err: any) {
+    } catch (err) {
       console.error("commitReceiveTask failed", err);
-      setCommitError(err?.message ?? "确认入库失败");
+      setCommitError(getErrorMessage(err, "确认入库失败"));
     } finally {
       setCommitting(false);
     }
@@ -171,20 +183,23 @@ const ReceiveTaskDetailPage: React.FC = () => {
             <button
               type="button"
               disabled={disabled}
-              className="px-1 text-xs border rounded disabled:opacity-50"
+              className="rounded border px-1 text-xs disabled:opacity-50"
               onClick={() =>
-                handleChangeScanned(l, Math.max(0, l.scanned_qty - 1))
+                void handleChangeScanned(
+                  l,
+                  Math.max(0, l.scanned_qty - 1),
+                )
               }
             >
               -
             </button>
             <input
-              className="w-16 text-right rounded border border-slate-300 px-1 py-0.5 text-xs"
+              className="w-16 rounded border border-slate-300 px-1 py-0.5 text-right text-xs"
               type="number"
               value={l.scanned_qty}
               disabled={disabled}
               onChange={(e) =>
-                handleChangeScanned(
+                void handleChangeScanned(
                   l,
                   Number(e.target.value || "0"),
                 )
@@ -193,8 +208,10 @@ const ReceiveTaskDetailPage: React.FC = () => {
             <button
               type="button"
               disabled={disabled}
-              className="px-1 text-xs border rounded disabled:opacity-50"
-              onClick={() => handleChangeScanned(l, l.scanned_qty + 1)}
+              className="rounded border px-1 text-xs disabled:opacity-50"
+              onClick={() =>
+                void handleChangeScanned(l, l.scanned_qty + 1)
+              }
             >
               +
             </button>
@@ -249,8 +266,7 @@ const ReceiveTaskDetailPage: React.FC = () => {
 
       {task && (
         <>
-          {/* 头部信息 */}
-          <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 text-sm text-slate-700">
+          <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-slate-800">
                 基本信息
@@ -260,7 +276,7 @@ const ReceiveTaskDetailPage: React.FC = () => {
                 <span className="font-medium">{task.status}</span>
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2">
+            <div className="grid grid-cols-1 gap-x-8 gap-y-2 md:grid-cols-3">
               <div>
                 <div className="text-[11px] text-slate-500">
                   收货任务 ID
@@ -297,8 +313,7 @@ const ReceiveTaskDetailPage: React.FC = () => {
                 </div>
                 <div>
                   应收：{varianceSummary.totalExpected}，实收：
-                  {varianceSummary.totalScanned}，
-                  差异：
+                  {varianceSummary.totalScanned}，差异：
                   <span
                     className={
                       varianceSummary.totalVariance === 0
@@ -315,7 +330,6 @@ const ReceiveTaskDetailPage: React.FC = () => {
             </div>
           </section>
 
-          {/* 行表 + commit 区 */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-800">

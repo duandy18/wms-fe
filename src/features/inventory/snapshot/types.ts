@@ -1,4 +1,4 @@
-// src/types/inventory.ts
+// src/features/inventory/snapshot/types.ts
 
 // 单个库位上的库存
 export type InventoryLocation = {
@@ -61,3 +61,6 @@ export type InventoryItemDetail = {
   };
   slices: InventoryItemSlice[];
 };
+
+// 兼容 dev / operations 模块中使用的 SnapshotRow 别名
+export type SnapshotRow = InventoryItemDetail;

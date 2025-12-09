@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 import { createRole, fetchRoles, setRolePermissions } from "../api";
 import type { RoleDTO } from "../types";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
 export function useRolesPresenter() {
   const [roles, setRoles] = useState<RoleDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -16,8 +20,9 @@ export function useRolesPresenter() {
     try {
       const r = await fetchRoles();
       setRoles(r);
-    } catch (err: any) {
-      setError(err?.message ?? "加载角色失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "加载角色失败");
     } finally {
       setLoading(false);
     }
@@ -36,8 +41,9 @@ export function useRolesPresenter() {
     try {
       await createRole(payload);
       await load();
-    } catch (err: any) {
-      setError(err?.message ?? "创建角色失败");
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "创建角色失败");
     } finally {
       setCreating(false);
     }
@@ -48,9 +54,12 @@ export function useRolesPresenter() {
     setError(null);
     try {
       const updated = await setRolePermissions(roleId, ids);
-      setRoles((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-    } catch (err: any) {
-      setError(err?.message ?? "更新角色权限失败");
+      setRoles((prev) =>
+        prev.map((r) => (r.id === updated.id ? updated : r)),
+      );
+    } catch (err: unknown) {
+      const e = err as ApiErrorShape | undefined;
+      setError(e?.message ?? "更新角色权限失败");
     } finally {
       setSavingPerms(false);
     }

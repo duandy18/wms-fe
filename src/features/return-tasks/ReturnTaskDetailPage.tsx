@@ -17,6 +17,15 @@ import {
 const formatTs = (ts: string | null | undefined) =>
   ts ? ts.replace("T", " ").replace("Z", "") : "-";
 
+type ApiErrorShape = {
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+};
+
 const ReturnTaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
@@ -42,9 +51,9 @@ const ReturnTaskDetailPage: React.FC = () => {
     try {
       const data = await fetchReturnTask(idNum);
       setTask(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error("fetchReturnTask failed", err);
-      setError(err?.message ?? "加载退货任务失败");
+      setError(getErrorMessage(err, "加载退货任务失败"));
       setTask(null);
     } finally {
       setLoading(false);
@@ -59,7 +68,13 @@ const ReturnTaskDetailPage: React.FC = () => {
   const isCommitted = task?.status === "COMMITTED";
 
   const varianceSummary = useMemo(() => {
-    if (!task) return { totalExpected: 0, totalPicked: 0, totalVariance: 0 };
+    if (!task) {
+      return {
+        totalExpected: 0,
+        totalPicked: 0,
+        totalVariance: 0,
+      };
+    }
     let totalExpected = 0;
     let totalPicked = 0;
     for (const l of task.lines) {
@@ -82,9 +97,9 @@ const ReturnTaskDetailPage: React.FC = () => {
     try {
       const updated = await commitReturnTask(task.id, {});
       setTask(updated);
-    } catch (err: any) {
+    } catch (err) {
       console.error("commitReturnTask failed", err);
-      setCommitError(err?.message ?? "确认退货失败");
+      setCommitError(getErrorMessage(err, "确认退货失败"));
     } finally {
       setCommitting(false);
     }
@@ -180,7 +195,7 @@ const ReturnTaskDetailPage: React.FC = () => {
 
       {task && (
         <>
-          <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 text-sm text-slate-700">
+          <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-slate-800">
                 基本信息
@@ -190,7 +205,7 @@ const ReturnTaskDetailPage: React.FC = () => {
                 <span className="font-medium">{task.status}</span>
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2">
+            <div className="grid grid-cols-1 gap-x-8 gap-y-2 md:grid-cols-3">
               <div>
                 <div className="text-[11px] text-slate-500">
                   退货任务 ID

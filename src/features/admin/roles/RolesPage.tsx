@@ -1,7 +1,6 @@
 // src/features/admin/roles/RolesPage.tsx
 import React, { useEffect, useState } from "react";
 import { apiGet, apiPost, apiPatch } from "../../../lib/api";
-import { useAuth } from "../../../app/auth/useAuth";
 
 type PermissionOut = {
   id: string;
@@ -17,8 +16,6 @@ type RoleOut = {
 };
 
 export default function RolesPage() {
-  const { can } = useAuth();
-
   const [roles, setRoles] = useState<RoleOut[]>([]);
   const [perms, setPerms] = useState<PermissionOut[]>([]);
 
@@ -45,19 +42,17 @@ export default function RolesPage() {
       ]);
       setRoles(rolesRes);
       setPerms(permsRes);
-    } catch (err: any) {
-      setError(err?.message ?? "加载角色/权限失败");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message ?? "加载角色/权限失败");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
-
-  const canCreateRole = can("create_role");
-  const canEditPerms = can("add_permission_to_role");
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -75,8 +70,9 @@ export default function RolesPage() {
       setNewRoleName("");
       setNewRoleDesc("");
       await load();
-    } catch (err: any) {
-      setError(err?.message ?? "创建角色失败");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message ?? "创建角色失败");
     } finally {
       setCreating(false);
     }
@@ -105,23 +101,21 @@ export default function RolesPage() {
     setSavingPerms(true);
     setError(null);
     try {
-      // 和后端 RolePermissionsBody(permission_ids: list[str]) 对齐
       const body = {
         permission_ids: Array.from(selectedPermIds),
       };
-
       const updated = await apiPatch<RoleOut>(
         `/roles/${editingRole.id}/permissions`,
         body,
       );
-
       setRoles((prev) =>
         prev.map((r) => (r.id === updated.id ? updated : r)),
       );
       setEditingRole(null);
       setSelectedPermIds(new Set());
-    } catch (err: any) {
-      setError(err?.message ?? "更新角色权限失败");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message ?? "更新角色权限失败");
     } finally {
       setSavingPerms(false);
     }
@@ -137,72 +131,70 @@ export default function RolesPage() {
       <header className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold">角色管理</h1>
-          <p className="text-xs text-slate-600 mt-1">
+          <p className="mt-1 text-xs text-slate-600">
             管理角色与权限绑定。用户通过 primary_role_id 继承权限。
           </p>
         </div>
       </header>
 
       {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">
+        <div className="rounded border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-600">
           {error}
         </div>
       )}
 
       {/* 创建角色 */}
-      {canCreateRole && (
-        <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-slate-800">创建角色</h2>
-          <form
-            className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm"
-            onSubmit={handleCreate}
-          >
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-500">角色名称</label>
-              <input
-                className="border rounded-lg px-3 py-2 text-sm"
-                value={newRoleName}
-                onChange={(e) => setNewRoleName(e.target.value)}
-                placeholder="如 warehouse.admin"
-              />
-            </div>
-            <div className="flex flex-col gap-1 md:col-span-2">
-              <label className="text-xs text-slate-500">描述</label>
-              <input
-                className="border rounded-lg px-3 py-2 text-sm"
-                value={newRoleDesc}
-                onChange={(e) => setNewRoleDesc(e.target.value)}
-                placeholder="角色说明（可选）"
-              />
-            </div>
-            <div className="flex items-end">
-              <button
-                type="submit"
-                disabled={creating}
-                className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm disabled:opacity-60"
-              >
-                {creating ? "创建中…" : "创建"}
-              </button>
-            </div>
-          </form>
-        </section>
-      )}
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-slate-800">创建角色</h2>
+        <form
+          className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3"
+          onSubmit={handleCreate}
+        >
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-500">角色名称</label>
+            <input
+              className="rounded-lg border px-3 py-2 text-sm"
+              value={newRoleName}
+              onChange={(e) => setNewRoleName(e.target.value)}
+              placeholder="如 warehouse.admin"
+            />
+          </div>
+          <div className="flex flex-col gap-1 md:col-span-2">
+            <label className="text-xs text-slate-500">描述</label>
+            <input
+              className="rounded-lg border px-3 py-2 text-sm"
+              value={newRoleDesc}
+              onChange={(e) => setNewRoleDesc(e.target.value)}
+              placeholder="角色说明（可选）"
+            />
+          </div>
+          <div className="flex items-end">
+            <button
+              type="submit"
+              disabled={creating}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
+            >
+              {creating ? "创建中…" : "创建"}
+            </button>
+          </div>
+        </form>
+      </section>
 
       {/* 角色列表 */}
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         {loading ? (
           <div className="px-4 py-6 text-sm text-slate-600">加载中…</div>
         ) : roles.length === 0 ? (
           <div className="px-4 py-6 text-sm text-slate-500">暂无角色。</div>
         ) : (
           <table className="min-w-full text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
-                <th className="px-3 py-2 text-left w-16">ID</th>
-                <th className="px-3 py-2 text-left w-40">角色名</th>
+                <th className="w-16 px-3 py-2 text-left">ID</th>
+                <th className="w-40 px-3 py-2 text-left">角色名</th>
                 <th className="px-3 py-2 text-left">描述</th>
-                <th className="px-3 py-2 text-left w-72">权限</th>
-                <th className="px-3 py-2 text-left w-28">操作</th>
+                <th className="w-72 px-3 py-2 text-left">权限</th>
+                <th className="w-28 px-3 py-2 text-left">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -220,14 +212,12 @@ export default function RolesPage() {
                   </td>
                   <td className="px-3 py-2">{permNames(r)}</td>
                   <td className="px-3 py-2">
-                    {canEditPerms && (
-                      <button
-                        className="text-[11px] text-slate-600 hover:text-slate-900"
-                        onClick={() => openEditPerms(r)}
-                      >
-                        编辑权限
-                      </button>
-                    )}
+                    <button
+                      className="text-xs text-slate-600 hover:text-slate-900"
+                      onClick={() => openEditPerms(r)}
+                    >
+                      编辑权限
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -238,13 +228,13 @@ export default function RolesPage() {
 
       {/* 编辑角色权限 */}
       {editingRole && (
-        <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
+        <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between gap-2">
             <div>
               <h2 className="text-sm font-semibold text-slate-800">
                 编辑角色权限: {editingRole.name}
               </h2>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="mt-1 text-[11px] text-slate-500">
                 选中要绑定在该角色下的权限（幂等：重复绑定不会出重复记录）。
               </p>
             </div>
@@ -259,17 +249,17 @@ export default function RolesPage() {
             </button>
           </div>
 
-          <div className="max-h-64 overflow-auto border border-slate-200 rounded-lg p-2">
+          <div className="max-h-64 overflow-auto rounded-lg border border-slate-200 p-2">
             {perms.length === 0 ? (
-              <div className="text-xs text-slate-500 px-2 py-1">
+              <div className="px-2 py-1 text-xs text-slate-500">
                 暂无权限，请先创建权限。
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs">
+              <div className="grid grid-cols-1 gap-1 text-xs md:grid-cols-2">
                 {perms.map((p) => (
                   <label
                     key={p.id}
-                    className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-50 cursor-pointer"
+                    className="flex cursor-pointer items-center gap-2 px-2 py-1 hover:bg-slate-50"
                   >
                     <input
                       type="checkbox"
@@ -290,9 +280,9 @@ export default function RolesPage() {
 
           <div className="flex gap-2">
             <button
-              onClick={savePerms}
+              onClick={() => void savePerms()}
               disabled={savingPerms}
-              className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm disabled:opacity-60"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
             >
               {savingPerms ? "保存中…" : "保存权限"}
             </button>
