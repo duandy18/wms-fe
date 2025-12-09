@@ -23,6 +23,9 @@ export function UsersPanel({ presenter }: Props) {
     resetPassword,
   } = presenter;
 
+  // 这里做一个非常关键的过滤：下拉选项里不再出现 viewer 角色
+  const selectableRoles = roles.filter((r) => r.name !== "viewer");
+
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("000000"); // 默认密码
   const [newRoleId, setNewRoleId] = useState<string>("");
@@ -199,7 +202,7 @@ export function UsersPanel({ presenter }: Props) {
                 onChange={(e) => setNewRoleId(e.target.value)}
               >
                 <option value="">请选择角色</option>
-                {roles.map((r) => (
+                {selectableRoles.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}
                   </option>
@@ -343,7 +346,7 @@ export function UsersPanel({ presenter }: Props) {
                     onChange={(e) => setEditRoleId(e.target.value)}
                   >
                     <option value="">不变</option>
-                    {roles.map((r) => (
+                    {selectableRoles.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.name}
                       </option>
