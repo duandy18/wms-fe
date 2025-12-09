@@ -67,6 +67,12 @@ export const menuSections: RouteSection[] = [
         // 暂时共用拣货权限；后面如果拆分，可以单独加 work.ship
         requiredPermissions: ["work.pick"],
       },
+      {
+        path: "/outbound/internal-outbound",
+        label: "内部出库 Cockpit",
+        // 内部出库同属出库作业，先沿用 work.pick 权限
+        requiredPermissions: ["work.pick"],
+      },
     ],
   },
 

@@ -29,6 +29,13 @@ const PickTasksCockpitPage = lazy(
 const ShipCockpitPage = lazy(
   () => import("../../features/operations/ship/ShipCockpitPage"),
 );
+// 内部出库 Cockpit
+const InternalOutboundPage = lazy(
+  () =>
+    import(
+      "../../features/operations/ship/InternalOutboundPage"
+    ),
+);
 
 // 标签打印页（专用打印机）
 const ShippingLabelPrintPage = lazy(
@@ -192,6 +199,16 @@ const FinanceOrderUnitPage = lazy(
   () => import("../../features/finance/FinanceOrderUnitPage"),
 );
 
+/** 无权限页面（简单版） */
+const ForbiddenPage: React.FC = () => (
+  <div className="p-6 text-center text-lg">
+    <div className="mb-2 text-2xl font-semibold">无权限访问</div>
+    <div className="text-slate-600">
+      当前账号没有权限访问这个页面，如需开通请联系管理员。
+    </div>
+  </div>
+);
+
 /* 登录守卫 */
 function RequireAuth({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -201,12 +218,30 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/* 管理员守卫：用于系统级页面（用户总控 / DevConsole 等） */
+function RequireAdmin({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isAdmin } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/forbidden" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 /* 路由入口 */
 const AppRouter: React.FC = () => {
   return (
     <Routes>
       {/* 登录页（不带 Layout） */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* 无权限页（不带 Layout） */}
+      <Route path="/forbidden" element={<ForbiddenPage />} />
 
       {/* 标签打印页（不挂菜单，不需要登录） */}
       <Route
@@ -242,6 +277,10 @@ const AppRouter: React.FC = () => {
           element={<PickTasksCockpitPage />}
         />
         <Route path="outbound/ship" element={<ShipCockpitPage />} />
+        <Route
+          path="outbound/internal-outbound"
+          element={<InternalOutboundPage />}
+        />
 
         {/* 财务分析 */}
         <Route path="finance" element={<FinanceOverviewPage />} />
@@ -314,7 +353,6 @@ const AppRouter: React.FC = () => {
 
         {/* 诊断 & 工具 / Studio */}
         <Route path="trace" element={<TraceStudioPage />} />
-        <Route path="dev" element={<DevConsolePage />} />
         <Route
           path="tools/stocks"
           element={<InventoryStudioPage />}
@@ -322,6 +360,16 @@ const AppRouter: React.FC = () => {
         <Route
           path="tools/ledger"
           element={<LedgerStudioPage />}
+        />
+
+        {/* DevConsole（仅管理员可进） */}
+        <Route
+          path="dev"
+          element={
+            <RequireAdmin>
+              <DevConsolePage />
+            </RequireAdmin>
+          }
         />
 
         {/* 系统管理 */}
@@ -362,9 +410,14 @@ const AppRouter: React.FC = () => {
           path="admin/permissions"
           element={<PermissionsPage />}
         />
+        {/* 用户管理总控（仅管理员可进） */}
         <Route
           path="admin/users-admin"
-          element={<UsersAdminPage />}
+          element={
+            <RequireAdmin>
+              <UsersAdminPage />
+            </RequireAdmin>
+          }
         />
       </Route>
 
