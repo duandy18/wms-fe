@@ -8,6 +8,7 @@ export function styleTraceEvent(ev: TraceEvent) {
   const source = (ev.source || "").toLowerCase();
   const kind = (ev.kind || "").toUpperCase();
   const reason = (ev.raw?.reason as string | undefined) || "";
+  const eventName = (ev.raw?.event as string | undefined) || "";
 
   // 默认样式
   let badgeClassName =
@@ -74,10 +75,18 @@ export function styleTraceEvent(ev: TraceEvent) {
 
   // 审计事件
   if (source === "audit") {
-    badgeClassName =
-      "inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 text-[11px]";
-    icon = "📝";
-    label = "审计";
+    if (eventName === "WAREHOUSE_ROUTED") {
+      // 仓库路由审计：单独高亮
+      badgeClassName =
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[11px]";
+      icon = "🧭";
+      label = "仓库路由";
+    } else {
+      badgeClassName =
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 text-[11px]";
+      icon = "📝";
+      label = "审计";
+    }
   }
 
   // event_store
@@ -99,6 +108,16 @@ export function explainTraceEvent(ev: TraceEvent): string {
   const reason = (ev.raw?.reason as string | undefined) || "";
   const r = reason.toUpperCase();
   const base = ev.summary || "";
+  const eventName = (ev.raw?.event as string | undefined) || "";
+
+  const wh =
+    (ev.raw?.warehouse_id as number | undefined) ??
+    (ev.warehouse_id as number | undefined) ??
+    null;
+  const routeMode =
+    (ev.raw?.route_mode as string | undefined) || "";
+  const considered =
+    (ev.raw?.considered as number[] | undefined) || [];
 
   if (source === "order") {
     return base || "订单事件";
@@ -125,6 +144,18 @@ export function explainTraceEvent(ev: TraceEvent): string {
     return base || "库存台账变动";
   }
   if (source === "audit") {
+    if (eventName === "WAREHOUSE_ROUTED") {
+      const whText = wh != null ? String(wh) : "?";
+      const mode = routeMode || "FALLBACK";
+      const consideredText = considered.length
+        ? considered.join(",")
+        : "无";
+
+      return (
+        base ||
+        `仓库路由决策：WH=${whText} · 模式=${mode.toUpperCase()} · 尝试仓=[${consideredText}]`
+      );
+    }
     return base || "审计记录（重要流程打点）";
   }
   if (source === "event_store") {

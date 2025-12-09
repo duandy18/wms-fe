@@ -1,7 +1,7 @@
 // src/features/diagnostics/trace/TraceTimeline.tsx
 import React, { useEffect } from "react";
 import type { TraceEvent } from "./types";
-import { styleTraceEvent } from "./eventStyling";
+import { styleTraceEvent, explainTraceEvent } from "./eventStyling";
 import { buildDiagnosticUrl } from "../diagNavigation";
 
 type Props = {
@@ -38,7 +38,7 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
 
       <div className="space-y-3">
         {events.map((ev, idx) => {
-          const { badgeClass, tsText } = styleTraceEvent(ev);
+          const styled = styleTraceEvent(ev);
           const isFocused =
             !!focusRef && ev.ref && ev.ref === focusRef;
 
@@ -69,6 +69,17 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
               })
             : null;
 
+          const tsText = ev.ts
+            ? ev.ts.replace("T", " ").replace("Z", "")
+            : "-";
+
+          const badgeEl = (
+            <span className={styled.badgeClassName}>
+              <span>{styled.icon}</span>
+              <span>{styled.label}</span>
+            </span>
+          );
+
           return (
             <div
               key={idx}
@@ -84,7 +95,7 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2 text-xs text-slate-600">
                   <span className="font-mono">{tsText}</span>
-                  {badgeClass}
+                  {badgeEl}
                   {ev.movement_type && (
                     <span className="rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700">
                       {ev.movement_type}
@@ -97,9 +108,9 @@ export const TraceTimeline: React.FC<Props> = ({ events, focusRef }) => {
                   )}
                 </div>
 
-                {/* 事件摘要 */}
+                {/* 事件摘要（业务向解释） */}
                 <div className="text-xs text-slate-700">
-                  {ev.message || ev.reason || ev.kind || "-"}
+                  {explainTraceEvent(ev)}
                 </div>
 
                 {/* WH / ITEM / BATCH 维度展示 */}
