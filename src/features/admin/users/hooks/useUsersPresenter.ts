@@ -1,10 +1,8 @@
 // src/features/admin/users/hooks/useUsersPresenter.ts
 //
-// 【最终版】多角色 RBAC Users Presenter
-// - 负责 users API 调用
-// - 负责构建 UserDTO.extra_roles（临时补全）
-// - 负责创建、更新、重置密码
-// - 负责错误状态管理
+// 多角色 RBAC Users Presenter（加固版）
+// - 对后端返回的 users / roles 做了数组防御，避免 null.map 报错
+// - 负责：加载用户 + 角色、创建 / 更新用户、重置密码
 //
 
 import { useEffect, useState } from "react";
@@ -15,7 +13,7 @@ import {
   resetUserPassword,
 } from "../api";
 
-import { fetchRoles } from "../../roles/api"; // 用于角色名渲染
+import { fetchRoles } from "../../roles/api";
 import type { UserDTO, RoleDTO } from "../types";
 
 type ApiErrorShape = { message?: string };
@@ -31,19 +29,26 @@ export function useUsersPresenter() {
   const [error, setError] = useState<string | null>(null);
 
   // ============================================================
-  // 加载用户列表 + 角色列表
+  // 加载用户列表 + 角色列表（加固版）
   // ============================================================
   async function load() {
     setLoading(true);
     setError(null);
 
     try {
-      const [userList, roleList] = await Promise.all([
+      const [userListRaw, roleListRaw] = await Promise.all([
         fetchUsers(),
         fetchRoles(),
       ]);
 
-      // 多角色：后端暂时未返回 extra_roles，需要前端补齐为 []
+      // 后端如果返回 null / 非数组，这里统一防御
+      const userList: UserDTO[] = Array.isArray(userListRaw)
+        ? userListRaw
+        : [];
+      const roleList: RoleDTO[] = Array.isArray(roleListRaw)
+        ? roleListRaw
+        : [];
+
       const normalized = userList.map((u) => ({
         ...u,
         extra_roles: u.extra_roles ?? [],
