@@ -1,5 +1,5 @@
 // src/app/router/index.tsx
-// 应用路由总表：挂载所有页面，包括财务分析相关页面
+// 应用路由总表：挂载所有页面，包括财务分析 / 诊断 / DevConsole 等
 
 import React, { type ReactNode, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -218,15 +218,21 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/* 管理员守卫：用于系统级页面（用户总控 / DevConsole 等） */
-function RequireAdmin({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isAdmin } = useAuth();
+/* 通用权限守卫：用于绑定到 system.* / operations.* / report.* / diagnostics.* / dev.* 等 */
+function RequirePermission({
+  permission,
+  children,
+}: {
+  permission: string;
+  children: ReactNode;
+}) {
+  const { isAuthenticated, can } = useAuth();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isAdmin) {
+  if (!can(permission)) {
     return <Navigate to="/forbidden" replace />;
   }
 
@@ -258,165 +264,355 @@ const AppRouter: React.FC = () => {
           </RequireAuth>
         }
       >
-        {/* 默认首页 */}
-        <Route index element={<SnapshotPage />} />
+        {/* 默认首页：看成库存报表入口 */}
+        <Route
+          index
+          element={
+            <RequirePermission permission="report.inventory">
+              <SnapshotPage />
+            </RequirePermission>
+          }
+        />
 
         {/* 作业台 Cockpits */}
-        <Route path="inbound" element={<InboundCockpitPage />} />
+        <Route
+          path="inbound"
+          element={
+            <RequirePermission permission="operations.inbound">
+              <InboundCockpitPage />
+            </RequirePermission>
+          }
+        />
         <Route
           path="inbound/cockpit"
-          element={<InboundCockpitPage />}
+          element={
+            <RequirePermission permission="operations.inbound">
+              <InboundCockpitPage />
+            </RequirePermission>
+          }
         />
-        <Route path="count" element={<CountCockpitPage />} />
+        <Route
+          path="count"
+          element={
+            <RequirePermission permission="operations.count">
+              <CountCockpitPage />
+            </RequirePermission>
+          }
+        />
         <Route
           path="outbound/pick"
-          element={<OutboundPickV2Page />}
+          element={
+            <RequirePermission permission="operations.outbound">
+              <OutboundPickV2Page />
+            </RequirePermission>
+          }
         />
         <Route
           path="outbound/pick-tasks"
-          element={<PickTasksCockpitPage />}
+          element={
+            <RequirePermission permission="operations.outbound">
+              <PickTasksCockpitPage />
+            </RequirePermission>
+          }
         />
-        <Route path="outbound/ship" element={<ShipCockpitPage />} />
+        <Route
+          path="outbound/ship"
+          element={
+            <RequirePermission permission="operations.outbound">
+              <ShipCockpitPage />
+            </RequirePermission>
+          }
+        />
         <Route
           path="outbound/internal-outbound"
-          element={<InternalOutboundPage />}
-        />
-
-        {/* 财务分析 */}
-        <Route path="finance" element={<FinanceOverviewPage />} />
-        <Route
-          path="finance/overview"
-          element={<FinanceOverviewPage />}
-        />
-        <Route path="finance/shop" element={<FinanceShopPage />} />
-        <Route path="finance/sku" element={<FinanceSkuPage />} />
-        <Route
-          path="finance/order-unit"
-          element={<FinanceOrderUnitPage />}
+          element={
+            <RequirePermission permission="operations.internal_outbound">
+              <InternalOutboundPage />
+            </RequirePermission>
+          }
         />
 
         {/* 库存 & 报表 */}
-        <Route path="snapshot" element={<SnapshotPage />} />
+        <Route
+          path="snapshot"
+          element={
+            <RequirePermission permission="report.inventory">
+              <SnapshotPage />
+            </RequirePermission>
+          }
+        />
         <Route
           path="channel-inventory"
-          element={<ChannelInventoryPage />}
+          element={
+            <RequirePermission permission="report.inventory">
+              <ChannelInventoryPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="inventory/outbound-dashboard"
-          element={<OutboundDashboardPage />}
+          element={
+            <RequirePermission permission="report.outbound">
+              <OutboundDashboardPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="shipping/reports"
-          element={<ShippingReportsPage />}
+          element={
+            <RequirePermission permission="report.outbound">
+              <ShippingReportsPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="shipping/record"
-          element={<ShippingRecordDetailPage />}
+          element={
+            <RequirePermission permission="report.outbound">
+              <ShippingRecordDetailPage />
+            </RequirePermission>
+          }
         />
 
-        {/* 订单管理 */}
-        <Route path="orders" element={<OrdersPage />} />
+        {/* 财务分析 */}
+        <Route
+          path="finance"
+          element={
+            <RequirePermission permission="report.finance">
+              <FinanceOverviewPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="finance/overview"
+          element={
+            <RequirePermission permission="report.finance">
+              <FinanceOverviewPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="finance/shop"
+          element={
+            <RequirePermission permission="report.finance">
+              <FinanceShopPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="finance/sku"
+          element={
+            <RequirePermission permission="report.finance">
+              <FinanceSkuPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="finance/order-unit"
+          element={
+            <RequirePermission permission="report.finance">
+              <FinanceOrderUnitPage />
+            </RequirePermission>
+          }
+        />
+
+        {/* 订单管理：只读权限 orders.read */}
+        <Route
+          path="orders"
+          element={
+            <RequirePermission permission="orders.read">
+              <OrdersPage />
+            </RequirePermission>
+          }
+        />
         <Route
           path="orders/stats"
-          element={<OrdersStatsPage />}
+          element={
+            <RequirePermission permission="orders.read">
+              <OrdersStatsPage />
+            </RequirePermission>
+          }
         />
 
-        {/* 采购系统 */}
+        {/* 采购系统：使用 purchase.manage / purchase.report */}
         <Route
           path="purchase-orders"
-          element={<PurchaseOrdersPage />}
+          element={
+            <RequirePermission permission="purchase.manage">
+              <PurchaseOrdersPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="purchase-orders/reports"
-          element={<PurchaseReportsPage />}
+          element={
+            <RequirePermission permission="purchase.report">
+              <PurchaseReportsPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="purchase-orders/new-v2"
-          element={<PurchaseOrderCreateV2Page />}
+          element={
+            <RequirePermission permission="purchase.manage">
+              <PurchaseOrderCreateV2Page />
+            </RequirePermission>
+          }
         />
         <Route
           path="purchase-orders/:poId"
-          element={<PurchaseOrderDetailPage />}
+          element={
+            <RequirePermission permission="purchase.manage">
+              <PurchaseOrderDetailPage />
+            </RequirePermission>
+          }
         />
 
         {/* 收货任务 */}
         <Route
           path="receive-tasks/:taskId"
-          element={<ReceiveTaskDetailPage />}
-        />
-
-        {/* 退货任务 */}
-        <Route
-          path="return-tasks/:taskId"
-          element={<ReturnTaskDetailPage />}
-        />
-
-        {/* 诊断 & 工具 / Studio */}
-        <Route path="trace" element={<TraceStudioPage />} />
-        <Route
-          path="tools/stocks"
-          element={<InventoryStudioPage />}
-        />
-        <Route
-          path="tools/ledger"
-          element={<LedgerStudioPage />}
-        />
-
-        {/* DevConsole（仅管理员可进） */}
-        <Route
-          path="dev"
           element={
-            <RequireAdmin>
-              <DevConsolePage />
-            </RequireAdmin>
+            <RequirePermission permission="operations.inbound">
+              <ReceiveTaskDetailPage />
+            </RequirePermission>
           }
         />
 
-        {/* 系统管理 */}
-        <Route path="stores" element={<StoresListPage />} />
+        {/* 退货任务（按出库权限控制） */}
+        <Route
+          path="return-tasks/:taskId"
+          element={
+            <RequirePermission permission="operations.outbound">
+              <ReturnTaskDetailPage />
+            </RequirePermission>
+          }
+        />
+
+        {/* 诊断 & 工具 / Studio */}
+        <Route
+          path="trace"
+          element={
+            <RequirePermission permission="diagnostics.trace">
+              <TraceStudioPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="tools/stocks"
+          element={
+            <RequirePermission permission="diagnostics.inventory">
+              <InventoryStudioPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="tools/ledger"
+          element={
+            <RequirePermission permission="diagnostics.ledger">
+              <LedgerStudioPage />
+            </RequirePermission>
+          }
+        />
+
+        {/* DevConsole（有 dev.tools.access 权限的账号可进，一般只有 admin） */}
+        <Route
+          path="dev"
+          element={
+            <RequirePermission permission="dev.tools.access">
+              <DevConsolePage />
+            </RequirePermission>
+          }
+        />
+
+        {/* 系统管理（主数据）——用 config.store.write 作为总入口 */}
+        <Route
+          path="stores"
+          element={
+            <RequirePermission permission="config.store.write">
+              <StoresListPage />
+            </RequirePermission>
+          }
+        />
         <Route
           path="stores/:storeId"
-          element={<StoreDetailPage />}
+          element={
+            <RequirePermission permission="config.store.write">
+              <StoreDetailPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="warehouses"
-          element={<WarehousesListPage />}
+          element={
+            <RequirePermission permission="config.store.write">
+              <WarehousesListPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="warehouses/:warehouseId"
-          element={<WarehouseDetailPage />}
+          element={
+            <RequirePermission permission="config.store.write">
+              <WarehouseDetailPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="admin/items"
-          element={<ItemsPage />}
+          element={
+            <RequirePermission permission="config.store.write">
+              <ItemsPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="admin/suppliers"
-          element={<SuppliersListPage />}
+          element={
+            <RequirePermission permission="config.store.write">
+              <SuppliersListPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="admin/shipping-providers"
-          element={<ShippingProvidersListPage />}
+          element={
+            <RequirePermission permission="config.store.write">
+              <ShippingProvidersListPage />
+            </RequirePermission>
+          }
         />
+
+        {/* 用户 / 角色 / 权限管理 */}
         <Route
           path="admin/users"
-          element={<UsersPage />}
+          element={
+            <RequirePermission permission="system.user.manage">
+              <UsersPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="admin/roles"
-          element={<RolesPage />}
+          element={
+            <RequirePermission permission="system.role.manage">
+              <RolesPage />
+            </RequirePermission>
+          }
         />
         <Route
           path="admin/permissions"
-          element={<PermissionsPage />}
+          element={
+            <RequirePermission permission="system.permission.manage">
+              <PermissionsPage />
+            </RequirePermission>
+          }
         />
-        {/* 用户管理总控（仅管理员可进） */}
         <Route
           path="admin/users-admin"
           element={
-            <RequireAdmin>
+            <RequirePermission permission="system.user.manage">
               <UsersAdminPage />
-            </RequireAdmin>
+            </RequirePermission>
           }
         />
       </Route>

@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { menuSections } from "../router/menuConfig";
+import { useAuth } from "../auth/useAuth";
+import { resolvePermissionCodes } from "../auth/permissions";
 
 type OpenState = Record<string, boolean>;
 
@@ -12,11 +14,11 @@ type OpenState = Record<string, boolean>;
  * - 二级菜单 = text-xl（20px）
  * - 顶部标题 = text-2xl（更稳的层级视觉）
  *
- * 当前版本：仅根据 showInSidebar / devOnly 控制是否显示，不做前端权限过滤。
- * RBAC 由后端接口权限 + 页面内部按钮控制来兜底。
+ * 当前版本：基于 showInSidebar / devOnly + RBAC 权限过滤，决定是否显示菜单项。
  */
 export function Sidebar() {
   const location = useLocation();
+  const { can } = useAuth();
   const [openSections, setOpenSections] = useState<OpenState>({});
 
   // 环境：只在 dev 环境显示 devOnly 菜单
@@ -24,19 +26,32 @@ export function Sidebar() {
     import.meta.env.VITE_WMS_ENV === "dev" ||
     import.meta.env.MODE === "development";
 
-  // 过滤掉 devOnly 且当前不是 dev 环境的菜单项
+  // 过滤掉 devOnly 且当前不是 dev 环境的菜单项，并按权限做 gating
   const visibleSections = useMemo(() => {
     return menuSections
       .map((section) => {
         const visibleItems = section.items.filter((item) => {
           if (item.showInSidebar === false) return false;
           if (item.devOnly && !IS_DEV_ENV) return false;
+
+          // 有 requiredPermissions 的菜单项 → 映射成后端权限名 → 至少命中一个 can()
+          if (
+            item.requiredPermissions &&
+            item.requiredPermissions.length > 0
+          ) {
+            const backendPerms = resolvePermissionCodes(
+              item.requiredPermissions,
+            );
+            const hasAny = backendPerms.some((p) => can(p));
+            if (!hasAny) return false;
+          }
+
           return true;
         });
         return { ...section, items: visibleItems };
       })
       .filter((section) => section.items.length > 0);
-  }, [IS_DEV_ENV]);
+  }, [IS_DEV_ENV, can]);
 
   // 根据当前路由自动展开所在分组
   useEffect(() => {

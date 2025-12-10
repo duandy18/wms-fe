@@ -7,9 +7,15 @@ import React, {
   useState,
   useEffect,
 } from "react";
-import { apiPost, setAccessToken, getAccessToken } from "../lib/api";
+import {
+  apiPost,
+  apiGet,
+  setAccessToken,
+  getAccessToken,
+} from "../lib/api";
 
 export type UserRole = "staff" | "admin";
+type Permission = string;
 
 interface LoginInput {
   username: string;
@@ -21,11 +27,20 @@ interface LoginResult {
   token_type: string;
 }
 
-// 仅用于前端显示的用户信息。
-// 以后如果后端提供 /me，可以在这里扩展字段（真实角色、姓名等）。
+// /users/me 返回结构（按后端实际 schema 调整）
+interface MeResponse {
+  id: number;
+  username: string;
+  roles?: { id: number; name: string }[];
+  permissions?: string[];
+}
+
+// 前端使用的用户信息模型：挂上 roles / permissions，方便调试与 gating。
 interface UserInfo {
   username: string;
-  role: UserRole;
+  role: UserRole; // 前端视角 admin/staff（通过 roles 推导）
+  roles: string[]; // 后端角色名列表，如 ["admin"] / ["operator"]
+  permissions: Permission[];
 }
 
 interface AuthContextType {
@@ -37,6 +52,11 @@ interface AuthContextType {
   role: UserRole;
   setRole: (role: UserRole) => void;
   isAdmin: boolean;
+
+  permissions: Permission[];
+  can: (perm: Permission) => boolean;
+  canAny: (perms: Permission[]) => boolean;
+  canAll: (perms: Permission[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,40 +72,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<UserInfo | null>(null);
   // 默认 staff，当成“业务人员”角色
   const [role, setRole] = useState<UserRole>("staff");
+  // 后端返回的权限串，如 ["system.user.manage", "operations.inbound", ...]
+  const [permissions, setPermissions] = useState<Permission[]>([]);
 
-  // 启动时：根据 token + 本地用户名 + 本地角色恢复状态
+  // 启动时：根据 token + /users/me 恢复状态
   useEffect(() => {
     const token = getAccessToken(); // 内部仍然用 WMS_TOKEN
+
+    if (!token) {
+      setIsAuthenticated(false);
+      setUser(null);
+      setPermissions([]);
+      return;
+    }
+
     const savedUsername =
       typeof window !== "undefined"
         ? window.localStorage.getItem(USERNAME_STORAGE_KEY)
         : null;
-    const savedRoleRaw =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem(ROLE_STORAGE_KEY)
-        : null;
 
-    const validRoles: UserRole[] = ["staff", "admin"];
+    (async () => {
+      try {
+        const me = await apiGet<MeResponse>("/users/me");
 
-    if (token) {
-      const effectiveRole: UserRole = validRoles.includes(
-        savedRoleRaw as UserRole,
-      )
-        ? (savedRoleRaw as UserRole)
-        : "staff";
+        const backendRoles = me.roles?.map((r) => r.name) ?? [];
+        const backendPerms = me.permissions ?? [];
 
-      setIsAuthenticated(true);
-      setRole(effectiveRole);
+        // 约定：拥有 admin 角色 → 前端视角 admin；否则 staff
+        const effectiveRole: UserRole = backendRoles.includes("admin")
+          ? "admin"
+          : "staff";
 
-      if (savedUsername) {
-        setUser({ username: savedUsername, role: effectiveRole });
-      } else {
-        setUser({ username: "unknown", role: effectiveRole });
+        setIsAuthenticated(true);
+        setRole(effectiveRole);
+        setPermissions(backendPerms);
+
+        const username = me.username ?? savedUsername ?? "unknown";
+
+        setUser({
+          username,
+          role: effectiveRole,
+          roles: backendRoles,
+          permissions: backendPerms,
+        });
+
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(USERNAME_STORAGE_KEY, username);
+          window.localStorage.setItem(ROLE_STORAGE_KEY, effectiveRole);
+        }
+      } catch {
+        // /users/me 掉线时，至少保持“已登录 + 基础信息”
+        setIsAuthenticated(true);
+        const fallbackRole: UserRole = "staff";
+
+        setRole(fallbackRole);
+        setPermissions([]);
+
+        const username = savedUsername ?? "unknown";
+        setUser({
+          username,
+          role: fallbackRole,
+          roles: [],
+          permissions: [],
+        });
       }
-    } else {
-      setIsAuthenticated(false);
-      setUser(null);
-    }
+    })();
   }, []);
 
   const login = async (input: LoginInput) => {
@@ -95,18 +146,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     const token = result.access_token;
-
     setAccessToken(token);
     setIsAuthenticated(true);
 
-    // 暂时沿用当前内存中的角色（默认为 staff），以后可以从 /me 覆盖
-    const currentRole: UserRole = role || "staff";
-    const u: UserInfo = { username: input.username, role: currentRole };
-    setUser(u);
+    try {
+      const me = await apiGet<MeResponse>("/users/me");
 
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(USERNAME_STORAGE_KEY, input.username);
-      window.localStorage.setItem(ROLE_STORAGE_KEY, currentRole);
+      const backendRoles = me.roles?.map((r) => r.name) ?? [];
+      const backendPerms = me.permissions ?? [];
+
+      const effectiveRole: UserRole = backendRoles.includes("admin")
+        ? "admin"
+        : "staff";
+
+      setRole(effectiveRole);
+      setPermissions(backendPerms);
+
+      const username = me.username ?? input.username;
+
+      setUser({
+        username,
+        role: effectiveRole,
+        roles: backendRoles,
+        permissions: backendPerms,
+      });
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(USERNAME_STORAGE_KEY, username);
+        window.localStorage.setItem(ROLE_STORAGE_KEY, effectiveRole);
+      }
+    } catch {
+      // /users/me 暂时失败 → 退化到只记录用户名，权限为空
+      const fallbackRole: UserRole = "staff";
+
+      setRole(fallbackRole);
+      setPermissions([]);
+
+      setUser({
+        username: input.username,
+        role: fallbackRole,
+        roles: [],
+        permissions: [],
+      });
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(USERNAME_STORAGE_KEY, input.username);
+        window.localStorage.setItem(ROLE_STORAGE_KEY, fallbackRole);
+      }
     }
   };
 
@@ -114,11 +200,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setAccessToken(null);
     setIsAuthenticated(false);
     setUser(null);
+    setPermissions([]);
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(USERNAME_STORAGE_KEY);
       window.localStorage.removeItem(ROLE_STORAGE_KEY);
     }
   };
+
+  const can = (perm: Permission) => permissions.includes(perm);
+
+  const canAny = (perms: Permission[]) =>
+    perms.some((p) => permissions.includes(p));
+
+  const canAll = (perms: Permission[]) =>
+    perms.every((p) => permissions.includes(p));
 
   const isAdmin = role === "admin";
 
@@ -132,6 +227,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         role,
         setRole,
         isAdmin,
+        permissions,
+        can,
+        canAny,
+        canAll,
       }}
     >
       {children}
