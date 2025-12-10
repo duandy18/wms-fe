@@ -1,10 +1,10 @@
 // src/features/admin/roles/RolesPanel.tsx
 //
-// 角色管理面板
-// - 列出角色
+// 角色管理面板（多角色 RBAC）
 // - 创建角色
+// - 查看角色
 // - 编辑角色权限
-//
+// - 所有 .map 调用都做了 null/undefined 防御
 
 import React, { useState } from "react";
 import type { RolesPresenter } from "./useRolesPresenter";
@@ -32,6 +32,9 @@ export function RolesPanel({
     setError,
   } = presenter;
 
+  const safePermissions = Array.isArray(permissions) ? permissions : [];
+  const safeRoles = Array.isArray(roles) ? roles : [];
+
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDesc, setNewRoleDesc] = useState("");
 
@@ -40,21 +43,22 @@ export function RolesPanel({
     () => new Set(),
   );
 
-  // 具体权限 gating 交给上层 UsersAdminPage，根据 system.role.manage 控制
   const canCreateRole = true;
   const canEditPerms = true;
 
-  // ------------------------------------------------------------
-  // 角色权限编辑
-  // ------------------------------------------------------------
+  // 打开“编辑权限”对话
   function openEditPerms(roleId: number) {
-    const role = roles.find((r) => r.id === roleId);
+    const role = safeRoles.find((r) => r.id === roleId);
     if (!role) return;
 
     setEditingRoleId(roleId);
 
     const newSet = new Set<string>();
-    for (const p of role.permissions || []) {
+    const currentPerms = Array.isArray(role.permissions)
+      ? role.permissions
+      : [];
+
+    for (const p of currentPerms) {
       newSet.add(String(p.id));
     }
 
@@ -85,9 +89,6 @@ export function RolesPanel({
     }
   }
 
-  // ------------------------------------------------------------
-  // 创建角色
-  // ------------------------------------------------------------
   async function handleCreateRole(e: React.FormEvent) {
     e.preventDefault();
     if (!newRoleName.trim()) {
@@ -109,20 +110,17 @@ export function RolesPanel({
   }
 
   function permNames(roleId: number) {
-    const role = roles.find((r) => r.id === roleId);
+    const role = safeRoles.find((r) => r.id === roleId);
     if (!role) return "-";
-    const names = role.permissions.map((p) => p.name);
+    const permsArr = Array.isArray(role.permissions) ? role.permissions : [];
+    const names = permsArr.map((p) => p.name);
     return names.length ? names.join(", ") : "-";
   }
 
-  // ------------------------------------------------------------
-  // 渲染区域
-  // ------------------------------------------------------------
   return (
     <div className="space-y-4 text-sm">
       <h2 className="text-lg font-semibold">角色管理</h2>
 
-      {/* 错误提示 */}
       {error ? (
         <div className="text-sm text-red-600 bg-red-50 border px-3 py-2 rounded">
           {error}
@@ -172,9 +170,11 @@ export function RolesPanel({
       ) : null}
 
       {/* 角色列表 */}
-      <section className="bg-white border rounded-xl overflow-hidden">
+      <section className="bg白 border rounded-xl overflow-hidden">
         {loading ? (
           <div className="px-4 py-6">加载中…</div>
+        ) : safeRoles.length === 0 ? (
+          <div className="px-4 py-6 text-slate-500">暂无角色。</div>
         ) : (
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 border-b">
@@ -188,7 +188,7 @@ export function RolesPanel({
             </thead>
 
             <tbody>
-              {roles.map((r) => (
+              {safeRoles.map((r) => (
                 <tr key={r.id} className="border-b hover:bg-slate-50">
                   <td className="px-3 py-2">{r.id}</td>
                   <td className="px-3 py-2">{r.name}</td>
@@ -220,7 +220,7 @@ export function RolesPanel({
         <section className="bg-white border rounded-xl p-4 space-y-3">
           <h3 className="text-base font-semibold">
             编辑角色权限：
-            {roles.find((r) => r.id === editingRoleId)?.name}
+            {safeRoles.find((r) => r.id === editingRoleId)?.name}
           </h3>
 
           <div className="max-h-64 overflow-auto border rounded-lg p-2">
@@ -228,13 +228,13 @@ export function RolesPanel({
               <div className="px-2 py-1 text-xs text-slate-500">
                 权限列表加载中…
               </div>
-            ) : permissions.length === 0 ? (
+            ) : safePermissions.length === 0 ? (
               <div className="px-2 py-1 text-xs text-slate-500">
                 暂无权限，请先创建权限。
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs">
-                {permissions.map((p) => (
+                {safePermissions.map((p) => (
                   <label
                     key={p.id}
                     className="flex items-center gap-2 px-2 py-1 hover:bg-slate-50 cursor-pointer"
