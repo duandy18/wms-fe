@@ -1,10 +1,10 @@
 // src/features/admin/permissions/PermissionsPanel.tsx
 //
-// 【最终版】权限字典管理面板（RBAC 拆分版）
-// - 展示系统所有权限（Permission Dictionary）
-// - 创建权限（幂等）
-// - 不依赖 Users / Roles 模块
-//
+// 权限字典管理面板
+// - 展示系统所有权限
+// - 创建新权限
+// - mergedError 对 loading/loadError/createError 做统一提示
+// - 对 permissions 做严格的数组防御
 
 import React, { useState } from "react";
 import type { PermissionsPresenter } from "./usePermissionsPresenter";
@@ -25,9 +25,9 @@ export function PermissionsPanel({
 }: Props) {
   const { creating, error, setError, createPermission } = presenter;
 
+  const safePermissions = Array.isArray(permissions) ? permissions : [];
   const mergedError = loadError || error;
 
-  // 创建权限字段
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -81,7 +81,6 @@ export function PermissionsPanel({
           className="grid grid-cols-1 md:grid-cols-3 gap-3"
           onSubmit={handleCreate}
         >
-          {/* 权限名 */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-600">权限名</label>
             <input
@@ -92,7 +91,6 @@ export function PermissionsPanel({
             />
           </div>
 
-          {/* 描述 */}
           <div className="flex flex-col gap-1 md:col-span-2">
             <label className="text-xs text-slate-600">描述</label>
             <input
@@ -119,7 +117,7 @@ export function PermissionsPanel({
       <section className="border bg-white rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-4 text-sm text-slate-600">加载中…</div>
-        ) : permissions.length === 0 ? (
+        ) : safePermissions.length === 0 ? (
           <div className="p-4 text-sm text-slate-500">暂无权限。</div>
         ) : (
           <table className="min-w-full text-sm">
@@ -132,7 +130,7 @@ export function PermissionsPanel({
             </thead>
 
             <tbody>
-              {permissions.map((p) => (
+              {safePermissions.map((p) => (
                 <tr key={p.id} className="border-b hover:bg-slate-50">
                   <td className="px-3 py-2">{p.id}</td>
                   <td className="px-3 py-2 font-mono text-[12px]">
