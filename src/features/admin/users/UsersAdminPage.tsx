@@ -1,11 +1,12 @@
 // src/features/admin/users/UsersAdminPage.tsx
 //
-// 【最终版】RBAC 用户管理总控页（模块化 + 多角色）
-// - Users / Roles / Permissions 三大板块
-// - 每块用各自的 Presenter + API
-//
+// RBAC 用户 & 权限管理中心
+// - Tab1: 用户管理（UsersPanel）
+// - Tab2: 角色 & 权限（RolesPanel）
+// - Tab3: 权限字典（PermissionsPanel）
+// Hooks 全部在组件顶层调用，符合 react-hooks/rules-of-hooks 要求。
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "../../../app/auth/useAuth";
 
@@ -29,51 +30,51 @@ type TabKey = "users" | "roles" | "perms";
 export default function UsersAdminPage() {
   const { can } = useAuth();
 
-  // --- 前端权限 gating ---
+  // 顶层：先算出当前账号有哪些 system.* 权限
   const canManageUsers = can("system.user.manage");
   const canManageRoles = can("system.role.manage");
   const canManagePerms = can("system.permission.manage");
 
-  const visibleTabs: { key: TabKey; label: string }[] = [
-    ...(canManageUsers ? [{ key: "users", label: "用户管理" }] : []),
-    ...(canManageRoles ? [{ key: "roles", label: "角色 & 权限" }] : []),
-    ...(canManagePerms ? [{ key: "perms", label: "权限字典" }] : []),
-  ];
+  // visibleTabs 用 useMemo 包起来，避免每次 render 都创建新数组，配合 useEffect 更稳定
+  const visibleTabs = useMemo(
+    () =>
+      [
+        ...(canManageUsers ? [{ key: "users", label: "用户管理" as const }] : []),
+        ...(canManageRoles ? [{ key: "roles", label: "角色 & 权限" as const }] : []),
+        ...(canManagePerms ? [{ key: "perms", label: "权限字典" as const }] : []),
+      ] satisfies { key: TabKey; label: string }[],
+    [canManageUsers, canManageRoles, canManagePerms],
+  );
 
-  if (visibleTabs.length === 0) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-lg font-semibold">用户 & 权限管理</h1>
-        <p className="text-sm text-slate-600">
-          当前账号没有 system.* 管理权限，如需开通请联系系统管理员。
-        </p>
-      </div>
-    );
-  }
+  // 如果当前账号完全没有 system.* 管理权限
+  const hasAnyTab = visibleTabs.length > 0;
 
-  const [activeTab, setActiveTab] = useState<TabKey>(visibleTabs[0].key);
+  // 所有 hooks 都要在组件顶层调用，不能写在 if 里面
+  const [activeTab, setActiveTab] = useState<TabKey>("users");
 
-  // --- Users ---
+  // Users / Roles / Permissions 三个 Presenter：始终定义在顶层
   const usersPresenter = useUsersPresenter();
-
-  // --- Roles ---
   const rolesPresenter = useRolesPresenter();
 
-  // --- Permissions ---
   const [permissions, setPermissions] = useState<PermissionDTO[]>([]);
   const [permLoading, setPermLoading] = useState(false);
   const [permError, setPermError] = useState<string | null>(null);
 
   const permsPresenter = usePermissionsPresenter(reloadPermissions);
 
+  // ---- 权限字典加载 ----
   async function reloadPermissions() {
     setPermLoading(true);
     setPermError(null);
     try {
       const data = await fetchPermissions();
       setPermissions(data);
-    } catch (e: any) {
-      setPermError(e?.message ?? "加载权限列表失败");
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: string }).message)
+          : "加载权限列表失败";
+      setPermError(message);
     } finally {
       setPermLoading(false);
     }
@@ -83,12 +84,28 @@ export default function UsersAdminPage() {
     void reloadPermissions();
   }, []);
 
-  // 当权限变化导致当前 Tab 不可见时，自动切换到第一个可见 Tab
+  // ---- 保证 activeTab 始终在可见 Tab 集合内 ----
   useEffect(() => {
+    if (!hasAnyTab) {
+      return;
+    }
     if (!visibleTabs.some((t) => t.key === activeTab)) {
       setActiveTab(visibleTabs[0].key);
     }
-  }, [activeTab, visibleTabs]);
+  }, [activeTab, hasAnyTab, visibleTabs]);
+
+  // ---- 若完全没有 system.* 管理权限 ----
+  if (!hasAnyTab) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-lg font-semibold">用户 & 权限管理</h1>
+        <p className="text-sm text-slate-600">
+          当前账号未拥有任何 system.* 管理权限。
+          如需开通，请联系系统管理员。
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -121,10 +138,7 @@ export default function UsersAdminPage() {
       {/* Panels */}
       <div>
         {activeTab === "users" && canManageUsers && (
-          <UsersPanel
-            presenter={usersPresenter}
-            roles={rolesPresenter.roles} // ⭐ 关键修复：把角色传给 UsersPanel
-          />
+          <UsersPanel presenter={usersPresenter} roles={rolesPresenter.roles} />
         )}
 
         {activeTab === "roles" && canManageRoles && (

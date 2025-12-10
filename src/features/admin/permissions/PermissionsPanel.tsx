@@ -6,7 +6,7 @@
 // - 不依赖 Users / Roles 模块
 //
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import type { PermissionsPresenter } from "./usePermissionsPresenter";
 import type { PermissionDTO } from "../users/types";
 

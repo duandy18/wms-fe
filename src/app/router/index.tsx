@@ -101,15 +101,6 @@ const StoresListPage = lazy(
 const StoreDetailPage = lazy(
   () => import("../../features/admin/stores/StoreDetailPage"),
 );
-const UsersPage = lazy(
-  () => import("../../features/admin/users/UsersPage"),
-);
-const RolesPage = lazy(
-  () => import("../../features/admin/roles/RolesPage"),
-);
-const PermissionsPage = lazy(
-  () => import("../../features/admin/permissions/PermissionsPage"),
-);
 const ItemsPage = lazy(
   () => import("../../features/admin/items/ItemsPage"),
 );
@@ -582,31 +573,7 @@ const AppRouter: React.FC = () => {
           }
         />
 
-        {/* 用户 / 角色 / 权限管理 */}
-        <Route
-          path="admin/users"
-          element={
-            <RequirePermission permission="system.user.manage">
-              <UsersPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="admin/roles"
-          element={
-            <RequirePermission permission="system.role.manage">
-              <RolesPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="admin/permissions"
-          element={
-            <RequirePermission permission="system.permission.manage">
-              <PermissionsPage />
-            </RequirePermission>
-          }
-        />
+        {/* 用户管理总控页（新 RBAC 中枢） */}
         <Route
           path="admin/users-admin"
           element={

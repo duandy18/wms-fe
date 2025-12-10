@@ -46,7 +46,7 @@ export function useUsersPresenter() {
       // 多角色：后端暂时未返回 extra_roles，需要前端补齐为 []
       const normalized = userList.map((u) => ({
         ...u,
-        extra_roles: (u as any).extra_roles || [],
+        extra_roles: u.extra_roles ?? [],
       }));
 
       setUsers(normalized);

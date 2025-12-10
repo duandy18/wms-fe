@@ -9,7 +9,7 @@
 
 import React, { useState } from "react";
 import type { RolesPresenter } from "./useRolesPresenter";
-import type { PermissionDTO } from "../permissions/api";
+import type { PermissionDTO } from "../users/types";
 
 type Props = {
   presenter: RolesPresenter;
@@ -41,7 +41,8 @@ export function RolesPanel({
     () => new Set(),
   );
 
-  const canCreateRole = true; // 权限 gating 交给上层
+  // 具体权限 gating 交给上层 UsersAdminPage，根据 system.role.manage 等控制
+  const canCreateRole = true;
   const canEditPerms = true;
 
   // ------------------------------------------------------------
@@ -54,7 +55,9 @@ export function RolesPanel({
     setEditingRoleId(roleId);
 
     const newSet = new Set<string>();
-    for (const p of role.permissions || []) newSet.add(String(p.id));
+    for (const p of role.permissions || []) {
+      newSet.add(String(p.id));
+    }
 
     setSelectedPermIds(newSet);
   }
@@ -62,7 +65,11 @@ export function RolesPanel({
   function togglePerm(id: string) {
     setSelectedPermIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }
@@ -117,14 +124,14 @@ export function RolesPanel({
       <h2 className="text-lg font-semibold">角色管理</h2>
 
       {/* 错误提示 */}
-      {error && (
+      {error ? (
         <div className="text-sm text-red-600 bg-red-50 border px-3 py-2 rounded">
           {error}
         </div>
-      )}
+      ) : null}
 
       {/* 创建角色 */}
-      {canCreateRole && (
+      {canCreateRole ? (
         <section className="bg-white border rounded-xl p-4 space-y-3">
           <h3 className="text-base font-semibold">创建角色</h3>
 
@@ -163,7 +170,7 @@ export function RolesPanel({
             </div>
           </form>
         </section>
-      )}
+      ) : null}
 
       {/* 角色列表 */}
       <section className="bg-white border rounded-xl overflow-hidden">
@@ -187,18 +194,20 @@ export function RolesPanel({
                   <td className="px-3 py-2">{r.id}</td>
                   <td className="px-3 py-2">{r.name}</td>
                   <td className="px-3 py-2">
-                    {r.description || <span className="text-slate-400">-</span>}
+                    {r.description || (
+                      <span className="text-slate-400">-</span>
+                    )}
                   </td>
                   <td className="px-3 py-2">{permNames(r.id)}</td>
                   <td className="px-3 py-2">
-                    {canEditPerms && (
+                    {canEditPerms ? (
                       <button
                         className="text-xs text-sky-700 hover:underline"
                         onClick={() => openEditPerms(r.id)}
                       >
                         编辑权限
                       </button>
-                    )}
+                    ) : null}
                   </td>
                 </tr>
               ))}
@@ -208,7 +217,7 @@ export function RolesPanel({
       </section>
 
       {/* 编辑角色权限 */}
-      {editingRoleId && (
+      {editingRoleId ? (
         <section className="bg-white border rounded-xl p-4 space-y-3">
           <h3 className="text-base font-semibold">
             编辑角色权限：{roles.find((r) => r.id === editingRoleId)?.name}
@@ -250,7 +259,7 @@ export function RolesPanel({
             {savingPerms ? "保存中…" : "保存权限"}
           </button>
         </section>
-      )}
+      ) : null}
     </div>
   );
 }
