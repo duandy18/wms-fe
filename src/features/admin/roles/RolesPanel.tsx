@@ -1,10 +1,9 @@
 // src/features/admin/roles/RolesPanel.tsx
 //
-// 【最终版】角色管理（多角色 RBAC 结构化版本）
+// 角色管理面板
 // - 列出角色
 // - 创建角色
 // - 编辑角色权限
-// - 完全兼容新的 roles/api.ts + useRolesPresenter.ts
 //
 
 import React, { useState } from "react";
@@ -36,19 +35,19 @@ export function RolesPanel({
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDesc, setNewRoleDesc] = useState("");
 
-  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
   const [selectedPermIds, setSelectedPermIds] = useState<Set<string>>(
     () => new Set(),
   );
 
-  // 具体权限 gating 交给上层 UsersAdminPage，根据 system.role.manage 等控制
+  // 具体权限 gating 交给上层 UsersAdminPage，根据 system.role.manage 控制
   const canCreateRole = true;
   const canEditPerms = true;
 
   // ------------------------------------------------------------
   // 角色权限编辑
   // ------------------------------------------------------------
-  function openEditPerms(roleId: string) {
+  function openEditPerms(roleId: number) {
     const role = roles.find((r) => r.id === roleId);
     if (!role) return;
 
@@ -75,7 +74,7 @@ export function RolesPanel({
   }
 
   async function handleSaveRolePerms() {
-    if (!editingRoleId) return;
+    if (editingRoleId == null) return;
 
     try {
       await setRolePermissions(editingRoleId, Array.from(selectedPermIds));
@@ -109,7 +108,7 @@ export function RolesPanel({
     }
   }
 
-  function permNames(roleId: string) {
+  function permNames(roleId: number) {
     const role = roles.find((r) => r.id === roleId);
     if (!role) return "-";
     const names = role.permissions.map((p) => p.name);
@@ -217,10 +216,11 @@ export function RolesPanel({
       </section>
 
       {/* 编辑角色权限 */}
-      {editingRoleId ? (
+      {editingRoleId != null ? (
         <section className="bg-white border rounded-xl p-4 space-y-3">
           <h3 className="text-base font-semibold">
-            编辑角色权限：{roles.find((r) => r.id === editingRoleId)?.name}
+            编辑角色权限：
+            {roles.find((r) => r.id === editingRoleId)?.name}
           </h3>
 
           <div className="max-h-64 overflow-auto border rounded-lg p-2">

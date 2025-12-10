@@ -1,4 +1,11 @@
 // src/features/admin/roles/useRolesPresenter.ts
+//
+// 角色管理 Presenter
+// - 加载角色列表
+// - 创建角色
+// - 更新角色权限
+//
+
 import { useEffect, useState } from "react";
 import { fetchRoles, createRole, setRolePermissions } from "./api";
 import type { RoleDTO } from "../users/types";
@@ -51,16 +58,22 @@ export function useRolesPresenter() {
     }
   }
 
-  /** 设置角色权限 */
-  async function updateRolePermissions(roleId: string, permissionIds: string[]) {
+  /** 设置角色权限
+   *  - 前端内部 roleId 可以是 number
+   *  - API 调用时统一转换为字符串
+   */
+  async function updateRolePermissions(
+    roleId: number | string,
+    permissionIds: string[],
+  ) {
     setSavingPerms(true);
     setError(null);
 
     try {
-      const updated = await setRolePermissions(roleId, permissionIds);
+      const updated = await setRolePermissions(String(roleId), permissionIds);
 
       setRoles((prev) =>
-        prev.map((r) => (r.id === updated.id ? updated : r))
+        prev.map((r) => (r.id === updated.id ? updated : r)),
       );
     } catch (err) {
       const e = err as ApiErrorShape | undefined;
