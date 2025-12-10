@@ -2,22 +2,9 @@
 // 左侧菜单配置：分区 + 每个路由项
 //
 // 注意：这里只负责“菜单的元信息”（path / label / 权限 / 显示规则）。
-// 真正的页面组件挂载在 router/index.tsx 里通过 React.lazy + <Route> 完成，
-// 避免同一页面既被静态 import 又被动态 import，影响懒加载切块。
+// 真正的页面组件挂载在 router/index.tsx 里通过 React.lazy + <Route> 完成。
 
-export type PermissionCode =
-  | "work.inbound"
-  | "work.count"
-  | "work.pick"
-  | "work.orders"
-  | "report.snapshot"
-  | "report.channel_inventory"
-  | "report.outbound_metrics"
-  | "tool.trace"
-  | "tool.stocks"
-  | "tool.ledger"
-  | "admin.stores"
-  | "admin.users";
+import type { PermissionCode } from "../auth/permissions";
 
 export interface RouteItem {
   path: string;
@@ -70,7 +57,8 @@ export const menuSections: RouteSection[] = [
       {
         path: "/outbound/internal-outbound",
         label: "内部出库 Cockpit",
-        // 内部出库同属出库作业，先沿用 work.pick 权限
+        // 内部出库同属出库作业，菜单逻辑沿用 work.pick，
+        // 路由里再挂 operations.internal_outbound 做更细权限控制。
         requiredPermissions: ["work.pick"],
       },
     ],
@@ -115,22 +103,22 @@ export const menuSections: RouteSection[] = [
       {
         path: "/finance",
         label: "收入 / 成本 / 毛利",
-        requiredPermissions: ["report.outbound_metrics"],
+        requiredPermissions: ["report.finance"],
       },
       {
         path: "/finance/shop",
         label: "店铺盈利能力",
-        requiredPermissions: ["report.outbound_metrics"],
+        requiredPermissions: ["report.finance"],
       },
       {
         path: "/finance/sku",
         label: "SKU 毛利榜",
-        requiredPermissions: ["report.outbound_metrics"],
+        requiredPermissions: ["report.finance"],
       },
       {
         path: "/finance/order-unit",
         label: "客单价 / 贡献度",
-        requiredPermissions: ["report.outbound_metrics"],
+        requiredPermissions: ["report.finance"],
       },
     ],
   },
@@ -142,12 +130,12 @@ export const menuSections: RouteSection[] = [
       {
         path: "/orders",
         label: "订单列表",
-        requiredPermissions: ["work.orders"],
+        requiredPermissions: ["work.orders"], // → orders.read
       },
       {
         path: "/orders/stats",
         label: "订单统计",
-        requiredPermissions: ["work.orders"],
+        requiredPermissions: ["work.orders"], // → orders.read
       },
     ],
   },
@@ -159,17 +147,17 @@ export const menuSections: RouteSection[] = [
       {
         path: "/purchase-orders",
         label: "采购单列表",
-        requiredPermissions: ["work.inbound"],
+        requiredPermissions: ["purchase.manage"],
       },
       {
         path: "/purchase-orders/new-v2",
         label: "采购单生成",
-        requiredPermissions: ["work.inbound"],
+        requiredPermissions: ["purchase.manage"],
       },
       {
         path: "/purchase-orders/reports",
         label: "采购报表",
-        requiredPermissions: ["work.inbound"],
+        requiredPermissions: ["purchase.report"],
       },
     ],
   },
@@ -203,7 +191,7 @@ export const menuSections: RouteSection[] = [
       {
         path: "/dev",
         label: "后端调试台",
-        requiredPermissions: ["tool.trace"],
+        requiredPermissions: ["devtools.access"],
         devOnly: true,
       },
     ],

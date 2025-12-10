@@ -1,6 +1,6 @@
 // src/features/admin/users/hooks/usePermissionsPresenter.ts
 import { useState } from "react";
-import { createPermission } from "../api";
+import { createPermission } from "./api";
 
 type ApiErrorShape = {
   message?: string;

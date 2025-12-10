@@ -1,129 +1,158 @@
 // src/features/admin/users/panels/UsersPanel.tsx
+//
+// 【最终版】用户管理面板（多角色 RBAC 完整版）
+// - 创建用户（主角色 + 多角色）
+// - 编辑用户（基础信息 + 主/多角色）
+// - 启用 / 停用
+// - 重置密码
+//
+
 import React, { useState } from "react";
 import { useAuth } from "../../../../app/auth/useAuth";
 import type { UsersPresenter } from "../hooks/useUsersPresenter";
-import type { UserDTO } from "../types";
+import type { UserDTO, RoleDTO } from "../types";
 
-type Props = { presenter: UsersPresenter };
+type Props = {
+  presenter: UsersPresenter;
+  roles: RoleDTO[]; // 来自 UsersAdminPage，rolesPresenter.roles
+};
 
-export function UsersPanel({ presenter }: Props) {
-  // 当前阶段：只要登录即可创建 / 修改 / 重置密码，RBAC 以后再接入
-  const { isAuthenticated } = useAuth();
+export function UsersPanel({ presenter, roles }: Props) {
+  const { can } = useAuth();
 
   const {
     users,
-    roles,
     loading,
     creating,
     mutating,
     error,
     createUser,
-    setError,
     updateUser,
     resetPassword,
+    setError,
   } = presenter;
 
-  // 这里做一个非常关键的过滤：下拉选项里不再出现 viewer 角色
-  const selectableRoles = roles.filter((r) => r.name !== "viewer");
+  // 权限控制
+  const canManageUser = can("system.user.manage");
 
+  // -------------------------------------------------------
+  // 创建用户字段
+  // -------------------------------------------------------
   const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("000000"); // 默认密码
-  const [newRoleId, setNewRoleId] = useState<string>("");
+  const [newPassword, setNewPassword] = useState("000000");
+  const [newPrimaryRoleId, setNewPrimaryRoleId] = useState<string>("");
+  const [newExtraRoleIds, setNewExtraRoleIds] = useState<Set<string>>(new Set());
+
   const [newFullName, setNewFullName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newEmail, setNewEmail] = useState("");
 
+  function toggleNewExtraRole(id: string) {
+    setNewExtraRoleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!canManageUser) return;
+
+    if (!newUsername.trim() || !newPrimaryRoleId) {
+      setError("请填写用户名 + 主角色");
+      return;
+    }
+
+    await createUser({
+      username: newUsername.trim(),
+      password: newPassword,
+      primary_role_id: Number(newPrimaryRoleId),
+      extra_role_ids: Array.from(newExtraRoleIds).map((x) => Number(x)),
+      full_name: newFullName || null,
+      phone: newPhone || null,
+      email: newEmail || null,
+    });
+
+    // 清空
+    setNewUsername("");
+    setNewPassword("000000");
+    setNewPrimaryRoleId("");
+    setNewExtraRoleIds(new Set());
+    setNewFullName("");
+    setNewPhone("");
+    setNewEmail("");
+  }
+
+  // -------------------------------------------------------
+  // 编辑用户字段
+  // -------------------------------------------------------
   const [editingUser, setEditingUser] = useState<UserDTO | null>(null);
   const [editFullName, setEditFullName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
-  const [editRoleId, setEditRoleId] = useState<string>("");
 
-  // 权限开关：统一基于是否登录
-  const canCreateUser = isAuthenticated;
-  const canUpdateUser = isAuthenticated;
-  const canResetPassword = isAuthenticated;
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!canCreateUser) return;
-
-    if (!newUsername || !newPassword || !newRoleId) {
-      setError("请至少填写：登录名 / 密码 / 角色");
-      return;
-    }
-
-    try {
-      await createUser({
-        username: newUsername,
-        password: newPassword,
-        role_id: Number(newRoleId),
-        full_name: newFullName || null,
-        phone: newPhone || null,
-        email: newEmail || null,
-      });
-      setNewUsername("");
-      setNewPassword("000000"); // 恢复默认
-      setNewRoleId("");
-      setNewFullName("");
-      setNewPhone("");
-      setNewEmail("");
-    } catch {
-      // error 已在 presenter 内部处理
-    }
-  }
-
-  function roleName(role_id: number | null | undefined) {
-    const r = roles.find((x) => Number(x.id) === Number(role_id));
-    return r?.name ?? (role_id != null ? `#${role_id}` : "-");
-  }
+  const [editPrimaryRoleId, setEditPrimaryRoleId] = useState<string>("");
+  const [editExtraRoleIds, setEditExtraRoleIds] = useState<Set<string>>(new Set());
 
   function openEdit(u: UserDTO) {
     setEditingUser(u);
+
     setEditFullName(u.full_name || "");
     setEditPhone(u.phone || "");
     setEditEmail(u.email || "");
-    setEditRoleId(u.role_id != null ? String(u.role_id) : "");
+
+    // 主角色
+    setEditPrimaryRoleId(u.role_id ? String(u.role_id) : "");
+
+    // 多角色（从 u.extra_roles 获取 — 稍后 presenter 会提供）
+    const extra = new Set<string>();
+    (u.extra_roles || []).forEach((rid) => extra.add(String(rid)));
+
+    setEditExtraRoleIds(extra);
+  }
+
+  function toggleEditExtraRole(id: string) {
+    setEditExtraRoleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   async function handleSaveEdit(e: React.FormEvent) {
     e.preventDefault();
-    if (!editingUser || !canUpdateUser) return;
+    if (!editingUser) return;
 
-    try {
-      await updateUser(editingUser.id, {
-        full_name: editFullName || null,
-        phone: editPhone || null,
-        email: editEmail || null,
-        role_id: editRoleId ? Number(editRoleId) : null,
-      });
-      setEditingUser(null);
-    } catch {
-      // 错误已在 presenter 里处理
-    }
+    await updateUser(editingUser.id, {
+      full_name: editFullName || null,
+      phone: editPhone || null,
+      email: editEmail || null,
+      primary_role_id: editPrimaryRoleId ? Number(editPrimaryRoleId) : null,
+      extra_role_ids: Array.from(editExtraRoleIds).map((x) => Number(x)),
+    });
+
+    setEditingUser(null);
   }
 
   async function handleToggleActive(u: UserDTO) {
-    if (!canUpdateUser) return;
-    try {
-      await updateUser(u.id, { is_active: !u.is_active });
-    } catch {
-      // presenter 已处理错误
-    }
+    await updateUser(u.id, { is_active: !u.is_active });
   }
 
   async function handleResetPassword(u: UserDTO) {
-    if (!canResetPassword) return;
-
     if (!window.confirm(`确认将用户「${u.username}」密码重置为 000000？`)) {
       return;
     }
-    try {
-      await resetPassword(u.id);
-      alert("密码已重置为 000000");
-    } catch {
-      // presenter 已处理错误
-    }
+    await resetPassword(u.id);
+    alert("密码已重置为 000000");
+  }
+
+  function roleName(rid: number | null | undefined) {
+    const r = roles.find((x) => Number(x.id) === Number(rid));
+    return r?.name ?? (rid ? `#${rid}` : "-");
   }
 
   return (
@@ -131,13 +160,13 @@ export function UsersPanel({ presenter }: Props) {
       <h2 className="text-lg font-semibold">用户管理</h2>
 
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 border px-3 py-2 rounded">
+        <div className="border border-red-200 bg-red-50 text-red-600 px-3 py-2 rounded">
           {error}
         </div>
       )}
 
-      {/* 创建用户卡片 */}
-      {canCreateUser && (
+      {/* ===================== 创建用户 ===================== */}
+      {canManageUser && (
         <section className="bg-white border rounded-xl p-4 space-y-3">
           <h3 className="text-base font-semibold">创建用户</h3>
 
@@ -145,64 +174,39 @@ export function UsersPanel({ presenter }: Props) {
             className="grid grid-cols-1 md:grid-cols-3 gap-3"
             onSubmit={handleCreate}
           >
-            <div className="flex flex-col gap-1">
+            {/* 用户名 */}
+            <div>
               <label className="text-xs text-slate-600">登录名</label>
               <input
-                className="border rounded-lg px-3 py-2"
+                className="border rounded px-3 py-2 w-full"
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
-                placeholder="登录用户名"
               />
             </div>
 
-            <div className="flex flex-col gap-1">
+            {/* 密码 */}
+            <div>
               <label className="text-xs text-slate-600">
                 密码（默认 000000）
               </label>
               <input
                 type="password"
-                className="border rounded-lg px-3 py-2"
+                className="border rounded px-3 py-2 w-full"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">姓名</label>
-              <input
-                className="border rounded-lg px-3 py-2"
-                value={newFullName}
-                onChange={(e) => setNewFullName(e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">联系电话</label>
-              <input
-                className="border rounded-lg px-3 py-2"
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">邮件地址</label>
-              <input
-                className="border rounded-lg px-3 py-2"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">角色</label>
+            {/* 主角色 */}
+            <div>
+              <label className="text-xs text-slate-600">主角色</label>
               <select
-                className="border rounded-lg px-3 py-2"
-                value={newRoleId}
-                onChange={(e) => setNewRoleId(e.target.value)}
+                className="border rounded px-3 py-2 w-full"
+                value={newPrimaryRoleId}
+                onChange={(e) => setNewPrimaryRoleId(e.target.value)}
               >
-                <option value="">请选择角色</option>
-                {selectableRoles.map((r) => (
+                <option value="">请选择主角色</option>
+                {roles.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}
                   </option>
@@ -210,11 +214,57 @@ export function UsersPanel({ presenter }: Props) {
               </select>
             </div>
 
+            {/* 多角色 */}
+            <div className="md:col-span-2">
+              <label className="text-xs text-slate-600">附加角色</label>
+              <div className="flex flex-wrap gap-2">
+                {roles.map((r) => (
+                  <label key={r.id} className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={newExtraRoleIds.has(String(r.id))}
+                      onChange={() => toggleNewExtraRole(String(r.id))}
+                    />
+                    <span>{r.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* 真实信息 */}
+            <div>
+              <label className="text-xs text-slate-600">姓名</label>
+              <input
+                className="border rounded px-3 py-2 w-full"
+                value={newFullName}
+                onChange={(e) => setNewFullName(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-600">电话</label>
+              <input
+                className="border rounded px-3 py-2 w-full"
+                value={newPhone}
+                onChange={(e) => setNewPhone(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-600">邮箱</label>
+              <input
+                className="border rounded px-3 py-2 w-full"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+              />
+            </div>
+
+            {/* 提交 */}
             <div className="flex items-end">
               <button
                 type="submit"
+                className="px-4 py-2 bg-sky-600 text-white rounded disabled:opacity-50"
                 disabled={creating}
-                className="px-4 py-2 rounded-lg bg-sky-600 text-white text-sm hover:bg-sky-700 disabled:opacity-60"
               >
                 {creating ? "创建中…" : "创建用户"}
               </button>
@@ -223,26 +273,28 @@ export function UsersPanel({ presenter }: Props) {
         </section>
       )}
 
-      {/* 用户列表卡片 */}
-      <section className="bg-white border rounded-xl overflow-hidden">
+      {/* ===================== 用户列表 ===================== */}
+      <section className="border bg-white rounded-xl overflow-hidden">
         {loading ? (
-          <div className="px-4 py-6">加载中…</div>
+          <div className="p-4">加载中…</div>
         ) : users.length === 0 ? (
-          <div className="px-4 py-6 text-slate-500">暂无用户。</div>
+          <div className="p-4 text-slate-500">暂无用户。</div>
         ) : (
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 border-b">
               <tr>
-                <th className="px-3 py-2 text-left w-12">ID</th>
-                <th className="px-3 py-2 text-left">登录名</th>
+                <th className="px-3 py-2 w-12 text-left">ID</th>
+                <th className="px-3 py-2 text-left">用户名</th>
                 <th className="px-3 py-2 text-left">姓名</th>
-                <th className="px-3 py-2 text-left">联系电话</th>
-                <th className="px-3 py-2 text-left">邮件地址</th>
-                <th className="px-3 py-2 text-left">角色</th>
-                <th className="px-3 py-2 text-left">状态</th>
+                <th className="px-3 py-2 text-left">电话</th>
+                <th className="px-3 py-2 text-left">邮箱</th>
+                <th className="px-3 py-2 text-left">主角色</th>
+                <th className="px-3 py-2 text-left">附加角色</th>
+                <th className="px-3 py-2 text-left w-28">状态</th>
                 <th className="px-3 py-2 text-left w-40">操作</th>
               </tr>
             </thead>
+
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className="border-b hover:bg-slate-50">
@@ -253,45 +305,56 @@ export function UsersPanel({ presenter }: Props) {
                   <td className="px-3 py-2">{u.email || "-"}</td>
                   <td className="px-3 py-2">{roleName(u.role_id)}</td>
                   <td className="px-3 py-2">
+                    {(u.extra_roles || []).map((rid) => (
+                      <span
+                        key={rid}
+                        className="inline-block px-2 py-0.5 bg-slate-100 rounded text-xs mr-1"
+                      >
+                        {roleName(rid)}
+                      </span>
+                    ))}
+                  </td>
+
+                  <td className="px-3 py-2">
                     {u.is_active ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-50 text-emerald-700">
+                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs">
                         启用
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-500">
+                      <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-xs">
                         停用
                       </span>
                     )}
                   </td>
+
                   <td className="px-3 py-2">
                     <div className="flex gap-2 text-xs">
-                      {canUpdateUser && (
-                        <>
-                          <button
-                            className="px-2 py-1 rounded border border-slate-300 hover:bg-slate-100"
-                            onClick={() => openEdit(u)}
-                            disabled={mutating}
-                          >
-                            编辑
-                          </button>
-                          <button
-                            className="px-2 py-1 rounded border border-slate-300 hover:bg-slate-100"
-                            onClick={() => handleToggleActive(u)}
-                            disabled={mutating}
-                          >
-                            {u.is_active ? "停用" : "启用"}
-                          </button>
-                        </>
-                      )}
-                      {canResetPassword && (
-                        <button
-                          className="px-2 py-1 rounded border border-amber-400 text-amber-700 hover:bg-amber-50"
-                          onClick={() => handleResetPassword(u)}
-                          disabled={mutating}
-                        >
-                          重置密码
-                        </button>
-                      )}
+                      {/* 编辑 */}
+                      <button
+                        className="px-2 py-1 border rounded hover:bg-slate-100"
+                        disabled={mutating}
+                        onClick={() => openEdit(u)}
+                      >
+                        编辑
+                      </button>
+
+                      {/* 启用/停用 */}
+                      <button
+                        className="px-2 py-1 border rounded hover:bg-slate-100"
+                        disabled={mutating}
+                        onClick={() => handleToggleActive(u)}
+                      >
+                        {u.is_active ? "停用" : "启用"}
+                      </button>
+
+                      {/* 重置密码 */}
+                      <button
+                        className="px-2 py-1 border border-amber-400 text-amber-700 rounded hover:bg-amber-50"
+                        disabled={mutating}
+                        onClick={() => handleResetPassword(u)}
+                      >
+                        重置密码
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -301,57 +364,78 @@ export function UsersPanel({ presenter }: Props) {
         )}
       </section>
 
-      {/* 编辑用户弹窗 */}
+      {/* ===================== 编辑用户弹窗 ===================== */}
       {editingUser && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 w-[480px] shadow-xl space-y-4">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-[520px] shadow-xl space-y-4">
             <h3 className="text-lg font-semibold">
               编辑用户：{editingUser.username}
             </h3>
 
-            <form className="space-y-3" onSubmit={handleSaveEdit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
+            <form className="space-y-4" onSubmit={handleSaveEdit}>
+              <div className="grid grid-cols-2 gap-3">
+                {/* 姓名 */}
+                <div>
                   <label className="text-xs text-slate-600">姓名</label>
                   <input
-                    className="border rounded-lg px-3 py-2"
+                    className="border rounded px-3 py-2 w-full"
                     value={editFullName}
                     onChange={(e) => setEditFullName(e.target.value)}
                   />
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-slate-600">联系电话</label>
+                {/* 电话 */}
+                <div>
+                  <label className="text-xs text-slate-600">电话</label>
                   <input
-                    className="border rounded-lg px-3 py-2"
+                    className="border rounded px-3 py-2 w-full"
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
                   />
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-slate-600">邮件地址</label>
+                {/* 邮箱 */}
+                <div>
+                  <label className="text-xs text-slate-600">邮箱</label>
                   <input
-                    className="border rounded-lg px-3 py-2"
+                    className="border rounded px-3 py-2 w-full"
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
                   />
                 </div>
 
-                <div className="flex flex-col gap-1">
+                {/* 主角色 */}
+                <div>
                   <label className="text-xs text-slate-600">主角色</label>
                   <select
-                    className="border rounded-lg px-3 py-2"
-                    value={editRoleId}
-                    onChange={(e) => setEditRoleId(e.target.value)}
+                    className="border rounded px-3 py-2 w-full"
+                    value={editPrimaryRoleId}
+                    onChange={(e) => setEditPrimaryRoleId(e.target.value)}
                   >
                     <option value="">不变</option>
-                    {selectableRoles.map((r) => (
-                      <option key={r.id} value={r.id}>
+                    {roles.map((r) => (
+                      <option key={r.id} value={String(r.id)}>
                         {r.name}
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* 附加角色 */}
+              <div>
+                <label className="text-xs text-slate-600">附加角色</label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {roles.map((r) => (
+                    <label key={r.id} className="flex items-center gap-1">
+                      <input
+                        type="checkbox"
+                        checked={editExtraRoleIds.has(String(r.id))}
+                        onChange={() => toggleEditExtraRole(String(r.id))}
+                      />
+                      <span>{r.name}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
@@ -364,9 +448,10 @@ export function UsersPanel({ presenter }: Props) {
                 >
                   取消
                 </button>
+
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm rounded-lg bg-slate-900 text-white disabled:opacity-60"
+                  className="px-4 py-2 text-sm rounded-lg bg-sky-600 text-white disabled:opacity-50"
                   disabled={mutating}
                 >
                   {mutating ? "保存中…" : "保存"}
