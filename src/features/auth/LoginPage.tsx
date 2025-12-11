@@ -91,10 +91,10 @@ const LoginPage: React.FC = () => {
             </span>
           </div>
 
-          {/* 系统标题 */}
+          {/* 系统标题（已改名为：安快泰仓储作业系统） */}
           <div className="space-y-6">
             <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-tight">
-              WMS-DU 仓储作业系统
+              安快泰仓储作业系统
             </h1>
 
             <p className="text-xl text-slate-200 max-w-2xl leading-relaxed">
@@ -135,41 +135,37 @@ const LoginPage: React.FC = () => {
 
                   <div className="grid grid-cols-3 gap-6">
                     <div className="h-28 rounded-xl border border-slate-600/70 bg-slate-900/70 flex flex-col justify-center px-4">
-                      <span className="text-sm text-slate-400">
-                        Stocks
-                      </span>
+                      <span className="text-sm text-slate-400">Stocks</span>
                       <span className="text-lg text-slate-100 font-semibold">
                         实时库存
                       </span>
                     </div>
 
                     <div className="h-28 rounded-xl border border-slate-600/70 bg-slate-900/70 flex flex-col justify-center px-4">
-                      <span className="text-sm text-slate-400">
-                        Batches
-                      </span>
+                      <span className="text-sm text-slate-400">Batches</span>
                       <span className="text-lg text-slate-100 font-semibold">
                         FEFO 批次
                       </span>
                     </div>
 
                     <div className="h-28 rounded-xl border border-slate-600/70 bg-slate-900/70 flex flex-col justify-center px-4">
-                      <span className="text-sm text-slate-400">
-                        Ledger
-                      </span>
+                      <span className="text-sm text-slate-400">Ledger</span>
                       <span className="text-lg text-slate-100 font-semibold">
                         台账事件
                       </span>
                     </div>
                   </div>
+
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 版权 */}
+          {/* 版权（已改为安快泰） */}
           <div className="pt-8 text-base text-slate-300 border-t border-slate-800/70 mt-12">
             本系统版权归北京安快泰科技有限公司所有
           </div>
+
         </div>
 
         {/* =========== 右侧登录卡片 · 大号版 =========== */}
@@ -187,9 +183,11 @@ const LoginPage: React.FC = () => {
           </div>
 
           <div className="max-w-md mx-auto w-full space-y-10">
+
+            {/* 登录标题（已改为“登录 安快泰”） */}
             <div className="space-y-4 text-center">
               <h2 className="text-3xl font-semibold text-slate-900">
-                登录 WMS-DU
+                登录 安快泰
               </h2>
               <p className="text-base text-slate-500">
                 请输入用户名与密码登录系统，所有操作将记录至审计日志。
@@ -248,10 +246,12 @@ const LoginPage: React.FC = () => {
               >
                 {submitting ? "登录中…" : "登录"}
               </button>
-            </form>
 
+            </form>
           </div>
+
         </div>
+
       </div>
     </div>
   );
