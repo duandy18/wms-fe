@@ -30,14 +30,14 @@ export function normalizeFlags(v: string): string[] {
 }
 
 export function readString(obj: unknown, key: string): string {
-  if (!obj || typeof obj !== "object") return "";
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return "";
   const rec = obj as Record<string, unknown>;
   const v = rec[key];
   return typeof v === "string" ? v : "";
 }
 
 export function readNum(obj: unknown, key: string): number | null {
-  if (!obj || typeof obj !== "object") return null;
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
   const rec = obj as Record<string, unknown>;
   const v = rec[key];
   const n = typeof v === "number" ? v : Number(v);
@@ -45,7 +45,7 @@ export function readNum(obj: unknown, key: string): number | null {
 }
 
 export function readObj(obj: unknown, key: string): Record<string, unknown> | null {
-  if (!obj || typeof obj !== "object") return null;
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
   const rec = obj as Record<string, unknown>;
   const v = rec[key];
   if (!v || typeof v !== "object" || Array.isArray(v)) return null;
@@ -53,7 +53,7 @@ export function readObj(obj: unknown, key: string): Record<string, unknown> | nu
 }
 
 export function readArr(obj: unknown, key: string): unknown[] {
-  if (!obj || typeof obj !== "object") return [];
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return [];
   const rec = obj as Record<string, unknown>;
   const v = rec[key];
   return Array.isArray(v) ? v : [];
@@ -105,3 +105,11 @@ export function buildExplainSummary(out: CalcOut | null): ExplainSummary {
 
   return { quoteStatus, totalAmount, currency, hitZone, hitBracket, bracketMode, reasons, breakdown, weight };
 }
+
+// 用于 reasons explain renderer
+export type ExplainReason =
+  | { kind: "zone_match"; raw: string; title: string; detail?: string }
+  | { kind: "bracket_match"; raw: string; title: string; detail?: string }
+  | { kind: "surcharge_hit"; raw: string; title: string; detail?: string }
+  | { kind: "total"; raw: string; title: string; detail?: string }
+  | { kind: "other"; raw: string; title: string; detail?: string };

@@ -1,5 +1,5 @@
 // src/features/dev/DevConsoleTabs.tsx
-// 简洁版：所有 Tab 一行横向排列
+// 简洁版：所有 Tab 一行横向排列（Orders / Pick / Inbound / Count / Platform）
 
 import React from "react";
 import { DevPanelId, type DevTabSpec } from "./DevConsoleTypes";
@@ -9,11 +9,6 @@ const TABS: DevTabSpec[] = [
   { id: DevPanelId.PickTasks, label: "拣货链路调试", group: "flows" },
   { id: DevPanelId.Inbound, label: "入库链路调试", group: "flows" },
   { id: DevPanelId.Count, label: "盘点链路调试", group: "flows" },
-  { id: DevPanelId.Ship, label: "发货成本调试", group: "flows" },
-
-  // ✅ 新增：Shipping Pricing Lab（工具/解释）
-  { id: DevPanelId.ShippingPricingLab, label: "Shipping Pricing Lab", group: "tools" },
-
   { id: DevPanelId.Platform, label: "平台 / 店铺", group: "tools" },
 ];
 
@@ -24,7 +19,7 @@ type Props = {
 
 export const DevConsoleTabs: React.FC<Props> = ({ active, onChange }) => {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center gap-2">
       {TABS.map((tab) => {
         const isActive = active === tab.id;
         return (
@@ -44,5 +39,3 @@ export const DevConsoleTabs: React.FC<Props> = ({ active, onChange }) => {
     </div>
   );
 };
-
-export default DevConsoleTabs;

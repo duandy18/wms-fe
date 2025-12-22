@@ -3,6 +3,7 @@
 import React from "react";
 import type { ExplainSummary } from "../labUtils";
 import { safeJson } from "../labUtils";
+import ReasonsExplain from "./ReasonsExplain";
 
 export const LabExplainSummary: React.FC<{ s: ExplainSummary }> = ({ s }) => {
   return (
@@ -44,20 +45,18 @@ export const LabExplainSummary: React.FC<{ s: ExplainSummary }> = ({ s }) => {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 p-3">
-          <div className="text-xs font-semibold text-slate-700">reasons[]</div>
-          <pre className="mt-2 max-h-[220px] overflow-auto rounded-lg bg-slate-50 p-3 text-xs font-mono text-slate-700">
-            {safeJson(s.reasons)}
-          </pre>
+      <div className="mt-4 rounded-xl border border-slate-200 p-3">
+        <div className="text-xs font-semibold text-slate-700">命中解释（reasons）</div>
+        <div className="mt-2">
+          <ReasonsExplain reasons={s.reasons} />
         </div>
+      </div>
 
-        <div className="rounded-xl border border-slate-200 p-3">
-          <div className="text-xs font-semibold text-slate-700">breakdown / weight</div>
-          <pre className="mt-2 max-h-[220px] overflow-auto rounded-lg bg-slate-50 p-3 text-xs font-mono text-slate-700">
-            {safeJson({ weight: s.weight, breakdown: s.breakdown })}
-          </pre>
-        </div>
+      <div className="mt-4 rounded-xl border border-slate-200 p-3">
+        <div className="text-xs font-semibold text-slate-700">breakdown / weight</div>
+        <pre className="mt-2 max-h-[260px] overflow-auto rounded-lg bg-slate-50 p-3 text-xs font-mono text-slate-700">
+          {safeJson({ weight: s.weight, breakdown: s.breakdown })}
+        </pre>
       </div>
     </div>
   );

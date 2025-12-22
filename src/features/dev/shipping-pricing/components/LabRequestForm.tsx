@@ -31,7 +31,8 @@ export const LabRequestForm: React.FC<{
 
   dimsWarning: boolean;
 
-  onRun: () => void;
+  onRunCalc: () => void;
+  onRunRecommend: () => void;
   onClear: () => void;
 }> = (p) => {
   const {
@@ -56,17 +57,18 @@ export const LabRequestForm: React.FC<{
     flags,
     setFlags,
     dimsWarning,
-    onRun,
+    onRunCalc,
+    onRunRecommend,
     onClear,
   } = p;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5">
-      <div className="text-sm font-semibold text-slate-800">构造算价请求（/shipping-quote/calc）</div>
+      <div className="text-sm font-semibold text-slate-800">构造算价请求（calc / recommend）</div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-6">
         <div className="md:col-span-2 flex flex-col">
-          <label className="text-xs text-slate-600">scheme_id *</label>
+          <label className="text-xs text-slate-600">scheme_id（calc 用）</label>
           <input
             className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono"
             value={schemeIdText}
@@ -128,14 +130,24 @@ export const LabRequestForm: React.FC<{
 
       {dimsWarning ? <div className="mt-2 text-sm text-amber-700">提示：体积三项必须都填且为合法数字，才会参与计算。</div> : null}
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
           className={"rounded-xl px-4 py-2 text-sm font-semibold " + (loading ? "bg-slate-200 text-slate-500" : "bg-slate-900 text-white hover:bg-slate-800")}
-          onClick={onRun}
+          onClick={onRunCalc}
           disabled={loading}
         >
           {loading ? "运行中…" : "运行 calc"}
+        </button>
+
+        <button
+          type="button"
+          className={"rounded-xl px-4 py-2 text-sm font-semibold " + (loading ? "bg-slate-200 text-slate-500" : "border border-slate-300 text-slate-700 hover:bg-slate-50")}
+          onClick={onRunRecommend}
+          disabled={loading}
+          title="对比多个 provider 的报价（recommend）"
+        >
+          运行 recommend
         </button>
 
         <button
