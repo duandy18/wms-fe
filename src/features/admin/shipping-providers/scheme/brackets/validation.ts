@@ -38,7 +38,7 @@ export function validatePerKgRate(kind: BracketKind, ratePerKg: number): string 
 }
 
 /**
- * per_kg_over（首重封顶+续重）校验：
+ * per_kg_over（legacy）校验：
  * - start_kg >= 0
  * - base_amount >= 0
  * - rate_per_kg >= 0

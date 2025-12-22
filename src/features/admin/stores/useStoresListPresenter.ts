@@ -1,7 +1,7 @@
 // src/features/admin/stores/useStoresListPresenter.ts
 
 import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "../../../app/auth/useAuth";
+import { useAuth } from "../../../shared/useAuth";
 import { fetchStores, updateStore, createStore } from "./api";
 import type { StoreListItem, RouteMode } from "./types";
 

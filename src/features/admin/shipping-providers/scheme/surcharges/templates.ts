@@ -5,17 +5,21 @@
  *
  * 设计目标：
  * 1. 每个模板都对应真实物流合同中的“一句人话”
- * 2. 模板只表达【条件 + 计费方式】，不掺杂计算逻辑
- * 3. 与后端 _cond_match / _calc_surcharge_amount 完全对齐
+ * 2. 模板只表达【条件结构 + 计费方式】，不掺杂复杂计算逻辑
+ * 3. 与后端 _cond_match / _calc_surcharge_amount 对齐
+ *
+ * 重要裁决：
+ * - “重点城市”属于系统白名单（UI 提供默认），模板本身不内置长列表
+ * - 避免模板变更导致历史数据对比混乱
  */
 
 export type SurchargeTemplateKey =
-  | "dest_city_flat"       // ✅ 目的城市单票加价（最常用）
-  | "dest_province_flat"   // 目的省份单票加价
-  | "remote_flat"          // 偏远地区（省级）
-  | "bulky_flat"           // 大件附加费（flag）
-  | "fuel_perkg"           // 燃油附加费（按公斤）
-  | "weight_table";        // 重量阶梯附加费
+  | "dest_city_flat" // ✅ 目的城市单票加价（最常用）
+  | "dest_province_flat" // 目的省份单票加价
+  | "remote_flat" // 偏远地区（省级）
+  | "bulky_flat" // 大件附加费（flag）
+  | "fuel_perkg" // 燃油附加费（按公斤）
+  | "weight_table"; // 重量阶梯附加费
 
 export const SURCHARGE_TEMPLATES: Record<
   SurchargeTemplateKey,
@@ -27,14 +31,14 @@ export const SURCHARGE_TEMPLATES: Record<
   }
 > = {
   // =========================================================
-  // ✅ 目的地类（单票加价，最符合你现在的裁决）
+  // ✅ 目的地类（单票加价，最符合当前“勾选区域→分组→填价”裁决）
   // =========================================================
 
   dest_city_flat: {
     label: "目的城市单票加价（dest.city + 固定价）",
-    condition_json: `{"dest":{"city":["北京市","上海市","广州市","深圳市"]}}`,
+    condition_json: `{"dest":{"city":[]}}`,
     amount_json: `{"kind":"flat","amount":1.5}`,
-    tip: "适用于：指定城市的单票附加费（如北上广深）。不随重量变化。",
+    tip: "适用于：指定城市单票附加费。重点城市列表由系统白名单提供默认值。",
   },
 
   dest_province_flat: {

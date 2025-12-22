@@ -7,7 +7,7 @@
 // - 所有 hooks 在顶层调用，所有 .map 前均做空值防御
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useAuth } from "../../../app/auth/useAuth";
+import { useAuth } from "../../../shared/useAuth";
 
 // Users
 import { useUsersPresenter } from "./hooks/useUsersPresenter";

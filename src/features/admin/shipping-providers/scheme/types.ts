@@ -1,6 +1,10 @@
 // src/features/admin/shipping-providers/scheme/types.ts
 
-export type SchemeTabKey = "zones" | "members" | "brackets" | "surcharges" | "preview";
+// ✅ Phase 4 裁决：
+// - 命中条件（Members）维护从 Admin 删除
+// - 健康度诊断（Health）从 Admin 删除
+// - 解释/实验/调试统一迁入 DevConsole → Shipping Pricing Lab
+export type SchemeTabKey = "zones" | "brackets" | "surcharges" | "preview";
 
 export type MutateFn = () => Promise<void>;
 

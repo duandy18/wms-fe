@@ -8,6 +8,9 @@ export interface ItemBasic {
   spec: string | null;
   uom: string | null;
   enabled: boolean;
+
+  // ⭐
+  spec_family: string | null;
 }
 
 type ItemsApiRow = {
@@ -19,32 +22,18 @@ type ItemsApiRow = {
   uom?: string | null;
   base_uom?: string | null;
   enabled?: boolean;
+  spec_family?: string | null;
 };
 
-/**
- * 商品主数据基础列表：
- * - 调用 /items；
- * - 兼容后端 ItemOut 的 spec / uom 字段。
- */
 export async function fetchItemsBasic(): Promise<ItemBasic[]> {
   const raw = await apiGet<unknown>("/items");
-
-  if (!Array.isArray(raw)) {
-    return [];
-  }
+  if (!Array.isArray(raw)) return [];
 
   return raw.map((row) => {
     const it = row as ItemsApiRow;
 
-    const spec =
-      it.spec ??
-      it.spec_text ??
-      null;
-
-    const uom =
-      it.uom ??
-      it.base_uom ??
-      null;
+    const spec = it.spec ?? it.spec_text ?? null;
+    const uom = it.uom ?? it.base_uom ?? null;
 
     return {
       id: Number(it.id),
@@ -52,8 +41,8 @@ export async function fetchItemsBasic(): Promise<ItemBasic[]> {
       name: String(it.name ?? ""),
       spec,
       uom,
-      enabled:
-        typeof it.enabled === "boolean" ? it.enabled : true,
+      enabled: typeof it.enabled === "boolean" ? it.enabled : true,
+      spec_family: it.spec_family ?? null,
     };
   });
 }

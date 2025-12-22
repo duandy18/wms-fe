@@ -50,9 +50,7 @@ export interface ScanRequest {
 /**
  * v2 盘点（mode=count）
  */
-export async function scanCountV2(
-  req: ScanRequest,
-): Promise<ScanResponse> {
+export async function scanCountV2(req: ScanRequest): Promise<ScanResponse> {
   const body: ScanRequest = {
     ...req,
     mode: "count",
@@ -65,9 +63,7 @@ export async function scanCountV2(
 /**
  * v2 拣货（mode=pick）
  */
-export async function scanPickV2(
-  req: ScanRequest,
-): Promise<ScanResponse> {
+export async function scanPickV2(req: ScanRequest): Promise<ScanResponse> {
   const body: ScanRequest = {
     ...req,
     mode: "pick",
@@ -100,7 +96,7 @@ export async function scanCountCommit(
 }
 
 // =======================
-// Items 主数据（作业区与调试台需要）
+// Items 主数据（作业区 / Cockpit / 调试台统一使用）
 // =======================
 
 export interface ItemMeta {
@@ -115,11 +111,13 @@ export interface ItemMeta {
 }
 
 /**
- * 按 item_id 查询主数据 → 给各类 Scan 页面 / Cockpit / 调试台使用
+ * 按 item_id 查询主数据（统一路径）
+ *
+ * ✅ /items/{id}
  */
 export async function fetchItemMeta(itemId: number): Promise<ItemMeta> {
   if (!itemId || itemId <= 0) {
     throw new Error("invalid item_id");
   }
-  return apiGet<ItemMeta>(`/items/id/${itemId}`);
+  return apiGet<ItemMeta>(`/items/${itemId}`);
 }

@@ -8,7 +8,7 @@
 //
 
 import React, { useState } from "react";
-import { useAuth } from "../../../../app/auth/useAuth";
+import { useAuth } from "../../../../shared/useAuth";
 import type { UsersPresenter } from "../hooks/useUsersPresenter";
 import type { UserDTO, RoleDTO } from "../types";
 

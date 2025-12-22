@@ -1,3 +1,4 @@
+// src/features/purchase-orders/api.ts
 import { apiGet, apiPost } from "../../lib/api";
 
 export type PurchaseOrderStatus =
@@ -55,6 +56,12 @@ export interface PurchaseOrderWithLines {
   supplier_id: number | null;
   supplier_name: string | null;
   total_amount: string | null;
+
+  // ⭐ 新增：采购人 + 采购时间（后端已支持）
+  purchaser: string;
+  purchase_time: string;
+
+  // 备注（可选）
   remark: string | null;
 
   status: PurchaseOrderStatus;
@@ -114,7 +121,14 @@ export interface PurchaseOrderCreateV2Payload {
   warehouse_id: number;
   supplier_id?: number | null;
   supplier_name?: string | null;
+
+  // ⭐ 新增：采购人 + 采购时间（必填）
+  purchaser: string;
+  purchase_time: string; // ISO 字符串，例如 "2025-12-11T14:05:53.264Z"
+
+  // 备注可选
   remark?: string | null;
+
   lines: PurchaseOrderLineCreatePayload[];
 }
 

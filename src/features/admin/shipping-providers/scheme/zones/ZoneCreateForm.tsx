@@ -1,69 +1,112 @@
 // src/features/admin/shipping-providers/scheme/zones/ZoneCreateForm.tsx
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { UI } from "../../ui";
+import { RegionSelector } from "../components/RegionSelector";
+import type { PricingSchemeZone } from "../../api";
 
 export type CreateZonePayload = { name: string; priority: number };
 
+function buildZoneNameFromProvinces(list: string[]): string {
+  const cleaned = (list ?? []).map((x) => (x || "").trim()).filter(Boolean);
+  if (cleaned.length === 0) return "";
+  return cleaned.join("、");
+}
+
 export const ZoneCreateForm: React.FC<{
   disabled?: boolean;
-  onCreate: (payload: CreateZonePayload) => Promise<void>;
+  onCreate: (payload: CreateZonePayload) => Promise<PricingSchemeZone>;
   onError: (msg: string) => void;
-}> = ({ disabled, onCreate, onError }) => {
+  onCreateWithProvinces?: (payload: CreateZonePayload, provinces: string[]) => Promise<void>;
+}> = ({ disabled, onCreate, onError, onCreateWithProvinces }) => {
   const [name, setName] = useState("");
-  const [priority, setPriority] = useState("100");
+  const [nameTouched, setNameTouched] = useState(false);
+
+  const [provinces, setProvinces] = useState<string[]>([]);
+
+  const suggestedName = useMemo(() => buildZoneNameFromProvinces(provinces), [provinces]);
+
+  useEffect(() => {
+    if (disabled) return;
+
+    const s = suggestedName.trim();
+    if (!s) return;
+
+    const current = name.trim();
+    if (!nameTouched || current === "") {
+      setName(s);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestedName]);
 
   const handleCreate = async () => {
+    const cleanedProvinces = (provinces ?? []).map((x) => (x || "").trim()).filter(Boolean);
+    if (cleanedProvinces.length === 0) {
+      onError("必须选择省份");
+      return;
+    }
+
     const n = name.trim();
     if (!n) {
-      onError("Zone 名称必填");
+      onError("名称必填");
       return;
     }
-    const pr = Number(priority);
-    if (!Number.isFinite(pr) || pr < 0) {
-      onError("Zone 优先级必须是 >=0 的数字");
+
+    const payload: CreateZonePayload = { name: n, priority: 100 };
+
+    if (onCreateWithProvinces) {
+      await onCreateWithProvinces(payload, cleanedProvinces);
+      setName("");
+      setNameTouched(false);
+      setProvinces([]);
       return;
     }
-    await onCreate({ name: n, priority: pr });
+
+    await onCreate(payload);
     setName("");
-    setPriority("100");
+    setNameTouched(false);
+    setProvinces([]);
   };
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div className="text-sm font-semibold text-slate-800">新增地区分组（Zone）</div>
+      <div className="text-sm font-semibold text-slate-800">新增区域收费规则</div>
 
-      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="flex flex-col">
+      <div className="mt-4">
+        <RegionSelector
+          value={provinces}
+          onChange={setProvinces}
+          disabled={disabled}
+          title="选择省份（必选）"
+          hint=""
+        />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="flex flex-col md:col-span-2">
           <label className="text-sm text-slate-600">名称 *</label>
           <input
             className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              setNameTouched(true);
+            }}
             disabled={disabled}
-            placeholder="如：华南-深圳 / 北京 / 全国-默认"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-600">优先级（数字越小越优先）</label>
-          <input
-            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-            disabled={disabled}
+            placeholder="如：广东、福建 / 江浙沪 / 北京"
           />
         </div>
 
         <div className="flex items-end">
-          <button className={UI.btnPrimaryGreen} type="button" disabled={disabled} onClick={() => void handleCreate()}>
-            创建 Zone
+          <button
+            className={UI.btnPrimaryGreen}
+            type="button"
+            disabled={disabled}
+            onClick={() => void handleCreate()}
+          >
+            创建
           </button>
         </div>
-      </div>
-
-      <div className="mt-2 text-sm text-slate-600">
-        建议：每个 Scheme 至少有一个 “全国-默认” Zone（不填 Members 作为兜底），priority 设大一些（如 9999）。
       </div>
     </div>
   );

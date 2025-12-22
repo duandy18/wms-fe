@@ -61,7 +61,6 @@ const ItemsPage: React.FC = () => {
   const probeError = useItemsStore((s) => s.probeError);
   const setProbeState = useItemsStore((s) => s.setProbeState);
 
-  // 统一扫码探针（前端视角 mode="items"，后端实际 mode="pick" + probe=true）
   const { probe } = useScanProbe("items");
 
   // --- 1. 从 URL 读取 ?barcode=xxx，写入 scannedBarcode ---
@@ -98,8 +97,7 @@ const ItemsPage: React.FC = () => {
         const res: ScanProbeResponse = std.raw;
         setProbeState({ loading: false, result: res });
       } catch (err: unknown) {
-        const message =
-          err instanceof Error ? err.message : "调用 /scan 失败";
+        const message = err instanceof Error ? err.message : "调用 /scan 失败";
         setProbeState({
           loading: false,
           result: null,
@@ -121,12 +119,10 @@ const ItemsPage: React.FC = () => {
 
   // --- 4.1 扫码后：若条码在主数据中唯一绑定 → 自动选中该商品 + 展开条码管理面板 ---
   useEffect(() => {
-    if (!scannedBarcode) {
-      return;
-    }
+    if (!scannedBarcode) return;
+
     const itemId = barcodeIndex[scannedBarcode];
     if (!itemId) {
-      // 未绑定条码：保持当前选中项，只确保条码面板展开，方便用户看到提示
       setPanelOpen(true);
       return;
     }
@@ -173,9 +169,7 @@ const ItemsPage: React.FC = () => {
     }
     return {
       status: "CONFLICT" as const,
-      msg: `该条码被绑定到多个商品：${owners.join(
-        ", ",
-      )}，建议尽快排查并修复（严重冲突）。`,
+      msg: `该条码被绑定到多个商品：${owners.join(", ")}，建议尽快排查并修复（严重冲突）。`,
     };
   }, [scannedBarcode, barcodeOwners]);
 
@@ -215,18 +209,37 @@ const ItemsPage: React.FC = () => {
     };
   }, [scannedBarcode, probeResult, barcodeOwners]);
 
+  // ===== 状态筛选按钮 =====
+  const btnBase = "rounded px-2 py-1 border text-[11px] font-medium";
+  const clsAll =
+    btnBase +
+    " " +
+    (filter === "all"
+      ? "border-slate-900 bg-slate-900 text-white"
+      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50");
+
+  const clsEnabled =
+    btnBase +
+    " " +
+    (filter === "enabled"
+      ? "border-emerald-700 bg-emerald-700 text-white"
+      : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100");
+
+  const clsDisabled =
+    btnBase +
+    " " +
+    (filter === "disabled"
+      ? "border-red-700 bg-red-700 text-white"
+      : "border-red-300 bg-red-50 text-red-800 hover:bg-red-100");
+
   return (
     <div className="space-y-6 p-6">
-      {/* 头部 */}
       <header>
-        <h1 className="text-2xl font-semibold text-slate-900">
-          商品主数据（Items）
-        </h1>
+        <h1 className="text-2xl font-semibold text-slate-900">商品主数据（Items）</h1>
         <p className="mt-1 text-sm text-slate-500">
           Items 是全系统统一的商品来源：入库、出库、库存、批次、订单都只认{" "}
-          <span className="font-mono">item_id</span> /{" "}
-          <span className="font-mono">sku</span>。
-          条码管理必须在这里维护完整，仓库作业区只负责扫描执行，不再判断商品。
+          <span className="font-mono">item_id</span> / <span className="font-mono">sku</span>。
+          商品新建必须绑定供货商（必选），否则无法创建。条码管理必须在这里维护完整，仓库作业区只负责扫描执行，不再判断商品。
         </p>
       </header>
 
@@ -234,31 +247,21 @@ const ItemsPage: React.FC = () => {
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
           <div className="text-[11px] text-slate-500">商品总数</div>
-          <div className="mt-1 text-xl font-semibold text-slate-900">
-            {stats.total}
-          </div>
+          <div className="mt-1 text-xl font-semibold text-slate-900">{stats.total}</div>
         </div>
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm">
           <div className="text-[11px] text-emerald-700">已配置主条码</div>
-          <div className="mt-1 text-xl font-semibold text-emerald-900">
-            {stats.withPrimary}
-          </div>
+          <div className="mt-1 text-xl font-semibold text-emerald-900">{stats.withPrimary}</div>
         </div>
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
-          <div className="text-[11px] text-amber-700">
-            未配置主条码（入库时会失败）
-          </div>
-          <div className="mt-1 text-xl font-semibold text-amber-900">
-            {stats.withoutPrimary}
-          </div>
+          <div className="text-[11px] text-amber-700">未配置主条码（入库时会失败）</div>
+          <div className="mt-1 text-xl font-semibold text-amber-900">{stats.withoutPrimary}</div>
         </div>
       </section>
 
       {/* 条码扫描台 */}
       <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">
-          Items 条码扫描台
-        </h2>
+        <h2 className="text-sm font-semibold text-slate-800">Items 条码扫描台</h2>
         <p className="text-[11px] text-slate-500">
           扫描任意条码，系统会调用 /scan(mode=pick, probe=true) 做一次条码体检，
           并在下方展示主数据绑定情况。你可以在条码管理卡片中完成绑定或调整。
@@ -274,41 +277,25 @@ const ItemsPage: React.FC = () => {
       {/* 扫描结果 + 条码体检 */}
       {scannedBarcode && (
         <section className="space-y-2">
-          {/* 当前条码 + 绑定提示 */}
           <div className="space-y-1 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] text-sky-800">
             <div>
-              当前条码：{" "}
-              <span className="font-mono">{scannedBarcode}</span>
+              当前条码： <span className="font-mono">{scannedBarcode}</span>
             </div>
             {bindInfo && <div>{bindInfo.msg}</div>}
           </div>
 
-          {/* 条码体检卡片 */}
           <div className="space-y-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-700">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-800">
-                条码体检（/scan probe）
-              </span>
-              {probeLoading && (
-                <span className="text-[11px] text-slate-500">
-                  调用 /scan 中…
-                </span>
-              )}
+              <span className="font-semibold text-slate-800">条码体检（/scan probe）</span>
+              {probeLoading && <span className="text-[11px] text-slate-500">调用 /scan 中…</span>}
             </div>
 
-            {probeError && (
-              <div className="mt-1 text-[11px] text-red-600">
-                {probeError}
-              </div>
-            )}
+            {probeError && <div className="mt-1 text-[11px] text-red-600">{probeError}</div>}
 
             {probeResult && (
               <>
                 <div>
-                  后端解析 item_id：{" "}
-                  <span className="font-mono">
-                    {probeResult.item_id ?? "(未解析)"}
-                  </span>
+                  后端解析 item_id： <span className="font-mono">{probeResult.item_id ?? "(未解析)"}</span>
                 </div>
                 <div>
                   主数据绑定 item_ids：{" "}
@@ -332,26 +319,21 @@ const ItemsPage: React.FC = () => {
                     {probeInfo.msg}
                   </div>
                 )}
-                {probeResult.errors &&
-                  probeResult.errors.length > 0 && (
-                    <div className="mt-1 text-[11px] text-red-600">
-                      /scan 报告错误：
-                      {probeResult.errors.map(
-                        (e: ScanProbeError, idx: number) => (
-                          <div key={idx}>
-                            [{e.stage ?? "stage"}] {e.error ?? ""}
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  )}
+                {probeResult.errors && probeResult.errors.length > 0 && (
+                  <div className="mt-1 text-[11px] text-red-600">
+                    /scan 报告错误：
+                    {probeResult.errors.map((e: ScanProbeError, idx: number) => (
+                      <div key={idx}>
+                        [{e.stage ?? "stage"}] {e.error ?? ""}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
 
             {!probeError && !probeResult && !probeLoading && (
-              <div className="mt-1 text-[11px] text-slate-500">
-                尚未拿到 /scan 体检结果。
-              </div>
+              <div className="mt-1 text-[11px] text-slate-500">尚未拿到 /scan 体检结果。</div>
             )}
           </div>
         </section>
@@ -364,70 +346,35 @@ const ItemsPage: React.FC = () => {
         </div>
       )}
 
-      {/* 新建商品表单（含 SKU 生成器） */}
+      {/* 新建商品表单 */}
       <ItemsFormSection />
 
       {/* 商品列表 */}
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-800">
-            商品列表
-          </h2>
+          <h2 className="text-sm font-semibold text-slate-800">商品列表</h2>
 
-          <div className="flex items-center gap-2 text-[11px] text-slate-600">
-            <span>状态筛选：</span>
-            <button
-              type="button"
-              className={
-                "rounded px-2 py-1 border " +
-                (filter === "all"
-                  ? "border-slate-900 text-slate-900"
-                  : "border-slate-300 text-slate-500")
-              }
-              onClick={() => setFilter("all")}
-            >
-              全部
-            </button>
-            <button
-              type="button"
-              className={
-                "rounded px-2 py-1 border " +
-                (filter === "enabled"
-                  ? "border-emerald-500 text-emerald-700"
-                  : "border-slate-300 text-slate-500")
-              }
-              onClick={() => setFilter("enabled")}
-            >
-              仅启用
-            </button>
-            <button
-              type="button"
-              className={
-                "rounded px-2 py-1 border " +
-                (filter === "disabled"
-                  ? "border-slate-500 text-slate-800"
-                  : "border-slate-300 text-slate-500")
-              }
-              onClick={() => setFilter("disabled")}
-            >
-              仅停用
-            </button>
+          <div className="flex flex-col items-end gap-1 text-[11px] text-slate-600">
+            <div className="flex items-center gap-2">
+              <span>状态筛选：</span>
+              <button type="button" className={clsAll} onClick={() => setFilter("all")}>
+                全部
+              </button>
+              <button type="button" className={clsEnabled} onClick={() => setFilter("enabled")}>
+                有效
+              </button>
+              <button type="button" className={clsDisabled} onClick={() => setFilter("disabled")}>
+                无效
+              </button>
+            </div>
           </div>
         </div>
 
         <ItemsTable />
       </section>
 
-      {/* 当前商品条码管理 */}
-      <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">
-          当前商品的条码管理
-        </h2>
-        <p className="text-xs text-slate-500">
-          在上方商品列表中点击「管理条码」，或在顶部扫描条码并手动选择商品，然后在这里维护主条码和次条码。
-        </p>
-        <ItemBarcodesPanel />
-      </section>
+      {/* ✅ 直接渲染条码管理面板：不再包外圈 */}
+      <ItemBarcodesPanel />
     </div>
   );
 };

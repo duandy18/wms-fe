@@ -1,6 +1,13 @@
 // src/features/operations/inbound/useInboundCockpitController.ts
 // =====================================================
 //  Inbound Cockpit - 核心中控
+//
+// 重要约定（与后端规则对齐）：
+// - 有保质期商品：后端 commit 会强制 batch_code + (production_date/expiry_date 至少一项)
+// - 无保质期商品：后端允许日期为空；batch_code 为空会自动归入 NOEXP
+//
+// 因此：前端 controller 不再用“缺批次/缺日期”硬阻断 commit，避免把无保质期商品卡死。
+// 最终校验以服务端为准，前端仅展示服务端错误信息。
 // =====================================================
 
 import { useMemo, useState } from "react";
@@ -50,6 +57,15 @@ function calcVariance(task: ReceiveTask | null): InboundVarianceSummary {
 type ApiErrorShape = {
   message?: string;
 };
+
+function getErrMsg(err: unknown, fallback: string): string {
+  const e = err as ApiErrorShape;
+  return e?.message ?? fallback;
+}
+
+function makeDefaultTraceId(taskId: number): string {
+  return `inbound:cockpit:${taskId}:${Date.now()}`;
+}
 
 export function useInboundCockpitController(): InboundCockpitController {
   const [poIdInput, setPoIdInput] = useState("");
@@ -102,10 +118,9 @@ export function useInboundCockpitController(): InboundCockpitController {
       const po = await fetchPurchaseOrderV2(id);
       setCurrentPo(po);
     } catch (err: unknown) {
-      const e = err as ApiErrorShape;
-      console.error("fetchPurchaseOrderV2 error", e);
+      console.error("fetchPurchaseOrderV2 error", err);
       setCurrentPo(null);
-      setPoError(e?.message ?? "加载采购单失败");
+      setPoError(getErrMsg(err, "加载采购单失败"));
     } finally {
       setLoadingPo(false);
     }
@@ -122,10 +137,9 @@ export function useInboundCockpitController(): InboundCockpitController {
       setCommitError(null);
       setActiveItemId(null);
     } catch (err: unknown) {
-      const e = err as ApiErrorShape;
-      console.error("fetchReceiveTask error", e);
+      console.error("fetchReceiveTask error", err);
       setCurrentTask(null);
-      setTaskError(e?.message ?? "加载收货任务失败");
+      setTaskError(getErrMsg(err, "加载收货任务失败"));
     } finally {
       setLoadingTask(false);
     }
@@ -170,9 +184,8 @@ export function useInboundCockpitController(): InboundCockpitController {
       setCommitError(null);
       setActiveItemId(null);
     } catch (err: unknown) {
-      const e = err as ApiErrorShape;
-      console.error("createReceiveTaskFromPo failed", e);
-      setTaskError(e?.message ?? "从采购单创建收货任务失败");
+      console.error("createReceiveTaskFromPo failed", err);
+      setTaskError(getErrMsg(err, "从采购单创建收货任务失败"));
     } finally {
       setCreatingTask(false);
     }
@@ -243,6 +256,8 @@ export function useInboundCockpitController(): InboundCockpitController {
       });
       setCurrentTask(updated);
       setActiveItemId(itemId);
+      setTaskError(null);
+      setCommitError(null);
 
       const entry: InboundScanHistoryEntry = {
         id: histId,
@@ -254,9 +269,8 @@ export function useInboundCockpitController(): InboundCockpitController {
       };
       setHistory((prev) => [entry, ...prev].slice(0, 100));
     } catch (err: unknown) {
-      const e = err as ApiErrorShape;
-      console.error("recordReceiveScan failed", e);
-      const msg = e?.message ?? "扫码失败";
+      console.error("recordReceiveScan failed", err);
+      const msg = getErrMsg(err, "扫码失败");
 
       const entry: InboundScanHistoryEntry = {
         id: histId,
@@ -273,7 +287,7 @@ export function useInboundCockpitController(): InboundCockpitController {
     }
   }
 
-  // ========== 行内批次元数据更新 ==========
+  // ========== 行内批次元数据更新（批次/日期） ==========
 
   async function updateLineMeta(
     itemId: number,
@@ -295,16 +309,16 @@ export function useInboundCockpitController(): InboundCockpitController {
     try {
       const updated = await recordReceiveScan(currentTask.id, {
         item_id: itemId,
-        qty: 0, // 仅更新元数据，后端允许 qty=0 时更新批次/日期
+        qty: 0, // 仅更新元数据
         batch_code: meta.batch_code,
         production_date: meta.production_date,
         expiry_date: meta.expiry_date,
       });
       setCurrentTask(updated);
+      setTaskError(null);
     } catch (err: unknown) {
-      const e = err as ApiErrorShape;
-      console.error("updateLineMeta (recordReceiveScan) failed", e);
-      setTaskError(e?.message ?? "更新批次信息失败");
+      console.error("updateLineMeta (recordReceiveScan) failed", err);
+      setTaskError(getErrMsg(err, "更新批次信息失败"));
     }
   }
 
@@ -360,6 +374,8 @@ export function useInboundCockpitController(): InboundCockpitController {
       });
       setCurrentTask(updated);
       setActiveItemId(itemId);
+      setTaskError(null);
+      setCommitError(null);
 
       const now = new Date();
       const histId = nextHistoryId++;
@@ -373,9 +389,8 @@ export function useInboundCockpitController(): InboundCockpitController {
       };
       setHistory((prev) => [entry, ...prev].slice(0, 100));
     } catch (err: unknown) {
-      const e = err as ApiErrorShape;
-      console.error("manualReceiveLine failed", e);
-      const msg = e?.message ?? "按行收货失败";
+      console.error("manualReceiveLine failed", err);
+      const msg = getErrMsg(err, "按行收货失败");
       setTaskError(msg);
 
       const now = new Date();
@@ -393,7 +408,7 @@ export function useInboundCockpitController(): InboundCockpitController {
     }
   }
 
-  // ========== commit ==========
+  // ========== commit（关键改动：不再前端硬校验批次/日期） ==========
 
   async function commit(): Promise<boolean> {
     if (!currentTask) {
@@ -405,28 +420,16 @@ export function useInboundCockpitController(): InboundCockpitController {
       return false;
     }
 
-    // ★ 提交前强校验：任何 scanned_qty != 0 的行，必须有 batch_code 和(生产或到期日期)
-    const badLine = currentTask.lines.find((l) => {
-      if (!l.scanned_qty || l.scanned_qty === 0) return false;
-      const noBatch = !l.batch_code || !l.batch_code.trim();
-      const noDates = !l.production_date && !l.expiry_date;
-      return noBatch || noDates;
-    });
-
-    if (badLine) {
-      const msg = `行 item_id=${badLine.item_id}（${
-        badLine.item_name ?? "-"
-      }）已存在实收数量，但批次或生产/到期日期信息不完整，请先在“收货明细 → 编辑批次/日期”中补全后再提交。`;
-      setCommitError(msg);
-      return false;
-    }
+    // ✅ 不再进行“缺批次/缺日期”的前端硬校验。
+    // 理由：无保质期商品允许日期为空，批次可由后端自动 NOEXP；
+    // 有保质期商品若缺批次/日期，后端会返回明确错误信息。
 
     const finalTraceId =
       traceId && traceId.trim()
         ? traceId.trim()
-        : `inbound:cockpit:${currentTask.id}:${Date.now()}`;
-    setTraceId(finalTraceId);
+        : makeDefaultTraceId(currentTask.id);
 
+    setTraceId(finalTraceId);
     setCommitting(true);
     setCommitError(null);
 
@@ -435,11 +438,11 @@ export function useInboundCockpitController(): InboundCockpitController {
         trace_id: finalTraceId,
       });
       setCurrentTask(updated);
+      setTaskError(null);
       return true;
     } catch (err: unknown) {
-      const e = err as ApiErrorShape;
-      console.error("commitReceiveTask failed", e);
-      setCommitError(e?.message ?? "确认入库失败");
+      console.error("commitReceiveTask failed", err);
+      setCommitError(getErrMsg(err, "确认入库失败"));
       return false;
     } finally {
       setCommitting(false);

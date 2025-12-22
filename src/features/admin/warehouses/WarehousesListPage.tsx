@@ -16,8 +16,7 @@ const WarehousesListPage: React.FC = () => {
         <div>
           <h1 className="text-xl font-semibold">仓库管理</h1>
           <p className="text-sm text-slate-600 mt-1">
-            管理仓库主数据（名称 / 编码 / 启用状态），为店铺绑定、出库路由、
-            库存视图提供基础信息。
+            管理仓库主数据（名称/编码/地址/联系人/电话/面积/启用状态），为店铺绑定、出库路由、库存视图提供基础信息。
           </p>
         </div>
       </header>
@@ -33,8 +32,18 @@ const WarehousesListPage: React.FC = () => {
         saving={p.saving}
         name={p.name}
         code={p.code}
+        active={p.active}
+        address={p.address}
+        contactName={p.contactName}
+        contactPhone={p.contactPhone}
+        areaSqm={p.areaSqm}
         onNameChange={p.setName}
         onCodeChange={p.setCode}
+        onActiveChange={p.setActive}
+        onAddressChange={p.setAddress}
+        onContactNameChange={p.setContactName}
+        onContactPhoneChange={p.setContactPhone}
+        onAreaSqmChange={p.setAreaSqm}
         onSubmit={p.handleCreate}
       />
 

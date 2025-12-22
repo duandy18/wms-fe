@@ -170,7 +170,7 @@ export function RolesPanel({
       ) : null}
 
       {/* 角色列表 */}
-      <section className="bg白 border rounded-xl overflow-hidden">
+      <section className="bg-white border rounded-xl overflow-hidden">
         {loading ? (
           <div className="px-4 py-6">加载中…</div>
         ) : safeRoles.length === 0 ? (

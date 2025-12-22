@@ -7,13 +7,18 @@
  * 1. 与数据库结构保持 1:1 语义对应
  * 2. 模板只解决“默认值 + 可解释性”，不承载业务判断
  * 3. 所有模板都能被 shipping_quote_service 明确识别
+ *
+ * 说明：
+ * - 当前主流程推荐：linear_total（票费 + 元/kg）
+ * - 旧 kind 仍保留：用于兼容历史数据/旧方案，但不再作为默认推荐
  */
 
 export type BracketKind =
   | "flat"               // 固定价
-  | "per_kg"             // 每公斤
-  | "per_kg_with_base"   // 首费 + 每公斤（旧模型，保留兼容）
-  | "per_kg_over"        // ✅ 首重封顶 + 续重（主推）
+  | "linear_total"       // 票费 + 元/kg（推荐）
+  | "per_kg"             // legacy：按公斤
+  | "per_kg_with_base"   // legacy：带 base 的按公斤
+  | "per_kg_over"        // legacy：旧模型（兼容保留）
   | "manual_quote";      // 人工报价
 
 /**
@@ -34,6 +39,15 @@ export function defaultPriceJson(
     };
   }
 
+  if (kind === "linear_total") {
+    return {
+      kind: "linear_total",
+      base_amount: 0,
+      rate_per_kg: 1.0,
+      rounding: { mode: "ceil", step_kg: 1.0 },
+    };
+  }
+
   if (kind === "per_kg") {
     return {
       kind: "per_kg",
@@ -43,22 +57,20 @@ export function defaultPriceJson(
   }
 
   if (kind === "per_kg_with_base") {
-    // ⚠️ 旧模型：首费 + 每公斤（不是封顶）
     return {
       kind: "per_kg_with_base",
-      base_fee: { label: "首费", amount: 5.0 },
+      base_fee: { label: "base", amount: 5.0 },
       rate_per_kg: 1.5,
       rounding: { mode: "ceil", step_kg: 1.0 },
     };
   }
 
   if (kind === "per_kg_over") {
-    // ✅ 主推模型：首重封顶 + 续重
     return {
       kind: "per_kg_over",
-      start_kg: 3.0,        // ≤ 3kg
-      base_amount: 4.8,     // 封顶价
-      rate_per_kg: 1.2,     // 超出部分单价
+      start_kg: 3.0,
+      base_amount: 4.8,
+      rate_per_kg: 1.2,
       rounding: { mode: "ceil", step_kg: 1.0 },
     };
   }
@@ -70,12 +82,15 @@ export function defaultPriceJson(
 }
 
 /**
- * 在 UI 中展示给用户的“人话标签”
+ * 在 UI 中展示给用户的标签
+ * - 推荐项：linear_total / flat
+ * - legacy 项：仅用于兼容
  */
 export function kindLabel(kind: BracketKind): string {
+  if (kind === "linear_total") return "票费 + 元/kg（linear_total）";
   if (kind === "flat") return "固定价（flat）";
-  if (kind === "per_kg") return "按公斤（per_kg）";
-  if (kind === "per_kg_with_base") return "首费 + 按公斤（per_kg_with_base）";
-  if (kind === "per_kg_over") return "首重封顶 + 续重（per_kg_over）";
+  if (kind === "per_kg") return "legacy：按公斤（per_kg）";
+  if (kind === "per_kg_with_base") return "legacy：base + 按公斤（per_kg_with_base）";
+  if (kind === "per_kg_over") return "legacy：per_kg_over";
   return "人工报价（manual_quote）";
 }

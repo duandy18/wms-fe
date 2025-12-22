@@ -2,31 +2,20 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { menuSections } from "../router/menuConfig";
-import { useAuth } from "../auth/useAuth";
+import { useAuth } from "../../shared/useAuth";
 import { resolvePermissionCodes } from "../auth/permissions";
 
 type OpenState = Record<string, boolean>;
 
-/**
- * Sidebar（折叠 + 大字号版）
- *
- * - 一级菜单 = text-xl（20px）
- * - 二级菜单 = text-xl（20px）
- * - 顶部标题 = text-2xl（更稳的层级视觉）
- *
- * 当前版本：基于 showInSidebar / devOnly + RBAC 权限过滤，决定是否显示菜单项。
- */
 export function Sidebar() {
   const location = useLocation();
   const { can } = useAuth();
   const [openSections, setOpenSections] = useState<OpenState>({});
 
-  // 环境：只在 dev 环境显示 devOnly 菜单
   const IS_DEV_ENV =
     import.meta.env.VITE_WMS_ENV === "dev" ||
     import.meta.env.MODE === "development";
 
-  // 过滤掉 devOnly 且当前不是 dev 环境的菜单项，并按权限做 gating
   const visibleSections = useMemo(() => {
     return menuSections
       .map((section) => {
@@ -34,15 +23,10 @@ export function Sidebar() {
           if (item.showInSidebar === false) return false;
           if (item.devOnly && !IS_DEV_ENV) return false;
 
-          // 有 requiredPermissions 的菜单项 → 映射成后端权限名 → 至少命中一个 can()
-          if (
-            item.requiredPermissions &&
-            item.requiredPermissions.length > 0
-          ) {
-            const backendPerms = resolvePermissionCodes(
-              item.requiredPermissions,
-            );
-            const hasAny = backendPerms.some((p) => can(p));
+          if (item.requiredPermissions && item.requiredPermissions.length > 0) {
+            // ✅ 直接使用后端权限名
+            const perms = resolvePermissionCodes(item.requiredPermissions);
+            const hasAny = perms.some((p) => can(p));
             if (!hasAny) return false;
           }
 
@@ -53,16 +37,14 @@ export function Sidebar() {
       .filter((section) => section.items.length > 0);
   }, [IS_DEV_ENV, can]);
 
-  // 根据当前路由自动展开所在分组
   useEffect(() => {
     const next: OpenState = {};
     for (const section of visibleSections) {
-      const matched = section.items.some((item) => {
-        return (
+      const matched = section.items.some(
+        (item) =>
           location.pathname === item.path ||
-          location.pathname.startsWith(item.path + "/")
-        );
-      });
+          location.pathname.startsWith(item.path + "/"),
+      );
       next[section.id] = matched;
     }
     setOpenSections((prev) => ({ ...prev, ...next }));
@@ -73,19 +55,16 @@ export function Sidebar() {
 
   return (
     <aside className="flex w-72 flex-col bg-slate-900 text-slate-100">
-      {/* 顶部 Logo */}
       <div className="border-b border-slate-800 px-5 py-6 text-2xl font-bold">
         WMS-DU
       </div>
 
-      {/* 导航主体 */}
       <nav className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         {visibleSections.map((section) => {
           const isOpen = openSections[section.id] ?? false;
 
           return (
             <div key={section.id}>
-              {/* 一级分组标题（20px） */}
               <button
                 type="button"
                 onClick={() => toggleSection(section.id)}
@@ -96,7 +75,6 @@ export function Sidebar() {
                 <span className="text-lg">{isOpen ? "▾" : "▸"}</span>
               </button>
 
-              {/* 二级菜单项（20px） */}
               {isOpen && (
                 <div className="mb-3 mt-2 space-y-2 pl-4">
                   {section.items.map((item) => (

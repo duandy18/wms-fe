@@ -1,4 +1,8 @@
 // src/features/purchase-orders/PurchaseOrderCreateV2Page.tsx
+// 新建多行采购单（Cockpit，大字号版）
+// - 头部：供应商 / 仓库 / 采购人 / 采购时间（必填）
+// - 行明细：多 SKU 录入
+// - 提交后在本页下方展示本次采购报告（不跳转）
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
@@ -18,26 +22,31 @@ const PurchaseOrderCreateV2Page: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-8">
       {/* 顶部标题 + 返回按钮 */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <PageTitle
-          title="新建多行采购单（Cockpit）"
-          description="按 Excel 风格录入多 SKU 采购单。创建成功后，本页下方会显示本次采购报告，并可导出 CSV。"
-        />
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <PageTitle
+            title="新建多行采购单（Cockpit）"
+            description="按 Excel 风格录入多 SKU 采购单，支持下方生成本次采购汇总报告，并可导出 CSV。"
+          />
+          <p className="mt-2 text-lg text-slate-600">
+            这是“采购作业驾驶舱”：字体更大、行距更宽，适合在仓库或办公室大屏幕上直接操作。
+          </p>
+        </div>
 
         <button
           type="button"
           onClick={() => navigate("/purchase-orders")}
-          className="inline-flex items-center rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+          className="inline-flex items-center rounded-xl border border-slate-300 px-5 py-3 text-base font-medium text-slate-700 hover:bg-slate-50"
         >
           ← 返回采购单列表
         </button>
       </div>
 
       {/* 表单区域 */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 头部信息：供应商 / 仓库 / 备注 */}
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* 头部信息：供应商 / 仓库 / 采购人 / 采购时间 */}
         <PurchaseOrderCreateHeaderForm
           supplierId={state.supplierId}
           supplierName={state.supplierName}
@@ -45,11 +54,13 @@ const PurchaseOrderCreateV2Page: React.FC = () => {
           suppliersLoading={state.suppliersLoading}
           suppliersError={state.suppliersError}
           warehouseId={state.warehouseId}
-          remark={state.remark}
+          purchaser={state.purchaser}
+          purchaseTime={state.purchaseTime}
           error={state.error}
           onSelectSupplier={actions.selectSupplier}
           onChangeWarehouseId={actions.setWarehouseId}
-          onChangeRemark={actions.setRemark}
+          onChangePurchaser={actions.setPurchaser}
+          onChangePurchaseTime={actions.setPurchaseTime}
         />
 
         {/* 行明细编辑 */}
@@ -68,7 +79,7 @@ const PurchaseOrderCreateV2Page: React.FC = () => {
           <button
             type="submit"
             disabled={state.submitting}
-            className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-xs font-medium text-white shadow-sm disabled:opacity-60"
+            className="inline-flex items-center rounded-xl bg-indigo-600 px-6 py-3 text-lg font-semibold text-white shadow-sm disabled:opacity-60"
           >
             {state.submitting ? "创建中…" : "创建多行采购单"}
           </button>
@@ -76,7 +87,7 @@ const PurchaseOrderCreateV2Page: React.FC = () => {
       </form>
 
       {/* 本次采购报告：放在按钮下面 */}
-      <div className="mt-8">
+      <div className="mt-10">
         <PurchaseOrderCurrentReport po={state.lastCreatedPo} />
       </div>
     </div>

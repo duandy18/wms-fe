@@ -1,9 +1,18 @@
 // src/features/admin/shipping-providers/scheme/useSchemeWorkbench.ts
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchPricingSchemeDetail, type PricingSchemeDetail } from "../api";
 import { L } from "./labels";
 import { type MutateFn, type SchemeTabKey, toErrorMessage } from "./types";
+
+function isZoneActive(z: unknown): boolean {
+  // 兼容字段名：active / enabled（没有字段时按 true 处理，避免误伤）
+  if (!z || typeof z !== "object") return true;
+  const anyZ = z as Record<string, unknown>;
+  if (typeof anyZ.active === "boolean") return anyZ.active;
+  if (typeof anyZ.enabled === "boolean") return anyZ.enabled;
+  return true;
+}
 
 export function useSchemeWorkbench(params: { open: boolean; schemeId: number | null }) {
   const { open, schemeId } = params;
@@ -12,33 +21,90 @@ export function useSchemeWorkbench(params: { open: boolean; schemeId: number | n
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
 
   const [detail, setDetail] = useState<PricingSchemeDetail | null>(null);
+
+  // loading：只用于“首次进入/还没有 detail”时的加载占位
   const [loading, setLoading] = useState(false);
+
+  // refreshing：已有 detail 时的静默刷新（不卸载页面，不闪）
+  const [refreshing, setRefreshing] = useState(false);
+
   const [mutating, setMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canLoad = open && !!schemeId;
 
-  const load = useCallback(async () => {
-    if (!schemeId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const d = await fetchPricingSchemeDetail(schemeId);
-      setDetail(d);
+  // ✅ 用 ref 保存“当前 detail / 当前选中 zone”，避免 load() 依赖 state 造成循环触发
+  const detailRef = useRef<PricingSchemeDetail | null>(null);
+  const selectedZoneIdRef = useRef<number | null>(null);
 
-      const firstZone = d.zones?.[0] ?? null;
-      setSelectedZoneId(firstZone?.id ?? null);
-    } catch (e: unknown) {
-      setError(toErrorMessage(e, L.loadFailed));
-      setDetail(null);
-      setSelectedZoneId(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [schemeId]);
+  useEffect(() => {
+    detailRef.current = detail;
+  }, [detail]);
+
+  useEffect(() => {
+    selectedZoneIdRef.current = selectedZoneId;
+  }, [selectedZoneId]);
+
+  const load = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!schemeId) return;
+
+      const silent = !!opts?.silent;
+      const hasDetail = !!detailRef.current;
+
+      // ✅ 有 detail 时静默刷新；没 detail 才显示 loading 占位
+      if (silent && hasDetail) {
+        setRefreshing(true);
+      } else if (!hasDetail) {
+        setLoading(true);
+      } else {
+        // 有 detail 但不是 silent：也走 refreshing，避免闪
+        setRefreshing(true);
+      }
+
+      setError(null);
+
+      try {
+        const d = await fetchPricingSchemeDetail(schemeId);
+        setDetail(d);
+
+        const zones = d.zones ?? [];
+
+        // ✅ 保留用户当前选中的 Zone（如果还存在）
+        // - 即使该 Zone 已停用，也允许保留选择用于回看（但 UI 侧应只读）
+        const current = selectedZoneIdRef.current;
+        const stillExists = current != null && zones.some((z) => z.id === current);
+
+        if (stillExists) {
+          setSelectedZoneId(current);
+        } else {
+          // ✅ 默认优先选第一个“启用 Zone”，没有启用的再退回第一个
+          const firstActive = zones.find((z) => isZoneActive(z)) ?? null;
+          const firstZone = zones[0] ?? null;
+          setSelectedZoneId((firstActive ?? firstZone)?.id ?? null);
+        }
+      } catch (e: unknown) {
+        setError(toErrorMessage(e, L.loadFailed));
+
+        // ❗刷新失败不清空 detail，避免页面闪回空态
+        if (!detailRef.current) {
+          setDetail(null);
+          setSelectedZoneId(null);
+        }
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [schemeId],
+  );
 
   const reload = useCallback(async () => {
-    await load();
+    await load({ silent: false });
+  }, [load]);
+
+  const reloadSilent = useCallback(async () => {
+    await load({ silent: true });
   }, [load]);
 
   const mutate = useCallback(
@@ -48,26 +114,30 @@ export function useSchemeWorkbench(params: { open: boolean; schemeId: number | n
       setError(null);
       try {
         await fn();
-        await load();
+        // ✅ mutate 完成后静默刷新（不闪）
+        await reloadSilent();
       } catch (e: unknown) {
         setError(toErrorMessage(e, "操作失败"));
       } finally {
         setMutating(false);
       }
     },
-    [load, schemeId],
+    [reloadSilent, schemeId],
   );
 
+  // ✅ 关键：effect 只依赖 canLoad / schemeId，不依赖 load 的“变化引用”导致重复触发
   useEffect(() => {
     if (!canLoad) return;
-    void load();
-  }, [canLoad, load]);
+    void load({ silent: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canLoad, schemeId]);
 
   useEffect(() => {
     if (open) return;
     setDetail(null);
     setError(null);
     setLoading(false);
+    setRefreshing(false);
     setMutating(false);
     setTab("zones");
     setSelectedZoneId(null);
@@ -98,12 +168,14 @@ export function useSchemeWorkbench(params: { open: boolean; schemeId: number | n
     summary,
 
     loading,
+    refreshing,
     mutating,
     error,
     setError,
 
     load,
     reload,
+    reloadSilent,
     mutate,
   };
 }

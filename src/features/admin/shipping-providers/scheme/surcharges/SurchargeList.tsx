@@ -1,51 +1,94 @@
 // src/features/admin/shipping-providers/scheme/surcharges/SurchargeList.tsx
 
-import React from "react";
+import React, { useMemo } from "react";
 import type { PricingSchemeSurcharge } from "../../api";
+import { UI } from "../ui";
 
-/**
- * 把 condition_json / amount_json 翻译成“人话摘要”
- * 只做展示，不参与任何业务判断
- */
-function describeSurcharge(s: PricingSchemeSurcharge): string {
-  const cond = s.condition_json ?? {};
-  const amt = s.amount_json ?? {};
+type DestInfo =
+  | { kind: "province"; label: string }
+  | { kind: "city"; label: string }
+  | { kind: "other"; label: string };
 
-  const parts: string[] = [];
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object" && !Array.isArray(v);
+}
 
-  // ---------- 命中条件 ----------
-  if (cond.dest) {
-    const d = cond.dest as any;
-    if (Array.isArray(d.city) && d.city.length) {
-      parts.push(`目的城市：${d.city.join(" / ")}`);
-    }
-    if (Array.isArray(d.province) && d.province.length) {
-      parts.push(`目的省份：${d.province.join(" / ")}`);
-    }
+function asStringArray(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.map((x) => String(x)).map((x) => x.trim()).filter(Boolean);
+}
+
+function normalizeName(name: string): string {
+  const t = (name ?? "").trim();
+  if (!t) return "-";
+
+  // 去掉“目的地附加费”前缀（你要求）
+  if (t.startsWith("目的地附加费")) {
+    const rest = t.replace(/^目的地附加费[-—–_ ]*/g, "").trim();
+    return rest || "目的地附加费";
   }
+  return t;
+}
 
-  if (Array.isArray(cond.flag_any) && cond.flag_any.length) {
-    parts.push(`触发条件：${cond.flag_any.join(" / ")}`);
-  }
+function readCondition(s: PricingSchemeSurcharge): Record<string, unknown> {
+  return isRecord(s.condition_json) ? s.condition_json : {};
+}
 
-  if (!parts.length) {
-    parts.push("命中条件：全量");
-  }
+function readAmount(s: PricingSchemeSurcharge): Record<string, unknown> {
+  return isRecord(s.amount_json) ? s.amount_json : {};
+}
 
-  // ---------- 计费方式 ----------
-  const kind = String(amt.kind || "flat");
+function isFlagAnySurcharge(s: PricingSchemeSurcharge): boolean {
+  const cond = readCondition(s);
+  const flags = asStringArray(cond["flag_any"]);
+  if (!flags.length) return false;
+
+  // 你明确要求：异形件（bulky/irregular）不出现在列表
+  if (flags.includes("bulky") || flags.includes("irregular")) return true;
+
+  // 其他 flag_any 目前也先不进“目的地列表”（保持列表纯净）
+  return true;
+}
+
+function extractDest(s: PricingSchemeSurcharge): DestInfo {
+  const cond = readCondition(s);
+  const destRaw = cond["dest"];
+  const dest = isRecord(destRaw) ? destRaw : {};
+
+  const provArr = asStringArray(dest["province"]);
+  const cityArr = asStringArray(dest["city"]);
+
+  if (cityArr.length === 1) return { kind: "city", label: cityArr[0] };
+  if (provArr.length === 1) return { kind: "province", label: provArr[0] };
+
+  return { kind: "other", label: normalizeName(s.name ?? "") };
+}
+
+function isDestSurcharge(s: PricingSchemeSurcharge): boolean {
+  if (isFlagAnySurcharge(s)) return false;
+
+  const cond = readCondition(s);
+  const destRaw = cond["dest"];
+  const dest = isRecord(destRaw) ? destRaw : {};
+
+  const provArr = asStringArray(dest["province"]);
+  const cityArr = asStringArray(dest["city"]);
+  return provArr.length > 0 || cityArr.length > 0;
+}
+
+function extractFlatAmount(s: PricingSchemeSurcharge): string {
+  const amt = readAmount(s);
+  const kind = String(amt["kind"] ?? "flat").toLowerCase();
 
   if (kind === "flat") {
-    parts.push(`加价：￥${Number(amt.amount || 0).toFixed(2)} / 单`);
-  } else if (kind === "per_kg") {
-    parts.push(`加价：￥${Number(amt.rate_per_kg || 0).toFixed(2)} / kg`);
-  } else if (kind === "table") {
-    parts.push("加价：按重量阶梯表");
-  } else {
-    parts.push(`加价方式：${kind}`);
+    const raw = amt["amount"];
+    const n = typeof raw === "number" ? raw : Number(raw);
+    if (Number.isFinite(n)) return n.toFixed(2);
+    return "-";
   }
 
-  return parts.join(" ｜ ");
+  // 列表聚焦“每单加价”，其他类型不显示细节
+  return kind === "per_kg" ? "按公斤" : kind === "table" ? "阶梯表" : kind;
 }
 
 export const SurchargeList: React.FC<{
@@ -54,57 +97,100 @@ export const SurchargeList: React.FC<{
   onToggle: (s: PricingSchemeSurcharge) => Promise<void>;
   onDelete: (s: PricingSchemeSurcharge) => Promise<void>;
 }> = ({ list, disabled, onToggle, onDelete }) => {
-  if (!list.length) {
-    return <div className="text-sm text-slate-600">暂无附加费</div>;
+  const rows = useMemo(() => {
+    const arr = [...(list ?? [])];
+
+    // ✅ 只保留“目的地附加费”类：dest.province / dest.city
+    const destOnly = arr.filter((s) => isDestSurcharge(s));
+
+    // 展示：启用靠前；其余按 id 倒序（最近录入靠前）
+    destOnly.sort((a, b) => {
+      const aa = a.active ? 1 : 0;
+      const bb = b.active ? 1 : 0;
+      if (aa !== bb) return bb - aa;
+      return (b.id ?? 0) - (a.id ?? 0);
+    });
+
+    return destOnly;
+  }, [list]);
+
+  if (!rows.length) {
+    return <div className={UI.surchargeEmpty}>暂无目的地附加费</div>;
   }
 
   return (
-    <div className="space-y-2">
-      {list.map((s) => (
-        <div
-          key={s.id}
-          className="space-y-1 rounded-2xl border border-slate-200 bg-slate-50 p-3"
-        >
-          {/* 人话摘要（核心价值） */}
-          <div className="text-sm text-slate-700">
-            {describeSurcharge(s)}
-          </div>
+    <div className="overflow-x-auto">
+      <table className="min-w-full border-collapse">
+        <thead>
+          <tr className="border-b border-slate-200 text-left text-sm font-semibold text-slate-700">
+            <th className="px-3 py-2 w-[72px]">序号</th>
+            <th className="px-3 py-2">目的地</th>
+            <th className="px-3 py-2 w-[160px]">每单加价（元）</th>
+            <th className="px-3 py-2 w-[120px]">状态</th>
+            <th className="px-3 py-2 w-[220px]">操作</th>
+          </tr>
+        </thead>
 
-          {/* 原始信息 + 操作 */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-sm text-slate-800">
-              <span className="font-semibold">{s.name}</span>
-              <span className="ml-2 font-mono text-slate-500">
-                pri={s.priority} · {s.active ? "启用" : "停用"}
-              </span>
-            </div>
+        <tbody>
+          {rows.map((s, idx) => {
+            const dest = extractDest(s);
+            const amountText = extractFlatAmount(s);
 
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={disabled}
-                className="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-100 disabled:opacity-60"
-                onClick={() => void onToggle(s)}
-              >
-                {s.active ? "停用" : "启用"}
-              </button>
+            return (
+              <tr key={s.id} className="border-b border-slate-100 text-sm">
+                <td className="px-3 py-2 text-slate-700 font-mono">{idx + 1}</td>
 
-              <button
-                type="button"
-                disabled={disabled}
-                className="inline-flex items-center rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
-                onClick={() => void onDelete(s)}
-              >
-                删除
-              </button>
-            </div>
-          </div>
-        </div>
-      ))}
+                <td className="px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-xl px-3 py-1 text-sm font-semibold ${
+                        dest.kind === "province"
+                          ? "bg-slate-100 text-slate-700"
+                          : dest.kind === "city"
+                            ? "bg-sky-50 text-sky-700"
+                            : "bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {dest.kind === "province" ? "省" : dest.kind === "city" ? "城市" : "其他"}
+                    </span>
+                    <span className="text-slate-900">{dest.label}</span>
+                  </div>
 
-      <div className="text-sm text-slate-600">
-        删除失败常见原因：被约束（RESTRICT）拒绝，或后端业务规则不允许。可先停用再观察。
-      </div>
+                  <div className="mt-1 text-xs text-slate-500">规则名：{normalizeName(s.name ?? "")}</div>
+                </td>
+
+                <td className="px-3 py-2 font-mono text-slate-900">{amountText}</td>
+
+                <td className="px-3 py-2">
+                  <span
+                    className={`inline-flex items-center rounded-xl px-3 py-1 text-sm font-semibold ${
+                      s.active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {s.active ? "启用" : "停用"}
+                  </span>
+                </td>
+
+                <td className="px-3 py-2">
+                  <div className="flex gap-2">
+                    <button type="button" disabled={disabled} className={UI.btnNeutralSm} onClick={() => void onToggle(s)}>
+                      {s.active ? "停用" : "启用"}
+                    </button>
+
+                    <button type="button" disabled={disabled} className={UI.btnDangerSm} onClick={() => void onDelete(s)}>
+                      删除
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <div className="mt-2 text-sm text-slate-600">提示：此处仅显示“目的地附加费（省/城市）”。异形件操作费在单独卡片维护。</div>
     </div>
   );
 };
+
+export default SurchargeList;

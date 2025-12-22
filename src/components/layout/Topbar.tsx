@@ -1,7 +1,7 @@
 // src/components/layout/Topbar.tsx
 import { useLocation } from "react-router-dom";
 import { flatRoutes } from "../../app/router/menuConfig";
-import { useAuth } from "../../app/auth/useAuth";
+import { useAuth } from "../../shared/useAuth";
 
 export function Topbar() {
   const location = useLocation();

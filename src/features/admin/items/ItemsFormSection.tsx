@@ -1,572 +1,400 @@
 // src/features/admin/items/ItemsFormSection.tsx
-// 新建商品表单 + SKU 生成器（v2：记忆 + 自动编号），使用 ItemsStore 管理部分状态。
+// 新建商品表单（路线 A：新建即完整事实，强校验）
+//
+// 目标：新建商品卡字段严格对齐商品列表列（除机器生成列：SKU/ID）
+// - 商品名称（必填）
+// - 供货商（必选）
+// - 单位净重(kg)（必填，允许 0）
+// - 最小包装单位（必选，若不选则不让提交；可自定义）
+// - 有效期（有/无，必选）
+// - 默认有效期值（当“有效期=有”必填）
+// - 单位（月/天，当“有效期=有”必选）
+// - 状态（有效/无效，必选）
+// - 主条码（必填）
+// - SKU：后端生成（AKT-000001...），新建阶段不手填
 
 import React, { useEffect, useMemo, useState } from "react";
-import { createItem } from "./api";
-import type { Item } from "./api";
+import { createItem, type Item } from "./api";
 import { useItemsStore } from "./itemsStore";
+import { fetchSuppliers, type Supplier } from "../suppliers/api";
 
-interface SkuParts {
-  category: string;
-  target: string;
-  brand: string;
-  specCode: string;
-  serial: string;
-}
+type ShelfMode = "yes" | "no";
+type StatusMode = "enabled" | "disabled";
 
 interface FormState {
-  sku: string;
   name: string;
-  spec: string;
-  uom: string;
+  supplier_id: string;
+
+  uom_mode: "preset" | "custom";
+  uom_preset: string;
+  uom_custom: string;
+
+  weight_kg: string;
+
+  shelf_mode: ShelfMode;
+  shelf_life_value: string;
+  shelf_life_unit: "MONTH" | "DAY";
+
+  status: StatusMode;
+
   barcode: string;
-  enabled: boolean;
-  weight_kg: string; // 单件重量输入（字符串），提交时解析为 number
 }
 
-const CATEGORY_OPTIONS: { code: string; label: string }[] = [
-  { code: "KF", label: "KF · 干粮" },
-  { code: "GT", label: "GT · 罐头" },
-  { code: "LX", label: "LX · 零食" },
-  { code: "BJ", label: "BJ · 保健品" },
-];
-
-const TARGET_OPTIONS: { code: string; label: string }[] = [
-  { code: "C", label: "C · 猫" },
-  { code: "G", label: "G · 狗" },
-  { code: "T", label: "T · 通用" },
-];
-
-const BRAND_OPTIONS: { code: string; label: string }[] = [
-  { code: "NZ", label: "NZ · 皇家" },
-  { code: "GS", label: "GS · 冠能" },
-  { code: "WP", label: "WP · 自有品牌" },
-];
-
-const EMPTY_SKU_PARTS: SkuParts = {
-  category: "KF",
-  target: "C",
-  brand: "",
-  specCode: "",
-  serial: "001",
-};
+const COMMON_UOMS = ["PCS", "袋", "个", "罐", "箱", "瓶"];
 
 const EMPTY_FORM: FormState = {
-  sku: "",
   name: "",
-  spec: "",
-  uom: "PCS",
-  barcode: "",
-  enabled: true,
+  supplier_id: "",
+
+  uom_mode: "preset",
+  uom_preset: "",
+  uom_custom: "",
+
   weight_kg: "",
+
+  shelf_mode: "no",
+  shelf_life_value: "",
+  shelf_life_unit: "MONTH",
+
+  status: "enabled",
+
+  barcode: "",
 };
 
-const SKU_PARTS_LS_KEY = "wmsdu_items_sku_parts_v1";
-
-/**
- * 从 localStorage 读取上次的 SKU 片段；
- * 若无记录，则使用默认值（KF/C/空品牌/空规格/001）。
- */
-function loadSkuPartsFromStorage(): SkuParts {
-  if (typeof window === "undefined") return { ...EMPTY_SKU_PARTS };
-  try {
-    const raw = window.localStorage.getItem(SKU_PARTS_LS_KEY);
-    if (!raw) return { ...EMPTY_SKU_PARTS };
-    const parsed = JSON.parse(raw) as Partial<SkuParts>;
-    return {
-      category: parsed.category ?? EMPTY_SKU_PARTS.category,
-      target: parsed.target ?? EMPTY_SKU_PARTS.target,
-      brand: parsed.brand ?? EMPTY_SKU_PARTS.brand,
-      specCode: parsed.specCode ?? EMPTY_SKU_PARTS.specCode,
-      serial: parsed.serial ?? EMPTY_SKU_PARTS.serial,
-    };
-  } catch {
-    return { ...EMPTY_SKU_PARTS };
-  }
+function effectiveUom(f: FormState): string {
+  return f.uom_mode === "preset" ? f.uom_preset.trim() : f.uom_custom.trim();
 }
-
-function saveSkuPartsToStorage(parts: SkuParts) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(SKU_PARTS_LS_KEY, JSON.stringify(parts));
-  } catch {
-    // 忽略（无痕模式等）
-  }
-}
-
-/**
- * 序号自动递增：
- * - "001" -> "002"
- * - "009" -> "010"
- * - "123" -> "124"
- * - 非纯数字则原样返回
- */
-function nextSerial(serial: string): string {
-  const s = (serial || "").trim();
-  if (!s) return "001";
-  const digits = s.replace(/\D/g, "");
-  if (!digits) return s;
-  const n = Number(digits);
-  if (!Number.isFinite(n)) return s;
-  const width = digits.length;
-  return String(n + 1).padStart(width, "0");
-}
-
-type ApiErrorShape = {
-  message?: string;
-  response?: {
-    data?: {
-      detail?: string;
-    };
-  };
-};
-
-const getErrorMessage = (e: unknown, fallback: string): string => {
-  const err = e as ApiErrorShape;
-  return err?.response?.data?.detail ?? err?.message ?? fallback;
-};
 
 const ItemsFormSection: React.FC = () => {
   const scannedBarcode = useItemsStore((s) => s.scannedBarcode);
   const loadItems = useItemsStore((s) => s.loadItems);
-  const items = useItemsStore((s) => s.items);
 
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
-  const [skuParts, setSkuParts] = useState<SkuParts>(() =>
-    loadSkuPartsFromStorage(),
-  );
-
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // 保证 useMemo 依赖不乱：先解构 serial 出来
-  const { serial } = skuParts;
+  const [created, setCreated] = useState<{ id: number; sku: string } | null>(null);
 
-  // skuParts 变化时写回 localStorage
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [supLoading, setSupLoading] = useState(false);
+  const [supError, setSupError] = useState<string | null>(null);
+
+  // 加载供货商（active=true）
   useEffect(() => {
-    saveSkuPartsToStorage(skuParts);
-  }, [skuParts]);
+    let alive = true;
+    (async () => {
+      setSupLoading(true);
+      setSupError(null);
+      try {
+        const list = await fetchSuppliers({ active: true });
+        if (!alive) return;
+        setSuppliers(list);
+      } catch (e: unknown) {
+        if (!alive) return;
+        const msg = e instanceof Error ? e.message : "加载供货商失败";
+        setSuppliers([]);
+        setSupError(msg);
+      } finally {
+        if (alive) setSupLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  // 扫描带来的条码 → 预填主条码（仅当表单还没填时）
+  // 扫码带入主条码（但条码仍可编辑）
   useEffect(() => {
     if (scannedBarcode && !form.barcode) {
-      setForm((prev) => ({ ...prev, barcode: scannedBarcode }));
+      setForm((f) => ({ ...f, barcode: scannedBarcode }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scannedBarcode]);
+  }, [scannedBarcode, form.barcode]);
 
-  function updateForm<K extends keyof FormState>(
-    field: K,
-    value: FormState[K],
-  ) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
+  const shelfEnabled = useMemo(() => form.shelf_mode === "yes", [form.shelf_mode]);
 
-  function updateSkuPart<K extends keyof SkuParts>(
-    field: K,
-    value: SkuParts[K],
-  ) {
-    setSkuParts((prev) => ({ ...prev, [field]: value }));
-  }
-
-  // SKU 前缀
-  const skuPrefix = useMemo(() => {
-    const { category, target, brand, specCode } = skuParts;
-    if (!category || !target || !brand || !specCode) return "";
-    return (
-      category.trim().toUpperCase() +
-      "-" +
-      target.trim().toUpperCase() +
-      "-" +
-      brand.trim().toUpperCase() +
-      "-" +
-      specCode.trim().toUpperCase()
-    );
-  }, [skuParts]);
-
-  // SKU 预览
-  const previewSku = useMemo(() => {
-    if (!skuPrefix) return "";
-    const n = serial.trim();
-    const digits = n.replace(/\D/g, "");
-    const padded = digits ? digits.padStart(3, "0") : "";
-    return padded ? `${skuPrefix}-${padded}` : skuPrefix;
-  }, [skuPrefix, serial]);
-
-  // 是否与已有 SKU 冲突
-  const skuConflict = useMemo(
-    () =>
-      previewSku
-        ? items.some((it: Item) => it.sku === previewSku)
-        : false,
-    [items, previewSku],
-  );
-
-  const handleBuildSku = () => {
-    setSaveError(null);
-
-    if (!skuPrefix) {
-      setSaveError("请先选择/填写 分类 + 对象 + 品牌 + 规格编码");
-      return;
-    }
-    const n = serial.trim();
-    if (!n) {
-      setSaveError("请填写序号（3 位）");
-      return;
-    }
-    const digits = n.replace(/\D/g, "");
-    if (!digits) {
-      setSaveError("序号必须是数字");
-      return;
-    }
-    const padded = digits.padStart(3, "0");
-    const finalSku = `${skuPrefix}-${padded}`;
-
-    if (items.some((it) => it.sku === finalSku)) {
-      setSaveError(`SKU 已存在：${finalSku}，请更换序号`);
-      return;
-    }
-
-    setForm((prev) => ({ ...prev, sku: finalSku }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaveError(null);
+    setError(null);
+    setCreated(null);
 
-    const sku = form.sku.trim();
+    // 供货商必须存在（UI级防撞墙）
+    if (!supLoading && suppliers.length === 0) {
+      setError("没有可用供货商。请先到「系统管理 → 供应商主数据」新建供应商。");
+      return;
+    }
+
     const name = form.name.trim();
-
-    if (!sku) {
-      setSaveError("SKU 必填（可先用右侧生成 SKU 再调整）。");
-      return;
-    }
     if (!name) {
-      setSaveError("商品名称必填。");
+      setError("商品名称不能为空");
       return;
     }
 
-    // 解析重量
-    let weight_kg: number | null = null;
-    const w = form.weight_kg.trim();
-    if (w) {
-      const num = Number(w);
-      if (!Number.isFinite(num) || num < 0) {
-        setSaveError("单件重量(kg) 必须是大于等于 0 的数字");
+    const supplierId = Number(form.supplier_id);
+    if (!form.supplier_id || !Number.isFinite(supplierId) || supplierId <= 0) {
+      setError("供货商必须选择");
+      return;
+    }
+
+    const uom = effectiveUom(form);
+    if (!uom) {
+      setError("最小包装单位必须选择或填写");
+      return;
+    }
+
+    // 单位净重必填（允许 0）
+    const weightRaw = form.weight_kg.trim();
+    if (!weightRaw) {
+      setError("单位净重(kg)必须填写（可填 0）");
+      return;
+    }
+    const weightNum = Number(weightRaw);
+    if (!Number.isFinite(weightNum) || weightNum < 0) {
+      setError("单位净重(kg)必须是 >= 0 的数字");
+      return;
+    }
+    const weight_kg: number = weightNum;
+
+    // 主条码必填
+    const barcode = form.barcode.trim();
+    if (!barcode) {
+      setError("主条码必须填写");
+      return;
+    }
+
+    const has_shelf_life = form.shelf_mode === "yes";
+
+    // 当有效期=有：默认有效期值必填 + 单位必选
+    let shelf_life_value: number | null = null;
+    let shelf_life_unit: "MONTH" | "DAY" | null = null;
+
+    if (has_shelf_life) {
+      const v = form.shelf_life_value.trim();
+      if (!v) {
+        setError("默认有效期值必须填写");
         return;
       }
-      weight_kg = num;
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0) {
+        setError("默认有效期值必须是 >= 0 的数字");
+        return;
+      }
+      shelf_life_value = n;
+      shelf_life_unit = form.shelf_life_unit;
+    } else {
+      shelf_life_value = null;
+      shelf_life_unit = null;
     }
+
+    const enabled = form.status === "enabled";
 
     setSaving(true);
     try {
-      await createItem({
-        sku,
+      const createdItem: Item = await createItem({
         name,
-        spec: form.spec.trim() || undefined,
-        uom: form.uom.trim() || undefined,
-        barcode: form.barcode.trim() || undefined,
-        enabled: form.enabled,
+        supplier_id: supplierId,
+        uom,
         weight_kg,
+
+        has_shelf_life,
+        shelf_life_value,
+        shelf_life_unit,
+
+        enabled,
+        barcode,
       });
 
-      // 表单重置
+      setCreated({ id: createdItem.id, sku: createdItem.sku });
       setForm({ ...EMPTY_FORM });
-
-      // SKU 片段保留大部分，只自动递增序号
-      setSkuParts((prev) => ({
-        ...prev,
-        serial: nextSerial(prev.serial),
-      }));
-
       await loadItems();
     } catch (e: unknown) {
-      console.error("createItem failed", e);
-      setSaveError(getErrorMessage(e, "创建商品失败"));
+      const msg = e instanceof Error ? e.message : "创建商品失败";
+      setError(msg);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <section className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-      {/* 左：新建商品表单 */}
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">新建商品</h2>
+    <section className="rounded-xl border border-slate-200 bg-white p-6 space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">新建商品</h2>
+          <div className="mt-1 text-[11px] text-slate-500">
+            SKU：保存后自动生成（<span className="font-mono">AKT-000001...</span>）
+          </div>
+        </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          {/* SKU + 名称 */}
-          <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">SKU</label>
-              <input
-                className="rounded-lg border px-3 py-2 font-mono text-sm"
-                value={form.sku}
-                onChange={(e) => updateForm("sku", e.target.value)}
-                placeholder="KF-C-NZ-2KG-001"
-              />
-              <span className="text-[11px] text-slate-500">
-                可直接手填，也可以右侧生成 SKU 再微调。
-              </span>
+        {created && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900">
+            <div className="font-semibold">创建成功</div>
+            <div>
+              SKU：<span className="font-mono">{created.sku}</span>
             </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">商品名称</label>
-              <input
-                className="rounded-lg border px-3 py-2 text-sm"
-                value={form.name}
-                onChange={(e) => updateForm("name", e.target.value)}
-                placeholder="如：皇家猫粮 2kg 成猫"
-              />
+            <div>
+              商品ID：<span className="font-mono">{created.id}</span>
             </div>
           </div>
-
-          {/* 规格 / 单位 / 条码 / 重量 */}
-          <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">规格说明</label>
-              <input
-                className="rounded-lg border px-3 py-2 text-sm"
-                value={form.spec}
-                onChange={(e) => updateForm("spec", e.target.value)}
-                placeholder="如：2kg 鸡肉味"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">单位 (uom)</label>
-              <input
-                className="rounded-lg border px-3 py-2 text-sm"
-                value={form.uom}
-                onChange={(e) => updateForm("uom", e.target.value)}
-                placeholder="KG / G / BAG / PCS / 袋 / 箱 / 罐 / 听"
-              />
-              <div className="mt-1 flex flex-wrap gap-1">
-                {["袋", "箱", "罐", "听", "个", "件"].map((u) => (
-                  <button
-                    key={u}
-                    type="button"
-                    className="rounded-full border px-2 py-0.5 text-[11px] hover:bg-slate-50"
-                    onClick={() => updateForm("uom", u)}
-                  >
-                    {u}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">主条码</label>
-              <input
-                className="rounded-lg border px-3 py-2 text-sm"
-                value={form.barcode}
-                onChange={(e) => updateForm("barcode", e.target.value)}
-                placeholder="EAN13 / 内码"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">
-                单件重量(kg)
-              </label>
-              <input
-                className="rounded-lg border px-3 py-2 text-sm font-mono"
-                value={form.weight_kg}
-                onChange={(e) =>
-                  updateForm("weight_kg", e.target.value)
-                }
-                placeholder="如：2.000"
-              />
-              <span className="text-[11px] text-slate-500">
-                用于发货成本预估，后续电子秤可覆盖。
-              </span>
-            </div>
-          </div>
-
-          {/* 启用 + 提交按钮 */}
-          <div className="mt-1 flex items-center justify-between">
-            <label className="inline-flex items-center gap-2 text-xs text-slate-700">
-              <input
-                type="checkbox"
-                checked={form.enabled}
-                onChange={(e) =>
-                  updateForm("enabled", e.target.checked)
-                }
-              />
-              启用（可售）
-            </label>
-            <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
-              >
-                {saving ? "保存中…" : "保存商品"}
-              </button>
-              {saveError && (
-                <span className="text-xs text-red-600">{saveError}</span>
-              )}
-            </div>
-          </div>
-        </form>
+        )}
       </div>
 
-      {/* 右：SKU 生成器 */}
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 text-sm">
-        <h2 className="text-sm font-semibold text-slate-800">SKU 生成器</h2>
+      {(supError || error) && (
+        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {supError ?? error}
+        </div>
+      )}
 
-        {/* 分类 + 对象 */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-600">分类代码(2)</label>
-            <select
-              className="rounded-lg border px-2 py-1 text-sm"
-              value={skuParts.category}
-              onChange={(e) =>
-                updateSkuPart(
-                  "category",
-                  e.target.value.toUpperCase(),
-                )
-              }
-            >
-              <option value="">请选择或自填</option>
-              {CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt.code} value={opt.code}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <input
-              className="mt-1 rounded-lg border px-2 py-1 font-mono"
-              value={skuParts.category}
-              onChange={(e) =>
-                updateSkuPart(
-                  "category",
-                  e.target.value.toUpperCase(),
-                )
-              }
-              placeholder="自定义分类代码，如 KF / GT"
-            />
-          </div>
+      {!supLoading && suppliers.length === 0 && (
+        <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          当前没有可用供货商（active=true）。请先到「系统管理 → 供应商主数据」新建并启用供应商。
+        </div>
+      )}
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-600">对象代码(1)</label>
-            <select
-              className="rounded-lg border px-2 py-1 text-sm"
-              value={skuParts.target}
-              onChange={(e) =>
-                updateSkuPart("target", e.target.value.toUpperCase())
-              }
-            >
-              <option value="">请选择或自填</option>
-              {TARGET_OPTIONS.map((opt) => (
-                <option key={opt.code} value={opt.code}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <input
-              className="mt-1 rounded-lg border px-2 py-1 font-mono"
-              value={skuParts.target}
-              onChange={(e) =>
-                updateSkuPart("target", e.target.value.toUpperCase())
-              }
-              placeholder="自定义对象代码，如 C / G / T"
-            />
-          </div>
+      <form onSubmit={submit} className="space-y-4">
+        {/* Row 1: 商品名称 / 主条码 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input
+            className="rounded border px-3 py-2"
+            placeholder="商品名称"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            disabled={saving}
+          />
+          <input
+            className="rounded border px-3 py-2 font-mono"
+            placeholder="主条码"
+            value={form.barcode}
+            onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+            disabled={saving}
+          />
         </div>
 
-        {/* 品牌 + 规格编码 */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-600">品牌代码(2)</label>
-            <select
-              className="rounded-lg border px-2 py-1 text-sm"
-              value={skuParts.brand}
-              onChange={(e) =>
-                updateSkuPart("brand", e.target.value.toUpperCase())
-              }
-            >
-              <option value="">请选择或自填</option>
-              {BRAND_OPTIONS.map((opt) => (
-                <option key={opt.code} value={opt.code}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <input
-              className="mt-1 rounded-lg border px-2 py-1 font-mono"
-              value={skuParts.brand}
-              onChange={(e) =>
-                updateSkuPart("brand", e.target.value.toUpperCase())
-              }
-              placeholder="自定义品牌代码，如 WP / RC"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-600">
-              规格+口味编码(3+)
-            </label>
-            <input
-              className="rounded-lg border px-2 py-1 font-mono"
-              value={skuParts.specCode}
-              onChange={(e) =>
-                updateSkuPart(
-                  "specCode",
-                  e.target.value.toUpperCase(),
-                )
-              }
-              placeholder="如 2KG / CH2 / FD1 / 2KG-CH1"
-            />
-          </div>
-        </div>
-
-        {/* 序号 + 按钮 */}
-        <div className="grid grid-cols-[1.5fr_auto] items-end gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-600">
-              序号(3，自填 / 自动递增)
-            </label>
-            <input
-              className="rounded-lg border px-2 py-1 font-mono"
-              value={skuParts.serial}
-              onChange={(e) =>
-                updateSkuPart(
-                  "serial",
-                  e.target.value.replace(/\s+/g, ""),
-                )
-              }
-              placeholder="001 / 010 / 101"
-            />
-            {skuPrefix && (
-              <span className="text-[11px] text-slate-500">
-                前缀：
-                <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
-                  {skuPrefix}
-                </span>
-              </span>
-            )}
-            {previewSku && (
-              <span className="text-[11px] text-slate-500">
-                预览 SKU：
-                <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
-                  {previewSku}
-                </span>
-              </span>
-            )}
-            {skuConflict && previewSku && (
-              <span className="text-[11px] text-red-600">
-                SKU {previewSku} 已存在，请调整序号。
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={handleBuildSku}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
+        {/* Row 2: 供货商 / 单位净重 / 最小包装单位 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <select
+            className="rounded border px-3 py-2"
+            value={form.supplier_id}
+            onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}
+            disabled={supLoading || saving}
           >
-            使用当前编码生成 SKU
-          </button>
+            <option value="">
+              {supLoading ? "供货商加载中…" : "请选择供货商（必选）"}
+            </option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={String(s.id)}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+
+          <input
+            className="rounded border px-3 py-2 font-mono"
+            placeholder="单位净重(kg)"
+            value={form.weight_kg}
+            onChange={(e) => setForm({ ...form, weight_kg: e.target.value })}
+            disabled={saving}
+          />
+
+          <div className="space-y-2">
+            <select
+              className="w-full rounded border px-3 py-2"
+              value={form.uom_mode === "preset" ? form.uom_preset : "__CUSTOM__"}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "__CUSTOM__") {
+                  setForm({ ...form, uom_mode: "custom", uom_custom: "" });
+                } else {
+                  setForm({ ...form, uom_mode: "preset", uom_preset: v });
+                }
+              }}
+              disabled={saving}
+            >
+              <option value="">最小包装单位（必选）</option>
+              {COMMON_UOMS.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+              <option value="__CUSTOM__">自定义</option>
+            </select>
+
+            {form.uom_mode === "custom" && (
+              <input
+                className="w-full rounded border px-3 py-2"
+                placeholder="最小包装单位"
+                value={form.uom_custom}
+                onChange={(e) => setForm({ ...form, uom_custom: e.target.value })}
+                disabled={saving}
+              />
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* Row 3: 有效期 / 默认有效期值 / 单位 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <select
+            className="rounded border px-3 py-2"
+            value={form.shelf_mode}
+            onChange={(e) => {
+              const v = e.target.value as ShelfMode;
+              if (v === "no") {
+                setForm({ ...form, shelf_mode: v, shelf_life_value: "" });
+              } else {
+                setForm({ ...form, shelf_mode: v });
+              }
+            }}
+            disabled={saving}
+          >
+            <option value="yes">有效期：有</option>
+            <option value="no">有效期：无</option>
+          </select>
+
+          <input
+            className="rounded border px-3 py-2 font-mono"
+            placeholder="默认有效期值"
+            value={form.shelf_life_value}
+            onChange={(e) => setForm({ ...form, shelf_life_value: e.target.value })}
+            disabled={!shelfEnabled || saving}
+          />
+
+          <select
+            className="rounded border px-3 py-2"
+            value={form.shelf_life_unit}
+            onChange={(e) =>
+              setForm({ ...form, shelf_life_unit: e.target.value as "MONTH" | "DAY" })
+            }
+            disabled={!shelfEnabled || saving}
+          >
+            <option value="MONTH">单位：月</option>
+            <option value="DAY">单位：天</option>
+          </select>
+        </div>
+
+        {/* Row 4: 状态 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <select
+            className="rounded border px-3 py-2"
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value as StatusMode })}
+            disabled={saving}
+          >
+            <option value="enabled">状态：有效</option>
+            <option value="disabled">状态：无效</option>
+          </select>
+
+          <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 flex items-center">
+            <span className="text-slate-500">SKU：</span>
+            <span className="ml-2 font-mono text-slate-900">保存后自动生成</span>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving || supLoading || suppliers.length === 0}
+          className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
+        >
+          {saving ? "保存中…" : "保存商品"}
+        </button>
+      </form>
     </section>
   );
 };
