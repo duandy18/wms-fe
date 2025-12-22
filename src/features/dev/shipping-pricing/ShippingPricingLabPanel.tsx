@@ -1,10 +1,4 @@
 // src/features/dev/shipping-pricing/ShippingPricingLabPanel.tsx
-//
-// Shipping Pricing Lab（DevConsole 专用）
-// Panel 职责（严格收敛）：
-// 1) 持有 state（输入/结果/状态）
-// 2) 发请求（calc / recommend）
-// 3) 组装组件（Form / Explain / Compare / Raw）
 
 import React, { useMemo, useState } from "react";
 import { apiPost } from "../../../lib/api";
@@ -18,8 +12,12 @@ import LabExplainSummary from "./components/LabExplainSummary";
 import RecommendCompare from "./components/RecommendCompare";
 import LabRawJsonCard from "./components/LabRawJsonCard";
 
+import ReproTools from "./components/ReproTools";
+import SchemeHealthScan from "./components/SchemeHealthScan";
+import ShippingRecordReconcile from "./components/ShippingRecordReconcile";
+
 export const ShippingPricingLabPanel: React.FC = () => {
-  // ===== 输入（可被 URL query 回填）=====
+  // ===== 输入 =====
   const [schemeIdText, setSchemeIdText] = useState("1");
 
   const [province, setProvince] = useState("广东省");
@@ -32,14 +30,14 @@ export const ShippingPricingLabPanel: React.FC = () => {
   const [widthCm, setWidthCm] = useState("");
   const [heightCm, setHeightCm] = useState("");
 
-  // ✅ Phase 4：默认必须空，不要默认 bulky/irregular
+  // ✅ 默认必须空
   const [flags, setFlags] = useState("");
 
-  // ===== 运行态 =====
+  // ===== 状态 =====
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // ===== 输出（calc / recommend）=====
+  // ===== 输出 =====
   const [calcOut, setCalcOut] = useState<CalcOut | null>(null);
 
   const [recOut, setRecOut] = useState<RecommendOut | null>(null);
@@ -168,12 +166,11 @@ export const ShippingPricingLabPanel: React.FC = () => {
     }
   };
 
-  // ===== Render =====
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <div className="text-base font-semibold text-slate-900">Shipping Pricing Lab</div>
-        <div className="mt-1 text-sm text-slate-600">calc（解释）+ recommend（对比）+ raw（证据）。</div>
+        <div className="mt-1 text-sm text-slate-600">calc（解释）+ recommend（对比）+ scan（诊断）+ reconcile（对照）。</div>
       </div>
 
       <LabRequestForm
@@ -203,6 +200,18 @@ export const ShippingPricingLabPanel: React.FC = () => {
         onClear={clearAll}
       />
 
+      <ReproTools
+        schemeId={schemeId}
+        province={province}
+        city={city}
+        district={district}
+        realWeightKg={realWeightKg}
+        flags={flags}
+        lengthCm={lengthCm}
+        widthCm={widthCm}
+        heightCm={heightCm}
+      />
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <LabExplainSummary s={explain} />
         <RecommendCompare
@@ -212,6 +221,18 @@ export const ShippingPricingLabPanel: React.FC = () => {
           onUseSchemeIdForCalc={(sid) => setSchemeIdText(String(sid))}
         />
       </div>
+
+      <SchemeHealthScan schemeId={schemeId} />
+
+      <ShippingRecordReconcile
+        calcTotalAmount={explain.totalAmount}
+        setProvince={setProvince}
+        setCity={setCity}
+        setDistrict={setDistrict}
+        setRealWeightKg={setRealWeightKg}
+        setFlags={setFlags}
+        setSchemeIdText={setSchemeIdText}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <LabRawJsonCard title="calc 原始 JSON（证据）" data={calcOut} />
