@@ -1,22 +1,25 @@
 // src/features/dev/shipping-pricing/ShippingPricingLabPanel.tsx
 //
 // Shipping Pricing Lab（DevConsole 专用）
-// - 目标：后端调试 + 算价实验室（解释能力集中）
-// - 支持：URL query 自动回填（可复现）
-// - 输出：命中 zone/bracket、pricing_mode、reasons、breakdown、raw JSON
+// Panel 职责（严格收敛）：
+// 1) 持有 state（输入/结果/状态）
+// 2) 发请求（calc / recommend）
+// 3) 组装组件（Form / Explain / Compare / Raw）
 
 import React, { useMemo, useState } from "react";
 import { apiPost } from "../../../lib/api";
 
-import type { CalcReq, CalcOut } from "./labTypes";
+import type { CalcReq, CalcOut, RecommendOut, RecommendReq } from "./labTypes";
 import { buildExplainSummary, computeDims, dimsWarning, normalizeAddr, normalizeFlags, toNum } from "./labUtils";
 import { useLabQuerySync } from "./useLabQuerySync";
 
 import LabRequestForm from "./components/LabRequestForm";
 import LabExplainSummary from "./components/LabExplainSummary";
-import LabRawJson from "./components/LabRawJson";
+import RecommendCompare from "./components/RecommendCompare";
+import LabRawJsonCard from "./components/LabRawJsonCard";
 
 export const ShippingPricingLabPanel: React.FC = () => {
+  // ===== 输入（可被 URL query 回填）=====
   const [schemeIdText, setSchemeIdText] = useState("1");
 
   const [province, setProvince] = useState("广东省");
@@ -29,13 +32,20 @@ export const ShippingPricingLabPanel: React.FC = () => {
   const [widthCm, setWidthCm] = useState("");
   const [heightCm, setHeightCm] = useState("");
 
+  // ✅ Phase 4：默认必须空，不要默认 bulky/irregular
   const [flags, setFlags] = useState("");
 
+  // ===== 运行态 =====
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [out, setOut] = useState<CalcOut | null>(null);
 
-  // ✅ 从 URL query 自动回填（只做一次）
+  // ===== 输出（calc / recommend）=====
+  const [calcOut, setCalcOut] = useState<CalcOut | null>(null);
+
+  const [recOut, setRecOut] = useState<RecommendOut | null>(null);
+  const [selectedQuoteIdx, setSelectedQuoteIdx] = useState<number>(0);
+
+  // ✅ URL 标准键自动回填（只做一次）
   useLabQuerySync({
     setSchemeIdText,
     setProvince,
@@ -48,6 +58,7 @@ export const ShippingPricingLabPanel: React.FC = () => {
     setHeightCm,
   });
 
+  // ===== 派生 =====
   const schemeId = useMemo(() => {
     const n = toNum(schemeIdText);
     if (n == null) return null;
@@ -57,9 +68,28 @@ export const ShippingPricingLabPanel: React.FC = () => {
   const dims = useMemo(() => computeDims(lengthCm, widthCm, heightCm), [lengthCm, widthCm, heightCm]);
   const warnDims = useMemo(() => dimsWarning(lengthCm, widthCm, heightCm, dims), [lengthCm, widthCm, heightCm, dims]);
 
-  const explain = useMemo(() => buildExplainSummary(out), [out]);
+  const explain = useMemo(() => buildExplainSummary(calcOut), [calcOut]);
 
-  const handleRun = async () => {
+  const dest = useMemo(
+    () => ({
+      province: normalizeAddr(province),
+      city: normalizeAddr(city),
+      district: normalizeAddr(district),
+    }),
+    [province, city, district],
+  );
+
+  const flagsList = useMemo(() => normalizeFlags(flags), [flags]);
+
+  const clearAll = () => {
+    setErr(null);
+    setCalcOut(null);
+    setRecOut(null);
+    setSelectedQuoteIdx(0);
+  };
+
+  // ===== 请求：calc =====
+  const handleRunCalc = async () => {
     if (!schemeId || schemeId <= 0) {
       setErr("scheme_id 必须是正整数");
       return;
@@ -72,17 +102,13 @@ export const ShippingPricingLabPanel: React.FC = () => {
 
     setErr(null);
     setLoading(true);
-    setOut(null);
+    setCalcOut(null);
 
     const body: CalcReq = {
       scheme_id: schemeId,
-      dest: {
-        province: normalizeAddr(province),
-        city: normalizeAddr(city),
-        district: normalizeAddr(district),
-      },
+      dest,
       real_weight_kg: w,
-      flags: normalizeFlags(flags),
+      flags: flagsList,
     };
 
     if (dims) {
@@ -93,26 +119,61 @@ export const ShippingPricingLabPanel: React.FC = () => {
 
     try {
       const res = await apiPost<CalcOut>("/shipping-quote/calc", body);
-      setOut(res);
+      setCalcOut(res);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "calc 调用失败";
       setErr(msg);
-      setOut(null);
+      setCalcOut(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // ===== 请求：recommend =====
+  const handleRunRecommend = async () => {
+    const w = toNum(realWeightKg);
+    if (w == null || w <= 0) {
+      setErr("real_weight_kg 必须是 > 0 的数字");
+      return;
+    }
+
+    setErr(null);
+    setLoading(true);
+    setRecOut(null);
+    setSelectedQuoteIdx(0);
+
+    const body: RecommendReq = {
+      provider_ids: [],
+      dest,
+      real_weight_kg: w,
+      flags: flagsList,
+      max_results: 10,
+    };
+
+    if (dims) {
+      body.length_cm = dims.length_cm;
+      body.width_cm = dims.width_cm;
+      body.height_cm = dims.height_cm;
+    }
+
+    try {
+      const res = await apiPost<RecommendOut>("/shipping-quote/recommend", body);
+      setRecOut(res);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "recommend 调用失败";
+      setErr(msg);
+      setRecOut(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ===== Render =====
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <div className="text-base font-semibold text-slate-900">Shipping Pricing Lab</div>
-        <div className="mt-1 text-sm text-slate-600">
-          DevConsole 专用算价实验室：构造请求 → 命中解释（Zone/Bracket）→ reasons/breakdown → 原始 JSON。
-        </div>
-        <div className="mt-1 text-xs text-slate-500">
-          提示：支持 URL query 自动回填（从 Admin “打开 Pricing Lab”跳转可复现同一组输入）。
-        </div>
+        <div className="mt-1 text-sm text-slate-600">calc（解释）+ recommend（对比）+ raw（证据）。</div>
       </div>
 
       <LabRequestForm
@@ -137,13 +198,25 @@ export const ShippingPricingLabPanel: React.FC = () => {
         flags={flags}
         setFlags={setFlags}
         dimsWarning={warnDims}
-        onRun={() => void handleRun()}
-        onClear={() => setOut(null)}
+        onRunCalc={() => void handleRunCalc()}
+        onRunRecommend={() => void handleRunRecommend()}
+        onClear={clearAll}
       />
 
-      <LabExplainSummary s={explain} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <LabExplainSummary s={explain} />
+        <RecommendCompare
+          recOut={recOut}
+          selectedIdx={selectedQuoteIdx}
+          onSelect={setSelectedQuoteIdx}
+          onUseSchemeIdForCalc={(sid) => setSchemeIdText(String(sid))}
+        />
+      </div>
 
-      <LabRawJson out={out} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <LabRawJsonCard title="calc 原始 JSON（证据）" data={calcOut} />
+        <LabRawJsonCard title="recommend 原始 JSON（证据）" data={recOut} />
+      </div>
     </div>
   );
 };
