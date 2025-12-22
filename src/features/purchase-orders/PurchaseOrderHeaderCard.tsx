@@ -35,7 +35,7 @@ export const PurchaseOrderHeaderCard: React.FC<PurchaseOrderHeaderCardProps> = (
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-sm text-slate-700">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-2 text-sm text-slate-700">
         <div>
           <span className="text-xs text-slate-500">采购单 ID</span>
           <div className="font-mono text-[13px]">
@@ -56,6 +56,16 @@ export const PurchaseOrderHeaderCard: React.FC<PurchaseOrderHeaderCardProps> = (
         <div>
           <span className="text-xs text-slate-500">仓库 ID</span>
           <div>{po.warehouse_id}</div>
+        </div>
+
+        <div>
+          <span className="text-xs text-slate-500">采购人</span>
+          <div>{po.purchaser}</div>
+        </div>
+
+        <div>
+          <span className="text-xs text-slate-500">采购时间</span>
+          <div>{formatTs(po.purchase_time)}</div>
         </div>
 
         <div>

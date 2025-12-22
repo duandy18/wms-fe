@@ -1,10 +1,10 @@
 // src/features/admin/items/ItemBarcodesPanel.tsx
 //
-// 条码管理面板（底部独立卡片版）
-// - 总是渲染一个卡片；
-//   * 若尚未选中商品：显示提示文案；
-//   * 若已有 selectedItem：显示条码列表 + 新增/设主/删除。
-// - 有 scannedBarcode 时自动把条码灌入“新增条码”的输入框，方便从扫描台上下文进入绑定流程。
+// 条码管理面板（单层卡片版）
+// - 去掉外圈（外圈由 ItemsPage 删除）
+// - 未选中商品时：保留引导说明（字号放大）
+// - 有明确“关闭”按钮：无输入也能退出
+// - 字号整体放大 2 倍
 
 import React, { useEffect, useState } from "react";
 import { useItemsStore } from "./itemsStore";
@@ -33,10 +33,13 @@ const getErrorMessage = (e: unknown, fallback: string): string => {
 export const ItemBarcodesPanel: React.FC = () => {
   const selectedItem = useItemsStore((s) => s.selectedItem);
   const scannedBarcode = useItemsStore((s) => s.scannedBarcode);
-  const setPrimaryBarcodeLocal = useItemsStore(
-    (s) => s.setPrimaryBarcodeLocal,
-  );
+
+  const setPrimaryBarcodeLocal = useItemsStore((s) => s.setPrimaryBarcodeLocal);
   const loadItems = useItemsStore((s) => s.loadItems);
+
+  const setSelectedItem = useItemsStore((s) => s.setSelectedItem);
+  const setPanelOpen = useItemsStore((s) => s.setPanelOpen);
+  const setScannedBarcode = useItemsStore((s) => s.setScannedBarcode);
 
   const [barcodes, setBarcodes] = useState<ItemBarcode[]>([]);
   const [loading, setLoading] = useState(false);
@@ -46,7 +49,20 @@ export const ItemBarcodesPanel: React.FC = () => {
   const [newKind, setNewKind] = useState("CUSTOM");
   const [saving, setSaving] = useState(false);
 
-  // 选中商品变化 → 加载条码
+  const closePanel = () => {
+    setSelectedItem(null);
+    setPanelOpen(false);
+
+    setBarcodes([]);
+    setError(null);
+    setNewCode("");
+    setNewKind("CUSTOM");
+    setSaving(false);
+    setLoading(false);
+
+    setScannedBarcode(null);
+  };
+
   useEffect(() => {
     if (!selectedItem) {
       setBarcodes([]);
@@ -64,10 +80,7 @@ export const ItemBarcodesPanel: React.FC = () => {
         if (cancelled) return;
         setBarcodes(list);
         const primary = list.find((b) => b.is_primary);
-        setPrimaryBarcodeLocal(
-          selectedItem.id,
-          primary ? primary.barcode : null,
-        );
+        setPrimaryBarcodeLocal(selectedItem.id, primary ? primary.barcode : null);
       } catch (e: unknown) {
         if (!cancelled) {
           setError(getErrorMessage(e, "加载条码失败"));
@@ -84,7 +97,6 @@ export const ItemBarcodesPanel: React.FC = () => {
     };
   }, [selectedItem, setPrimaryBarcodeLocal]);
 
-  // 扫码过来的条码：只要有扫描，就把新增输入框直接灌成该条码
   useEffect(() => {
     if (!scannedBarcode) return;
     setNewCode(scannedBarcode);
@@ -98,10 +110,7 @@ export const ItemBarcodesPanel: React.FC = () => {
       const list = await fetchItemBarcodes(selectedItem.id);
       setBarcodes(list);
       const primary = list.find((b) => b.is_primary);
-      setPrimaryBarcodeLocal(
-        selectedItem.id,
-        primary ? primary.barcode : null,
-      );
+      setPrimaryBarcodeLocal(selectedItem.id, primary ? primary.barcode : null);
       await loadItems();
     } catch (e: unknown) {
       setError(getErrorMessage(e, "刷新条码列表失败"));
@@ -126,7 +135,7 @@ export const ItemBarcodesPanel: React.FC = () => {
       const created = await createItemBarcode({
         item_id: selectedItem.id,
         barcode: code,
-        kind: newKind || "CUSTOM",
+        kind: newKind,
         active: true,
       });
 
@@ -163,80 +172,72 @@ export const ItemBarcodesPanel: React.FC = () => {
   };
 
   return (
-    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+    <section className="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-800">
-          条码管理
-        </h3>
-        {selectedItem && (
-          <span className="text-[11px] text-slate-500">
-            当前商品：#{selectedItem.id} / {selectedItem.sku}
-          </span>
-        )}
+        <h3 className="text-xl font-semibold text-slate-800">条码管理</h3>
+        <button
+          type="button"
+          onClick={closePanel}
+          className="rounded border border-slate-300 px-4 py-2 text-base hover:bg-slate-50"
+        >
+          关闭
+        </button>
       </div>
 
       {!selectedItem ? (
-        <div className="text-xs text-slate-500">
+        <div className="text-lg text-slate-600 leading-relaxed">
           尚未选择商品。你可以：
           <br />
-          ① 在上方“商品列表”中点击「管理条码」按钮；<br />
+          ① 在上方“商品列表”中点击「管理」按钮；
+          <br />
           ② 或在页面顶部的「Items 条码扫描台」扫描一个已绑定条码，系统会自动定位商品。
         </div>
       ) : (
         <>
-          {error && (
-            <div className="text-xs text-red-600">{error}</div>
-          )}
+          {error && <div className="text-lg text-red-600">{error}</div>}
 
           {loading ? (
-            <div className="text-xs text-slate-500">条码加载中…</div>
+            <div className="text-lg text-slate-600">条码加载中…</div>
           ) : barcodes.length === 0 ? (
-            <div className="text-xs text-slate-500">
-              当前商品尚未配置任何条码，可通过下方表单新增。
-            </div>
+            <div className="text-lg text-slate-600">当前商品尚未配置条码。</div>
           ) : (
-            <div className="overflow-auto rounded border border-slate-200 bg-white">
-              <table className="min-w-full text-[11px]">
+            <div className="overflow-auto rounded border border-slate-200">
+              <table className="min-w-full text-lg">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="border-b px-2 py-1 text-left">ID</th>
-                    <th className="border-b px-2 py-1 text-left">条码</th>
-                    <th className="border-b px-2 py-1 text-left">类型</th>
-                    <th className="border-b px-2 py-1 text-left">主条码</th>
-                    <th className="border-b px-2 py-1 text-left">操作</th>
+                    <th className="border-b px-4 py-3 text-left">ID</th>
+                    <th className="border-b px-4 py-3 text-left">条码</th>
+                    <th className="border-b px-4 py-3 text-left">类型</th>
+                    <th className="border-b px-4 py-3 text-left">主条码</th>
+                    <th className="border-b px-4 py-3 text-left">操作</th>
                   </tr>
                 </thead>
                 <tbody>
                   {barcodes.map((b) => (
-                    <tr
-                      key={b.id}
-                      className="border-t border-slate-100"
-                    >
-                      <td className="px-2 py-1">{b.id}</td>
-                      <td className="px-2 py-1 font-mono">
-                        {b.barcode}
-                      </td>
-                      <td className="px-2 py-1">{b.kind}</td>
-                      <td className="px-2 py-1">
+                    <tr key={b.id} className="border-t">
+                      <td className="px-4 py-3">{b.id}</td>
+                      <td className="px-4 py-3 font-mono">{b.barcode}</td>
+                      <td className="px-4 py-3">{b.kind}</td>
+                      <td className="px-4 py-3">
                         {b.is_primary ? (
-                          <span className="rounded border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700">
+                          <span className="rounded bg-emerald-100 px-3 py-1 text-base text-emerald-700">
                             主条码
                           </span>
                         ) : (
                           <button
                             type="button"
                             onClick={() => void handleSetPrimary(b.id)}
-                            className="rounded border border-slate-300 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50"
+                            className="rounded border px-3 py-1 text-base hover:bg-slate-50"
                           >
                             设为主条码
                           </button>
                         )}
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-4 py-3">
                         <button
                           type="button"
-                          className="text-[11px] text-red-600 hover:underline"
                           onClick={() => void handleDelete(b.id)}
+                          className="text-base text-red-600 hover:underline"
                         >
                           删除
                         </button>
@@ -248,22 +249,20 @@ export const ItemBarcodesPanel: React.FC = () => {
             </div>
           )}
 
-          {/* 新增条码表单 */}
-          <form
-            className="mt-2 flex flex-wrap items-center gap-2"
-            onSubmit={handleAdd}
-          >
+          <form onSubmit={handleAdd} className="mt-3 flex flex-wrap items-center gap-3">
             <input
-              className="min-w-[180px] rounded border bg-white px-2 py-1 text-[11px] font-mono"
-              placeholder="扫描或输入新条码"
+              className="min-w-[280px] rounded border px-4 py-3 text-lg font-mono"
+              placeholder="新条码"
               value={newCode}
               onChange={(e) => setNewCode(e.target.value)}
+              disabled={saving}
             />
 
             <select
-              className="rounded border bg白 px-2 py-1 text-[11px]"
+              className="rounded border px-4 py-3 text-lg"
               value={newKind}
               onChange={(e) => setNewKind(e.target.value)}
+              disabled={saving}
             >
               <option value="CUSTOM">CUSTOM</option>
               <option value="EAN13">EAN13</option>
@@ -275,9 +274,9 @@ export const ItemBarcodesPanel: React.FC = () => {
             <button
               type="submit"
               disabled={saving}
-              className="rounded bg-slate-900 px-3 py-1 text-[11px] text-white disabled:opacity-60"
+              className="rounded bg-slate-900 px-5 py-3 text-lg text-white disabled:opacity-60"
             >
-              {saving ? "保存中…" : "新增条码并设为主"}
+              {saving ? "保存中…" : "新增并设为主"}
             </button>
           </form>
         </>

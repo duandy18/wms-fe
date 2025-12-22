@@ -16,6 +16,14 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+
+    // ✅ 关闭热更新（HMR）
+    hmr: false,
+
+    // ✅ 禁用文件监听：改前端文件不会触发自动刷新/重载
+    // 这样只有你“重启前端服务”才会出现新页面/新登录页
+    watch: null,
+
     proxy: {
       // 登录 / 用户
       "/users": {

@@ -1,4 +1,7 @@
 // src/features/purchase-orders/usePurchaseOrderCreatePresenter.ts
+// 采购单创建 Presenter（大字号 Cockpit 版）
+// - 支持：供应商 / 仓库 / 采购人 / 采购时间 必填
+// - 行：最小单位 / 采购单位 / 每件数量 / 订购件数 / 单价 / 行金额（按最小单位）
 
 import { useEffect, useState } from "react";
 import {
@@ -22,13 +25,12 @@ export type LineDraft = {
   item_name: string;
   spec_text: string;
 
-  purchase_uom: string;
+  base_uom: string; // 最小单位（如 袋 / 罐 / PCS）
+  purchase_uom: string; // 采购单位（件 / 箱 / 托）
   units_per_case: string;
 
   qty_ordered: string;
   supply_price: string;
-
-  category: string;
 };
 
 const makeEmptyLine = (id: number): LineDraft => ({
@@ -36,11 +38,11 @@ const makeEmptyLine = (id: number): LineDraft => ({
   item_id: "",
   item_name: "",
   spec_text: "",
+  base_uom: "",
   purchase_uom: "",
   units_per_case: "",
   qty_ordered: "",
   supply_price: "",
-  category: "",
 });
 
 type ApiErrorShape = {
@@ -64,7 +66,11 @@ export interface PurchaseOrderCreateState {
   itemsError: string | null;
 
   warehouseId: string;
-  remark: string;
+
+  purchaser: string;
+  purchaseTime: string; // 形如 "2025-12-11T21:30" 的 datetime-local 字符串
+
+  remark: string; // 可选备注，当前 UI 可以先不用
 
   lines: LineDraft[];
 
@@ -79,6 +85,8 @@ export interface PurchaseOrderCreateActions {
   selectItemForLine: (lineId: number, itemId: number | null) => void;
 
   setWarehouseId: (v: string) => void;
+  setPurchaser: (v: string) => void;
+  setPurchaseTime: (v: string) => void;
   setRemark: (v: string) => void;
   setError: (v: string | null) => void;
 
@@ -109,6 +117,16 @@ export function usePurchaseOrderCreatePresenter(): [
   const [itemsError, setItemsError] = useState<string | null>(null);
 
   const [warehouseId, setWarehouseId] = useState("1");
+
+  const [purchaser, setPurchaser] = useState("");
+  const [purchaseTime, setPurchaseTime] = useState(() => {
+    // 初始值：当前时间截到分钟，适配 <input type="datetime-local">
+    const d = new Date();
+    const iso = d.toISOString(); // 2025-12-11T21:30:00.000Z
+    // datetime-local 需要本地时间，不带 Z，这里直接截前 16 个字符（YYYY-MM-DDTHH:mm）
+    return iso.slice(0, 16);
+  });
+
   const [remark, setRemark] = useState("");
 
   const [lines, setLines] = useState<LineDraft[]>([
@@ -182,6 +200,7 @@ export function usePurchaseOrderCreatePresenter(): [
             item_id: "",
             item_name: "",
             spec_text: "",
+            base_uom: "",
             purchase_uom: "",
           };
         }
@@ -194,12 +213,14 @@ export function usePurchaseOrderCreatePresenter(): [
           };
         }
 
+        // found.uom 视为最小单位（base_uom），采购单位由用户在表格中单独填写
         return {
           ...l,
           item_id: String(found.id),
           item_name: found.name,
           spec_text: found.spec ?? "",
-          purchase_uom: found.uom ?? l.purchase_uom,
+          base_uom: found.uom ?? l.base_uom,
+          purchase_uom: l.purchase_uom || "",
         };
       }),
     );
@@ -236,7 +257,11 @@ export function usePurchaseOrderCreatePresenter(): [
     const normalized: PurchaseOrderLineCreatePayload[] = [];
 
     for (const [idx, l] of lines.entries()) {
-      if (!l.item_id.trim() && !l.qty_ordered.trim() && !l.item_name.trim()) {
+      if (
+        !l.item_id.trim() &&
+        !l.qty_ordered.trim() &&
+        !l.item_name.trim()
+      ) {
         continue;
       }
 
@@ -257,7 +282,10 @@ export function usePurchaseOrderCreatePresenter(): [
       if (Number.isNaN(qty) || qty <= 0) {
         throw new Error(`第 ${idx + 1} 行：订购数量必须 > 0`);
       }
-      if (supplyPrice != null && (Number.isNaN(supplyPrice) || supplyPrice < 0)) {
+      if (
+        supplyPrice != null &&
+        (Number.isNaN(supplyPrice) || supplyPrice < 0)
+      ) {
         throw new Error(`第 ${idx + 1} 行：采购价格非法`);
       }
       if (
@@ -270,9 +298,10 @@ export function usePurchaseOrderCreatePresenter(): [
       normalized.push({
         line_no: idx + 1,
         item_id: itemId,
-        category: l.category.trim() || null,
+        category: null, // 当前前端不编辑分类，统一传 null
 
         spec_text: l.spec_text.trim() || null,
+        base_uom: l.base_uom.trim() || null,
         purchase_uom: l.purchase_uom.trim() || null,
         units_per_case: unitsPerCase,
 
@@ -289,14 +318,42 @@ export function usePurchaseOrderCreatePresenter(): [
   const submit = async (onSuccess?: (poId: number) => void) => {
     setError(null);
 
+    // 供应商必选
     if (!supplierId || !supplierName) {
       setError("请选择供应商");
       return;
     }
 
+    // 仓库必填
     const wid = Number(warehouseId.trim() || "1");
     if (Number.isNaN(wid) || wid <= 0) {
       setError("仓库 ID 非法");
+      return;
+    }
+
+    // 采购人必填
+    const purchaserTrimmed = purchaser.trim();
+    if (!purchaserTrimmed) {
+      setError("请填写采购人");
+      return;
+    }
+
+    // 采购时间必填
+    const purchaseTimeTrimmed = purchaseTime.trim();
+    if (!purchaseTimeTrimmed) {
+      setError("请填写采购时间");
+      return;
+    }
+
+    let purchaseTimeIso: string;
+    try {
+      const d = new Date(purchaseTimeTrimmed);
+      if (Number.isNaN(d.getTime())) {
+        throw new Error("时间格式非法");
+      }
+      purchaseTimeIso = d.toISOString();
+    } catch {
+      setError("采购时间格式非法，请重新选择");
       return;
     }
 
@@ -322,12 +379,15 @@ export function usePurchaseOrderCreatePresenter(): [
         supplier_id: supplierId,
         supplier_name: supplierName,
         warehouse_id: wid,
+        purchaser: purchaserTrimmed,
+        purchase_time: purchaseTimeIso,
         remark: remark.trim() || null,
         lines: normalizedLines,
       });
 
       setLastCreatedPo(po);
 
+      // 重置部分字段（采购人/时间通常不重置，方便连续录入）
       setRemark("");
       setLines([
         makeEmptyLine(1),
@@ -357,6 +417,10 @@ export function usePurchaseOrderCreatePresenter(): [
       itemsError,
 
       warehouseId,
+
+      purchaser,
+      purchaseTime,
+
       remark,
       lines,
       lastCreatedPo,
@@ -367,6 +431,8 @@ export function usePurchaseOrderCreatePresenter(): [
       selectSupplier,
       selectItemForLine,
       setWarehouseId,
+      setPurchaser,
+      setPurchaseTime,
       setRemark,
       setError,
       changeLineField,

@@ -1,18 +1,8 @@
 // src/shared/useAuth.tsx
 /* eslint-disable react-refresh/only-export-components */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-} from "react";
-import {
-  apiPost,
-  apiGet,
-  setAccessToken,
-  getAccessToken,
-} from "../lib/api";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { apiPost, apiGet, setAccessToken, getAccessToken } from "../lib/api";
 
 export type UserRole = "staff" | "admin";
 type Permission = string;
@@ -27,7 +17,6 @@ interface LoginResult {
   token_type: string;
 }
 
-// /users/me 返回结构（按后端实际 schema 调整）
 interface MeResponse {
   id: number;
   username: string;
@@ -35,17 +24,19 @@ interface MeResponse {
   permissions?: string[];
 }
 
-// 前端使用的用户信息模型：挂上 roles / permissions，方便调试与 gating。
 interface UserInfo {
   username: string;
-  role: UserRole; // 前端视角 admin/staff（通过 roles 推导）
-  roles: string[]; // 后端角色名列表，如 ["admin"] / ["operator"]
+  role: UserRole;
+  roles: string[];
   permissions: Permission[];
 }
 
 interface AuthContextType {
+  authReady: boolean;
+
   isAuthenticated: boolean;
   user: UserInfo | null;
+
   login: (input: LoginInput) => Promise<void>;
   logout: () => void;
 
@@ -61,35 +52,160 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 用户名和角色各自一个 key，不动 token 那套（WMS_TOKEN 仍由 lib/api 管）
 const USERNAME_STORAGE_KEY = "WMS_USERNAME";
 const ROLE_STORAGE_KEY = "WMS_ROLE";
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+function safeGetLS(key: string): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSetLS(key: string, value: string) {
+  try {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(key, value);
+  } catch {
+    // ignore
+  }
+}
+
+function safeRemoveLS(key: string) {
+  try {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+}
+
+function normalizeRole(v: string | null): UserRole {
+  return v === "admin" ? "admin" : "staff";
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object" && !Array.isArray(v);
+}
+
+function isNotAuthenticatedError(err: unknown): boolean {
+  const e = isRecord(err) ? err : {};
+
+  const status =
+    (typeof e["status"] === "number" ? e["status"] : undefined) ??
+    (typeof e["statusCode"] === "number" ? e["statusCode"] : undefined) ??
+    (isRecord(e["response"]) && typeof (e["response"] as Record<string, unknown>)["status"] === "number"
+      ? ((e["response"] as Record<string, unknown>)["status"] as number)
+      : undefined);
+
+  if (status === 401) return true;
+
+  const detail =
+    (isRecord(e["body"]) ? (e["body"] as Record<string, unknown>)["detail"] : undefined) ??
+    e["detail"] ??
+    (isRecord(e["response"]) && isRecord((e["response"] as Record<string, unknown>)["data"])
+      ? (((e["response"] as Record<string, unknown>)["data"] as Record<string, unknown>)["detail"] as unknown)
+      : undefined) ??
+    e["message"];
+
+  return typeof detail === "string" && detail.toLowerCase().includes("not authenticated");
+}
+
+function devForceLogout(reason: string) {
+  try {
+    setAccessToken(null);
+  } catch {
+    // ignore
+  }
+
+  try {
+    safeRemoveLS(USERNAME_STORAGE_KEY);
+    safeRemoveLS(ROLE_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+
+  try {
+    window.sessionStorage.setItem("WMS_DEV_FORCE_LOGOUT_REASON", reason);
+  } catch {
+    // ignore
+  }
+}
+
+// HMR: 模块被替换前强制 logout + 回登录页（DEV only）
+try {
+  const isDev = !!import.meta.env.DEV;
+
+  const meta = import.meta as unknown as { hot?: { dispose?: (cb: () => void) => void } };
+  const hot = meta.hot;
+
+  if (isDev && hot?.dispose) {
+    hot.dispose(() => {
+      devForceLogout("HMR_DISPOSE");
+      try {
+        window.location.replace("/login");
+      } catch {
+        // ignore
+      }
+    });
+  }
+} catch {
+  // ignore
+}
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [authReady, setAuthReady] = useState(false);
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<UserInfo | null>(null);
-  // 默认 staff，当成“业务人员”角色
-  const [role, setRole] = useState<UserRole>("staff");
-  // 后端返回的权限串，如 ["system.user.manage", "operations.inbound", ...]
+
+  const [role, setRole] = useState<UserRole>(normalizeRole(safeGetLS(ROLE_STORAGE_KEY)));
   const [permissions, setPermissions] = useState<Permission[]>([]);
 
-  // 启动时：根据 token + /users/me 恢复状态
-  useEffect(() => {
-    const token = getAccessToken(); // 内部仍然用 WMS_TOKEN
+  const hardLogout = () => {
+    setAccessToken(null);
+    setIsAuthenticated(false);
+    setUser(null);
+    setPermissions([]);
+    setRole("staff");
+    safeRemoveLS(USERNAME_STORAGE_KEY);
+    safeRemoveLS(ROLE_STORAGE_KEY);
+  };
 
-    if (!token) {
-      setIsAuthenticated(false);
-      setUser(null);
-      setPermissions([]);
+  useEffect(() => {
+    const isDev = !!import.meta.env.DEV;
+
+    if (isDev) {
+      devForceLogout("DEV_COLD_START");
+      hardLogout();
+      setAuthReady(true);
       return;
     }
 
-    const savedUsername =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem(USERNAME_STORAGE_KEY)
-        : null;
+    const token = getAccessToken();
+
+    if (!token) {
+      hardLogout();
+      setAuthReady(true);
+      return;
+    }
+
+    setAccessToken(token);
+    setIsAuthenticated(false);
+
+    const username0 = safeGetLS(USERNAME_STORAGE_KEY) ?? "unknown";
+    const role0 = normalizeRole(safeGetLS(ROLE_STORAGE_KEY));
+
+    setUser({
+      username: username0,
+      role: role0,
+      roles: role0 === "admin" ? ["admin"] : [],
+      permissions: [],
+    });
+    setRole(role0);
+    setPermissions([]);
 
     (async () => {
       try {
@@ -98,17 +214,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const backendRoles = me.roles?.map((r) => r.name) ?? [];
         const backendPerms = me.permissions ?? [];
 
-        // 约定：拥有 admin 角色 → 前端视角 admin；否则 staff
-        const effectiveRole: UserRole = backendRoles.includes("admin")
-          ? "admin"
-          : "staff";
+        const effectiveRole: UserRole = backendRoles.includes("admin") ? "admin" : "staff";
+        const username = me.username ?? username0;
 
-        setIsAuthenticated(true);
         setRole(effectiveRole);
         setPermissions(backendPerms);
-
-        const username = me.username ?? savedUsername ?? "unknown";
-
         setUser({
           username,
           role: effectiveRole,
@@ -116,25 +226,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           permissions: backendPerms,
         });
 
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(USERNAME_STORAGE_KEY, username);
-          window.localStorage.setItem(ROLE_STORAGE_KEY, effectiveRole);
-        }
-      } catch {
-        // /users/me 掉线时，至少保持“已登录 + 基础信息”
+        safeSetLS(USERNAME_STORAGE_KEY, username);
+        safeSetLS(ROLE_STORAGE_KEY, effectiveRole);
+
         setIsAuthenticated(true);
-        const fallbackRole: UserRole = "staff";
-
-        setRole(fallbackRole);
-        setPermissions([]);
-
-        const username = savedUsername ?? "unknown";
-        setUser({
-          username,
-          role: fallbackRole,
-          roles: [],
-          permissions: [],
-        });
+        setAuthReady(true);
+      } catch (err: unknown) {
+        if (isNotAuthenticatedError(err)) {
+          hardLogout();
+        }
+        setAuthReady(true);
       }
     })();
   }, []);
@@ -147,7 +248,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const token = result.access_token;
     setAccessToken(token);
-    setIsAuthenticated(true);
+
+    setIsAuthenticated(false);
+    setAuthReady(false);
 
     try {
       const me = await apiGet<MeResponse>("/users/me");
@@ -155,15 +258,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const backendRoles = me.roles?.map((r) => r.name) ?? [];
       const backendPerms = me.permissions ?? [];
 
-      const effectiveRole: UserRole = backendRoles.includes("admin")
-        ? "admin"
-        : "staff";
+      const effectiveRole: UserRole = backendRoles.includes("admin") ? "admin" : "staff";
+      const username = me.username ?? input.username;
 
       setRole(effectiveRole);
       setPermissions(backendPerms);
-
-      const username = me.username ?? input.username;
-
       setUser({
         username,
         role: effectiveRole,
@@ -171,55 +270,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         permissions: backendPerms,
       });
 
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(USERNAME_STORAGE_KEY, username);
-        window.localStorage.setItem(ROLE_STORAGE_KEY, effectiveRole);
+      safeSetLS(USERNAME_STORAGE_KEY, username);
+      safeSetLS(ROLE_STORAGE_KEY, effectiveRole);
+
+      setIsAuthenticated(true);
+      setAuthReady(true);
+
+      try {
+        window.sessionStorage.removeItem("WMS_DEV_FORCE_LOGOUT_REASON");
+      } catch {
+        // ignore
       }
-    } catch {
-      // /users/me 暂时失败 → 退化到只记录用户名，权限为空
-      const fallbackRole: UserRole = "staff";
-
-      setRole(fallbackRole);
-      setPermissions([]);
-
-      setUser({
-        username: input.username,
-        role: fallbackRole,
-        roles: [],
-        permissions: [],
-      });
-
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(USERNAME_STORAGE_KEY, input.username);
-        window.localStorage.setItem(ROLE_STORAGE_KEY, fallbackRole);
+    } catch (err: unknown) {
+      if (isNotAuthenticatedError(err)) {
+        hardLogout();
       }
+      setAuthReady(true);
     }
   };
 
   const logout = () => {
-    setAccessToken(null);
-    setIsAuthenticated(false);
-    setUser(null);
-    setPermissions([]);
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(USERNAME_STORAGE_KEY);
-      window.localStorage.removeItem(ROLE_STORAGE_KEY);
-    }
+    hardLogout();
+    setAuthReady(true);
   };
 
   const can = (perm: Permission) => permissions.includes(perm);
-
-  const canAny = (perms: Permission[]) =>
-    perms.some((p) => permissions.includes(p));
-
-  const canAll = (perms: Permission[]) =>
-    perms.every((p) => permissions.includes(p));
-
+  const canAny = (perms: Permission[]) => perms.some((p) => permissions.includes(p));
+  const canAll = (perms: Permission[]) => perms.every((p) => permissions.includes(p));
   const isAdmin = role === "admin";
 
   return (
     <AuthContext.Provider
       value={{
+        authReady,
         isAuthenticated,
         user,
         login,
@@ -240,8 +323,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export function useAuth(): AuthContextType {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }

@@ -1,6 +1,6 @@
 // src/app/layout/Topbar.tsx
 import React, { useState } from "react";
-import { useAuth } from "../auth/useAuth";
+import { useAuth } from "../../shared/useAuth";
 import { apiPost } from "../../lib/api";
 
 type ChangePasswordErrorShape = {

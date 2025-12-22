@@ -11,7 +11,6 @@ const WarehouseDetailPage: React.FC = () => {
   const id = Number(warehouseId);
   const navigate = useNavigate();
 
-  // 前端不再做 can("admin.stores") 校验
   const canWrite = true;
 
   const [detail, setDetail] = useState<WarehouseListItem | null>(null);
@@ -51,7 +50,7 @@ const WarehouseDetailPage: React.FC = () => {
       })
       .catch((err: unknown) => {
         const e = err as { message?: string };
-        setError(e?.message ?? "加载仓库详情失败");
+        setError(e?.message ?? "加载仓库失败");
         setDetail(null);
       })
       .finally(() => setLoading(false));
@@ -62,31 +61,37 @@ const WarehouseDetailPage: React.FC = () => {
     if (!detail) return;
     if (!canWrite) return;
 
+    const trimmedName = name.trim();
+    const trimmedCode = code.trim();
+
+    if (!trimmedName) {
+      setError("仓库名称不能为空");
+      return;
+    }
+    if (!trimmedCode) {
+      setError("仓库编码不能为空（必填）");
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
-      const trimmedName = name.trim();
-      if (!trimmedName) {
-        setError("仓库名称不能为空");
+      const parsedArea =
+        areaSqm.trim() === "" ? null : Number(areaSqm.trim());
+      if (parsedArea !== null && (!Number.isFinite(parsedArea) || parsedArea < 0)) {
+        setError("仓库面积必须是 >= 0 的数字");
         setSaving(false);
         return;
       }
-
-      const trimmedCode = code.trim() || null;
-      const trimmedAddress = address.trim() || null;
-      const trimmedContactName = contactName.trim() || null;
-      const trimmedContactPhone = contactPhone.trim() || null;
-      const parsedArea =
-        areaSqm.trim() === "" ? null : Number(areaSqm.trim()) || 0;
 
       const updated = await updateWarehouse(detail.id, {
         name: trimmedName,
         code: trimmedCode,
         active,
-        address: trimmedAddress,
-        contact_name: trimmedContactName,
-        contact_phone: trimmedContactPhone,
+        address: address.trim() ? address.trim() : null,
+        contact_name: contactName.trim() ? contactName.trim() : null,
+        contact_phone: contactPhone.trim() ? contactPhone.trim() : null,
         area_sqm: parsedArea,
       });
 
@@ -100,142 +105,126 @@ const WarehouseDetailPage: React.FC = () => {
   }
 
   if (!id) {
-    return (
-      <div className="p-4 text-sm text-red-600">缺少 warehouseId 参数</div>
-    );
+    return <div className="p-8 text-2xl text-red-600">缺少 warehouseId 参数</div>;
   }
 
   return (
-    <div className="space-y-4 p-4">
-      <PageTitle title="仓库详情" description="仓库主数据维护" />
+    <div className="space-y-8 p-10">
+      <PageTitle title="仓库编辑" description="仓库主数据维护（字体放大版）" />
 
       <button
         type="button"
-        className="text-sm text-sky-700 underline"
+        className="text-xl text-sky-700 underline"
         onClick={() => navigate(-1)}
       >
         ← 返回仓库管理
       </button>
 
       {error && (
-        <div className="rounded px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-100">
+        <div className="rounded-xl px-5 py-4 text-xl text-red-700 bg-red-50 border border-red-100">
           {error}
         </div>
       )}
 
       {loading && !detail ? (
-        <div className="text-sm text-slate-500">加载中…</div>
+        <div className="text-xl text-slate-500">加载中…</div>
       ) : !detail ? (
-        <div className="text-sm text-slate-500">未找到仓库。</div>
+        <div className="text-xl text-slate-500">未找到仓库。</div>
       ) : (
-        <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
-          <div className="text-base">
-            <span className="mr-2 text-slate-500">ID:</span>
+        <section className="space-y-8 rounded-2xl border border-slate-200 bg-white p-10">
+          <div className="text-2xl">
+            <span className="mr-3 text-slate-500">ID:</span>
             <span className="font-semibold">{detail.id}</span>
           </div>
 
-          {canWrite ? (
-            <form
-              className="grid grid-cols-1 gap-4 text-base md:grid-cols-2 lg:grid-cols-3"
-              onSubmit={handleSave}
-            >
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-slate-500">仓库名称</label>
-                <input
-                  className="rounded-lg border px-3 py-2 text-base"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="主仓 / 备仓 …"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-slate-500">
-                  仓库编码（可选）
-                </label>
-                <input
-                  className="rounded-lg border px-3 py-2 text-base"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="例如 WH1 / SH-MAIN / CODE-A"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-slate-500">状态</label>
-                <select
-                  value={active ? "1" : "0"}
-                  onChange={(e) => setActive(e.target.value === "1")}
-                  className="rounded-lg border px-3 py-2 text-base"
-                >
-                  <option value="1">启用</option>
-                  <option value="0">停用</option>
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1 md:col-span-2">
-                <label className="text-sm text-slate-500">地址（可选）</label>
-                <input
-                  className="rounded-lg border px-3 py-2 text-base"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="例如 上海市 · 某某路 · 某某仓库园区 ..."
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-slate-500">
-                  联系人（可选）
-                </label>
-                <input
-                  className="rounded-lg border px-3 py-2 text-base"
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  placeholder="例如 张三"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-slate-500">
-                  联系电话（可选）
-                </label>
-                <input
-                  className="rounded-lg border px-3 py-2 text-base"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  placeholder="手机 / 座机 / 分机号"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-slate-500">
-                  仓库面积（m²，可选）
-                </label>
-                <input
-                  type="number"
-                  className="rounded-lg border px-3 py-2 text-base"
-                  value={areaSqm}
-                  onChange={(e) => setAreaSqm(e.target.value)}
-                  placeholder="例如 800"
-                  min={0}
-                />
-              </div>
-
-              <div className="flex items-center">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-slate-900 px-5 py-2 text-base text-white disabled:opacity-60"
-                >
-                  {saving ? "保存中…" : "保存修改"}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="text-sm text-slate-500">
-              无编辑权限（admin.stores）
+          <form
+            className="grid grid-cols-1 gap-8 text-2xl md:grid-cols-2 lg:grid-cols-3"
+            onSubmit={handleSave}
+          >
+            <div className="flex flex-col gap-3">
+              <label className="text-xl text-slate-500">仓库名称 *</label>
+              <input
+                className="rounded-2xl border px-5 py-4 text-2xl"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
-          )}
+
+            <div className="flex flex-col gap-3">
+              <label className="text-xl text-slate-500">
+                仓库编码（手动填写）*
+              </label>
+              <input
+                className="rounded-2xl border px-5 py-4 text-2xl font-mono"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="text-xl text-slate-500">状态</label>
+              <select
+                value={active ? "1" : "0"}
+                onChange={(e) => setActive(e.target.value === "1")}
+                className="rounded-2xl border px-5 py-4 text-2xl"
+              >
+                <option value="1">启用</option>
+                <option value="0">停用</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-3 md:col-span-2 lg:col-span-3">
+              <label className="text-xl text-slate-500">地址</label>
+              <input
+                className="rounded-2xl border px-5 py-4 text-2xl"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="text-xl text-slate-500">联系人</label>
+              <input
+                className="rounded-2xl border px-5 py-4 text-2xl"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="text-xl text-slate-500">联系电话</label>
+              <input
+                className="rounded-2xl border px-5 py-4 text-2xl font-mono"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="text-xl text-slate-500">仓库面积（㎡）</label>
+              <input
+                type="number"
+                min={0}
+                className="rounded-2xl border px-5 py-4 text-2xl font-mono"
+                value={areaSqm}
+                onChange={(e) => setAreaSqm(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center lg:col-span-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="rounded-2xl bg-slate-900 px-10 py-5 text-2xl text-white disabled:opacity-60"
+              >
+                {saving ? "保存中…" : "保存修改"}
+              </button>
+            </div>
+          </form>
+
+          <div className="text-base text-slate-500">
+            说明：仓库不可删除（数据库已 RESTRICT），需要停用请改状态为“停用”。
+          </div>
         </section>
       )}
     </div>

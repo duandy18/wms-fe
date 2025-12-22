@@ -55,6 +55,9 @@ const statusBadge = (s: string) => {
   }
 };
 
+const formatTs = (ts: string | null | undefined) =>
+  ts ? ts.replace("T", " ").replace("Z", "") : "-";
+
 export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
   orders,
   loading,
@@ -86,6 +89,16 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
       key: "supplier_name",
       header: "供应商",
       render: (po) => po.supplier_name ?? po.supplier ?? "-",
+    },
+    {
+      key: "purchaser",
+      header: "采购人",
+      render: (po) => po.purchaser ?? "-",
+    },
+    {
+      key: "purchase_time",
+      header: "采购时间",
+      render: (po) => formatTs(po.purchase_time),
     },
     {
       key: "warehouse_id",
@@ -124,10 +137,7 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
     {
       key: "created_at",
       header: "创建时间",
-      render: (po) =>
-        po.created_at
-          ? po.created_at.replace("T", " ").replace("Z", "")
-          : "-",
+      render: (po) => formatTs(po.created_at),
     },
   ];
 

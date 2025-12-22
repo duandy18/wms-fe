@@ -1,44 +1,43 @@
 // src/features/admin/warehouses/types.ts
 
-// 仓库列表项 / 详情项
 export interface WarehouseListItem {
   id: number;
   name: string;
   code: string | null;
   active: boolean;
 
-  // 扩展字段（v2）
   address: string | null;
   contact_name: string | null;
   contact_phone: string | null;
   area_sqm: number | null;
 }
 
-// /warehouses 列表响应
 export interface WarehouseListResponse {
   ok: boolean;
   data: WarehouseListItem[];
 }
 
-// /warehouses/{id} / POST / PATCH 返回的统一结构
 export interface WarehouseDetailResponse {
   ok: boolean;
   data: WarehouseListItem;
 }
 
-// 创建 payload
+/**
+ * Phase 3 延展：新建=完整事实输入
+ * - 与列表列尽量一致（除机器生成字段：id/时间戳）
+ */
 export interface WarehouseCreatePayload {
   name: string;
-  code?: string | null;
-  // 目前创建表单只填 name/code，其余字段可在详情页补充；
-  // 若以后需要在创建时录入，可在此加上：
-  // address?: string | null;
-  // contact_name?: string | null;
-  // contact_phone?: string | null;
-  // area_sqm?: number | null;
+  code: string; // ✅ 作为稳定引用编码：创建时必须有
+
+  active: boolean;
+
+  address: string | null;
+  contact_name: string | null;
+  contact_phone: string | null;
+  area_sqm: number | null;
 }
 
-// 更新 payload（字段名与后端 Pydantic 保持一致：snake_case）
 export interface WarehouseUpdatePayload {
   name?: string | null;
   code?: string | null;

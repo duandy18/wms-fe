@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../app/auth/useAuth";
+import { useAuth } from "../../shared/useAuth";
 
 type ApiErrorShape = {
   message?: string;

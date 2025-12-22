@@ -60,7 +60,7 @@ export class ApiError extends Error {
 
 type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
-type QueryParams = Record<
+export type QueryParams = Record<
   string,
   string | number | boolean | null | undefined
 >;
@@ -78,6 +78,21 @@ function buildPathWithQuery(path: string, params?: QueryParams): string {
   if (!qs) return path;
 
   return path + (path.includes("?") ? "&" : "?") + qs;
+}
+
+// 判断一个对象是否像 RequestInit（用于重载识别）
+function looksLikeRequestInit(x: unknown): x is RequestInit {
+  if (!x || typeof x !== "object") return false;
+  const o = x as RequestInit;
+  return (
+    "headers" in o ||
+    "credentials" in o ||
+    "mode" in o ||
+    "cache" in o ||
+    "redirect" in o ||
+    "referrer" in o ||
+    "integrity" in o
+  );
 }
 
 // ============================================================================
@@ -109,9 +124,7 @@ async function request<T>(
     method,
     headers,
     body:
-      body !== undefined && body !== null
-        ? JSON.stringify(body)
-        : undefined,
+      body !== undefined && body !== null ? JSON.stringify(body) : undefined,
     credentials: "include",
     ...options,
   });
@@ -149,7 +162,7 @@ async function request<T>(
  * - apiGet(path)                         // 无 query
  * - apiGet(path, params)                 // 以 params 拼 query
  * - apiGet(path, params, requestInit)    // query + 额外 fetch 选项
- * - apiGet(path, requestInit)            // 保持兼容旧签名：第二个参数当成 RequestInit
+ * - apiGet(path, requestInit)            // 兼容旧签名：第二个参数当成 RequestInit
  */
 export async function apiGet<T>(
   path: string,
@@ -160,20 +173,11 @@ export async function apiGet<T>(
   let options: RequestInit = {};
 
   if (maybeOptions) {
-    // 三参形式：apiGet(path, params, options)
     params = paramsOrOptions as QueryParams;
     options = maybeOptions;
-  } else if (
-    paramsOrOptions &&
-    typeof paramsOrOptions === "object" &&
-    ("headers" in (paramsOrOptions as RequestInit) ||
-      "credentials" in (paramsOrOptions as RequestInit) ||
-      "mode" in (paramsOrOptions as RequestInit))
-  ) {
-    // 二参形式且第二个参数看起来像 RequestInit
+  } else if (looksLikeRequestInit(paramsOrOptions)) {
     options = paramsOrOptions as RequestInit;
   } else {
-    // 二参形式且第二个参数不是 RequestInit → 当成 query params
     params = paramsOrOptions as QueryParams | undefined;
   }
 
@@ -181,25 +185,88 @@ export async function apiGet<T>(
   return request<T>("GET", finalPath, undefined, options);
 }
 
+/**
+ * POST 请求（新增 query 重载）：
+ * - apiPost(path, body)
+ * - apiPost(path, body, options)
+ * - apiPost(path, body, params)
+ * - apiPost(path, body, params, options)
+ */
 export async function apiPost<T>(
   path: string,
   body: unknown,
-  options: RequestInit = {},
+  paramsOrOptions?: unknown,
+  maybeOptions?: RequestInit,
 ): Promise<T> {
-  return request<T>("POST", path, body, options);
+  let params: QueryParams | undefined;
+  let options: RequestInit = {};
+
+  if (maybeOptions) {
+    params = paramsOrOptions as QueryParams;
+    options = maybeOptions;
+  } else if (looksLikeRequestInit(paramsOrOptions)) {
+    options = paramsOrOptions as RequestInit;
+  } else {
+    params = paramsOrOptions as QueryParams | undefined;
+  }
+
+  const finalPath = buildPathWithQuery(path, params);
+  return request<T>("POST", finalPath, body, options);
 }
 
+/**
+ * PATCH 请求（新增 query 重载）：
+ * - apiPatch(path, body)
+ * - apiPatch(path, body, options)
+ * - apiPatch(path, body, params)
+ * - apiPatch(path, body, params, options)
+ */
 export async function apiPatch<T>(
   path: string,
   body: unknown,
-  options: RequestInit = {},
+  paramsOrOptions?: unknown,
+  maybeOptions?: RequestInit,
 ): Promise<T> {
-  return request<T>("PATCH", path, body, options);
+  let params: QueryParams | undefined;
+  let options: RequestInit = {};
+
+  if (maybeOptions) {
+    params = paramsOrOptions as QueryParams;
+    options = maybeOptions;
+  } else if (looksLikeRequestInit(paramsOrOptions)) {
+    options = paramsOrOptions as RequestInit;
+  } else {
+    params = paramsOrOptions as QueryParams | undefined;
+  }
+
+  const finalPath = buildPathWithQuery(path, params);
+  return request<T>("PATCH", finalPath, body, options);
 }
 
+/**
+ * DELETE 请求（新增 query 重载）：
+ * - apiDelete(path)
+ * - apiDelete(path, options)
+ * - apiDelete(path, params)
+ * - apiDelete(path, params, options)
+ */
 export async function apiDelete<T>(
   path: string,
-  options: RequestInit = {},
+  paramsOrOptions?: unknown,
+  maybeOptions?: RequestInit,
 ): Promise<T> {
-  return request<T>("DELETE", path, undefined, options);
+  let params: QueryParams | undefined;
+  let options: RequestInit = {};
+
+  if (maybeOptions) {
+    params = paramsOrOptions as QueryParams;
+    options = maybeOptions;
+  } else if (looksLikeRequestInit(paramsOrOptions)) {
+    options = paramsOrOptions as RequestInit;
+  } else {
+    params = paramsOrOptions as QueryParams | undefined;
+  }
+
+  const finalPath = buildPathWithQuery(path, params);
+  return request<T>("DELETE", finalPath, undefined, options);
 }

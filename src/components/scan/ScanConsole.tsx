@@ -112,66 +112,64 @@ export const ScanConsole: React.FC<ScanConsoleProps> = ({
   };
 
   return (
-    <div className="border border-slate-200 rounded-xl bg-white p-4 shadow-sm h-full flex flex-col">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+    <div className="border border-slate-200 rounded-xl bg-white p-6 shadow-sm h-full flex flex-col">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
           {modeLabel && (
-            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-base text-slate-700">
               模式：{modeLabel}
             </span>
           )}
         </div>
-        {busy && (
-          <span className="text-[11px] text-slate-500">处理中…</span>
-        )}
+        {busy && <span className="text-base text-slate-500">处理中…</span>}
       </div>
 
-      <form onSubmit={handleSubmit} className="mb-3">
+      <form onSubmit={handleSubmit} className="mb-4">
         <input
           ref={inputRef}
-          className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
+          className="w-full border border-slate-300 rounded px-4 py-4 text-xl focus:outline-none focus:ring-2 focus:ring-sky-500"
           placeholder={placeholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
       </form>
 
-      <div className="text-xs text-slate-500 mb-1">最近扫描记录</div>
-      <div className="max-h-40 overflow-auto border border-slate-100 rounded bg-slate-50 flex-1">
+      <div className="text-lg text-slate-600 mb-2">最近扫描记录</div>
+
+      <div className="max-h-56 overflow-auto border border-slate-100 rounded bg-slate-50 flex-1">
         {records.length === 0 ? (
-          <div className="px-3 py-2 text-[11px] text-slate-400">
-            暂无记录。
-          </div>
+          <div className="px-4 py-3 text-lg text-slate-400">暂无记录。</div>
         ) : (
-          <ul className="divide-y divide-slate-100 text-[11px]">
+          <ul className="divide-y divide-slate-100 text-lg">
             {records.map((rec) => (
               <li
                 key={rec.id}
-                className="px-3 py-1.5 flex items-start justify-between gap-2"
+                className="px-4 py-3 flex items-start justify-between gap-3"
               >
-                <div>
+                <div className="min-w-0">
                   <div className="font-mono text-slate-800 break-all">
                     {rec.value}
                   </div>
                   {rec.message && (
-                    <div className="text-[10px] text-red-600 mt-0.5">
+                    <div className="text-base text-red-600 mt-1 break-words">
                       {rec.message}
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col items-end gap-0.5">
-                  <span className="text-[10px] text-slate-400">
+
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  <span className="text-base text-slate-500">
                     {rec.ts.toLocaleTimeString()}
                   </span>
                   <span
                     className={
-                      "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] " +
+                      "inline-flex items-center rounded-full px-3 py-1 text-base border " +
                       (rec.status === "success"
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : rec.status === "error"
-                        ? "bg-red-50 text-red-700 border border-red-200"
-                        : "bg-slate-50 text-slate-500 border border-slate-200")
+                        ? "bg-red-50 text-red-700 border-red-200"
+                        : "bg-slate-50 text-slate-600 border-slate-200")
                     }
                   >
                     {rec.status === "success"

@@ -1,8 +1,9 @@
+// src/features/dev/DevConsoleTypes.ts
 // DevConsole 面板枚举（v3）
 // =====================================================
 // DevConsole 分为两大区域：
-// 1. 链路调试（flows）：orders / pick / inbound / count / ship
-// 2. 工具（tools）：platform
+// 1. 链路调试（flows）：orders / pick / inbound / count
+// 2. 工具（tools）：platform / shipping pricing lab(另一个 panel id)
 // =====================================================
 
 export enum DevPanelId {
@@ -10,7 +11,6 @@ export enum DevPanelId {
   PickTasks = "pick-tasks",
   Inbound = "inbound",
   Count = "count",
-  Ship = "ship",        // ⭐ 新增：发货成本调试
   Platform = "platform",
 }
 
