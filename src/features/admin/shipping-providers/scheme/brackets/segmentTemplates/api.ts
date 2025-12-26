@@ -1,0 +1,73 @@
+// src/features/admin/shipping-providers/scheme/brackets/segmentTemplates/api.ts
+//
+// Segments / Template Workbench 的 API（集中在一个目录，避免散落在 schemes/api.types）
+//
+// 注意：endpoint 命名以当前前端代码与既有 PUT items 路径为锚点；
+// 若后端路径不同，只需要在这里集中改动即可。
+
+import type { SegmentTemplateOut } from "./types";
+
+async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const { API_BASE_URL, getAccessToken } = await import("../../../../../../lib/api");
+
+  const token = getAccessToken();
+  const url = `${API_BASE_URL}${path}`;
+
+  const resp = await fetch(url, {
+    ...(init ?? {}),
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`HTTP ${resp.status}: ${text}`);
+  }
+
+  const json = (await resp.json()) as { ok: boolean; data: T };
+  return json.data;
+}
+
+export async function fetchSegmentTemplates(schemeId: number): Promise<SegmentTemplateOut[]> {
+  return await fetchJson<SegmentTemplateOut[]>(`/pricing-schemes/${schemeId}/segment-templates`, { method: "GET" });
+}
+
+export async function fetchSegmentTemplateDetail(templateId: number): Promise<SegmentTemplateOut> {
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}`, { method: "GET" });
+}
+
+export async function createSegmentTemplate(schemeId: number, payload: { name: string }): Promise<SegmentTemplateOut> {
+  return await fetchJson<SegmentTemplateOut>(`/pricing-schemes/${schemeId}/segment-templates`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function publishSegmentTemplate(templateId: number): Promise<SegmentTemplateOut> {
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}/publish`, { method: "POST" });
+}
+
+export async function activateSegmentTemplate(templateId: number): Promise<SegmentTemplateOut> {
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}/activate`, { method: "POST" });
+}
+
+export async function patchSegmentTemplateItemActive(itemId: number, active: boolean): Promise<SegmentTemplateOut> {
+  return await fetchJson<SegmentTemplateOut>(`/segment-template-items/${itemId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ active }),
+  });
+}
+
+export async function apiPutTemplateItems(
+  templateId: number,
+  items: Array<{ ord: number; min_kg: string | number; max_kg: string | number | null; active: boolean }>,
+): Promise<SegmentTemplateOut> {
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}/items`, {
+    method: "PUT",
+    body: JSON.stringify({ items }),
+  });
+}

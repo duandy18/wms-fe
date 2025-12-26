@@ -10,6 +10,7 @@ import { type SchemeTabKey } from "./types";
 // ===== 子模块 =====
 import { ZonesPanel } from "./zones/ZonesPanel";
 import { BracketsPanel } from "./brackets/BracketsPanel";
+import SegmentsPanel from "./brackets/SegmentsPanel";
 import { SurchargesPanel } from "./surcharges/SurchargesPanel";
 import { QuotePreviewPanel } from "./preview/QuotePreviewPanel";
 
@@ -67,6 +68,7 @@ export const SchemeWorkbenchPage: React.FC = () => {
 
       <div className={UI.tabsWrap}>
         <TabButton label={L.tabZones} active={wb.tab === "zones"} disabled={pageDisabled} onClick={() => setTab("zones")} />
+        <TabButton label={L.tabSegments} active={wb.tab === "segments"} disabled={pageDisabled} onClick={() => setTab("segments")} />
         <TabButton label={L.tabBrackets} active={wb.tab === "brackets"} disabled={pageDisabled} onClick={() => setTab("brackets")} />
         <TabButton label={L.tabSurcharges} active={wb.tab === "surcharges"} disabled={pageDisabled} onClick={() => setTab("surcharges")} />
         <TabButton label={L.tabPreview} active={wb.tab === "preview"} disabled={pageDisabled} onClick={() => setTab("preview")} />
@@ -76,9 +78,7 @@ export const SchemeWorkbenchPage: React.FC = () => {
         {wb.loading && !wb.detail ? (
           <div className={UI.zonePageHint}>{L.loading}</div>
         ) : !wb.detail ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-            {L.empty}
-          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">{L.empty}</div>
         ) : (
           <>
             {wb.tab === "zones" ? (
@@ -104,9 +104,12 @@ export const SchemeWorkbenchPage: React.FC = () => {
                     await patchZone(z.id, { active: !z.active });
                   });
                 }}
-                onChangeBracketAmount={async () => {
-                }}
+                onChangeBracketAmount={async () => {}}
               />
+            ) : null}
+
+            {wb.tab === "segments" ? (
+              <SegmentsPanel detail={wb.detail} disabled={pageDisabled} onError={(msg) => wb.setError(msg)} />
             ) : null}
 
             {wb.tab === "brackets" ? (
