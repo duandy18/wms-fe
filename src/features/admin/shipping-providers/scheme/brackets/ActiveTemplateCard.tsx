@@ -1,11 +1,18 @@
 // src/features/admin/shipping-providers/scheme/brackets/ActiveTemplateCard.tsx
 //
-// 当前生效的重量段文件（只读 + 段级启用/暂停）
-// 使用者视角：这里展示“线上正在用什么文件”，不暴露 debug 字段
+// 当前生效方案（只读 + 段级启用/暂停）
+// 使用者视角：这里展示“线上正在用什么方案”
 
 import React, { useMemo } from "react";
 import type { SegmentTemplateOut, SegmentTemplateItemOut } from "../../api/types";
 import UI from "../ui";
+
+function displayName(name: string): string {
+  return String(name ?? "")
+    .replace(/表头模板/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 function fmt2(v: string | number | null | undefined): string {
   if (v === null || v === undefined) return "";
@@ -17,8 +24,8 @@ function fmt2(v: string | number | null | undefined): string {
 function fmtRange(min: string, max: string | null): string {
   const mn = fmt2(min);
   const mx = max ? fmt2(max) : "";
-  if (!mx) return `w ≥ ${mn}`;
-  return `${mn} ≤ w < ${mx}`;
+  if (!mx) return `w ≥ ${mn} kg`;
+  return `${mn} ≤ w < ${mx} kg`;
 }
 
 export const ActiveTemplateCard: React.FC<{
@@ -34,36 +41,31 @@ export const ActiveTemplateCard: React.FC<{
 
   return (
     <div className={UI.cardSoft}>
-      <div className={UI.sectionTitle}>当前生效的重量段文件</div>
-      <div className={UI.panelHint}>
-        该文件正在用于录价/算价。你可以暂停某一段（不会改变重量段结构，只影响是否使用）。
-      </div>
+      <div className={UI.sectionTitle}>当前生效方案</div>
 
       {!template ? (
-        <div className="mt-3 text-sm text-slate-600">当前没有生效文件（请新建并应用一套重量段文件）。</div>
+        <div className="mt-3 text-base text-slate-600">当前没有生效方案。</div>
       ) : (
         <>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm text-slate-800">
-              <span className="text-slate-500">文件：</span>
-              <span className="font-semibold">{template.name}</span>
-              <span className="ml-2 text-xs text-slate-500">（当前生效）</span>
+            <div className="text-base text-slate-800">
+              <span className="text-slate-500">方案：</span>
+              <span className="font-semibold">{displayName(template.name)}</span>
             </div>
-            <div className="text-xs text-slate-500">生效时间：{template.published_at ?? "—"}</div>
           </div>
 
           <div className="mt-3 overflow-x-auto">
             <table className="min-w-full border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-sm font-semibold text-slate-700">
-                  <th className="px-3 py-2 w-[240px]">重量段</th>
+                <tr className="border-b border-slate-200 text-left text-base font-semibold text-slate-700">
+                  <th className="px-3 py-2 w-[240px]">重量段（kg）</th>
                   <th className="px-3 py-2 w-[120px]">使用状态</th>
                   <th className="px-3 py-2 w-[160px]">操作</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((it) => (
-                  <tr key={it.id} className="border-b border-slate-100 text-sm">
+                  <tr key={it.id} className="border-b border-slate-100 text-base">
                     <td className="px-3 py-2 font-mono text-slate-800">{fmtRange(it.min_kg, it.max_kg)}</td>
                     <td className="px-3 py-2">
                       <span className={it.active ? UI.statusOn : UI.statusOff}>{it.active ? "启用" : "已暂停"}</span>
@@ -83,10 +85,6 @@ export const ActiveTemplateCard: React.FC<{
                 ))}
               </tbody>
             </table>
-
-            <div className="mt-2 text-xs text-slate-500">
-              说明：如需调整重量段结构，请新建一个“重量段文件”，保存草稿后在下拉框里选择并点击“应用此文件”。
-            </div>
           </div>
         </>
       )}

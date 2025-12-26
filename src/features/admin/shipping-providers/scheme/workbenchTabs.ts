@@ -1,26 +1,53 @@
 // src/features/admin/shipping-providers/scheme/workbenchTabs.ts
 //
-// Workbench Tabs 的纯逻辑（无 React）
-// - tab keys
-// - parseTab
-// - needsZone + explainNeedZone
+// 工作台 Tabs 辅助逻辑（供 SchemeWorkbenchPage 使用）
+//
+// 设计目标：
+// - 与 SchemeTabKey 严格对齐
+// - 保留历史导出，避免调用方报错
+// - 彻底移除“强制流程红字”
+// - eslint / tsc clean（不留 unused vars）
 
 import type { SchemeTabKey } from "./types";
 
-export const TAB_KEYS: SchemeTabKey[] = ["zones", "segments", "pricing", "surcharges", "preview", "overview"];
+// Tabs 固定顺序（供 UI 使用）
+// ⚠️ 必须与 SchemeTabKey 对齐
+export const TAB_KEYS: SchemeTabKey[] = [
+  "zones",
+  "segments",
+  "pricing",
+  "surcharges",
+  "preview",
+  "overview",
+];
 
-export function parseTab(v: string | null): SchemeTabKey | null {
-  if (!v) return null;
-  const t = v.trim() as SchemeTabKey;
-  return TAB_KEYS.includes(t) ? t : null;
+// 解析 URL / query 中的 tab 参数
+export function parseTab(v: unknown, fallback: SchemeTabKey = "segments"): SchemeTabKey {
+  const s = String(v ?? "").trim();
+  if (s === "zones") return "zones";
+  if (s === "segments") return "segments";
+  if (s === "pricing") return "pricing";
+  if (s === "surcharges") return "surcharges";
+  if (s === "preview") return "preview";
+  if (s === "overview") return "overview";
+  return fallback;
 }
 
+// 是否“逻辑上”依赖 zone（由上层决定如何使用这个布尔值）
 export function needsZone(tab: SchemeTabKey): boolean {
-  // 只有“价格录入”需要先选择/创建 Zone
+  // 价格录入通常依赖配送区域
   return tab === "pricing";
 }
 
-export function explainNeedZone(tab: SchemeTabKey): string {
-  if (tab === "pricing") return "请先在【配送区域】里选择/创建一个区域分类，再来进行【价格录入】。";
-  return "请先在【配送区域】里选择/创建一个区域分类。";
+// ❌ 已废弃：不再返回任何提示文案（避免红字误导）
+// 但必须消费参数，避免 eslint unused-vars
+export function explainNeedZone(tab: SchemeTabKey): string | null {
+  void tab; // 显式消费参数，满足 eslint
+  return null;
+}
+
+// ❌ 已废弃：tab 级提示同样移除
+export function getWorkbenchTabHint(tab: SchemeTabKey): string | null {
+  void tab; // 显式消费参数，满足 eslint
+  return null;
 }

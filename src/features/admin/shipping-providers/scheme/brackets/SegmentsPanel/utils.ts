@@ -22,16 +22,20 @@ export function templateItemsToWeightSegments(items: Array<{ ord: number; min_kg
 }
 
 /**
- * ✅ 草稿保存：只提交“连续可用的前缀段”，避免后端强校验 422
+ * ✅ 草稿保存：提交“连续可用段”
  *
- * 规则：
- * - 只要遇到某行 max 为空，就停止（该行及后续不提交）
+ * 目标：
+ * - 支持“未完成草稿”：用户还没填完，先保存已完成的前缀段（避免后端强校验 422）
+ * - 支持“闭环草稿”：最后一行 max 为空表示 ∞，这不是未完成，应当提交为 max_kg=null
+ *
+ * 规则（严格、可预期）：
  * - min_kg 自动按上一段 max 接续（严格连续）
- * - 至少提交 1 段（若第 0 行 max 也为空，则返回空数组，让上层提示用户先填写）
- *
- * 说明：
- * - 草稿阶段允许不完整：用户还没填完，就先保存已经填好的部分
- * - “∞段（max 为空）”建议放到发布前最后一步再处理（发布/启用时要求完整）
+ * - 当遇到 max 为空：
+ *   - 如果它是“最后一行” => 视为 ∞ 段，提交该行（max_kg=null）并结束
+ *   - 如果它后面还有行 => 视为未完成，停止（该行及后续不提交）
+ * - 至少提交 1 段：
+ *   - 若第 0 行 max 为空且它也是最后一行：允许提交一个 ∞ 段（0 → ∞）
+ *   - 若第 0 行 max 为空但后面还有行：返回空数组，让上层提示先填写第 1 行 max
  */
 export function weightSegmentsToPutItemsDraftPrefix(
   seg: WeightSegment[],
@@ -43,11 +47,26 @@ export function weightSegmentsToPutItemsDraftPrefix(
   }));
 
   let prevMax = "0";
+
   for (let i = 0; i < safe.length; i += 1) {
     const maxText = safe[i].max;
+    const isLastRow = i === safe.length - 1;
 
-    // 草稿保存：max 未填就停止（不提交这一行）
-    if (!maxText) break;
+    // max 为空：两种语义
+    if (!maxText) {
+      if (isLastRow) {
+        // ✅ 闭环：最后一行 max 为空 = ∞ 段，提交这一行并结束
+        const minKg = i === 0 ? "0" : prevMax;
+        rows.push({
+          ord: i,
+          min_kg: minKg,
+          max_kg: null, // NULL = ∞（后端硬契约）
+          active: true,
+        });
+      }
+      // 无论是否 last：到这里都结束（last 已提交；非 last 视为未完成则不提交）
+      break;
+    }
 
     const minKg = i === 0 ? "0" : prevMax;
 
@@ -61,6 +80,7 @@ export function weightSegmentsToPutItemsDraftPrefix(
     prevMax = maxText;
   }
 
+  // 第 0 行 max 为空但不是最后一行（safe.length>1）时会返回 []，由上层提示用户先填第 1 行 max
   return rows;
 }
 

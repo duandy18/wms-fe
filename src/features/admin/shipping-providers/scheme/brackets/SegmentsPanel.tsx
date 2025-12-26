@@ -1,8 +1,8 @@
 // src/features/admin/shipping-providers/scheme/brackets/SegmentsPanel.tsx
 //
 // 重量分段模板工作台（路线 1：draft → publish → activate）
-// - 顶部：当前生效重量段（事实锚点）
-// - 下方：整合卡（需要调整？+ 模板详情 + 草稿编辑器）
+// - 顶部：当前生效重量段
+// - 下方：整合卡（选择文件 + 编辑草稿 + 保存/启用）
 
 import React from "react";
 import type { PricingSchemeDetail } from "../../api";
@@ -19,7 +19,7 @@ export const SegmentsPanel: React.FC<{
   onError?: (msg: string) => void;
 }> = ({ detail, disabled, onError }) => {
   const schemeId = detail.id;
-  const mirror = (detail.segments_json ?? null) as SchemeWeightSegment[] | null;
+  const mirror: SchemeWeightSegment[] | null = detail.segments_json ?? null;
 
   const w = useSegmentTemplateWorkbench({
     schemeId,

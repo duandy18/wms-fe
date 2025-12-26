@@ -1,13 +1,13 @@
 // src/features/admin/shipping-providers/scheme/brackets/TemplateWorkbenchSelectBar.tsx
-import React, { useMemo } from "react";
+import React from "react";
 import type { SegmentTemplateOut, SchemeWeightSegment } from "../../api/types";
 import UI from "../ui";
 
-function humanStatus(status: string): string {
-  if (status === "draft") return "草稿";
-  if (status === "published") return "已发布";
-  if (status === "archived") return "已归档";
-  return status;
+function displayName(name: string): string {
+  return String(name ?? "")
+    .replace(/表头模板/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export const TemplateWorkbenchSelectBar: React.FC<{
@@ -17,38 +17,46 @@ export const TemplateWorkbenchSelectBar: React.FC<{
   onSelectTemplateId: (id: number | null) => void;
   onCreateDraft: () => void;
   mirrorSegmentsJson: SchemeWeightSegment[] | null;
-}> = ({ disabled, templates, selectedTemplateId, onSelectTemplateId, onCreateDraft, mirrorSegmentsJson }) => {
-  const mirrorCount = useMemo(
-    () => (Array.isArray(mirrorSegmentsJson) ? mirrorSegmentsJson.length : 0),
-    [mirrorSegmentsJson],
-  );
 
+  // 右侧操作区（保存 / 启用）
+  rightSlot?: React.ReactNode;
+}> = ({ disabled, templates, selectedTemplateId, onSelectTemplateId, onCreateDraft, rightSlot }) => {
   return (
     <>
-      <div className={UI.sectionTitle}>需要调整重量段吗？</div>
-      <div className={UI.panelHint}>当前规则会持续生效，直到你发布并启用一个新的调整方案（模板版本）。</div>
+      <div className={UI.sectionTitle}>重量段方案管理</div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button type="button" className={UI.btnNeutral} disabled={disabled} onClick={onCreateDraft}>
-          新建调整方案（草稿）
-        </button>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className={UI.btnNeutral}
+            disabled={disabled}
+            onClick={onCreateDraft}
+          >
+            新建方案
+          </button>
 
-        <select
-          className={UI.selectBase}
-          disabled={disabled}
-          value={selectedTemplateId ?? ""}
-          onChange={(e) => onSelectTemplateId(e.target.value ? Number(e.target.value) : null)}
-        >
-          <option value="">选择一个方案版本…</option>
-          {templates.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.is_active ? "★ 当前生效 · " : ""}
-              {t.name}（{humanStatus(String(t.status))}）
+          <select
+            className={`${UI.selectBase} min-w-[360px]`}
+            disabled={disabled}
+            value={selectedTemplateId ?? ""}
+            onChange={(e) => onSelectTemplateId(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">
+              {templates.length ? "选择一个方案…" : "暂无方案（请先新建）"}
             </option>
-          ))}
-        </select>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.is_active ? "★ 当前生效 · " : ""}
+                {displayName(t.name)}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <div className="ml-auto text-xs text-slate-500">镜像 segments_json：{mirrorCount ? `${mirrorCount} 段` : "—"}</div>
+        <div className="flex items-center">
+          {rightSlot ?? null}
+        </div>
       </div>
     </>
   );
