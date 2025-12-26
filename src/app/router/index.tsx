@@ -134,6 +134,14 @@ const ShippingProvidersListPage = lazy(
     ),
 );
 
+// ✅ 运价方案工作台（五标签：区域 / 重量分段（表头）/ 录价 / 附加费 / 算价）
+const SchemeWorkbenchPage = lazy(
+  () =>
+    import(
+      "../../features/admin/shipping-providers/scheme/SchemeWorkbenchPage"
+    ),
+);
+
 // 采购系统
 const PurchaseOrdersPage = lazy(
   () =>
@@ -569,6 +577,16 @@ const AppRouter: React.FC = () => {
           element={
             <RequirePermission permission="config.store.write">
               <ShippingProvidersListPage />
+            </RequirePermission>
+          }
+        />
+
+        {/* ✅ 运价方案工作台（五标签：区域 / 重量分段（表头）/ 录价 / 附加费 / 算价） */}
+        <Route
+          path="admin/shipping-providers/schemes/:schemeId/workbench"
+          element={
+            <RequirePermission permission="config.store.write">
+              <SchemeWorkbenchPage />
             </RequirePermission>
           }
         />

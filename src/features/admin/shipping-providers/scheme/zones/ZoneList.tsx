@@ -3,6 +3,7 @@
 import React from "react";
 import type { PricingSchemeZone } from "../../api";
 import { ZoneRow } from "./ZoneRow";
+import { UI } from "../ui";
 
 export const ZoneList: React.FC<{
   zones: PricingSchemeZone[];
@@ -10,28 +11,43 @@ export const ZoneList: React.FC<{
   disabled?: boolean;
   onSelectZone: (zoneId: number) => void;
   onToggleZone: (z: PricingSchemeZone) => Promise<void>;
-  onDeleteZone: (z: PricingSchemeZone) => Promise<void>;
-}> = ({ zones, selectedZoneId, disabled, onSelectZone, onToggleZone, onDeleteZone }) => {
+}> = ({ zones, selectedZoneId, disabled, onSelectZone, onToggleZone }) => {
   if (!zones.length) {
-    return <div className="text-sm text-slate-600">暂无 Zone。建议先创建一个“全国-默认”。</div>;
+    return <div className={UI.zoneListEmpty}>暂无区域分类，请先创建一条。</div>;
   }
+
+  // ✅ 排序：正在使用中在上；暂停使用在下；同组内新建在上（id 倒序）
+  const sorted = [...zones].sort((a, b) => {
+    const aa = a.active ? 1 : 0;
+    const bb = b.active ? 1 : 0;
+    if (aa !== bb) return bb - aa;
+    return b.id - a.id;
+  });
 
   return (
     <div className="space-y-3">
-      {zones.map((z) => (
+      {/* 表头 */}
+      <div className={UI.zoneTableHeadWrap}>
+        <div className={UI.zoneTableHeadRow}>
+          <div className="col-span-1 text-center">序号</div>
+          <div className="col-span-2">ID</div>
+          <div className="col-span-5">区域</div>
+          <div className="col-span-2">状态</div>
+          <div className="col-span-2 text-right">操作</div>
+        </div>
+      </div>
+
+      {sorted.map((z, idx) => (
         <ZoneRow
           key={z.id}
+          index={idx + 1}
           zone={z}
           selected={selectedZoneId === z.id}
           disabled={disabled}
           onSelect={onSelectZone}
           onToggleActive={onToggleZone}
-          onDelete={onDeleteZone}
         />
       ))}
-      <div className="text-sm text-slate-600">
-        删除失败常见原因：Zone 下已有 Members/Brackets（数据库 RESTRICT 拒绝）。建议先停用。
-      </div>
     </div>
   );
 };

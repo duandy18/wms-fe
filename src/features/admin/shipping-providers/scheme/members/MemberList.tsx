@@ -3,6 +3,7 @@
 import React from "react";
 import type { PricingSchemeZoneMember } from "../../api";
 import { MemberRow } from "./MemberRow";
+import { UI } from "../ui";
 
 export const MemberList: React.FC<{
   members: PricingSchemeZoneMember[];
@@ -10,7 +11,7 @@ export const MemberList: React.FC<{
   onDelete: (m: PricingSchemeZoneMember) => Promise<void>;
 }> = ({ members, disabled, onDelete }) => {
   if (!members.length) {
-    return <div className="text-sm text-slate-600">暂无命中条件。建议至少配置 province/city/district 之一。</div>;
+    return <div className={UI.memberEmpty}>暂无命中条件。建议至少配置 省/市/区 之一。</div>;
   }
 
   return (
@@ -21,3 +22,5 @@ export const MemberList: React.FC<{
     </div>
   );
 };
+
+export default MemberList;

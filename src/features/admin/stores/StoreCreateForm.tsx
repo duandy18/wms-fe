@@ -1,6 +1,7 @@
 // src/features/admin/stores/StoreCreateForm.tsx
 
 import React from "react";
+import { UI } from "./ui";
 
 type StoreCreateFormProps = {
   plat: string;
@@ -28,38 +29,34 @@ export const StoreCreateForm: React.FC<StoreCreateFormProps> = ({
   if (!canWrite) return null;
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-      <h2 className="text-lg font-semibold text-slate-800">
-        创建 / 补录店铺
-      </h2>
-      <form
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 text-base"
-        onSubmit={onSubmit}
-      >
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-slate-500">platform</label>
+    <section className={UI.cardP5}>
+      <h2 className={UI.titleLg}>创建 / 补录店铺</h2>
+
+      <form className={UI.formGrid4} onSubmit={onSubmit}>
+        <div className={UI.fieldCol}>
+          <label className={UI.labelSm}>platform</label>
           <input
-            className="border rounded-lg px-3 py-2 text-base"
+            className={UI.inputBase}
             value={plat}
             onChange={(e) => onPlatChange(e.target.value)}
             placeholder="PDD / TB / JD ..."
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-slate-500">shop_id</label>
+        <div className={UI.fieldCol}>
+          <label className={UI.labelSm}>shop_id</label>
           <input
-            className="border rounded-lg px-3 py-2 text-base"
+            className={UI.inputBase}
             value={shopId}
             onChange={(e) => onShopIdChange(e.target.value)}
             placeholder="平台店铺 ID"
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-slate-500">店铺名（可选）</label>
+        <div className={UI.fieldCol}>
+          <label className={UI.labelSm}>店铺名（可选）</label>
           <input
-            className="border rounded-lg px-3 py-2 text-base"
+            className={UI.inputBase}
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="不填则默认 {PLAT}-{shop_id}"
@@ -67,11 +64,7 @@ export const StoreCreateForm: React.FC<StoreCreateFormProps> = ({
         </div>
 
         <div className="flex items-end">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-5 py-2 rounded-lg bg-slate-900 text-white text-base disabled:opacity-60"
-          >
+          <button type="submit" disabled={saving} className={UI.btnPrimary}>
             {saving ? "提交中…" : "创建 / 补录"}
           </button>
         </div>
@@ -79,3 +72,5 @@ export const StoreCreateForm: React.FC<StoreCreateFormProps> = ({
     </section>
   );
 };
+
+export default StoreCreateForm;

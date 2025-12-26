@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchActiveWarehouses } from "../warehouses/api";
 import type { WarehouseListItem } from "../warehouses/types";
+import { UI } from "./ui";
 
 type Props = {
   canWrite: boolean;
@@ -38,17 +39,11 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({
 
       try {
         const items = await fetchActiveWarehouses();
-        if (!cancelled) {
-          setWarehouses(items);
-        }
+        if (!cancelled) setWarehouses(items);
       } catch {
-        if (!cancelled) {
-          setLoadError("加载仓库列表失败，请稍后重试");
-        }
+        if (!cancelled) setLoadError("加载仓库列表失败，请稍后重试");
       } finally {
-        if (!cancelled) {
-          setLoadingWarehouses(false);
-        }
+        if (!cancelled) setLoadingWarehouses(false);
       }
     }
 
@@ -66,11 +61,7 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({
     const wid = Number(warehouseId);
     if (!wid || wid <= 0) return;
 
-    onSubmit({
-      warehouseId: wid,
-      isTop,
-      priority,
-    });
+    onSubmit({ warehouseId: wid, isTop, priority });
 
     // 重置表单
     setWarehouseId("");
@@ -78,24 +69,23 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({
     setPriority(100);
   }
 
-  return (
-    <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-      <div className="text-base font-semibold text-slate-900">
-        新增仓库绑定
-      </div>
+  const selectDisabled = loadingWarehouses || saving || warehouses.length === 0;
+  const submitDisabled =
+    saving || loadingWarehouses || warehouses.length === 0 || !warehouseId;
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-wrap gap-4 items-end text-sm"
-      >
+  return (
+    <section className={UI.cardP4}>
+      <div className={UI.titleBase}>新增仓库绑定</div>
+
+      <form onSubmit={handleSubmit} className={UI.formRowWrap}>
         {/* 仓库选择 */}
-        <label className="flex flex-col gap-1">
-          <span className="text-slate-600">选择仓库</span>
+        <label className={UI.fieldCol}>
+          <span className={UI.labelSm}>选择仓库</span>
           <select
             value={warehouseId}
             onChange={(e) => setWarehouseId(e.target.value)}
-            className="border rounded px-3 py-2 text-base w-64"
-            disabled={loadingWarehouses || saving || warehouses.length === 0}
+            className={UI.inputW64}
+            disabled={selectDisabled}
           >
             <option value="">
               {loadingWarehouses
@@ -124,13 +114,11 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({
             })}
           </select>
 
-          {loadError && (
-            <span className="text-xs text-red-500 mt-1">{loadError}</span>
-          )}
+          {loadError ? <span className={UI.inlineErr}>{loadError}</span> : null}
         </label>
 
         {/* 是否主仓 */}
-        <label className="flex items-center gap-2 text-base">
+        <label className={UI.checkboxRow}>
           <input
             type="checkbox"
             checked={isTop}
@@ -140,28 +128,21 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({
         </label>
 
         {/* 优先级 */}
-        <label className="flex flex-col gap-1">
-          <span className="text-slate-600">优先级</span>
+        <label className={UI.fieldCol}>
+          <span className={UI.labelSm}>优先级</span>
           <input
             type="number"
             value={priority}
-            onChange={(e) =>
-              setPriority(Number(e.target.value) || 0)
-            }
-            className="border rounded px-3 py-2 text-base w-28"
+            onChange={(e) => setPriority(Number(e.target.value) || 0)}
+            className={UI.inputW28}
           />
         </label>
 
         {/* 提交 */}
         <button
           type="submit"
-          disabled={
-            saving ||
-            loadingWarehouses ||
-            warehouses.length === 0 ||
-            !warehouseId
-          }
-          className="px-5 py-2 rounded-lg bg-slate-900 text-white text-base font-medium hover:bg-slate-800 disabled:opacity-50"
+          disabled={submitDisabled}
+          className={UI.btnPrimaryHover}
         >
           {saving ? "绑定中…" : "绑定"}
         </button>
@@ -169,3 +150,5 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({
     </section>
   );
 };
+
+export default StoreBindWarehouseForm;

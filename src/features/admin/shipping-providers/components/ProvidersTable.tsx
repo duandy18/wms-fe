@@ -50,14 +50,14 @@ export const ProvidersTable: React.FC<Props> = ({
 }) => {
   return (
     <section className={UI.card}>
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className={UI.providersHeadRow}>
         <h2 className={`${UI.h2} font-semibold text-slate-900`}>物流/快递公司列表</h2>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="inline-flex items-center gap-2">
+        <div className={UI.providersFiltersRow}>
+          <label className={UI.providersOnlyActiveLabel}>
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-slate-300"
+              className={UI.providersOnlyActiveCheckbox}
               checked={onlyActive}
               onChange={(e) => onOnlyActiveChange(e.target.checked)}
             />
@@ -65,7 +65,7 @@ export const ProvidersTable: React.FC<Props> = ({
           </label>
 
           <input
-            className="w-64 rounded-xl border border-slate-300 px-4 py-3 text-lg"
+            className={UI.providersSearchInput}
             placeholder="名称 / 联系人 搜索"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -83,14 +83,14 @@ export const ProvidersTable: React.FC<Props> = ({
         <table className={UI.table}>
           <thead>
             <tr className={UI.theadRow}>
-              <th className={UI.th}>ID</th>
+              <th className={UI.th}>序号</th>
               <th className={UI.th}>名称</th>
               <th className={UI.th}>编码</th>
               <th className={UI.th}>主联系人</th>
               <th className={UI.th}>电话</th>
               <th className={UI.th}>优先级</th>
               <th className={UI.th}>状态</th>
-              <th className={UI.th}>Schemes</th>
+              <th className={UI.th}>报价</th>
               <th className={UI.th}>操作</th>
             </tr>
           </thead>
@@ -119,11 +119,7 @@ export const ProvidersTable: React.FC<Props> = ({
                     <td className={UI.tdMono}>{renderNumber(p.priority)}</td>
 
                     <td className={UI.td}>
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold ${
-                          p.active ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
-                        }`}
-                      >
+                      <span className={`${UI.pill} ${p.active ? UI.pillActive : UI.pillInactive}`}>
                         {p.active ? "启用" : "停用"}
                       </span>
                     </td>
@@ -134,7 +130,7 @@ export const ProvidersTable: React.FC<Props> = ({
                         className={`${UI.badgeBtn} ${selected ? UI.badgeBtnActive : UI.badgeBtnIdle}`}
                         onClick={() => onSelectProviderForSchemes(p.id)}
                       >
-                        {selected ? "已选中" : "查看方案"}
+                        {selected ? "已选中" : "查看报价"}
                       </button>
                     </td>
 
@@ -150,10 +146,8 @@ export const ProvidersTable: React.FC<Props> = ({
           </tbody>
         </table>
       </div>
-
-      <div className="mt-3 text-sm text-slate-600">
-        列表页不允许直接切换状态；危险修改统一进编辑弹窗（与 suppliers 一致）。
-      </div>
     </section>
   );
 };
+
+export default ProvidersTable;

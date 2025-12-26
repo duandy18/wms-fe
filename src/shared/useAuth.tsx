@@ -1,18 +1,8 @@
 // src/shared/useAuth.tsx
 /* eslint-disable react-refresh/only-export-components */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-} from "react";
-import {
-  apiPost,
-  apiGet,
-  setAccessToken,
-  getAccessToken,
-} from "../lib/api";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { apiGet, apiPost, setAccessToken, getAccessToken } from "../lib/api";
 
 export type UserRole = "staff" | "admin";
 type Permission = string;
@@ -25,6 +15,7 @@ interface LoginInput {
 interface LoginResult {
   access_token: string;
   token_type: string;
+  expires_in?: number;
 }
 
 // /users/me 返回结构（按后端实际 schema 调整）
@@ -65,31 +56,41 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const USERNAME_STORAGE_KEY = "WMS_USERNAME";
 const ROLE_STORAGE_KEY = "WMS_ROLE";
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+function deriveRoleFromBackendRoles(backendRoles: string[]): UserRole {
+  return backendRoles.includes("admin") ? "admin" : "staff";
+}
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<UserInfo | null>(null);
+
   // 默认 staff，当成“业务人员”角色
   const [role, setRole] = useState<UserRole>("staff");
+
   // 后端返回的权限串，如 ["system.user.manage", "operations.inbound", ...]
   const [permissions, setPermissions] = useState<Permission[]>([]);
+
+  // 统一清理：登出/失效都走这里
+  function hardLogout() {
+    setAccessToken(null);
+    setIsAuthenticated(false);
+    setUser(null);
+    setPermissions([]);
+    setRole("staff");
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(USERNAME_STORAGE_KEY);
+      window.localStorage.removeItem(ROLE_STORAGE_KEY);
+    }
+  }
 
   // 启动时：根据 token + /users/me 恢复状态
   useEffect(() => {
     const token = getAccessToken(); // 内部仍然用 WMS_TOKEN
 
     if (!token) {
-      setIsAuthenticated(false);
-      setUser(null);
-      setPermissions([]);
+      hardLogout();
       return;
     }
-
-    const savedUsername =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem(USERNAME_STORAGE_KEY)
-        : null;
 
     (async () => {
       try {
@@ -97,18 +98,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const backendRoles = me.roles?.map((r) => r.name) ?? [];
         const backendPerms = me.permissions ?? [];
+        const effectiveRole = deriveRoleFromBackendRoles(backendRoles);
 
-        // 约定：拥有 admin 角色 → 前端视角 admin；否则 staff
-        const effectiveRole: UserRole = backendRoles.includes("admin")
-          ? "admin"
-          : "staff";
+        const username = me.username ?? "unknown";
 
         setIsAuthenticated(true);
         setRole(effectiveRole);
         setPermissions(backendPerms);
-
-        const username = me.username ?? savedUsername ?? "unknown";
-
         setUser({
           username,
           role: effectiveRole,
@@ -121,49 +117,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           window.localStorage.setItem(ROLE_STORAGE_KEY, effectiveRole);
         }
       } catch {
-        // /users/me 掉线时，至少保持“已登录 + 基础信息”
-        setIsAuthenticated(true);
-        const fallbackRole: UserRole = "staff";
-
-        setRole(fallbackRole);
-        setPermissions([]);
-
-        const username = savedUsername ?? "unknown";
-        setUser({
-          username,
-          role: fallbackRole,
-          roles: [],
-          permissions: [],
-        });
+        // ✅ 关键修复：/users/me 失败 → 视为 token 失效/未登录
+        // 不允许伪装成 staff（会把人送去 /forbidden）
+        hardLogout();
       }
     })();
+     
   }, []);
 
   const login = async (input: LoginInput) => {
+    // 1) 登录拿 token
     const result = await apiPost<LoginResult>("/users/login", {
       username: input.username,
       password: input.password,
     });
 
     const token = result.access_token;
-    setAccessToken(token);
-    setIsAuthenticated(true);
+    if (!token) {
+      throw new Error("Login failed: missing access_token");
+    }
 
+    // 2) 写入 token（必须先写，后面 /users/me 才能带 Authorization）
+    setAccessToken(token);
+
+    // 3) 拉取 /users/me，成功才认为“已登录”
     try {
       const me = await apiGet<MeResponse>("/users/me");
 
       const backendRoles = me.roles?.map((r) => r.name) ?? [];
       const backendPerms = me.permissions ?? [];
-
-      const effectiveRole: UserRole = backendRoles.includes("admin")
-        ? "admin"
-        : "staff";
-
-      setRole(effectiveRole);
-      setPermissions(backendPerms);
+      const effectiveRole = deriveRoleFromBackendRoles(backendRoles);
 
       const username = me.username ?? input.username;
 
+      setIsAuthenticated(true);
+      setRole(effectiveRole);
+      setPermissions(backendPerms);
       setUser({
         username,
         role: effectiveRole,
@@ -175,45 +164,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         window.localStorage.setItem(USERNAME_STORAGE_KEY, username);
         window.localStorage.setItem(ROLE_STORAGE_KEY, effectiveRole);
       }
-    } catch {
-      // /users/me 暂时失败 → 退化到只记录用户名，权限为空
-      const fallbackRole: UserRole = "staff";
-
-      setRole(fallbackRole);
-      setPermissions([]);
-
-      setUser({
-        username: input.username,
-        role: fallbackRole,
-        roles: [],
-        permissions: [],
-      });
-
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(USERNAME_STORAGE_KEY, input.username);
-        window.localStorage.setItem(ROLE_STORAGE_KEY, fallbackRole);
-      }
+    } catch (e) {
+      // ✅ 关键修复：登录后 /users/me 失败 → 直接回滚登录态，让用户重新登录
+      hardLogout();
+      throw e;
     }
   };
 
   const logout = () => {
-    setAccessToken(null);
-    setIsAuthenticated(false);
-    setUser(null);
-    setPermissions([]);
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(USERNAME_STORAGE_KEY);
-      window.localStorage.removeItem(ROLE_STORAGE_KEY);
-    }
+    hardLogout();
   };
 
   const can = (perm: Permission) => permissions.includes(perm);
 
-  const canAny = (perms: Permission[]) =>
-    perms.some((p) => permissions.includes(p));
+  const canAny = (perms: Permission[]) => perms.some((p) => permissions.includes(p));
 
-  const canAll = (perms: Permission[]) =>
-    perms.every((p) => permissions.includes(p));
+  const canAll = (perms: Permission[]) => perms.every((p) => permissions.includes(p));
 
   const isAdmin = role === "admin";
 

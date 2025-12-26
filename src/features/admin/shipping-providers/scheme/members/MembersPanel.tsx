@@ -4,6 +4,14 @@ import React, { useMemo } from "react";
 import type { PricingSchemeDetail, PricingSchemeZone, PricingSchemeZoneMember } from "../../api";
 import { MemberCreateForm, type CreateMemberPayload } from "./MemberCreateForm";
 import { MemberList } from "./MemberList";
+import { UI } from "../ui";
+import { buildProvinceOccupancy } from "../zones/regionRules";
+
+function zoneDisplayName(z: PricingSchemeZone | null): string {
+  if (!z) return "未选择";
+  const name = (z.name ?? "").trim();
+  return name ? name : `区域#${z.id}`;
+}
 
 export const MembersPanel: React.FC<{
   detail: PricingSchemeDetail;
@@ -16,33 +24,38 @@ export const MembersPanel: React.FC<{
   onCreate: (payload: CreateMemberPayload) => Promise<void>;
   onDelete: (m: PricingSchemeZoneMember) => Promise<void>;
 }> = ({ detail, disabled, selectedZoneId, onSelectZone, onError, onCreate, onDelete }) => {
-  const zones = detail.zones ?? [];
+  const zones = useMemo(() => detail.zones ?? [], [detail.zones]);
 
   const selectedZone = useMemo<PricingSchemeZone | null>(() => {
     if (!selectedZoneId) return null;
     return zones.find((z) => z.id === selectedZoneId) ?? null;
   }, [zones, selectedZoneId]);
 
+  // ✅ 对 province 级别：禁选“已被其它 active zone 占用的省”（放行当前 selected zone）
+  const occupancy = useMemo(() => {
+    return buildProvinceOccupancy(zones as unknown[], { editingZoneId: selectedZoneId });
+  }, [zones, selectedZoneId]);
+
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="text-base font-semibold text-slate-900">命中条件（Member）维护</div>
-        <div className="mt-1 text-sm text-slate-600">
-          Member 用于让 Zone 命中目的地（province/city/district/text）。Member 只属于某个 Zone。
+      <div className={UI.cardTight}>
+        <div className={UI.panelTitle}>目的地命中规则</div>
+        <div className={`mt-1 ${UI.panelHint}`}>
+          让“区域分类（Zone）”能命中订单地址。一般只需要配置 省 / 市 / 区（文本规则仅在特殊场景用）。
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm font-semibold text-slate-800">选择 Zone（Member 依附于 Zone）</div>
-          <div className="text-sm text-slate-600">
-            当前选择：<span className="font-mono">{selectedZoneId ? `zone_id=${selectedZoneId}` : "未选择"}</span>
+      <div className={UI.cardTight}>
+        <div className={UI.headerRow}>
+          <div className={UI.sectionTitle}>选择要维护的区域分类（Zone）</div>
+          <div className={UI.headerMeta}>
+            当前选择： <span className={UI.headerMetaMono}>{zoneDisplayName(selectedZone)}</span>
           </div>
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           <select
-            className="rounded-xl border border-slate-300 px-3 py-2 text-base"
+            className={UI.selectBase}
             value={selectedZoneId ?? ""}
             disabled={disabled}
             onChange={(e) => onSelectZone(e.target.value ? Number(e.target.value) : 0)}
@@ -50,15 +63,15 @@ export const MembersPanel: React.FC<{
             <option value="">请选择…</option>
             {zones.map((z) => (
               <option key={z.id} value={z.id}>
-                {z.name} (id={z.id})
+                {z.name}
               </option>
             ))}
           </select>
 
-          <div className="text-sm text-slate-600 flex items-center">
+          <div className={`${UI.helpText} flex items-center`}>
             {selectedZone ? (
-              <span className="font-mono">
-                {selectedZone.name} · members {selectedZone.members.length} · brackets {selectedZone.brackets.length}
+              <span className={UI.headerMetaMono}>
+                {selectedZone.name} · 命中条件 {selectedZone.members.length} · 价格规则 {selectedZone.brackets.length}
               </span>
             ) : (
               <span>请先选择一个 Zone</span>
@@ -68,16 +81,22 @@ export const MembersPanel: React.FC<{
       </div>
 
       {!selectedZone ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-          你还没有选择 Zone。请先在上方选择一个 Zone，再新增/删除命中条件。
+        <div className={UI.cardSoft}>
+          <div className={UI.emptyText}>你还没有选择 Zone。请先在上方选择一个 Zone，再新增/删除命中规则。</div>
         </div>
       ) : (
         <>
-          <MemberCreateForm disabled={disabled} onCreate={onCreate} onError={onError} />
+          <MemberCreateForm
+            disabled={disabled}
+            onCreate={onCreate}
+            onError={onError}
+            selectedZoneName={selectedZone.name}
+            blockedReasonByProvince={occupancy.reasonByProvince}
+          />
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="text-sm font-semibold text-slate-800">
-              当前 Zone 的命中条件（Members） · <span className="font-mono">{selectedZone.name}</span>
+          <div className={UI.cardTight}>
+            <div className={UI.sectionTitle}>
+              当前 Zone 的命中规则 · <span className={UI.headerMetaMono}>{selectedZone.name}</span>
             </div>
             <div className="mt-3">
               <MemberList members={selectedZone.members ?? []} disabled={disabled} onDelete={onDelete} />
@@ -88,3 +107,5 @@ export const MembersPanel: React.FC<{
     </div>
   );
 };
+
+export default MembersPanel;

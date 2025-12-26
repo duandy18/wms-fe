@@ -2,7 +2,8 @@
 
 import React from "react";
 import type { PricingSchemeZoneMember } from "../../api";
-import { confirmDeleteMemberText } from "./memberActions";
+import { confirmDeleteMemberText, levelLabel } from "./memberActions";
+import { UI } from "../ui";
 
 export const MemberRow: React.FC<{
   member: PricingSchemeZoneMember;
@@ -10,16 +11,16 @@ export const MemberRow: React.FC<{
   onDelete: (m: PricingSchemeZoneMember) => Promise<void>;
 }> = ({ member, disabled, onDelete }) => {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
-      <div className="text-sm text-slate-700 font-mono">
-        {member.level} = {member.value}
-        <span className="ml-2 text-xs text-slate-400">id={member.id}</span>
+    <div className={UI.memberRowWrap}>
+      <div className={UI.memberRowText}>
+        {levelLabel(member.level)}：{member.value}
+        <span className={UI.memberRowId}>#{member.id}</span>
       </div>
 
       <button
         type="button"
         disabled={disabled}
-        className="inline-flex items-center rounded-xl border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+        className={UI.btnDangerSm}
         onClick={() => {
           const ok = window.confirm(confirmDeleteMemberText(member.level, member.value));
           if (!ok) return;

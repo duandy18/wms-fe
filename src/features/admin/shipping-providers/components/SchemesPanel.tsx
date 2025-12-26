@@ -1,13 +1,14 @@
 // src/features/admin/shipping-providers/components/SchemesPanel.tsx
 
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { UI } from "../ui";
 import { type PricingScheme, type ShippingProvider } from "../api";
+import type { SchemeDefaultPricingMode } from "../api/types";
+import { CUI } from "./ui";
 
-function formatDt(v?: string | null) {
-  if (!v) return "—";
-  return v.replace("T", " ").replace("Z", "");
-}
+import { isTestSchemeName } from "./SchemesPanel/utils";
+import SchemesCreateCard from "./SchemesCreateCard";
+import SchemesTable from "./SchemesTable";
 
 type Props = {
   selectedProvider: ShippingProvider | null;
@@ -20,6 +21,10 @@ type Props = {
   newSchemePriority: string;
   newSchemeCurrency: string;
   newSchemeSaving: boolean;
+
+  // ✅ 默认口径：不再在 Admin 暴露 UI，但上游 state 仍保留（避免牵连更多改动）
+  newSchemeDefaultMode: SchemeDefaultPricingMode;
+  onChangeDefaultMode: (v: SchemeDefaultPricingMode) => void;
 
   onChangeName: (v: string) => void;
   onChangePriority: (v: string) => void;
@@ -39,6 +44,8 @@ export const SchemesPanel: React.FC<Props> = ({
   newSchemePriority,
   newSchemeCurrency,
   newSchemeSaving,
+  newSchemeDefaultMode,
+  onChangeDefaultMode,
   onChangeName,
   onChangePriority,
   onChangeCurrency,
@@ -46,160 +53,88 @@ export const SchemesPanel: React.FC<Props> = ({
   onRefresh,
   onOpenWorkbench,
 }) => {
+  const [showTestSchemes, setShowTestSchemes] = useState(false);
+
+  const { visibleSchemes, testCount } = useMemo(() => {
+    const tests = schemes.filter((s) => isTestSchemeName(s.name));
+    const visible = showTestSchemes ? schemes : schemes.filter((s) => !isTestSchemeName(s.name));
+    return { visibleSchemes: visible, testCount: tests.length };
+  }, [schemes, showTestSchemes]);
+
   return (
     <section className={UI.card}>
-      <div className="flex items-center justify-between gap-3">
-        <h2 className={`${UI.h2} font-semibold text-slate-900`}>Pricing Schemes</h2>
+      <div className={CUI.headRow}>
+        <h2 className={`${UI.h2} ${CUI.title}`}>快递公司运费</h2>
+
         {selectedProvider ? (
-          <div className="text-sm text-slate-600">
-            Provider：<span className="font-mono">{selectedProvider.name}</span>
+          <div className={CUI.providerHint}>
+            公司：<span className={CUI.mono}>{selectedProvider.name}</span>
           </div>
         ) : (
-          <div className="text-sm text-slate-500">请从左侧选择一个 Provider</div>
+          <div className={CUI.providerNone}>请从左侧选择一个物流/快递公司</div>
         )}
       </div>
 
-      {schemesError && <div className={UI.error}>{schemesError}</div>}
+      {schemesError ? <div className={UI.error}>{schemesError}</div> : null}
 
       {!selectedProvider ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-          先选一个 Provider，再新建/维护 Scheme。
-        </div>
+        <div className={CUI.emptyCard}>先选择公司，再录入/维护运费价格表。</div>
       ) : (
-        <div className="space-y-3">
-          {/* 新建 Scheme */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-semibold text-slate-800">新建 Scheme</div>
-
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
-              <div className="flex flex-col">
-                <label className="text-sm text-slate-600">名称 *</label>
-                <input
-                  className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
-                  value={newSchemeName}
-                  onChange={(e) => onChangeName(e.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm text-slate-600">优先级</label>
-                <input
-                  className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono"
-                  value={newSchemePriority}
-                  onChange={(e) => onChangePriority(e.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm text-slate-600">币种</label>
-                <input
-                  className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono"
-                  value={newSchemeCurrency}
-                  onChange={(e) => onChangeCurrency(e.target.value)}
-                />
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  className={UI.btnPrimaryGreen}
-                  disabled={newSchemeSaving}
-                  onClick={onCreateScheme}
-                >
-                  {newSchemeSaving ? "创建中…" : "创建 Scheme"}
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className={CUI.stack}>
+          <SchemesCreateCard
+            newSchemeName={newSchemeName}
+            newSchemePriority={newSchemePriority}
+            newSchemeCurrency={newSchemeCurrency}
+            newSchemeSaving={newSchemeSaving}
+            newSchemeDefaultMode={newSchemeDefaultMode}
+            onChangeDefaultMode={onChangeDefaultMode}
+            onChangeName={onChangeName}
+            onChangePriority={onChangePriority}
+            onChangeCurrency={onChangeCurrency}
+            onCreateScheme={onCreateScheme}
+          />
 
           {/* 列表头 */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-600">
-              {loadingSchemes ? "加载中…" : `共 ${schemes.length} 套方案`}
+          <div className={CUI.listHead}>
+            <div className={CUI.listMeta}>
+              {loadingSchemes ? (
+                "加载中…"
+              ) : (
+                <>
+                  共 <span className={CUI.mono}>{visibleSchemes.length}</span> 份运费价格表
+                  {testCount > 0 ? (
+                    <span className={CUI.listMetaMuted}>
+                      （已隐藏 <span className={CUI.mono}>{testCount}</span> 份测试表）
+                    </span>
+                  ) : null}
+                </>
+              )}
             </div>
-            <button
-              type="button"
-              className={UI.btnSecondary}
-              disabled={loadingSchemes}
-              onClick={onRefresh}
-            >
-              刷新
-            </button>
+
+            <div className={CUI.listActionsRow}>
+              {testCount > 0 ? (
+                <label className={CUI.checkRow}>
+                  <input
+                    type="checkbox"
+                    className={CUI.checkBox}
+                    checked={showTestSchemes}
+                    onChange={(e) => setShowTestSchemes(e.target.checked)}
+                  />
+                  显示测试表
+                </label>
+              ) : null}
+
+              <button type="button" className={UI.btnSecondary} disabled={loadingSchemes} onClick={onRefresh}>
+                刷新
+              </button>
+            </div>
           </div>
 
-          {/* Schemes 表 */}
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="min-w-full text-base">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">名称</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">优先级</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">状态</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">币种</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">生效窗</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schemes.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
-                      暂无方案
-                    </td>
-                  </tr>
-                ) : (
-                  schemes.map((s) => (
-                    <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-4 py-3 font-mono">{s.id}</td>
-                      <td className="px-4 py-3">{s.name}</td>
-                      <td className="px-4 py-3 font-mono">{s.priority}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${
-                            s.active
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-slate-200 text-slate-700"
-                          }`}
-                        >
-                          {s.active ? "启用" : "停用"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-mono">{s.currency}</td>
-                      <td className="px-4 py-3 font-mono text-sm">
-                        {formatDt(s.effective_from)} ~ {formatDt(s.effective_to)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            className="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100"
-                            onClick={() => onOpenWorkbench(s.id)}
-                          >
-                            查看工作台
-                          </button>
-
-                          <button
-                            type="button"
-                            className="inline-flex items-center rounded-xl border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-100"
-                            onClick={() => onOpenWorkbench(s.id)}
-                          >
-                            工作台（新）
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="text-sm text-slate-600">
-            提示：工作台（新）是长期主数据维护入口（非弹窗）。
-          </div>
+          <SchemesTable schemes={visibleSchemes} onOpenWorkbench={onOpenWorkbench} />
         </div>
       )}
     </section>
   );
 };
+
+export default SchemesPanel;

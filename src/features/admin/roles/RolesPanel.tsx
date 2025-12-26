@@ -9,6 +9,7 @@
 import React, { useState } from "react";
 import type { RolesPresenter } from "./useRolesPresenter";
 import type { PermissionDTO } from "../users/types";
+import { UI } from "./ui";
 
 type Props = {
   presenter: RolesPresenter;
@@ -16,21 +17,8 @@ type Props = {
   permissionsLoading?: boolean;
 };
 
-export function RolesPanel({
-  presenter,
-  permissions,
-  permissionsLoading = false,
-}: Props) {
-  const {
-    roles,
-    loading,
-    creating,
-    savingPerms,
-    error,
-    createRole,
-    setRolePermissions,
-    setError,
-  } = presenter;
+export function RolesPanel({ presenter, permissions, permissionsLoading = false }: Props) {
+  const { roles, loading, creating, savingPerms, error, createRole, setRolePermissions, setError } = presenter;
 
   const safePermissions = Array.isArray(permissions) ? permissions : [];
   const safeRoles = Array.isArray(roles) ? roles : [];
@@ -39,14 +27,11 @@ export function RolesPanel({
   const [newRoleDesc, setNewRoleDesc] = useState("");
 
   const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
-  const [selectedPermIds, setSelectedPermIds] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [selectedPermIds, setSelectedPermIds] = useState<Set<string>>(() => new Set());
 
   const canCreateRole = true;
   const canEditPerms = true;
 
-  // 打开“编辑权限”对话
   function openEditPerms(roleId: number) {
     const role = safeRoles.find((r) => r.id === roleId);
     if (!role) return;
@@ -54,9 +39,7 @@ export function RolesPanel({
     setEditingRoleId(roleId);
 
     const newSet = new Set<string>();
-    const currentPerms = Array.isArray(role.permissions)
-      ? role.permissions
-      : [];
+    const currentPerms = Array.isArray(role.permissions) ? role.permissions : [];
 
     for (const p of currentPerms) {
       newSet.add(String(p.id));
@@ -68,11 +51,8 @@ export function RolesPanel({
   function togglePerm(id: string) {
     setSelectedPermIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -118,38 +98,31 @@ export function RolesPanel({
   }
 
   return (
-    <div className="space-y-4 text-sm">
-      <h2 className="text-lg font-semibold">角色管理</h2>
+    <div className={UI.page}>
+      <h2 className={UI.h2}>角色管理</h2>
 
-      {error ? (
-        <div className="text-sm text-red-600 bg-red-50 border px-3 py-2 rounded">
-          {error}
-        </div>
-      ) : null}
+      {error ? <div className={UI.errBanner}>{error}</div> : null}
 
       {/* 创建角色 */}
       {canCreateRole ? (
-        <section className="bg-white border rounded-xl p-4 space-y-3">
-          <h3 className="text-base font-semibold">创建角色</h3>
+        <section className={UI.card}>
+          <h3 className={UI.h3}>创建角色</h3>
 
-          <form
-            className="grid grid-cols-1 md:grid-cols-3 gap-3"
-            onSubmit={handleCreateRole}
-          >
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-600">角色名称</label>
+          <form className={UI.formGrid} onSubmit={handleCreateRole}>
+            <div className={UI.field}>
+              <label className={UI.label}>角色名称</label>
               <input
-                className="border rounded-lg px-3 py-2"
+                className={UI.input}
                 value={newRoleName}
                 onChange={(e) => setNewRoleName(e.target.value)}
                 placeholder="如 warehouse_manager"
               />
             </div>
 
-            <div className="flex flex-col gap-1 md:col-span-2">
-              <label className="text-xs text-slate-600">描述（可选）</label>
+            <div className={`${UI.field} md:col-span-2`}>
+              <label className={UI.label}>描述（可选）</label>
               <input
-                className="border rounded-lg px-3 py-2"
+                className={UI.input}
                 value={newRoleDesc}
                 onChange={(e) => setNewRoleDesc(e.target.value)}
                 placeholder="该角色的说明"
@@ -157,11 +130,7 @@ export function RolesPanel({
             </div>
 
             <div className="flex items-end">
-              <button
-                type="submit"
-                disabled={creating}
-                className="px-4 py-2 rounded-lg bg-sky-600 text-white text-sm hover:bg-sky-700 disabled:opacity-60"
-              >
+              <button type="submit" disabled={creating} className={UI.btnPrimary}>
                 {creating ? "创建中…" : "创建角色"}
               </button>
             </div>
@@ -170,40 +139,35 @@ export function RolesPanel({
       ) : null}
 
       {/* 角色列表 */}
-      <section className="bg白 border rounded-xl overflow-hidden">
+      <section className={UI.listWrap}>
         {loading ? (
-          <div className="px-4 py-6">加载中…</div>
+          <div className={UI.listLoading}>加载中…</div>
         ) : safeRoles.length === 0 ? (
-          <div className="px-4 py-6 text-slate-500">暂无角色。</div>
+          <div className={UI.listEmpty}>暂无角色。</div>
         ) : (
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 border-b">
+          <table className={UI.table}>
+            <thead className={UI.thead}>
               <tr>
-                <th className="px-3 py-2 text-left w-12">ID</th>
-                <th className="px-3 py-2 text-left">角色名</th>
-                <th className="px-3 py-2 text-left">描述</th>
-                <th className="px-3 py-2 text-left">权限</th>
-                <th className="px-3 py-2 text-left w-28">操作</th>
+                <th className={`${UI.th} w-12`}>ID</th>
+                <th className={UI.th}>角色名</th>
+                <th className={UI.th}>描述</th>
+                <th className={UI.th}>权限</th>
+                <th className={`${UI.th} w-28`}>操作</th>
               </tr>
             </thead>
 
             <tbody>
               {safeRoles.map((r) => (
-                <tr key={r.id} className="border-b hover:bg-slate-50">
-                  <td className="px-3 py-2">{r.id}</td>
-                  <td className="px-3 py-2">{r.name}</td>
-                  <td className="px-3 py-2">
-                    {r.description || (
-                      <span className="text-slate-400">-</span>
-                    )}
+                <tr key={r.id} className={UI.tr}>
+                  <td className={UI.td}>{r.id}</td>
+                  <td className={UI.td}>{r.name}</td>
+                  <td className={UI.td}>
+                    {r.description ? r.description : <span className={UI.dash}>-</span>}
                   </td>
-                  <td className="px-3 py-2">{permNames(r.id)}</td>
-                  <td className="px-3 py-2">
+                  <td className={UI.td}>{permNames(r.id)}</td>
+                  <td className={UI.td}>
                     {canEditPerms ? (
-                      <button
-                        className="text-xs text-sky-700 hover:underline"
-                        onClick={() => openEditPerms(r.id)}
-                      >
+                      <button className={UI.actionLink} onClick={() => openEditPerms(r.id)}>
                         编辑权限
                       </button>
                     ) : null}
@@ -217,45 +181,33 @@ export function RolesPanel({
 
       {/* 编辑角色权限 */}
       {editingRoleId != null ? (
-        <section className="bg-white border rounded-xl p-4 space-y-3">
-          <h3 className="text-base font-semibold">
-            编辑角色权限：
-            {safeRoles.find((r) => r.id === editingRoleId)?.name}
+        <section className={UI.card}>
+          <h3 className={UI.permPanelTitle}>
+            编辑角色权限：{safeRoles.find((r) => r.id === editingRoleId)?.name}
           </h3>
 
-          <div className="max-h-64 overflow-auto border rounded-lg p-2">
+          <div className={UI.permBox}>
             {permissionsLoading ? (
-              <div className="px-2 py-1 text-xs text-slate-500">
-                权限列表加载中…
-              </div>
+              <div className={UI.permHint}>权限列表加载中…</div>
             ) : safePermissions.length === 0 ? (
-              <div className="px-2 py-1 text-xs text-slate-500">
-                暂无权限，请先创建权限。
-              </div>
+              <div className={UI.permHint}>暂无权限，请先创建权限。</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs">
+              <div className={UI.permGrid}>
                 {safePermissions.map((p) => (
-                  <label
-                    key={p.id}
-                    className="flex items-center gap-2 px-2 py-1 hover:bg-slate-50 cursor-pointer"
-                  >
+                  <label key={p.id} className={UI.permRow}>
                     <input
                       type="checkbox"
                       checked={selectedPermIds.has(String(p.id))}
                       onChange={() => togglePerm(String(p.id))}
                     />
-                    <span className="font-mono text-[11px]">{p.name}</span>
+                    <span className={UI.permName}>{p.name}</span>
                   </label>
                 ))}
               </div>
             )}
           </div>
 
-          <button
-            onClick={handleSaveRolePerms}
-            disabled={savingPerms}
-            className="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm hover:bg-sky-700 disabled:opacity-60"
-          >
+          <button onClick={handleSaveRolePerms} disabled={savingPerms} className={UI.btnSavePerms}>
             {savingPerms ? "保存中…" : "保存权限"}
           </button>
         </section>
