@@ -1,8 +1,8 @@
 // src/features/admin/shipping-providers/scheme/brackets/SegmentsPanel/utils.ts
 //
-// SegmentsPanel 纯工具：转换 / PUT items（避免主文件膨胀）
+// SegmentsPanel 纯工具：转换（避免主文件膨胀）
 
-import type { SchemeWeightSegment, SegmentTemplateOut } from "../../../api/types";
+import type { SchemeWeightSegment } from "../segmentTemplates";
 import type { WeightSegment } from "../PricingRuleEditor";
 
 // ---- conversions ----
@@ -13,7 +13,9 @@ export function segmentsJsonToWeightSegments(v?: SchemeWeightSegment[] | null): 
     .filter((x) => Boolean(x.min || x.max));
 }
 
-export function templateItemsToWeightSegments(items: Array<{ ord: number; min_kg: string; max_kg: string | null }>): WeightSegment[] {
+export function templateItemsToWeightSegments(
+  items: Array<{ ord?: number | null; min_kg: string; max_kg: string | null }>,
+): WeightSegment[] {
   const rows = (items ?? []).slice().sort((a, b) => (a.ord ?? 0) - (b.ord ?? 0));
   return rows.map((it) => ({
     min: String(it.min_kg ?? "").trim(),
@@ -82,33 +84,4 @@ export function weightSegmentsToPutItemsDraftPrefix(
 
   // 第 0 行 max 为空但不是最后一行（safe.length>1）时会返回 []，由上层提示用户先填第 1 行 max
   return rows;
-}
-
-// ---- API (PUT items) ----
-export async function apiPutTemplateItems(
-  templateId: number,
-  items: Array<{ ord: number; min_kg: string | number; max_kg: string | number | null; active: boolean }>,
-): Promise<SegmentTemplateOut> {
-  const { API_BASE_URL, getAccessToken } = await import("../../../../../../lib/api");
-
-  const token = getAccessToken();
-  const url = `${API_BASE_URL}/segment-templates/${templateId}/items`;
-
-  const resp = await fetch(url, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({ items }),
-    credentials: "include",
-  });
-
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`HTTP ${resp.status}: ${text}`);
-  }
-
-  const json = (await resp.json()) as { ok: boolean; data: SegmentTemplateOut };
-  return json.data;
 }

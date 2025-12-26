@@ -4,8 +4,8 @@
 // 使用者视角：这里展示“线上正在用什么方案”
 
 import React, { useMemo } from "react";
-import type { SegmentTemplateOut, SegmentTemplateItemOut } from "../../api/types";
-import UI from "../ui";
+import type { SegmentTemplateOut, SegmentTemplateItemOut } from "./segmentTemplates";
+import { UI } from "../ui";
 
 function displayName(name: string): string {
   return String(name ?? "")
@@ -35,7 +35,7 @@ export const ActiveTemplateCard: React.FC<{
 }> = ({ template, disabled, onToggleItem }) => {
   const items = useMemo(() => {
     const arr = template?.items?.slice() ?? [];
-    arr.sort((a, b) => (a.ord ?? 0) - (b.ord ?? 0));
+    arr.sort((a: SegmentTemplateItemOut, b: SegmentTemplateItemOut) => (a.ord ?? 0) - (b.ord ?? 0));
     return arr;
   }, [template]);
 
@@ -50,7 +50,7 @@ export const ActiveTemplateCard: React.FC<{
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div className="text-base text-slate-800">
               <span className="text-slate-500">方案：</span>
-              <span className="font-semibold">{displayName(template.name)}</span>
+              <span className="font-semibold">{displayName(template.name ?? "")}</span>
             </div>
           </div>
 
@@ -64,7 +64,7 @@ export const ActiveTemplateCard: React.FC<{
                 </tr>
               </thead>
               <tbody>
-                {items.map((it) => (
+                {items.map((it: SegmentTemplateItemOut) => (
                   <tr key={it.id} className="border-b border-slate-100 text-base">
                     <td className="px-3 py-2 font-mono text-slate-800">{fmtRange(it.min_kg, it.max_kg)}</td>
                     <td className="px-3 py-2">

@@ -12,35 +12,27 @@ import type { SchemeTabKey } from "./types";
 
 // Tabs 固定顺序（供 UI 使用）
 // ⚠️ 必须与 SchemeTabKey 对齐
-export const TAB_KEYS: SchemeTabKey[] = [
-  "zones",
-  "segments",
-  "pricing",
-  "surcharges",
-  "preview",
-  "overview",
-];
+export const TAB_KEYS: SchemeTabKey[] = ["zones", "segments", "brackets", "surcharges", "preview"];
 
 // 解析 URL / query 中的 tab 参数
-export function parseTab(v: unknown, fallback: SchemeTabKey = "segments"): SchemeTabKey {
+export function parseTab(v: unknown, fallback: SchemeTabKey = "zones"): SchemeTabKey {
   const s = String(v ?? "").trim();
   if (s === "zones") return "zones";
   if (s === "segments") return "segments";
-  if (s === "pricing") return "pricing";
+  if (s === "brackets") return "brackets";
   if (s === "surcharges") return "surcharges";
   if (s === "preview") return "preview";
-  if (s === "overview") return "overview";
   return fallback;
 }
 
 // 是否“逻辑上”依赖 zone（由上层决定如何使用这个布尔值）
+// 当前阶段：不做阻断提示，不做强制流程。
 export function needsZone(tab: SchemeTabKey): boolean {
-  // 价格录入通常依赖配送区域
-  return tab === "pricing";
+  void tab; // 显式消费参数，满足 eslint
+  return false;
 }
 
 // ❌ 已废弃：不再返回任何提示文案（避免红字误导）
-// 但必须消费参数，避免 eslint unused-vars
 export function explainNeedZone(tab: SchemeTabKey): string | null {
   void tab; // 显式消费参数，满足 eslint
   return null;

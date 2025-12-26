@@ -4,7 +4,7 @@
 // - 默认草稿行策略（新建方案时自动出现几行）
 // - 统一 try/catch 包装，减少主文件体积
 
-import type { SchemeWeightSegment } from "../../../api/types";
+import type { SchemeWeightSegment } from "../segmentTemplates";
 import type { WeightSegment } from "../PricingRuleEditor";
 import { segmentsJsonToWeightSegments } from "../SegmentsPanel/utils";
 

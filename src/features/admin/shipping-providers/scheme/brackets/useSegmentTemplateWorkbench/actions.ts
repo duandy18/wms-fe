@@ -1,16 +1,17 @@
 // src/features/admin/shipping-providers/scheme/brackets/useSegmentTemplateWorkbench/actions.ts
-import type { SegmentTemplateItemOut, SegmentTemplateOut, SchemeWeightSegment } from "../../../api/types";
+import type { SegmentTemplateItemOut, SegmentTemplateOut, SchemeWeightSegment } from "../segmentTemplates";
 import type { WeightSegment } from "../PricingRuleEditor";
 
 import {
   activateSegmentTemplate,
+  apiPutTemplateItems,
   createSegmentTemplate,
   fetchSegmentTemplateDetail,
   patchSegmentTemplateItemActive,
   publishSegmentTemplate,
-} from "../../../api/schemes";
+} from "../segmentTemplates";
 
-import { apiPutTemplateItems, templateItemsToWeightSegments, weightSegmentsToPutItemsDraftPrefix } from "../SegmentsPanel/utils";
+import { templateItemsToWeightSegments, weightSegmentsToPutItemsDraftPrefix } from "../SegmentsPanel/utils";
 import { initDraftSegments, runGuarded } from "./helpers";
 
 function datePrefix(): string {
@@ -162,7 +163,6 @@ export function createWorkbenchActions(ctx: {
     })) as SegmentTemplateOut | null;
     if (!activated) return;
 
-    // 启用后：以列表里的 is_active=true 为唯一事实
     const list = (await runGuarded({
       setBusy,
       setErr,

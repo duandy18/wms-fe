@@ -5,10 +5,10 @@
 // - ✅ UI 两步走：保存方案 + 启用（启用内部自动 publish -> activate）
 
 import { useMemo, useState } from "react";
-import type { SegmentTemplateOut, SchemeWeightSegment } from "../../../api/types";
+import type { SegmentTemplateOut, SchemeWeightSegment } from "../segmentTemplates";
 import type { WeightSegment } from "../PricingRuleEditor";
 
-import { fetchSegmentTemplates } from "../../../api/schemes";
+import { fetchSegmentTemplates } from "../segmentTemplates";
 import { createWorkbenchActions } from "./actions";
 import { useLoadTemplateDetailEffect, useLoadTemplatesEffect } from "./effects";
 

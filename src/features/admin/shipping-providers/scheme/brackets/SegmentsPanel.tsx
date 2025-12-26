@@ -6,9 +6,8 @@
 
 import React from "react";
 import type { PricingSchemeDetail } from "../../api";
-import type { SchemeWeightSegment } from "../../api/types";
-import UI from "../ui";
 
+import type { SchemeWeightSegment } from "./segmentTemplates";
 import ActiveTemplateCard from "./ActiveTemplateCard";
 import TemplateWorkbenchCard from "./TemplateWorkbenchCard";
 import { useSegmentTemplateWorkbench } from "./useSegmentTemplateWorkbench";
@@ -19,7 +18,9 @@ export const SegmentsPanel: React.FC<{
   onError?: (msg: string) => void;
 }> = ({ detail, disabled, onError }) => {
   const schemeId = detail.id;
-  const mirror: SchemeWeightSegment[] | null = detail.segments_json ?? null;
+
+  // 当前 PricingSchemeDetail 类型中没有 segments_json（并且后端也可能已迁移到模板体系）
+  const mirror: SchemeWeightSegment[] | null = null;
 
   const w = useSegmentTemplateWorkbench({
     schemeId,
@@ -30,7 +31,7 @@ export const SegmentsPanel: React.FC<{
 
   return (
     <div className="space-y-3">
-      {w.err ? <div className={UI.surchargeValidationError}>{w.err}</div> : null}
+      {w.err ? <div className="text-red-600 text-sm">{w.err}</div> : null}
 
       <ActiveTemplateCard
         template={w.activeTemplate}

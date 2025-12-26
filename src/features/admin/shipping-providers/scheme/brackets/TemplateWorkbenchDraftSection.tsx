@@ -2,7 +2,7 @@
 import React, { useMemo } from "react";
 import type { WeightSegment } from "./PricingRuleEditor";
 import PricingRuleEditor from "./PricingRuleEditor";
-import UI from "../ui";
+import { UI } from "../ui";
 
 function lastMaxFilled(segs: WeightSegment[]): boolean {
   if (!segs.length) return true;
@@ -43,11 +43,7 @@ export const TemplateWorkbenchDraftSection: React.FC<{
         <PricingRuleEditor
           schemeId={schemeId}
           value={draftSegments}
-          onChange={setDraftSegments}
-          onSave={async () => {}}
-          saving={disabled}
-          hideAddRow={true}
-          mode="draft"
+          onChange={(next) => setDraftSegments(next)}
         />
       </div>
 

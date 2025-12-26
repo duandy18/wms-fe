@@ -1,9 +1,9 @@
 // src/features/admin/shipping-providers/scheme/brackets/useSegmentTemplateWorkbench/effects.ts
 import { useEffect } from "react";
-import type { SegmentTemplateOut } from "../../../api/types";
+import type { SegmentTemplateOut } from "../segmentTemplates";
 import type { WeightSegment } from "../PricingRuleEditor";
 
-import { fetchSegmentTemplateDetail, fetchSegmentTemplates } from "../../../api/schemes";
+import { fetchSegmentTemplateDetail, fetchSegmentTemplates } from "../segmentTemplates";
 import { templateItemsToWeightSegments } from "../SegmentsPanel/utils";
 import { runGuarded } from "./helpers";
 
@@ -70,7 +70,6 @@ export function useLoadTemplateDetailEffect(args: {
 
       setSelectedTemplate(tpl);
 
-      // 仅 draft 才进入编辑态，其余只读
       if (String(tpl.status) === "draft") {
         setDraftSegments(templateItemsToWeightSegments(tpl.items));
       } else {

@@ -3,9 +3,9 @@
 // 单卡流程：选择方案 → 编辑 → 保存 / 启用（两步走）
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { SegmentTemplateItemOut, SegmentTemplateOut, SchemeWeightSegment } from "../../api/types";
+import type { SegmentTemplateItemOut, SegmentTemplateOut, SchemeWeightSegment } from "./segmentTemplates";
 import type { WeightSegment } from "./PricingRuleEditor";
-import UI from "../ui";
+import { UI } from "../ui";
 
 import TemplateWorkbenchSelectBar from "./TemplateWorkbenchSelectBar";
 import TemplateWorkbenchMetaBar from "./TemplateWorkbenchMetaBar";

@@ -1,7 +1,7 @@
 // src/features/admin/shipping-providers/scheme/brackets/TemplateWorkbenchMetaBar.tsx
 import React from "react";
-import type { SegmentTemplateOut } from "../../api/types";
-import UI from "../ui";
+import type { SegmentTemplateOut } from "./segmentTemplates";
+import { UI } from "../ui";
 
 export const TemplateWorkbenchMetaBar: React.FC<{
   template: SegmentTemplateOut | null;

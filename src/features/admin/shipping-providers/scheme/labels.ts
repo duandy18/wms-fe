@@ -7,6 +7,7 @@ export const L = {
   loadFailed: "加载方案明细失败",
 
   tabZones: "区域分类",
+  tabSegments: "重量段方案",
   tabBrackets: "重量区间",
   tabSurcharges: "附加费",
   tabPreview: "算价预览（摘要）",

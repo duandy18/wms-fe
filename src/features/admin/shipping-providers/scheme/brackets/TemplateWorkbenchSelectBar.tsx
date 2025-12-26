@@ -1,7 +1,7 @@
 // src/features/admin/shipping-providers/scheme/brackets/TemplateWorkbenchSelectBar.tsx
 import React from "react";
-import type { SegmentTemplateOut, SchemeWeightSegment } from "../../api/types";
-import UI from "../ui";
+import type { SegmentTemplateOut, SchemeWeightSegment } from "./segmentTemplates";
+import { UI } from "../ui";
 
 function displayName(name: string): string {
   return String(name ?? "")
@@ -48,7 +48,7 @@ export const TemplateWorkbenchSelectBar: React.FC<{
             {templates.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.is_active ? "★ 当前生效 · " : ""}
-                {displayName(t.name)}
+                {displayName(t.name ?? "")}
               </option>
             ))}
           </select>
