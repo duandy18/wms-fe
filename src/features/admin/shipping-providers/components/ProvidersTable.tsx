@@ -16,6 +16,17 @@ function pickPrimaryContact(provider: ShippingProvider): ShippingProviderContact
   return list.find((c) => c.is_primary) ?? list[0] ?? null;
 }
 
+function getContactsCount(provider: ShippingProvider): number {
+  return (provider.contacts ?? []).length;
+}
+
+function formatContactSummary(primary: ShippingProviderContact | null): string {
+  if (!primary) return "未设置";
+  const name = renderText(primary.name);
+  const phone = renderText(primary.phone ?? null);
+  return phone === "—" ? name : `${name} / ${phone}`;
+}
+
 type Props = {
   providers: ShippingProvider[];
   loading: boolean;
@@ -33,6 +44,7 @@ type Props = {
   onSelectProviderForSchemes: (id: number) => void;
 
   onEditProvider: (p: ShippingProvider) => void;
+  onToggleProviderActive: (p: ShippingProvider) => void;
 };
 
 export const ProvidersTable: React.FC<Props> = ({
@@ -41,38 +53,29 @@ export const ProvidersTable: React.FC<Props> = ({
   error,
   onlyActive,
   onOnlyActiveChange,
-  search,
-  onSearchChange,
   onRefresh,
   selectedProviderId,
   onSelectProviderForSchemes,
   onEditProvider,
+  onToggleProviderActive,
 }) => {
   return (
     <section className={UI.card}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h2 className={`${UI.h2} font-semibold text-slate-900`}>物流/快递公司列表</h2>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-3">
           <label className="inline-flex items-center gap-2">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-slate-300"
               checked={onlyActive}
               onChange={(e) => onOnlyActiveChange(e.target.checked)}
             />
             <span className={UI.small}>仅显示启用</span>
           </label>
 
-          <input
-            className="w-64 rounded-xl border border-slate-300 px-4 py-3 text-lg"
-            placeholder="名称 / 联系人 搜索"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
-
           <button type="button" disabled={loading} onClick={onRefresh} className={UI.btnSecondary}>
-            {loading ? "查询中…" : "刷新"}
+            刷新
           </button>
         </div>
       </div>
@@ -86,11 +89,11 @@ export const ProvidersTable: React.FC<Props> = ({
               <th className={UI.th}>序号</th>
               <th className={UI.th}>名称</th>
               <th className={UI.th}>编码</th>
-              <th className={UI.th}>主联系人</th>
-              <th className={UI.th}>电话</th>
+              <th className={UI.th}>联系人摘要</th>
+              <th className={UI.th}>联系人数量</th>
               <th className={UI.th}>优先级</th>
               <th className={UI.th}>状态</th>
-              <th className={UI.th}>价格方案</th>
+              <th className={UI.th}>收费标准</th>
               <th className={UI.th}>操作</th>
             </tr>
           </thead>
@@ -98,9 +101,7 @@ export const ProvidersTable: React.FC<Props> = ({
           <tbody>
             {providers.length === 0 ? (
               <tr>
-                <td colSpan={9} className={UI.empty}>
-                  暂无记录
-                </td>
+                <td colSpan={9} className={UI.empty}>暂无记录</td>
               </tr>
             ) : (
               providers.map((p) => {
@@ -112,36 +113,33 @@ export const ProvidersTable: React.FC<Props> = ({
                     <td className={UI.tdMono}>{p.id}</td>
                     <td className={UI.td}>{renderText(p.name)}</td>
                     <td className={UI.tdMono}>{renderText(p.code ?? null)}</td>
-
-                    <td className={UI.td}>{renderText(primary?.name ?? null)}</td>
-                    <td className={UI.tdMono}>{renderText(primary?.phone ?? null)}</td>
-
+                    <td className={UI.td}>{formatContactSummary(primary)}</td>
+                    <td className={UI.tdMono}>{getContactsCount(p)}</td>
                     <td className={UI.tdMono}>{renderNumber(p.priority)}</td>
 
                     <td className={UI.td}>
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold ${
+                      <button
+                        onClick={() => onToggleProviderActive(p)}
+                        className={`rounded-full px-3 py-1 text-sm ${
                           p.active ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
                         }`}
                       >
                         {p.active ? "启用" : "停用"}
-                      </span>
-                    </td>
-
-                    {/* 注意：这里是“查看方案”动作，不表达“选中方案” */}
-                    <td className={UI.td}>
-                      <button
-                        type="button"
-                        className={`${UI.badgeBtn} ${selected ? UI.badgeBtnActive : UI.badgeBtnIdle}`}
-                        onClick={() => onSelectProviderForSchemes(p.id)}
-                      >
-                        查看方案
                       </button>
                     </td>
 
                     <td className={UI.td}>
-                      <button type="button" className={UI.btnSecondary} onClick={() => onEditProvider(p)}>
-                        编辑
+                      <button
+                        className={`${UI.badgeBtn} ${selected ? UI.badgeBtnActive : UI.badgeBtnIdle}`}
+                        onClick={() => onSelectProviderForSchemes(p.id)}
+                      >
+                        查看收费标准
+                      </button>
+                    </td>
+
+                    <td className={UI.td}>
+                      <button className={UI.btnSecondary} onClick={() => onEditProvider(p)}>
+                        管理联系人
                       </button>
                     </td>
                   </tr>

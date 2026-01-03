@@ -71,7 +71,6 @@ export function useSchemeWorkbench(params: { open: boolean; schemeId: number | n
         const zones = d.zones ?? [];
 
         // ✅ 保留用户当前选中的 Zone（如果还存在）
-        // - 即使该 Zone 已停用，也允许保留选择用于回看（但 UI 侧应只读）
         const current = selectedZoneIdRef.current;
         const stillExists = current != null && zones.some((z) => z.id === current);
 
@@ -125,7 +124,6 @@ export function useSchemeWorkbench(params: { open: boolean; schemeId: number | n
     [reloadSilent, schemeId],
   );
 
-  // ✅ 关键：effect 只依赖 canLoad / schemeId，不依赖 load 的“变化引用”导致重复触发
   useEffect(() => {
     if (!canLoad) return;
     void load({ silent: false });
@@ -149,7 +147,6 @@ export function useSchemeWorkbench(params: { open: boolean; schemeId: number | n
       id: detail.id,
       name: detail.name,
       active: detail.active,
-      priority: detail.priority,
       currency: detail.currency,
       effective_from: detail.effective_from ?? null,
       effective_to: detail.effective_to ?? null,

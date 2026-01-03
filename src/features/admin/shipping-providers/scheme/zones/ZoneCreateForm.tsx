@@ -5,7 +5,7 @@ import { UI } from "../../ui";
 import { RegionSelector } from "../components/RegionSelector";
 import type { PricingSchemeZone } from "../../api";
 
-export type CreateZonePayload = { name: string; priority: number };
+export type CreateZonePayload = { name: string };
 
 function buildZoneNameFromProvinces(list: string[]): string {
   const cleaned = (list ?? []).map((x) => (x || "").trim()).filter(Boolean);
@@ -52,7 +52,7 @@ export const ZoneCreateForm: React.FC<{
       return;
     }
 
-    const payload: CreateZonePayload = { name: n, priority: 100 };
+    const payload: CreateZonePayload = { name: n };
 
     if (onCreateWithProvinces) {
       await onCreateWithProvinces(payload, cleanedProvinces);
@@ -98,12 +98,7 @@ export const ZoneCreateForm: React.FC<{
         </div>
 
         <div className="flex items-end">
-          <button
-            className={UI.btnPrimaryGreen}
-            type="button"
-            disabled={disabled}
-            onClick={() => void handleCreate()}
-          >
+          <button className={UI.btnPrimaryGreen} type="button" disabled={disabled} onClick={() => void handleCreate()}>
             创建
           </button>
         </div>

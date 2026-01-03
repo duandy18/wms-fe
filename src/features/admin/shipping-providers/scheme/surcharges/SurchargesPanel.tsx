@@ -13,7 +13,6 @@ export const SurchargesPanel: React.FC<{
 
   onCreate: (payload: {
     name: string;
-    priority: number;
     condition_json: Record<string, unknown>;
     amount_json: Record<string, unknown>;
   }) => Promise<void>;
@@ -22,7 +21,6 @@ export const SurchargesPanel: React.FC<{
     surchargeId: number,
     payload: Partial<{
       name: string;
-      priority: number;
       active: boolean;
       condition_json: Record<string, unknown>;
       amount_json: Record<string, unknown>;
@@ -56,9 +54,7 @@ export const SurchargesPanel: React.FC<{
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className={UI.sectionTitle}>附加费列表（已生效规则，可停用/删除）</div>
-            <div className="mt-1 text-sm text-slate-600">
-              这里展示的是“已经写入系统、会参与算价”的条款清单。
-            </div>
+            <div className="mt-1 text-sm text-slate-600">这里展示的是“已经写入系统、会参与算价”的条款清单。</div>
           </div>
 
           <button

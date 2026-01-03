@@ -93,7 +93,6 @@ export const SchemeWorkbenchPage: React.FC = () => {
                     const z = await createZoneAtomic(wb.detail!.id, {
                       name,
                       provinces,
-                      priority: 100,
                       active: true,
                     });
                     wb.setSelectedZoneId(z.id);
@@ -129,7 +128,6 @@ export const SchemeWorkbenchPage: React.FC = () => {
                   await wb.mutate(async () => {
                     await createSurcharge(wb.detail!.id, {
                       name: payload.name,
-                      priority: payload.priority,
                       active: true,
                       condition_json: payload.condition_json,
                       amount_json: payload.amount_json,

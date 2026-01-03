@@ -9,11 +9,6 @@ function formatDt(v?: string | null) {
   return v.replace("T", " ").replace("Z", "");
 }
 
-function toIntOrNegInf(v: unknown) {
-  const n = typeof v === "number" ? v : Number(String(v));
-  return Number.isFinite(n) ? n : Number.NEGATIVE_INFINITY;
-}
-
 type Props = {
   selectedProvider: ShippingProvider | null;
 
@@ -22,12 +17,10 @@ type Props = {
   schemesError: string | null;
 
   newSchemeName: string;
-  newSchemePriority: string;
   newSchemeCurrency: string;
   newSchemeSaving: boolean;
 
   onChangeName: (v: string) => void;
-  onChangePriority: (v: string) => void;
   onChangeCurrency: (v: string) => void;
 
   onCreateScheme: () => void;
@@ -35,6 +28,13 @@ type Props = {
   onOpenWorkbench: (schemeId: number) => void;
 
   onClearSelectedProvider: () => void;
+
+  hasMultiActive: boolean;
+  fixingActive: boolean;
+  onFixMultiActive: () => void;
+
+  settingActive: boolean;
+  onSetActive: (schemeId: number) => void;
 };
 
 export const SchemesPanel: React.FC<Props> = ({
@@ -43,36 +43,48 @@ export const SchemesPanel: React.FC<Props> = ({
   loadingSchemes,
   schemesError,
   newSchemeName,
-  newSchemePriority,
   newSchemeCurrency,
   newSchemeSaving,
   onChangeName,
-  onChangePriority,
   onChangeCurrency,
   onCreateScheme,
   onRefresh,
   onOpenWorkbench,
   onClearSelectedProvider,
+  hasMultiActive,
+  fixingActive,
+  onFixMultiActive,
+  settingActive,
+  onSetActive,
 }) => {
+  const [showAll, setShowAll] = React.useState(false);
+
   const sortedSchemes = React.useMemo(() => {
-    // 规则：启用排第一；同状态下优先级高的排前；再按 id 升序稳定
+    // 启用排第一；同状态下 id 升序稳定
     return [...schemes].sort((a, b) => {
       const aa = a.active ? 1 : 0;
       const bb = b.active ? 1 : 0;
       if (aa !== bb) return bb - aa;
-
-      const pa = toIntOrNegInf(a.priority);
-      const pb = toIntOrNegInf(b.priority);
-      if (pa !== pb) return pb - pa;
-
       return a.id - b.id;
     });
   }, [schemes]);
 
+  const visibleSchemes = React.useMemo(() => {
+    if (showAll) return sortedSchemes;
+
+    // 默认只显示 5 条：先启用，再最近停用（id 大的优先展示）
+    const actives = sortedSchemes.filter((s) => s.active);
+    const inactives = sortedSchemes.filter((s) => !s.active).sort((a, b) => b.id - a.id);
+
+    const limit = 5;
+    const restSlots = Math.max(0, limit - actives.length);
+    return [...actives, ...inactives.slice(0, restSlots)];
+  }, [sortedSchemes, showAll]);
+
   return (
     <section className={UI.card}>
       <div className="flex items-center justify-between gap-3">
-        <h2 className={`${UI.h2} font-semibold text-slate-900`}>价格方案</h2>
+        <h2 className={`${UI.h2} font-semibold text-slate-900`}>收费标准</h2>
 
         <div className="flex items-center gap-3">
           {selectedProvider ? (
@@ -95,30 +107,41 @@ export const SchemesPanel: React.FC<Props> = ({
 
       {!selectedProvider ? (
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-          先选一个物流/快递公司，再新建/维护价格方案。
+          先选一个物流/快递公司，再新建/维护收费标准。
         </div>
       ) : (
         <div className="space-y-3">
-          {/* 新方案 */}
+          {/* 多启用冲突提示 */}
+          {hasMultiActive ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="font-semibold">当前存在多条“启用”收费标准（不符合单启用规则）。</div>
+              <div className="mt-1 text-amber-800">
+                系统应当只保留 1 条启用。点击“一键修复”将保留启用中 id 最大的一条，其余全部停用。
+              </div>
+              <div className="mt-3">
+                <button
+                  type="button"
+                  className="inline-flex items-center rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+                  disabled={fixingActive || loadingSchemes || settingActive}
+                  onClick={onFixMultiActive}
+                >
+                  {fixingActive ? "修复中…" : "一键修复"}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* 新的收费标准 */}
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-semibold text-slate-800">新方案</div>
+            <div className="text-sm font-semibold text-slate-800">新的收费标准</div>
 
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
-              <div className="flex flex-col">
+              <div className="flex flex-col md:col-span-2">
                 <label className="text-sm text-slate-600">名称 *</label>
                 <input
                   className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
                   value={newSchemeName}
                   onChange={(e) => onChangeName(e.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm text-slate-600">优先级</label>
-                <input
-                  className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono"
-                  value={newSchemePriority}
-                  onChange={(e) => onChangePriority(e.target.value)}
                 />
               </div>
 
@@ -138,7 +161,7 @@ export const SchemesPanel: React.FC<Props> = ({
                   disabled={newSchemeSaving}
                   onClick={onCreateScheme}
                 >
-                  {newSchemeSaving ? "创建中…" : "创建方案"}
+                  {newSchemeSaving ? "创建中…" : "创建收费标准"}
                 </button>
               </div>
             </div>
@@ -147,21 +170,32 @@ export const SchemesPanel: React.FC<Props> = ({
           {/* 列表头 */}
           <div className="flex items-center justify-between">
             <div className="text-sm text-slate-600">
-              {loadingSchemes ? "加载中…" : `共 ${schemes.length} 套方案`}
+              {loadingSchemes ? "加载中…" : `共 ${schemes.length} 条收费标准`}
+              {!showAll && schemes.length > visibleSchemes.length ? (
+                <span className="ml-2 text-slate-500">（当前仅展示 {visibleSchemes.length} 条）</span>
+              ) : null}
             </div>
-            <button type="button" className={UI.btnSecondary} disabled={loadingSchemes} onClick={onRefresh}>
-              刷新
-            </button>
+
+            <div className="flex items-center gap-2">
+              <button type="button" className={UI.btnSecondary} disabled={loadingSchemes} onClick={onRefresh}>
+                刷新
+              </button>
+
+              {schemes.length > 5 ? (
+                <button type="button" className={UI.btnSecondary} onClick={() => setShowAll((v) => !v)}>
+                  {showAll ? "收起" : "展开全部"}
+                </button>
+              ) : null}
+            </div>
           </div>
 
-          {/* 方案表 */}
+          {/* 表 */}
           <div className="overflow-x-auto rounded-2xl border border-slate-200">
             <table className="min-w-full text-base">
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">序号</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">名称</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">优先级</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">状态</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">币种</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">生效窗</th>
@@ -170,18 +204,17 @@ export const SchemesPanel: React.FC<Props> = ({
               </thead>
 
               <tbody>
-                {sortedSchemes.length === 0 ? (
+                {visibleSchemes.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
-                      暂无方案
+                    <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
+                      暂无收费标准
                     </td>
                   </tr>
                 ) : (
-                  sortedSchemes.map((s) => (
+                  visibleSchemes.map((s) => (
                     <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="px-4 py-3 font-mono">{s.id}</td>
                       <td className="px-4 py-3">{s.name}</td>
-                      <td className="px-4 py-3 font-mono">{s.priority}</td>
 
                       <td className="px-4 py-3">
                         <span
@@ -200,13 +233,26 @@ export const SchemesPanel: React.FC<Props> = ({
                       </td>
 
                       <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          className="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100"
-                          onClick={() => onOpenWorkbench(s.id)}
-                        >
-                          打开工作台
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100"
+                            onClick={() => onOpenWorkbench(s.id)}
+                          >
+                            打开收费标准
+                          </button>
+
+                          {!s.active ? (
+                            <button
+                              type="button"
+                              className="inline-flex items-center rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
+                              disabled={settingActive || loadingSchemes || fixingActive}
+                              onClick={() => onSetActive(s.id)}
+                            >
+                              {settingActive ? "切换中…" : "设为启用"}
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -215,7 +261,9 @@ export const SchemesPanel: React.FC<Props> = ({
             </table>
           </div>
 
-          <div className="text-sm text-slate-600">提示：工作台用于维护区域、重量段、报价与附加费。</div>
+          <div className="text-sm text-slate-600">
+            规则：同一物流/快递公司只允许 1 条收费标准处于“启用”。历史收费标准默认折叠，必要时再展开查看。
+          </div>
         </div>
       )}
     </section>

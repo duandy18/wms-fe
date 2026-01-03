@@ -1,8 +1,19 @@
 // src/features/admin/shipping-providers/edit-provider/ContactsForm.tsx
 
 import React from "react";
-import type { EditProviderFormState } from "./ProviderForm";
-import { CONTACT_ROLE_OPTIONS } from "./contactRoles";
+import type { EditProviderFormState } from "@/features/admin/shipping-providers/edit-provider/ProviderForm";
+import { UI } from "@/features/admin/shipping-providers/ui";
+
+function Row(props: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-20 shrink-0 text-sm text-slate-600 text-right">
+        {props.label}
+      </div>
+      <div className="flex-1">{props.children}</div>
+    </div>
+  );
+}
 
 export const ContactsForm: React.FC<{
   state: EditProviderFormState;
@@ -12,64 +23,58 @@ export const ContactsForm: React.FC<{
   onCreateContact: () => void | Promise<void>;
 }> = ({ state, busy, savingContact, onChange, onCreateContact }) => {
   return (
-    <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-6">
-      <div className="md:col-span-2">
-        <label className="text-xs text-slate-600">姓名 *</label>
+    <div className="mt-3 space-y-3">
+      <Row label="姓名 *">
         <input
-          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          className={UI.input}
           value={state.cName}
           disabled={busy}
           onChange={(e) => onChange({ cName: e.target.value })}
+          placeholder="联系人姓名"
         />
-      </div>
+      </Row>
 
-      <div>
-        <label className="text-xs text-slate-600">电话</label>
+      <Row label="电话">
         <input
-          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono"
+          className={UI.inputMono}
           value={state.cPhone}
           disabled={busy}
           onChange={(e) => onChange({ cPhone: e.target.value })}
+          placeholder="手机号 / 座机"
         />
-      </div>
+      </Row>
 
-      <div>
-        <label className="text-xs text-slate-600">邮箱</label>
+      <Row label="邮箱">
         <input
-          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono"
+          className={UI.inputMono}
           value={state.cEmail}
           disabled={busy}
           onChange={(e) => onChange({ cEmail: e.target.value })}
+          placeholder="example@company.com"
         />
-      </div>
+      </Row>
 
-      <div>
-        <label className="text-xs text-slate-600">微信</label>
+      <Row label="微信">
         <input
-          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono"
+          className={UI.inputMono}
           value={state.cWechat}
           disabled={busy}
           onChange={(e) => onChange({ cWechat: e.target.value })}
+          placeholder="微信号"
         />
-      </div>
+      </Row>
 
-      <div>
-        <label className="text-xs text-slate-600">角色</label>
-        <select
-          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+      <Row label="职位">
+        <input
+          className={UI.input}
           value={state.cRole}
           disabled={busy}
           onChange={(e) => onChange({ cRole: e.target.value })}
-        >
-          {CONTACT_ROLE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
+          placeholder="如：发货 / 对账 / 客服 / 售后"
+        />
+      </Row>
 
-      <div className="flex items-end gap-2 md:col-span-6">
+      <div className="flex items-center gap-4 pt-2">
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input
             type="checkbox"
@@ -82,7 +87,7 @@ export const ContactsForm: React.FC<{
 
         <button
           type="button"
-          className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+          className={UI.btnPrimaryGreen}
           disabled={busy || savingContact}
           onClick={() => void onCreateContact()}
         >
@@ -92,3 +97,5 @@ export const ContactsForm: React.FC<{
     </div>
   );
 };
+
+export default ContactsForm;
