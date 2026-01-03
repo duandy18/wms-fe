@@ -83,14 +83,14 @@ export const ProvidersTable: React.FC<Props> = ({
         <table className={UI.table}>
           <thead>
             <tr className={UI.theadRow}>
-              <th className={UI.th}>ID</th>
+              <th className={UI.th}>序号</th>
               <th className={UI.th}>名称</th>
               <th className={UI.th}>编码</th>
               <th className={UI.th}>主联系人</th>
               <th className={UI.th}>电话</th>
               <th className={UI.th}>优先级</th>
               <th className={UI.th}>状态</th>
-              <th className={UI.th}>Schemes</th>
+              <th className={UI.th}>价格方案</th>
               <th className={UI.th}>操作</th>
             </tr>
           </thead>
@@ -128,13 +128,14 @@ export const ProvidersTable: React.FC<Props> = ({
                       </span>
                     </td>
 
+                    {/* 注意：这里是“查看方案”动作，不表达“选中方案” */}
                     <td className={UI.td}>
                       <button
                         type="button"
                         className={`${UI.badgeBtn} ${selected ? UI.badgeBtnActive : UI.badgeBtnIdle}`}
                         onClick={() => onSelectProviderForSchemes(p.id)}
                       >
-                        {selected ? "已选中" : "查看方案"}
+                        查看方案
                       </button>
                     </td>
 
@@ -149,10 +150,6 @@ export const ProvidersTable: React.FC<Props> = ({
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="mt-3 text-sm text-slate-600">
-        列表页不允许直接切换状态；危险修改统一进编辑弹窗（与 suppliers 一致）。
       </div>
     </section>
   );

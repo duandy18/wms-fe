@@ -18,10 +18,7 @@ const ShippingProvidersListPage: React.FC = () => {
 
   return (
     <div className={UI.page}>
-      <PageTitle
-        title="物流 / 快递公司（主数据）"
-        description="维护 Provider + Contacts + Pricing Schemes（Scheme → Zone → Bracket → Surcharge → Preview）。"
-      />
+      <PageTitle title="物流 / 快递公司（主数据）" />
 
       {/* 新建 provider */}
       <section className={UI.card}>
@@ -86,6 +83,7 @@ const ShippingProvidersListPage: React.FC = () => {
           onCreateScheme={() => void vm.schemesHook.handleCreateScheme(vm.selectedProviderId)}
           onRefresh={() => vm.selectedProvider && void vm.schemesHook.loadSchemes(vm.selectedProvider.id)}
           onOpenWorkbench={(id) => navigate(`/admin/shipping-providers/schemes/${id}/workbench`)}
+          onClearSelectedProvider={vm.clearProviderForSchemes}
         />
       </div>
 
