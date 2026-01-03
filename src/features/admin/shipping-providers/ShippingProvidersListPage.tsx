@@ -18,16 +18,13 @@ const ShippingProvidersListPage: React.FC = () => {
 
   return (
     <div className={UI.page}>
-      <PageTitle
-        title="物流 / 快递公司（主数据）"
-        description="维护 Provider + Contacts + Pricing Schemes（Scheme → Zone → Bracket → Surcharge → Preview）。"
-      />
+      <PageTitle title="物流 / 快递公司（主数据）" />
 
-      {/* 新建 provider */}
+      {/* 关联物流/快递公司 */}
       <section className={UI.card}>
         <div className={UI.cardHeader}>
-          <h2 className={`${UI.h2} font-semibold text-slate-900`}>新建物流/快递公司</h2>
-          {vm.providersHook.createError && <div className={UI.error}>{vm.providersHook.createError}</div>}
+          <h2 className={`${UI.h2} font-semibold text-slate-900`}>关联物流/快递公司</h2>
+          {vm.providersHook.createError ? <div className={UI.error}>{vm.providersHook.createError}</div> : null}
         </div>
 
         <form onSubmit={vm.providersHook.handleCreateProvider} className="grid grid-cols-1 gap-4 md:grid-cols-6">
@@ -39,6 +36,7 @@ const ShippingProvidersListPage: React.FC = () => {
               onChange={(e) => vm.providersHook.setName(e.target.value)}
             />
           </div>
+
           <div className={UI.field}>
             <label className={UI.label}>编码</label>
             <input
@@ -47,19 +45,20 @@ const ShippingProvidersListPage: React.FC = () => {
               onChange={(e) => vm.providersHook.setCode(e.target.value)}
             />
           </div>
+
           <div className="flex items-end">
             <button type="submit" disabled={vm.providersHook.creating} className={UI.btnPrimary}>
-              {vm.providersHook.creating ? "创建中…" : "创建"}
+              {vm.providersHook.creating ? "关联中…" : "关联"}
             </button>
           </div>
         </form>
       </section>
 
-      {/* Providers + Schemes */}
+      {/* Providers + Charging Standards */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <ProvidersTable
           providers={vm.providersHook.providers}
-          loading={vm.providersHook.loading}
+          loading={vm.providersHook.loading || vm.providersHook.toggling}
           error={vm.providersHook.error}
           onlyActive={vm.providersHook.onlyActive}
           onOnlyActiveChange={vm.providersHook.setOnlyActive}
@@ -69,6 +68,7 @@ const ShippingProvidersListPage: React.FC = () => {
           selectedProviderId={vm.selectedProviderId}
           onSelectProviderForSchemes={(id) => void vm.selectProviderForSchemes(id)}
           onEditProvider={vm.openEditProvider}
+          onToggleProviderActive={(p) => void vm.providersHook.toggleProviderActive(p)}
         />
 
         <SchemesPanel
@@ -77,15 +77,21 @@ const ShippingProvidersListPage: React.FC = () => {
           loadingSchemes={vm.schemesHook.loadingSchemes}
           schemesError={vm.schemesHook.schemesError}
           newSchemeName={vm.schemesHook.newSchemeName}
-          newSchemePriority={vm.schemesHook.newSchemePriority}
           newSchemeCurrency={vm.schemesHook.newSchemeCurrency}
           newSchemeSaving={vm.schemesHook.newSchemeSaving}
           onChangeName={vm.schemesHook.setNewSchemeName}
-          onChangePriority={vm.schemesHook.setNewSchemePriority}
           onChangeCurrency={vm.schemesHook.setNewSchemeCurrency}
           onCreateScheme={() => void vm.schemesHook.handleCreateScheme(vm.selectedProviderId)}
           onRefresh={() => vm.selectedProvider && void vm.schemesHook.loadSchemes(vm.selectedProvider.id)}
           onOpenWorkbench={(id) => navigate(`/admin/shipping-providers/schemes/${id}/workbench`)}
+          onClearSelectedProvider={vm.clearProviderForSchemes}
+          hasMultiActive={vm.schemesHook.hasMultiActive}
+          fixingActive={vm.schemesHook.fixingActive}
+          onFixMultiActive={() => vm.selectedProviderId && void vm.schemesHook.fixMultiActive(vm.selectedProviderId)}
+          settingActive={vm.schemesHook.settingActive}
+          onSetActive={(schemeId) =>
+            vm.selectedProviderId && void vm.schemesHook.setActiveScheme(vm.selectedProviderId, schemeId)
+          }
         />
       </div>
 

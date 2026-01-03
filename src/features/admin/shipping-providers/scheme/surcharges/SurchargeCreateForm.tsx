@@ -12,7 +12,6 @@ export const SurchargeCreateForm: React.FC<{
 
   onCreate: (payload: {
     name: string;
-    priority: number;
     condition_json: Record<string, unknown>;
     amount_json: Record<string, unknown>;
   }) => Promise<void>;
@@ -21,7 +20,6 @@ export const SurchargeCreateForm: React.FC<{
     surchargeId: number,
     payload: Partial<{
       name: string;
-      priority: number;
       active: boolean;
       condition_json: Record<string, unknown>;
       amount_json: Record<string, unknown>;

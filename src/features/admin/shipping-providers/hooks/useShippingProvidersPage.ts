@@ -24,6 +24,11 @@ export function useShippingProvidersPage() {
     await schemesHook.loadSchemes(id);
   }
 
+  function clearProviderForSchemes() {
+    setSelectedProviderId(null);
+    schemesHook.setSchemes([]);
+  }
+
   // ===== 初次加载 =====
   useEffect(() => {
     void providersHook.loadProviders();
@@ -54,6 +59,7 @@ export function useShippingProvidersPage() {
     selectedProviderId,
     selectedProvider,
     selectProviderForSchemes,
+    clearProviderForSchemes,
     setSelectedProviderId,
 
     // modal (透传，不改对外接口/字段名)
