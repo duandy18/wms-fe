@@ -62,12 +62,17 @@ export const UI = {
 
   // ===== Scheme 子模块：Region Selector =====
   regionSearchInput: "w-full md:w-72 rounded-xl border border-slate-300 px-3 py-2 text-base",
-  regionItemBox: "flex items-center gap-2 rounded-xl border px-4 py-3",
+  regionItemBox: "flex select-none items-center gap-2 rounded-xl border px-4 py-3 transition",
   regionItemText: "truncate text-base text-slate-900",
   regionItemTextHit: "truncate text-base font-semibold text-slate-900",
   regionTitle: "text-base font-semibold text-slate-900",
   regionHint: "text-sm text-slate-600",
   regionMeta: "text-sm text-slate-600",
+
+  // ✅ 9205585 依赖：禁用态透明度 + “已占用”徽章
+  regionItemDisabledOpacity: "opacity-60 cursor-not-allowed",
+  regionItemBadge:
+    "ml-auto inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700",
 
   // ===== Scheme 子模块：Zones Panel =====
   zonePageTitle: "text-base font-semibold text-slate-900",
