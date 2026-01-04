@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import type { SegmentTemplateOut, SchemeWeightSegment } from "../segmentTemplates";
 import type { WeightSegment } from "../PricingRuleEditor";
 
-import { fetchSegmentTemplates } from "../segmentTemplates";
+import { fetchSegmentTemplates, isTemplateActive } from "../segmentTemplates";
 import { createWorkbenchActions } from "./actions";
 import { useLoadTemplateDetailEffect, useLoadTemplatesEffect } from "./effects";
 
@@ -24,7 +24,7 @@ export function useSegmentTemplateWorkbench(args: {
   const [err, setErr] = useState<string | null>(null);
 
   const [templates, setTemplates] = useState<SegmentTemplateOut[]>([]);
-  const activeTemplate = useMemo(() => templates.find((t) => t.is_active) ?? null, [templates]);
+  const activeTemplate = useMemo(() => templates.find((t) => isTemplateActive(t)) ?? null, [templates]);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<SegmentTemplateOut | null>(null);

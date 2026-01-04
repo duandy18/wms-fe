@@ -1,38 +1,45 @@
 // src/features/admin/shipping-providers/scheme/brackets/TemplateWorkbenchCard.tsx
 //
-// 单卡流程：选择方案 → 编辑 → 保存 / 启用（两步走）
+// 人类流程版：选择/新建方案名 → 编辑 → 保存 → 决定是否启用
+// - 去掉解释型文案（避免噪音）
+// - 保存/启用分开
+// - 格式打磨：标题层级、badge、密度、对齐
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { SegmentTemplateItemOut, SegmentTemplateOut, SchemeWeightSegment } from "./segmentTemplates";
+import React, { useEffect, useRef, useState } from "react";
+import type { SegmentTemplateOut, SchemeWeightSegment } from "./segmentTemplates";
 import type { WeightSegment } from "./PricingRuleEditor";
+import PricingRuleEditor from "./PricingRuleEditor";
 import { UI } from "../ui";
 
 import TemplateWorkbenchSelectBar from "./TemplateWorkbenchSelectBar";
-import TemplateWorkbenchMetaBar from "./TemplateWorkbenchMetaBar";
-import TemplateWorkbenchDraftSection from "./TemplateWorkbenchDraftSection";
+import { isTemplateActive } from "./segmentTemplates";
 
 function stableKey(segs: WeightSegment[]): string {
   return JSON.stringify(segs ?? []);
 }
 
-function fmt2(v: string | number | null | undefined): string {
-  if (v === null || v === undefined) return "";
-  const n = Number(String(v).trim());
-  if (!Number.isFinite(n)) return String(v);
-  return n.toFixed(2);
+function isDraftTemplate(t: SegmentTemplateOut | null): boolean {
+  if (!t) return false;
+  return String(t.status ?? "") === "draft";
 }
 
-function fmtRange(min: string, max: string | null): string {
-  const mn = fmt2(min);
-  const mx = max ? fmt2(max) : "";
-  if (!mx) return `w ≥ ${mn} kg`;
-  return `${mn} ≤ w < ${mx} kg`;
+function displayName(name: string): string {
+  return String(name ?? "")
+    .replace(/表头模板/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function sortItems(items: SegmentTemplateItemOut[]): SegmentTemplateItemOut[] {
-  const arr = (items ?? []).slice();
-  arr.sort((a, b) => (a.ord ?? 0) - (b.ord ?? 0));
-  return arr;
+function canEditTemplate(t: SegmentTemplateOut | null): boolean {
+  return !!t && isDraftTemplate(t);
+}
+
+function ActiveBadge() {
+  return (
+    <span className="ml-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+      当前生效
+    </span>
+  );
 }
 
 export const TemplateWorkbenchCard: React.FC<{
@@ -50,7 +57,7 @@ export const TemplateWorkbenchCard: React.FC<{
 
   onCreateDraft: () => void;
   onSaveDraft: () => Promise<void>;
-  onActivateTemplate: () => void;
+  onActivateTemplate: () => Promise<void>;
 
   mirrorSegmentsJson: SchemeWeightSegment[] | null;
 }> = ({
@@ -71,13 +78,8 @@ export const TemplateWorkbenchCard: React.FC<{
   const lastSavedKeyRef = useRef<string>(stableKey(draftSegments));
   const lastTplIdRef = useRef<number | null>(null);
 
-  const tplStatus = selectedTemplate?.status ? String(selectedTemplate.status) : "";
-  const isDraft = tplStatus === "draft";
-
-  const readonlyItems = useMemo(() => {
-    if (!selectedTemplate) return [];
-    return sortItems(selectedTemplate.items ?? []);
-  }, [selectedTemplate]);
+  const editable = canEditTemplate(selectedTemplate);
+  const isActive = isTemplateActive(selectedTemplate ?? undefined);
 
   useEffect(() => {
     const tplId = selectedTemplate?.id ?? null;
@@ -90,20 +92,34 @@ export const TemplateWorkbenchCard: React.FC<{
   }, [selectedTemplate?.id]);
 
   useEffect(() => {
-    if (!isDraft) {
+    if (!editable) {
       setDirty(false);
       return;
     }
     const cur = stableKey(draftSegments);
     if (cur !== lastSavedKeyRef.current) setDirty(true);
-  }, [draftSegments, isDraft]);
+  }, [draftSegments, editable]);
 
-  async function saveDraftAndMarkClean() {
+  async function handleSave() {
     if (disabled) return;
+    if (!editable) return;
     await onSaveDraft();
     lastSavedKeyRef.current = stableKey(draftSegments);
     setDirty(false);
   }
+
+  async function handleActivate() {
+    if (disabled) return;
+    if (!selectedTemplate) return;
+    if (dirty) {
+      window.alert("请先保存。");
+      return;
+    }
+    await onActivateTemplate();
+    setDirty(false);
+  }
+
+  const titleName = selectedTemplate ? displayName(selectedTemplate.name ?? "") : "";
 
   return (
     <div className={UI.cardSoft}>
@@ -114,57 +130,66 @@ export const TemplateWorkbenchCard: React.FC<{
         onSelectTemplateId={setSelectedTemplateId}
         onCreateDraft={onCreateDraft}
         mirrorSegmentsJson={mirrorSegmentsJson}
-        rightSlot={
-          selectedTemplate ? (
-            <TemplateWorkbenchMetaBar
-              template={selectedTemplate}
-              disabled={disabled}
-              dirty={dirty}
-              onSaveDraft={() => void saveDraftAndMarkClean()}
-              onActivateTemplate={onActivateTemplate}
-            />
-          ) : null
-        }
       />
 
-      {!selectedTemplate ? (
-        <div className="mt-3 text-base text-slate-600">请选择一个方案，或新建方案。</div>
-      ) : isDraft ? (
-        <TemplateWorkbenchDraftSection
-          disabled={disabled}
-          schemeId={schemeId}
-          draftSegments={draftSegments}
-          setDraftSegments={setDraftSegments}
-          onSaveDraft={() => void saveDraftAndMarkClean()}
-        />
-      ) : (
-        <div className="mt-4 overflow-x-auto">
-          {readonlyItems.length === 0 ? (
-            <div className="text-base text-slate-600">该方案没有段数据。</div>
-          ) : (
-            <table className="min-w-full border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-base font-semibold text-slate-700">
-                  <th className="px-3 py-2 w-[240px]">重量段（kg）</th>
-                  <th className="px-3 py-2 w-[120px]">使用状态</th>
-                  <th className="px-3 py-2 w-[160px]">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {readonlyItems.map((it) => (
-                  <tr key={it.id} className="border-b border-slate-100 text-base">
-                    <td className="px-3 py-2 font-mono text-slate-800">{fmtRange(it.min_kg, it.max_kg)}</td>
-                    <td className="px-3 py-2">
-                      <span className={it.active ? UI.statusOn : UI.statusOff}>{it.active ? "启用" : "已暂停"}</span>
-                    </td>
-                    <td className="px-3 py-2 text-slate-400">—</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-[15px] font-semibold text-slate-800">
+            重量段结构
+            {selectedTemplate ? (
+              <span className="ml-2 text-slate-500 font-normal text-sm">
+                {titleName}
+              </span>
+            ) : null}
+            {selectedTemplate && isActive ? <ActiveBadge /> : null}
+          </div>
+
+          {/* 状态小提示（非解释性文案）：仅在草稿时显示 */}
+          {editable ? (
+            <span className={dirty ? "text-xs font-semibold text-red-700" : "text-xs font-semibold text-emerald-700"}>
+              {dirty ? "未保存" : "已保存"}
+            </span>
+          ) : null}
         </div>
-      )}
+
+        <div className={`mt-3 ${disabled ? "opacity-70 pointer-events-none" : ""}`}>
+          <PricingRuleEditor
+            schemeId={schemeId}
+            value={draftSegments}
+            onChange={(next) => setDraftSegments(next)}
+            mode={editable ? "always" : "locked"}
+            dirty={dirty}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="text-[15px] font-semibold text-slate-800">保存与启用</div>
+
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              className={UI.btnNeutralSm}
+              disabled={disabled || !editable || !dirty}
+              onClick={() => void handleSave()}
+            >
+              保存
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-1 items-end">
+            <button
+              type="button"
+              className={UI.btnNeutralSm}
+              disabled={disabled || !selectedTemplate || dirty || !editable}
+              onClick={() => void handleActivate()}
+            >
+              启用为当前生效
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

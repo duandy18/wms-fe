@@ -25,7 +25,8 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`HTTP ${resp.status}: ${text}`);
+    // ✅ 关键：错误信息带上 url，便于以后定位（不兜底、不改行为）
+    throw new Error(`HTTP ${resp.status} @ ${url}: ${text}`);
   }
 
   const json = (await resp.json()) as { ok: boolean; data: T };
@@ -48,11 +49,13 @@ export async function createSegmentTemplate(schemeId: number, payload: { name: s
 }
 
 export async function publishSegmentTemplate(templateId: number): Promise<SegmentTemplateOut> {
-  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}/publish`, { method: "POST" });
+  // ✅ 后端真实路由：/segment-templates/{id}:publish
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}:publish`, { method: "POST" });
 }
 
 export async function activateSegmentTemplate(templateId: number): Promise<SegmentTemplateOut> {
-  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}/activate`, { method: "POST" });
+  // ✅ 后端真实路由：/segment-templates/{id}:activate
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}:activate`, { method: "POST" });
 }
 
 export async function patchSegmentTemplateItemActive(itemId: number, active: boolean): Promise<SegmentTemplateOut> {

@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import type { SegmentTemplateOut } from "../segmentTemplates";
 import type { WeightSegment } from "../PricingRuleEditor";
 
-import { fetchSegmentTemplateDetail, fetchSegmentTemplates } from "../segmentTemplates";
+import { fetchSegmentTemplateDetail, fetchSegmentTemplates, isTemplateActive } from "../segmentTemplates";
 import { templateItemsToWeightSegments } from "../SegmentsPanel/utils";
 import { runGuarded } from "./helpers";
 
@@ -32,7 +32,7 @@ export function useLoadTemplatesEffect(args: {
       if (!list) return;
 
       setTemplates(list);
-      const act = list.find((x) => x.is_active) ?? null;
+      const act = list.find((x) => isTemplateActive(x)) ?? null;
       setSelectedTemplateId(act?.id ?? null);
     })();
   }, [schemeId, onError, setBusy, setErr, setTemplates, setSelectedTemplateId]);

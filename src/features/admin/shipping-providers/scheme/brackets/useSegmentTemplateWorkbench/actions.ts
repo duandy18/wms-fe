@@ -22,6 +22,16 @@ function datePrefix(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function safeName(v: unknown): string {
+  return String(v ?? "").replace(/\s+/g, " ").trim();
+}
+
+function sortItems(items: SegmentTemplateItemOut[]): SegmentTemplateItemOut[] {
+  const arr = (items ?? []).slice();
+  arr.sort((a, b) => (a.ord ?? 0) - (b.ord ?? 0));
+  return arr;
+}
+
 export function createWorkbenchActions(ctx: {
   schemeId: number;
   mirrorSegmentsJson: SchemeWeightSegment[] | null;
@@ -56,6 +66,9 @@ export function createWorkbenchActions(ctx: {
     refreshTemplates,
   } = ctx;
 
+  /**
+   * ✅ 新建草稿方案（A 策略：自动生成 3 行默认段，并落到后端模板 items）
+   */
   async function createDraftTemplate() {
     if (disabled) return;
 
@@ -66,6 +79,7 @@ export function createWorkbenchActions(ctx: {
     const name0 = String(raw).trim();
     const name = name0 ? (/\d{4}-\d{2}-\d{2}/.test(name0) ? name0 : `${dp} ${name0}`) : `${dp} 方案`;
 
+    // 1) 新建空模板（draft 壳子）
     const tpl = (await runGuarded({
       setBusy,
       setErr,
@@ -75,25 +89,126 @@ export function createWorkbenchActions(ctx: {
     })) as SegmentTemplateOut | null;
     if (!tpl) return;
 
+    // 2) 立刻写入默认段（关键：从 0 到 1，不让用户卡死）
+    const defaults = initDraftSegments(mirrorSegmentsJson);
+    const putItems = weightSegmentsToPutItemsDraftPrefix(defaults);
+
+    const filledTpl = (await runGuarded({
+      setBusy,
+      setErr,
+      onError,
+      fallbackMsg: "初始化草稿段失败",
+      fn: async () => await apiPutTemplateItems(tpl.id, putItems),
+    })) as SegmentTemplateOut | null;
+    if (!filledTpl) return;
+
+    // 3) 刷新列表并选中新草稿
     await runGuarded({
       setBusy,
       setErr,
       onError,
       fallbackMsg: "刷新方案列表失败",
       fn: async () => {
-        await refreshTemplates(tpl.id);
+        await refreshTemplates(filledTpl.id);
       },
     });
 
-    setSelectedTemplateId(tpl.id);
-    setDraftSegments(initDraftSegments(mirrorSegmentsJson));
+    setSelectedTemplateId(filledTpl.id);
+    setSelectedTemplate(filledTpl);
+    setDraftSegments(templateItemsToWeightSegments(filledTpl.items));
+  }
+
+  /**
+   * ✅ 复制为草稿（从已发布/已生效复制出草稿再编辑）
+   * - 不新增后端接口：复用 create_template + put_items
+   * - ⚠️ ord 必须从 0 开始连续（后端硬校验）
+   */
+  async function cloneSelectedToDraft() {
+    if (disabled) return;
+    if (!selectedTemplate) return;
+
+    const st = String(selectedTemplate.status ?? "");
+    if (st === "draft") {
+      window.alert("当前已是草稿方案，可直接编辑。");
+      return;
+    }
+
+    const baseName = safeName(selectedTemplate.name) || "方案";
+    const dp = datePrefix();
+    const suggested = `${dp} ${baseName}（草稿）`;
+
+    const raw = window.prompt("将当前方案复制为草稿，请输入新草稿名称：", suggested);
+    if (raw === null) return;
+
+    const name = safeName(raw) || suggested;
+
+    const ok = window.confirm(
+      "确认复制为草稿？\n\n复制后你将在草稿中编辑，编辑完成请先“保存方案”，再“启用为当前生效”。",
+    );
+    if (!ok) return;
+
+    // 1) 新建空模板（draft）
+    const draftTpl = (await runGuarded({
+      setBusy,
+      setErr,
+      onError,
+      fallbackMsg: "复制为草稿失败：新建草稿方案失败",
+      fn: async () => await createSegmentTemplate(schemeId, { name }),
+    })) as SegmentTemplateOut | null;
+    if (!draftTpl) return;
+
+    // 2) 写入 items（过滤 active=false 的段，避免段级概念污染）
+    const srcItems = sortItems((selectedTemplate.items ?? []).filter((it) => it.active !== false));
+
+    // ✅ 关键修复：ord 必须从 0 开始连续（0..n-1）
+    const putItems = srcItems.map((it, idx) => ({
+      ord: idx,
+      min_kg: it.min_kg,
+      max_kg: it.max_kg ?? null,
+      active: true,
+    }));
+
+    const filledTpl = (await runGuarded({
+      setBusy,
+      setErr,
+      onError,
+      fallbackMsg: "复制为草稿失败：写入重量段失败",
+      fn: async () => await apiPutTemplateItems(draftTpl.id, putItems),
+    })) as SegmentTemplateOut | null;
+    if (!filledTpl) return;
+
+    // 3) 刷新列表并选中新草稿
+    await runGuarded({
+      setBusy,
+      setErr,
+      onError,
+      fallbackMsg: "刷新方案列表失败",
+      fn: async () => {
+        await refreshTemplates(filledTpl.id);
+      },
+    });
+
+    setSelectedTemplateId(filledTpl.id);
+
+    // 4) 拉详情并进入可编辑分支
+    const detail = (await runGuarded({
+      setBusy,
+      setErr,
+      onError,
+      fallbackMsg: "加载草稿方案详情失败",
+      fn: async () => await fetchSegmentTemplateDetail(filledTpl.id),
+    })) as SegmentTemplateOut | null;
+
+    const tpl = detail ?? filledTpl;
+    setSelectedTemplate(tpl);
+    setDraftSegments(templateItemsToWeightSegments(tpl.items));
   }
 
   async function saveDraftItems() {
     if (disabled) return;
     if (!selectedTemplate || String(selectedTemplate.status) !== "draft") return;
 
-    const ok = window.confirm("确认保存方案？\n\n提示：保存不会影响线上；只有“启用”才会替换当前生效方案。");
+    const ok = window.confirm("确认保存方案？\n\n提示：保存不会影响线上；只有“启用为当前生效”才会替换当前生效方案。");
     if (!ok) return;
 
     const items = weightSegmentsToPutItemsDraftPrefix(draftSegments);
@@ -222,6 +337,7 @@ export function createWorkbenchActions(ctx: {
 
   return {
     createDraftTemplate,
+    cloneSelectedToDraft,
     saveDraftItems,
     activateTemplate,
     toggleActiveItem,

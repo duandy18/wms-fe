@@ -1,8 +1,11 @@
 // src/features/admin/shipping-providers/scheme/brackets/SegmentsPanel.tsx
 //
-// 重量分段模板工作台（路线 1：draft → publish → activate）
-// - 顶部：当前生效重量段
-// - 下方：整合卡（选择文件 + 编辑草稿 + 保存/启用）
+// 重量分段模板工作台（路线：draft → publish → activate）
+// - 顶部：当前生效重量段（纯只读锚点）
+// - 下方：工作台（人类流程：选择/新建方案名 → 编辑 → 保存 → 决定是否启用）
+//
+// ✅ 收敛：重量段方案为整体启用/整体不启用
+// - 段级启停入口不在主流程暴露（避免交叉与隐性风险）
 
 import React from "react";
 import type { PricingSchemeDetail } from "../../api";
@@ -33,11 +36,7 @@ export const SegmentsPanel: React.FC<{
     <div className="space-y-3">
       {w.err ? <div className="text-red-600 text-sm">{w.err}</div> : null}
 
-      <ActiveTemplateCard
-        template={w.activeTemplate}
-        disabled={!!disabled || w.busy}
-        onToggleItem={(it) => void w.actions.toggleActiveItem(it)}
-      />
+      <ActiveTemplateCard template={w.activeTemplate} disabled={!!disabled || w.busy} />
 
       <TemplateWorkbenchCard
         schemeId={schemeId}
@@ -50,7 +49,7 @@ export const SegmentsPanel: React.FC<{
         setDraftSegments={w.setDraftSegments}
         onCreateDraft={() => void w.actions.createDraftTemplate()}
         onSaveDraft={w.actions.saveDraftItems}
-        onActivateTemplate={() => void w.actions.activateTemplate()}
+        onActivateTemplate={w.actions.activateTemplate}
         mirrorSegmentsJson={mirror}
       />
     </div>
