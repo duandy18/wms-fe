@@ -26,6 +26,7 @@ import {
   deleteSurcharge,
   type PricingSchemeSurcharge,
   createZoneAtomic,
+  replaceZoneProvinceMembers,
 } from "../api";
 
 function TabButton(props: { label: string; active: boolean; disabled?: boolean; onClick: () => void }) {
@@ -40,6 +41,11 @@ function TabButton(props: { label: string; active: boolean; disabled?: boolean; 
       {label}
     </button>
   );
+}
+
+function buildZoneNameFromProvinces(provinces: string[]): string {
+  const cleaned = (provinces ?? []).map((x) => (x || "").trim()).filter(Boolean);
+  return cleaned.join("、");
 }
 
 export const SchemeWorkbenchPage: React.FC = () => {
@@ -103,7 +109,18 @@ export const SchemeWorkbenchPage: React.FC = () => {
                     await patchZone(z.id, { active: !z.active });
                   });
                 }}
-                onChangeBracketAmount={async () => {}}
+                onReplaceProvinceMembers={async (zoneId, provinces) => {
+                  await wb.mutate(async () => {
+                    // 1) 替换 province members（你刚验证 OK 的后端原子接口）
+                    await replaceZoneProvinceMembers(zoneId, { provinces });
+
+                    // 2) 同步更新 zone.name，让列表“区域”立刻反映省份变化
+                    const nextName = buildZoneNameFromProvinces(provinces);
+                    if (nextName) {
+                      await patchZone(zoneId, { name: nextName });
+                    }
+                  });
+                }}
               />
             ) : null}
 

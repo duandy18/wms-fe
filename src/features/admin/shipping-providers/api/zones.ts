@@ -1,6 +1,6 @@
-// src/features/admin/shipping-providers/api.zones.ts
-import { apiPost, apiPatch, apiDelete } from "../../../lib/api";
-import type { PricingSchemeZone, PricingSchemeZoneMember } from "./api.types";
+// src/features/admin/shipping-providers/api/zones.ts
+import { apiPost, apiPatch, apiPut, apiDelete } from "../../../../lib/api";
+import type { PricingSchemeZone, PricingSchemeZoneMember } from "../api.types";
 
 export async function createZone(
   schemeId: number,
@@ -31,6 +31,16 @@ export async function patchZone(
   payload: Partial<{ name: string; priority: number; active: boolean }>,
 ): Promise<PricingSchemeZone> {
   return apiPatch<PricingSchemeZone>(`/zones/${zoneId}`, payload);
+}
+
+// ✅ 原子接口：替换某个 zone 的省份 members（level=province）
+export async function replaceZoneProvinceMembers(
+  zoneId: number,
+  payload: { provinces: string[] },
+): Promise<PricingSchemeZone> {
+  return apiPut<PricingSchemeZone>(`/zones/${zoneId}/province-members`, {
+    provinces: payload.provinces ?? [],
+  });
 }
 
 export async function deleteZone(zoneId: number): Promise<{ ok: boolean }> {

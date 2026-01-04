@@ -11,7 +11,8 @@ export const ZoneList: React.FC<{
   disabled?: boolean;
   onSelectZone: (zoneId: number) => void;
   onToggleZone: (z: PricingSchemeZone) => Promise<void>;
-}> = ({ zones, selectedZoneId, disabled, onSelectZone, onToggleZone }) => {
+  onEditZone: (zoneId: number) => void;
+}> = ({ zones, selectedZoneId, disabled, onSelectZone, onToggleZone, onEditZone }) => {
   if (!zones.length) {
     return <div className={UI.zoneListEmpty}>暂无区域分类，请先创建一条。</div>;
   }
@@ -45,6 +46,7 @@ export const ZoneList: React.FC<{
           selected={selectedZoneId === z.id}
           disabled={disabled}
           onSelect={onSelectZone}
+          onEdit={onEditZone}
           onToggleActive={onToggleZone}
         />
       ))}

@@ -11,11 +11,10 @@ export const ZoneRow: React.FC<{
   disabled?: boolean;
   onSelect: (zoneId: number) => void;
   onToggleActive: (zone: PricingSchemeZone) => Promise<void>;
-}> = ({ index, zone, selected, disabled, onSelect, onToggleActive }) => {
+  onEdit: (zoneId: number) => void;
+}> = ({ index, zone, selected, disabled, onSelect, onToggleActive, onEdit }) => {
   return (
-    <div
-      className={`${UI.zoneRowWrap} ${selected ? UI.zoneRowSelected : UI.zoneRowNormal}`}
-    >
+    <div className={`${UI.zoneRowWrap} ${selected ? UI.zoneRowSelected : UI.zoneRowNormal}`}>
       <div className="grid grid-cols-12 items-center gap-2">
         {/* 序号 */}
         <div className="col-span-1 text-center">
@@ -50,13 +49,20 @@ export const ZoneRow: React.FC<{
         </div>
 
         {/* 操作 */}
-        <div className="col-span-2 flex justify-end">
+        <div className="col-span-2 flex justify-end gap-2">
           <button
             type="button"
             disabled={disabled}
-            className={`${UI.zoneToggleBtnBase} ${
-              zone.active ? UI.zoneToggleBtnActive : UI.zoneToggleBtnInactive
-            }`}
+            className={UI.btnNeutralSm}
+            onClick={() => onEdit(zone.id)}
+          >
+            编辑
+          </button>
+
+          <button
+            type="button"
+            disabled={disabled}
+            className={`${UI.zoneToggleBtnBase} ${zone.active ? UI.zoneToggleBtnActive : UI.zoneToggleBtnInactive}`}
             onClick={() => void onToggleActive(zone)}
           >
             {zone.active ? "暂停使用" : "恢复使用"}
