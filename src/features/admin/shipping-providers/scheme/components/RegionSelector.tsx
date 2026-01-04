@@ -4,6 +4,7 @@
 // - 搜索：高亮 + 置顶（不隐藏未匹配项）
 // - 不提供全选 / 清空等批量操作
 // - 字号/密度由 scheme/ui.ts 统一控制
+// - 支持“已占用省份禁用 + 显示占用原因（人话）”
 
 import React, { useMemo, useState } from "react";
 import { UI } from "../ui";
@@ -51,6 +52,10 @@ type Props = {
   disabled?: boolean;
   title?: string;
   hint?: string;
+
+  // ✅ 占用原因：省份 -> “已在：XX 区域”
+  // - 存在即表示该省不可新增选择（但若已选中，允许取消，避免锁死）
+  blockedReasonByProvince?: Record<string, string>;
 };
 
 function toggle(list: string[], v: string): string[] {
@@ -71,6 +76,7 @@ export const RegionSelector: React.FC<Props> = ({
   disabled,
   title = "选择省份",
   hint = "",
+  blockedReasonByProvince,
 }) => {
   const [q, setQ] = useState("");
 
@@ -122,6 +128,14 @@ export const RegionSelector: React.FC<Props> = ({
           const checked = value.includes(p);
           const hit = qTrim ? includesQuery(p, qTrim) : false;
 
+          const blockedReason = blockedReasonByProvince?.[p] ?? "";
+          const blocked = !!blockedReason;
+
+          // ✅ 规则：
+          // - 被占用省份不可“新增选择”
+          // - 若已选中（例如：外部带入/历史数据），允许取消，避免锁死
+          const effectiveDisabled = !!disabled || (blocked && !checked);
+
           const boxClass = checked
             ? hit
               ? "border-emerald-400 bg-emerald-100"
@@ -130,24 +144,44 @@ export const RegionSelector: React.FC<Props> = ({
               ? "border-amber-300 bg-amber-50"
               : "border-slate-200 bg-white";
 
-          const hoverClass = disabled ? "opacity-70" : "hover:bg-slate-50";
+          const hoverClass = effectiveDisabled ? UI.regionItemDisabledOpacity : "hover:bg-slate-50";
 
           return (
-            <label key={p} className={`${UI.regionItemBox} ${boxClass} ${hoverClass}`}>
+            <label key={p} className={`${UI.regionItemBox} relative ${boxClass} ${hoverClass}`}>
+              {/* ✅ 绿色对号（绝对定位，保证可见） */}
+              {checked ? (
+                <span
+                  className="absolute right-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white"
+                  aria-label="已选中"
+                  title="已选中"
+                >
+                  ✓
+                </span>
+              ) : null}
+
               <input
                 type="checkbox"
-                className="h-4 w-4"
+                className="h-4 w-4 accent-emerald-600"
                 checked={checked}
-                disabled={disabled}
-                onChange={() => onChange(toggle(value, p))}
+                disabled={effectiveDisabled}
+                onChange={() => {
+                  if (effectiveDisabled) return;
+                  onChange(toggle(value, p));
+                }}
               />
 
               <span
                 className={hit ? UI.regionItemTextHit : UI.regionItemText}
-                title={hit ? `匹配：${qTrim}` : undefined}
+                title={blockedReason ? blockedReason : hit ? `匹配：${qTrim}` : undefined}
               >
                 {p}
               </span>
+
+              {blockedReason ? (
+                <span className={UI.regionItemBadge} title={blockedReason}>
+                  已占用
+                </span>
+              ) : null}
             </label>
           );
         })}

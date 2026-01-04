@@ -9,16 +9,12 @@ export const WorkbenchHeaderCard: React.FC<{
   mutating?: boolean;
   summary: { id: number; name: string } | null;
   onBack: () => void;
-}> = ({ schemeId, loading, mutating, summary, onBack }) => {
-  const titleText = summary ? `#${summary.id} · ${summary.name}` : schemeId ? `#${schemeId} · （加载中）` : "—";
-
+}> = ({ loading, mutating, onBack }) => {
   return (
     <div className={UI.card}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className={UI.workbenchTitle}>运价方案维护</div>
-
-          <div className={UI.workbenchSubtitle}>{titleText}</div>
+          <div className={UI.workbenchTitle}>收费价格设置和维护</div>
         </div>
 
         <div className={UI.workbenchHeaderActions}>

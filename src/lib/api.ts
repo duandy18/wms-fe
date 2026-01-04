@@ -58,7 +58,7 @@ export class ApiError extends Error {
   }
 }
 
-type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export type QueryParams = Record<
   string,
@@ -212,6 +212,35 @@ export async function apiPost<T>(
 
   const finalPath = buildPathWithQuery(path, params);
   return request<T>("POST", finalPath, body, options);
+}
+
+/**
+ * PUT 请求（新增 query 重载）：
+ * - apiPut(path, body)
+ * - apiPut(path, body, options)
+ * - apiPut(path, body, params)
+ * - apiPut(path, body, params, options)
+ */
+export async function apiPut<T>(
+  path: string,
+  body: unknown,
+  paramsOrOptions?: unknown,
+  maybeOptions?: RequestInit,
+): Promise<T> {
+  let params: QueryParams | undefined;
+  let options: RequestInit = {};
+
+  if (maybeOptions) {
+    params = paramsOrOptions as QueryParams;
+    options = maybeOptions;
+  } else if (looksLikeRequestInit(paramsOrOptions)) {
+    options = paramsOrOptions as RequestInit;
+  } else {
+    params = paramsOrOptions as QueryParams | undefined;
+  }
+
+  const finalPath = buildPathWithQuery(path, params);
+  return request<T>("PUT", finalPath, body, options);
 }
 
 /**
