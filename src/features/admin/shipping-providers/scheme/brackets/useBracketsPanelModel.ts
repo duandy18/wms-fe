@@ -6,9 +6,35 @@ import { createZoneBracket, patchZoneBracket } from "../../api/brackets";
 import type { WeightSegment } from "./PricingRuleEditor";
 import type { RowDraft } from "./quoteModel";
 import { defaultDraft, isZoneActive, keyFromBracket, keyFromSegment } from "./quoteModel";
-import { loadSegments } from "./segmentsTemplate";
 
 import { afterRefreshBrackets, buildInitialCaches, saveCurrentZonePrices, upsertCellPrice } from "./useBracketsPanelModel_internal";
+
+// ✅ 段模板体系：以“当前生效方案”为唯一真相
+import {
+  fetchSegmentTemplates,
+  fetchSegmentTemplateDetail,
+  isTemplateActive,
+  type SegmentTemplateOut,
+} from "./segmentTemplates";
+import { templateItemsToWeightSegments } from "./SegmentsPanel/utils";
+
+// fallback（仅在没有任何生效模板时兜底，避免页面空白）
+const FALLBACK_SEGMENTS: WeightSegment[] = [
+  { min: "0", max: "1" },
+  { min: "1", max: "2" },
+  { min: "2", max: "3" },
+  { min: "3", max: "" },
+];
+
+async function loadActiveTemplateSegments(schemeId: number): Promise<WeightSegment[] | null> {
+  const list = await fetchSegmentTemplates(schemeId);
+  const active = (list ?? []).find((t) => isTemplateActive(t)) ?? null;
+  if (!active) return null;
+
+  const detail: SegmentTemplateOut = await fetchSegmentTemplateDetail(active.id);
+  const rows = templateItemsToWeightSegments(detail.items ?? []);
+  return rows.length ? rows : null;
+}
 
 export function useBracketsPanelModel(args: { detail: PricingSchemeDetail; selectedZoneId: number | null }) {
   const { detail, selectedZoneId } = args;
@@ -24,9 +50,27 @@ export function useBracketsPanelModel(args: { detail: PricingSchemeDetail; selec
     return zones.find((z) => z.id === selectedZoneId) ?? null;
   }, [zones, selectedZoneId]);
 
-  const [segments, setSegments] = useState<WeightSegment[]>(() => loadSegments(detail.id));
+  // ✅ 录价页重量段：严格对齐“当前生效重量段方案”
+  const [segments, setSegments] = useState<WeightSegment[]>(FALLBACK_SEGMENTS);
+
   useEffect(() => {
-    setSegments(loadSegments(detail.id));
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const rows = await loadActiveTemplateSegments(detail.id);
+        if (cancelled) return;
+        setSegments(rows ?? FALLBACK_SEGMENTS);
+      } catch {
+        // 如果后端暂时不可用/没配模板，兜底不让页面空
+        if (cancelled) return;
+        setSegments(FALLBACK_SEGMENTS);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [detail.id]);
 
   const [bracketsByZoneId, setBracketsByZoneId] = useState<Record<number, PricingSchemeZoneBracket[]>>({});
@@ -118,8 +162,9 @@ export function useBracketsPanelModel(args: { detail: PricingSchemeDetail; selec
     zonesForTable,
     selectedZone,
 
+    // ✅ segments 现在是“当前生效重量段方案”的真相
     segments,
-    setSegments,
+    setSegments, // 保留 API 形状（尽量不要在录价页手动 set；以生效模板为准）
 
     tableRows,
     currentDrafts,

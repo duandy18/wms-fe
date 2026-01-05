@@ -1,13 +1,12 @@
 // src/features/admin/shipping-providers/scheme/brackets/PricingRuleEditor.tsx
 //
-// 重量分段（报价表表头）编辑器
-// - locked：只读展示
-// - always：可编辑（新增/删除/修改）
+// 重量分段编辑器（可编辑 / 可只读）
+// - mode="locked"：只读展示
+// - mode="always"：允许新增/删除/修改
 //
-// 格式打磨：
-// - 行距更紧凑（适合工作台）
-// - 标题层级更清晰
-// - 数值列保持 mono，便于扫读
+// 说明：
+// - “重量段方案”页（TemplateWorkbenchDraftSection）会传 mode="always"
+// - 其它位置如需只读展示，保持默认 locked 即可
 
 import React, { useMemo } from "react";
 
@@ -53,14 +52,14 @@ export const PricingRuleEditor: React.FC<{
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
-      <div className="text-[15px] font-semibold text-slate-800">重量分段</div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[15px] font-semibold text-slate-800">重量分段</div>
+        <span className="text-xs text-slate-500">{editable ? "可编辑" : "只读"}</span>
+      </div>
 
       <div className="mt-3 space-y-1.5">
         {rows.map((s, idx) => (
-          <div
-            key={idx}
-            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-[6px]"
-          >
+          <div key={idx} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-[6px]">
             <div className="min-w-[110px] text-xs font-mono text-slate-600">{labelOf(s)}</div>
 
             <input
@@ -68,7 +67,7 @@ export const PricingRuleEditor: React.FC<{
                 editable ? "border-slate-300 bg-white" : "border-slate-200 bg-slate-100 text-slate-500"
               }`}
               value={s.min}
-              placeholder="from"
+              placeholder="起"
               readOnly={!editable}
               onChange={(e) => updateRow(idx, { min: e.target.value })}
             />
@@ -80,7 +79,7 @@ export const PricingRuleEditor: React.FC<{
                 editable ? "border-slate-300 bg-white" : "border-slate-200 bg-slate-100 text-slate-500"
               }`}
               value={s.max}
-              placeholder="to / ∞"
+              placeholder="止 / ∞"
               readOnly={!editable}
               onChange={(e) => updateRow(idx, { max: e.target.value })}
             />
@@ -88,11 +87,7 @@ export const PricingRuleEditor: React.FC<{
             <span className="text-xs text-slate-400">kg</span>
 
             {editable ? (
-              <button
-                type="button"
-                className="ml-auto text-xs text-red-600 hover:underline"
-                onClick={() => deleteRow(idx)}
-              >
+              <button type="button" className="ml-auto text-xs text-red-600 hover:underline" onClick={() => deleteRow(idx)}>
                 删除
               </button>
             ) : (
