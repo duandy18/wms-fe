@@ -74,9 +74,24 @@ export const SchemeWorkbenchPage: React.FC = () => {
 
       <div className={UI.tabsWrap}>
         <TabButton label={L.tabZones} active={wb.tab === "zones"} disabled={pageDisabled} onClick={() => setTab("zones")} />
-        <TabButton label={L.tabSegments} active={wb.tab === "segments"} disabled={pageDisabled} onClick={() => setTab("segments")} />
-        <TabButton label={L.tabBrackets} active={wb.tab === "brackets"} disabled={pageDisabled} onClick={() => setTab("brackets")} />
-        <TabButton label={L.tabSurcharges} active={wb.tab === "surcharges"} disabled={pageDisabled} onClick={() => setTab("surcharges")} />
+        <TabButton
+          label={L.tabSegments}
+          active={wb.tab === "segments"}
+          disabled={pageDisabled}
+          onClick={() => setTab("segments")}
+        />
+        <TabButton
+          label={L.tabBrackets}
+          active={wb.tab === "brackets"}
+          disabled={pageDisabled}
+          onClick={() => setTab("brackets")}
+        />
+        <TabButton
+          label={L.tabSurcharges}
+          active={wb.tab === "surcharges"}
+          disabled={pageDisabled}
+          onClick={() => setTab("surcharges")}
+        />
         <TabButton label={L.tabPreview} active={wb.tab === "preview"} disabled={pageDisabled} onClick={() => setTab("preview")} />
       </div>
 
@@ -170,12 +185,7 @@ export const SchemeWorkbenchPage: React.FC = () => {
             ) : null}
 
             {wb.tab === "preview" ? (
-              <QuotePreviewPanel
-                schemeId={wb.detail.id}
-                schemeName={wb.detail.name}
-                disabled={pageDisabled}
-                onError={(msg) => wb.setError(msg)}
-              />
+              <QuotePreviewPanel schemeId={wb.detail.id} disabled={pageDisabled} onError={(msg) => wb.setError(msg)} />
             ) : null}
           </>
         )}

@@ -1,9 +1,4 @@
 // src/features/admin/shipping-providers/scheme/surcharges/create/CityPicker.tsx
-//
-// 城市勾选器（本期：各省首府 + 深圳）
-// - 城市必须从系统白名单勾选，不允许手写
-// - 城市按省分组展示，避免歧义
-// - 支持搜索（高亮/过滤）
 
 import React, { useMemo, useState } from "react";
 import { UI } from "../../ui";
@@ -30,25 +25,21 @@ export const CityPicker: React.FC<{
 
   disabled?: boolean;
   title?: string;
-  hint?: string;
 }> = ({
   selectedProvinces,
   onChangeSelectedProvinces,
   selectedCities,
   onChangeSelectedCities,
   disabled,
-  title = "选择城市（按省展开）",
-  hint = "本期仅提供：各省首府城市 + 深圳。城市必须从列表勾选。",
+  title = "选择城市",
 }) => {
   const [q, setQ] = useState("");
 
   const provincesOrdered = useMemo(() => {
-    // 只显示已有数据的省（按固定 key 顺序：用 Object.keys 的插入顺序）
     const all = Object.keys(PROVINCE_CITIES);
     const s = q.trim();
     if (!s) return all;
 
-    // 命中置顶：省名命中 or 任一城市命中
     const hit: string[] = [];
     const rest: string[] = [];
 
@@ -70,7 +61,6 @@ export const CityPicker: React.FC<{
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className={UI.regionTitle}>{title}</div>
-          <div className={`mt-1 ${UI.regionHint}`}>{hint}</div>
         </div>
         <div className={UI.regionMeta}>
           已选省：<span className="font-mono">{selectedProvCount}</span> · 已选城：<span className="font-mono">{selectedCityCount}</span>
@@ -80,15 +70,11 @@ export const CityPicker: React.FC<{
       <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <input
           className={UI.regionSearchInput}
-          placeholder="搜索省/城市（匹配项置顶）"
+          placeholder="搜索省/城市"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           disabled={disabled}
         />
-
-        <div className="text-sm text-slate-600">
-          操作：先勾省（展开）→ 再勾城市
-        </div>
       </div>
 
       <div className="mt-4 space-y-3">
@@ -96,14 +82,10 @@ export const CityPicker: React.FC<{
           const provChecked = selectedProvinces.includes(prov);
           const cities = PROVINCE_CITIES[prov] ?? [];
 
-          // 搜索过滤：若省/城市都不命中，则隐藏（这里用 includesQuery 做“命中展示”，否则太长）
-          const provOrCityHit =
-            includesQuery(prov, q) || cities.some((c) => includesQuery(c, q));
+          const provOrCityHit = includesQuery(prov, q) || cities.some((c) => includesQuery(c, q));
           if (!provOrCityHit) return null;
 
-          const provRowClass = provChecked
-            ? "border-emerald-300 bg-emerald-50"
-            : "border-slate-200 bg-white";
+          const provRowClass = provChecked ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white";
 
           return (
             <div key={prov} className={`rounded-2xl border p-4 ${provRowClass}`}>
@@ -117,16 +99,8 @@ export const CityPicker: React.FC<{
                     onChange={() => onChangeSelectedProvinces(toggle(selectedProvinces, prov))}
                   />
                   <span className="text-base font-semibold text-slate-900">{prov}</span>
-                  <span className="text-sm text-slate-500">
-                    （{cities.length} 城市）
-                  </span>
+                  <span className="text-sm text-slate-500">（{cities.length}）</span>
                 </label>
-
-                {provChecked ? (
-                  <span className="text-sm text-slate-600">已展开</span>
-                ) : (
-                  <span className="text-sm text-slate-500">勾选省后可选城市</span>
-                )}
               </div>
 
               {provChecked ? (
@@ -144,7 +118,10 @@ export const CityPicker: React.FC<{
                         : "border-slate-200 bg-white";
 
                     return (
-                      <label key={city} className={`${UI.regionItemBox} ${boxClass} ${disabled ? "opacity-70" : "hover:bg-slate-50"}`}>
+                      <label
+                        key={city}
+                        className={`${UI.regionItemBox} ${boxClass} ${disabled ? "opacity-70" : "hover:bg-slate-50"}`}
+                      >
                         <input
                           type="checkbox"
                           className="h-4 w-4"

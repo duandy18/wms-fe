@@ -6,7 +6,6 @@
 // - reasons/breakdown/raw 等解释能力：迁入 DevConsole → Shipping Pricing Lab
 
 import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { apiPost } from "../../../../../lib/api";
 import type { CalcOut, Dims } from "./types";
 import { normalizeAddrPart, toReasonsList } from "./utils";
@@ -15,12 +14,9 @@ import { QuotePreviewResult } from "./QuotePreviewResult";
 
 export const QuotePreviewPanel: React.FC<{
   schemeId: number;
-  schemeName?: string;
   disabled?: boolean;
   onError: (msg: string) => void;
-}> = ({ schemeId, schemeName, disabled, onError }) => {
-  const nav = useNavigate();
-
+}> = ({ schemeId, disabled, onError }) => {
   const [province, setProvince] = useState("广东省");
   const [city, setCity] = useState("深圳市");
   const [district, setDistrict] = useState("南山区");
@@ -65,29 +61,6 @@ export const QuotePreviewPanel: React.FC<{
       .map((x) => x.trim())
       .filter(Boolean);
   }, [flags]);
-
-  const openLab = () => {
-    // ✅ 标准化 query keys（Phase 4 收敛：可复现、可解释）
-    const qs = new URLSearchParams();
-    qs.set("panel", "shipping-pricing-lab");
-    qs.set("scheme_id", String(schemeId));
-    qs.set("province", province.trim());
-    qs.set("city", city.trim());
-    qs.set("district", district.trim());
-
-    // 标准键：real_weight_kg
-    qs.set("real_weight_kg", realWeightKg.trim());
-
-    // 标准键：flags
-    if (flags.trim()) qs.set("flags", flags.trim());
-
-    // 标准键：dims
-    if (lengthCm.trim()) qs.set("length_cm", lengthCm.trim());
-    if (widthCm.trim()) qs.set("width_cm", widthCm.trim());
-    if (heightCm.trim()) qs.set("height_cm", heightCm.trim());
-
-    nav(`/dev?${qs.toString()}`);
-  };
 
   const handleCalc = async () => {
     if (!schemeId) {
@@ -143,31 +116,6 @@ export const QuotePreviewPanel: React.FC<{
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-base font-semibold text-slate-900">算价预览（摘要）</div>
-            <div className="mt-1 text-sm text-slate-600">Admin 只展示结果摘要与对账摘要；解释/实验请去 DevConsole。</div>
-            <div className="mt-2 text-sm text-slate-600">
-              当前方案：<span className="font-mono">#{schemeId}</span>{" "}
-              {schemeName ? <span className="font-mono">· {schemeName}</span> : null}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-              disabled={disabled}
-              onClick={openLab}
-              title="打开 DevConsole 的 Shipping Pricing Lab（解释/实验室）"
-            >
-              打开 Pricing Lab
-            </button>
-          </div>
-        </div>
-      </div>
-
       <QuotePreviewForm
         disabled={disabled}
         loading={loading}
@@ -199,7 +147,7 @@ export const QuotePreviewPanel: React.FC<{
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           disabled={disabled || loading}
           onClick={() => setResult(null)}
-          title="清空当前结果"
+          title="清空结果"
         >
           清空结果
         </button>
