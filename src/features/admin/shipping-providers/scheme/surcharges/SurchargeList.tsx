@@ -22,7 +22,6 @@ function normalizeName(name: string): string {
   const t = (name ?? "").trim();
   if (!t) return "-";
 
-  // 去掉“目的地附加费”前缀（你要求）
   if (t.startsWith("目的地附加费")) {
     const rest = t.replace(/^目的地附加费[-—–_ ]*/g, "").trim();
     return rest || "目的地附加费";
@@ -43,10 +42,8 @@ function isFlagAnySurcharge(s: PricingSchemeSurcharge): boolean {
   const flags = asStringArray(cond["flag_any"]);
   if (!flags.length) return false;
 
-  // 你明确要求：异形件（bulky/irregular）不出现在列表
   if (flags.includes("bulky") || flags.includes("irregular")) return true;
 
-  // 其他 flag_any 目前也先不进“目的地列表”（保持列表纯净）
   return true;
 }
 
@@ -87,7 +84,6 @@ function extractFlatAmount(s: PricingSchemeSurcharge): string {
     return "-";
   }
 
-  // 列表聚焦“每单加价”，其他类型不显示细节
   return kind === "per_kg" ? "按公斤" : kind === "table" ? "阶梯表" : kind;
 }
 
@@ -100,10 +96,8 @@ export const SurchargeList: React.FC<{
   const rows = useMemo(() => {
     const arr = [...(list ?? [])];
 
-    // ✅ 只保留“目的地附加费”类：dest.province / dest.city
     const destOnly = arr.filter((s) => isDestSurcharge(s));
 
-    // 展示：启用靠前；其余按 id 倒序（最近录入靠前）
     destOnly.sort((a, b) => {
       const aa = a.active ? 1 : 0;
       const bb = b.active ? 1 : 0;
@@ -115,7 +109,7 @@ export const SurchargeList: React.FC<{
   }, [list]);
 
   if (!rows.length) {
-    return <div className={UI.surchargeEmpty}>暂无目的地附加费</div>;
+    return <div className={UI.surchargeEmpty}>—</div>;
   }
 
   return (
@@ -125,7 +119,7 @@ export const SurchargeList: React.FC<{
           <tr className="border-b border-slate-200 text-left text-sm font-semibold text-slate-700">
             <th className="px-3 py-2 w-[72px]">序号</th>
             <th className="px-3 py-2">目的地</th>
-            <th className="px-3 py-2 w-[160px]">每单加价（元）</th>
+            <th className="px-3 py-2 w-[160px]">金额（元）</th>
             <th className="px-3 py-2 w-[120px]">状态</th>
             <th className="px-3 py-2 w-[220px]">操作</th>
           </tr>
@@ -187,8 +181,6 @@ export const SurchargeList: React.FC<{
           })}
         </tbody>
       </table>
-
-      <div className="mt-2 text-sm text-slate-600">提示：此处仅显示“目的地附加费（省/城市）”。异形件操作费在单独卡片维护。</div>
     </div>
   );
 };

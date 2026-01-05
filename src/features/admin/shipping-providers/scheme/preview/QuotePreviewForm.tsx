@@ -1,4 +1,5 @@
 // src/features/admin/shipping-providers/scheme/preview/QuotePreviewForm.tsx
+
 import React, { useMemo } from "react";
 import { UI } from "../../ui";
 import { KEY_CITIES, PROVINCE_CAPITAL_CITY } from "../surcharges/data/keyCities";
@@ -96,7 +97,6 @@ export const QuotePreviewForm: React.FC<{
 }) => {
   const capitalCity = useMemo(() => PROVINCE_CAPITAL_CITY[province] ?? "", [province]);
 
-  // “重点城市下拉”选项：省会/首府（若存在） + KEY_CITIES（去重）
   const keyCityOptions = useMemo(() => {
     const set = new Set<string>();
     if (capitalCity) set.add(capitalCity);
@@ -110,11 +110,12 @@ export const QuotePreviewForm: React.FC<{
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div className="text-sm font-semibold text-slate-800">输入条件</div>
+      <div className="text-sm font-semibold text-slate-800">目的地</div>
 
+      {/* 省 / 城市 */}
       <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600">省（标准值）</label>
+          <label className="text-sm text-slate-600">省</label>
           <select
             className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
             value={province}
@@ -127,11 +128,10 @@ export const QuotePreviewForm: React.FC<{
               </option>
             ))}
           </select>
-          <div className="mt-1 text-xs text-slate-500">建议：省必须标准化（下拉），否则 Zone 命中会很容易失败。</div>
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600">重点城市（仅用于少量附加费/特例）</label>
+          <label className="text-sm text-slate-600">重点城市</label>
           <select
             className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
             value={selectedKeyCity}
@@ -142,20 +142,17 @@ export const QuotePreviewForm: React.FC<{
               onChangeCity(v);
             }}
           >
-            <option value="">— 不选择（可手输）—</option>
+            <option value="">—</option>
             {keyCityOptions.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
             ))}
           </select>
-          <div className="mt-1 text-xs text-slate-500">
-            重点城市来自系统内置白名单（省会/首府 + 深圳）。选中后会写入“市”字段。
-          </div>
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600">市（可手输，非重点城市时用）</label>
+          <label className="text-sm text-slate-600">市</label>
           <input
             className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
             value={city}
@@ -165,41 +162,28 @@ export const QuotePreviewForm: React.FC<{
               const norm = normalizeSpaces(city);
               if (norm !== city) onChangeCity(norm);
             }}
-            placeholder="例如：哈尔滨市 / 哈尔滨"
           />
-          <div className="mt-1 text-xs text-slate-500">
-            当前规则多数只看省；市主要用于“重点城市附加费/特例”。（会自动去空格）
-          </div>
         </div>
       </div>
 
-      <details className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
-        <summary className="cursor-pointer text-sm font-semibold text-slate-800">
-          高级（可选）：区/县（目前多数规则不使用）
-        </summary>
-
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="flex flex-col">
-            <label className="text-sm text-slate-600">区/县</label>
-            <input
-              className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
-              value={district}
-              disabled={disabled}
-              onChange={(e) => onChangeDistrict(e.target.value)}
-              onBlur={() => {
-                const norm = normalizeSpaces(district);
-                if (norm !== district) onChangeDistrict(norm);
-              }}
-              placeholder="例如：南山区"
-            />
-            <div className="mt-1 text-xs text-slate-500">
-              提交时会自动去掉空格；若留空，将按“不提供区县”处理（更贴合目前规则）。
-            </div>
-          </div>
-          <div className="md:col-span-2" />
+      {/* 区/县 */}
+      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600">区/县</label>
+          <input
+            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
+            value={district}
+            disabled={disabled}
+            onChange={(e) => onChangeDistrict(e.target.value)}
+            onBlur={() => {
+              const norm = normalizeSpaces(district);
+              if (norm !== district) onChangeDistrict(norm);
+            }}
+          />
         </div>
-      </details>
+      </div>
 
+      {/* 重量 & 货物特征 */}
       <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="flex flex-col">
           <label className="text-sm text-slate-600">实重（kg）*</label>
@@ -212,20 +196,26 @@ export const QuotePreviewForm: React.FC<{
         </div>
 
         <div className="flex flex-col md:col-span-2">
-          <label className="text-sm text-slate-600">flags（逗号分隔，可选）</label>
-          <input
-            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono"
+          <label className="text-sm text-slate-600">货物特征（flags）</label>
+          <select
+            className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
             value={flags}
             disabled={disabled}
             onChange={(e) => onChangeFlags(e.target.value)}
-            placeholder="例如：bulky,cold"
-          />
+          >
+            <option value="">普通货物</option>
+            <option value="bulky">异形件</option>
+            <option value="irregular">不规则</option>
+            <option value="cold">冷链</option>
+            <option value="fragile">易碎</option>
+          </select>
         </div>
       </div>
 
+      {/* 体积 */}
       <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600">长（cm，可选）</label>
+          <label className="text-sm text-slate-600">长（cm）</label>
           <input
             className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono"
             value={lengthCm}
@@ -233,8 +223,9 @@ export const QuotePreviewForm: React.FC<{
             onChange={(e) => onChangeLengthCm(e.target.value)}
           />
         </div>
+
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600">宽（cm，可选）</label>
+          <label className="text-sm text-slate-600">宽（cm）</label>
           <input
             className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono"
             value={widthCm}
@@ -242,8 +233,9 @@ export const QuotePreviewForm: React.FC<{
             onChange={(e) => onChangeWidthCm(e.target.value)}
           />
         </div>
+
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600">高（cm，可选）</label>
+          <label className="text-sm text-slate-600">高（cm）</label>
           <input
             className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono"
             value={heightCm}
@@ -259,9 +251,9 @@ export const QuotePreviewForm: React.FC<{
         </div>
       </div>
 
-      {!showDimsWarning ? null : (
-        <div className="mt-2 text-sm text-amber-700">体积重：需要同时填写 长/宽/高 三项才会参与计算（否则按未填写处理）。</div>
-      )}
+      {!showDimsWarning ? null : <div className="mt-2 text-sm text-amber-700">体积重输入不完整</div>}
     </div>
   );
 };
+
+export default QuotePreviewForm;

@@ -6,7 +6,7 @@ import { UI } from "../../ui";
 export type ScopeRow = {
   id: string;
   scope: "province" | "city";
-  label: string; // 省：广东省；城市：深圳市（不带省前缀）
+  label: string;
 };
 
 export const SelectedScopePriceTable: React.FC<{
@@ -23,20 +23,15 @@ export const SelectedScopePriceTable: React.FC<{
   amountById,
   onChangeAmount,
   disabled,
-  amountLabel = "单票加价（元）",
-  emptyText = "暂无已保存的省/城市。请先在第一/第二部分选择后点击“保存”。",
+  amountLabel = "金额（元）",
+  emptyText = "—",
 }) => {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-sm font-semibold text-slate-800">{title}</div>
-          <div className="mt-1 text-sm text-slate-600">
-            规则：省=全省收费；城市=省内点名收费（该省其他地区不收）。金额只在此表逐行填写。
-          </div>
-        </div>
+        <div className="text-sm font-semibold text-slate-800">{title}</div>
         <div className="text-sm text-slate-600">
-          已选：<span className="font-mono">{rows.length}</span>
+          条目：<span className="font-mono">{rows.length}</span>
         </div>
       </div>
 
@@ -73,17 +68,12 @@ export const SelectedScopePriceTable: React.FC<{
                       value={amountById[r.id] ?? ""}
                       disabled={disabled}
                       onChange={(e) => onChangeAmount(r.id, e.target.value)}
-                      placeholder="例如：0.3"
                     />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-
-          <div className="mt-2 text-xs text-slate-500">
-            金额必须是 <span className="font-mono">&gt;=0</span> 的数字。这里每一行会生成一条附加费记录。
-          </div>
         </div>
       )}
     </div>

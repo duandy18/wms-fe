@@ -55,10 +55,12 @@ export const UI = {
   workbenchSyncBar:
     "mb-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600",
 
+  // ✅ Tabs：统一外圈尺寸（active/idle 不允许“抖动”）
   tabsWrap: `${BaseUI.card} flex flex-wrap gap-2`,
-  tabBtn: BaseUI.badgeBtn,
-  tabBtnActive: BaseUI.badgeBtnActive,
-  tabBtnIdle: BaseUI.badgeBtnIdle,
+  tabBtn:
+    "inline-flex items-center justify-center h-9 rounded-full border-2 px-4 text-sm font-semibold transition disabled:opacity-60",
+  tabBtnActive: "border-sky-400 bg-sky-50 text-sky-800",
+  tabBtnIdle: "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
 
   // ===== Scheme 子模块：Region Selector =====
   regionSearchInput: "w-full md:w-72 rounded-xl border border-slate-300 px-3 py-2 text-base",
