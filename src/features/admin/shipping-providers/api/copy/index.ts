@@ -1,5 +1,5 @@
-// src/features/admin/shipping-providers/api.copy.ts
-import { apiPost } from "../../../lib/api";
+// src/features/admin/shipping-providers/api/copy/index.ts
+import { apiPost } from "../../../../../lib/api";
 
 export type BracketsCopyConflictPolicy = "skip" | "overwrite";
 export type BracketsCopyActivePolicy = "keep" | "force_active";

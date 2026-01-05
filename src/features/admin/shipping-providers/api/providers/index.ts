@@ -1,6 +1,6 @@
-// src/features/admin/shipping-providers/api.providers.ts
-import { apiGet, apiPost, apiPatch } from "../../../lib/api";
-import type { ShippingProvider, ListResponse, OneResponse } from "./api.types";
+// src/features/admin/shipping-providers/api/providers/index.ts
+import { apiGet, apiPost, apiPatch } from "../../../../../lib/api";
+import type { ShippingProvider, ListResponse, OneResponse } from "../../api.types";
 
 export async function fetchShippingProviders(params?: { active?: boolean; q?: string }): Promise<ShippingProvider[]> {
   const qs = new URLSearchParams();

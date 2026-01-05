@@ -4,7 +4,7 @@
 // - 不做“业务推断”，只做结构一致性扫描
 
 import React, { useMemo, useState } from "react";
-import { fetchPricingSchemeDetail } from "../../../admin/shipping-providers/api.schemes";
+import { fetchPricingSchemeDetail } from "../../../admin/shipping-providers/api";
 import type { PricingSchemeDetail, PricingSchemeZoneBracket, PricingSchemeZone } from "../../../admin/shipping-providers/api.types";
 import { safeJson } from "../labUtils";
 

@@ -3,15 +3,15 @@
 import type { PricingSchemeZoneBracket } from "../../api";
 import type { WeightSegment } from "./PricingRuleEditor";
 
-// 口径：manual | flat | linear_total（票费 + 总重×元/kg）
+// 口径：manual | flat | linear_total | step_over
 //
 // 立法（本轮不可破）：
-// - 真相字段：pricing_mode + flat_amount/base_amount/rate_per_kg
+// - 真相字段：pricing_mode + flat_amount/base_amount/rate_per_kg/base_kg
 // - 前端禁止“猜模型”
 //   ❌ 不读 price_json.kind
 //   ❌ 不用字段是否为 null 推断
 // - price_json 仅用于解释/审计镜像，UI/保存不依赖它
-export type CellMode = "manual" | "flat" | "linear_total";
+export type CellMode = "manual" | "flat" | "linear_total" | "step_over";
 
 export type RowDraft = {
   mode: CellMode;
@@ -19,12 +19,12 @@ export type RowDraft = {
   // flat
   flatAmount: string;
 
-  // linear_total
-  baseAmount: string; // 票费（每票固定）
+  // linear_total / step_over
+  baseAmount: string; // 票费/首重费（元/票）
   ratePerKg: string; // 元/kg
 
-  // legacy field（保留但不暴露为主入口）
-  baseKg: string;
+  // step_over
+  baseKg: string; // 首重 kg（例如 3.0）
 };
 
 export function parseNum(v: string): number | null {
@@ -36,7 +36,6 @@ function fmt2Str(v: unknown): string {
   if (v == null) return "0";
   const n = Number(v);
   if (!Number.isFinite(n)) return "0";
-  // 不强制 2 位小数：录入/回显优先“像人写的数”
   return String(n);
 }
 
@@ -89,13 +88,13 @@ export function keyFromBracket(b: PricingSchemeZoneBracket): string {
 }
 
 export function defaultDraft(): RowDraft {
-  // ✅ 本轮裁决：所有可编辑数值字段默认值统一为 "0"
+  // 默认推荐 linear_total；空值是否允许由 UI 控制
   return {
     mode: "linear_total",
-    flatAmount: "0",
+    flatAmount: "",
     baseKg: "1",
-    baseAmount: "0",
-    ratePerKg: "0",
+    baseAmount: "",
+    ratePerKg: "",
   };
 }
 
@@ -109,8 +108,8 @@ export function draftFromBracket(b: PricingSchemeZoneBracket): RowDraft {
       mode: "flat",
       flatAmount: amt,
       baseKg: "1",
-      baseAmount: "0",
-      ratePerKg: "0",
+      baseAmount: "",
+      ratePerKg: "",
     };
   }
 
@@ -119,8 +118,21 @@ export function draftFromBracket(b: PricingSchemeZoneBracket): RowDraft {
     const rate = fmt2Str(getUnknownField(b, "rate_per_kg"));
     return {
       mode: "linear_total",
-      flatAmount: "0",
+      flatAmount: "",
       baseKg: "1",
+      baseAmount: base,
+      ratePerKg: rate,
+    };
+  }
+
+  if (mode === "step_over") {
+    const baseKg = fmt2Str(getUnknownField(b, "base_kg"));
+    const base = fmt2Str(getUnknownField(b, "base_amount"));
+    const rate = fmt2Str(getUnknownField(b, "rate_per_kg"));
+    return {
+      mode: "step_over",
+      flatAmount: "",
+      baseKg: baseKg || "1",
       baseAmount: base,
       ratePerKg: rate,
     };
@@ -128,18 +140,19 @@ export function draftFromBracket(b: PricingSchemeZoneBracket): RowDraft {
 
   return {
     mode: "manual",
-    flatAmount: "0",
+    flatAmount: "",
     baseKg: "1",
-    baseAmount: "0",
-    ratePerKg: "0",
+    baseAmount: "",
+    ratePerKg: "",
   };
 }
 
 export function buildPayloadFromDraft(d: RowDraft): {
-  pricing_mode: "flat" | "linear_total" | "manual_quote";
+  pricing_mode: "flat" | "linear_total" | "step_over" | "manual_quote";
   flat_amount?: number;
   base_amount?: number;
   rate_per_kg?: number;
+  base_kg?: number;
 } {
   // ✅ pricing_mode 是唯一真相：只按 mode 输出允许字段
   if (d.mode === "flat") {
@@ -160,6 +173,18 @@ export function buildPayloadFromDraft(d: RowDraft): {
     };
   }
 
+  if (d.mode === "step_over") {
+    const baseKg = parseNum((d.baseKg ?? "").trim());
+    const baseAmt = parseNum((d.baseAmount ?? "").trim());
+    const rate = parseNum((d.ratePerKg ?? "").trim());
+    return {
+      pricing_mode: "step_over",
+      base_kg: baseKg == null ? 0 : baseKg,
+      base_amount: baseAmt == null ? 0 : baseAmt,
+      rate_per_kg: rate == null ? 0 : rate,
+    };
+  }
+
   return { pricing_mode: "manual_quote" };
 }
 
@@ -169,6 +194,12 @@ export function summarizeDraft(d: RowDraft): string {
     const base = d.baseAmount.trim() || "0";
     const rate = d.ratePerKg.trim() || "0";
     return `票费￥${fmtMoney(base)} + ￥${fmtMoney(rate)}/kg`;
+  }
+  if (d.mode === "step_over") {
+    const baseKg = d.baseKg.trim() || "0";
+    const base = d.baseAmount.trim() || "0";
+    const rate = d.ratePerKg.trim() || "0";
+    return `首重${baseKg}kg￥${fmtMoney(base)} + 续重￥${fmtMoney(rate)}/kg`;
   }
   return "人工/未设";
 }
@@ -185,6 +216,13 @@ export function summarizeBracket(b: PricingSchemeZoneBracket): string {
     const base = getUnknownField(b, "base_amount");
     const rate = getUnknownField(b, "rate_per_kg");
     return `票费￥${fmtMoney(base)} + ￥${fmtMoney(rate)}/kg`;
+  }
+
+  if (mode === "step_over") {
+    const baseKg = getUnknownField(b, "base_kg");
+    const base = getUnknownField(b, "base_amount");
+    const rate = getUnknownField(b, "rate_per_kg");
+    return `首重${fmt2Str(baseKg)}kg￥${fmtMoney(base)} + 续重￥${fmtMoney(rate)}/kg`;
   }
 
   return "人工/未设";

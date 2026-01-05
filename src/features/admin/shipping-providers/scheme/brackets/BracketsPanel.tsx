@@ -3,13 +3,9 @@
 import React from "react";
 import type { PricingSchemeDetail } from "../../api";
 
-import PricingRuleEditor from "./PricingRuleEditor";
-
-import IntroCard from "./IntroCard";
 import ZoneSelectCard from "./ZoneSelectCard";
 import ZoneEntryCard from "./ZoneEntryCard";
 import QuoteMatrixCard from "./QuoteMatrixCard";
-
 import { CopyBracketsCard } from "./CopyBracketsCard";
 import { useBracketsPanelModel } from "./useBracketsPanelModel";
 
@@ -22,11 +18,6 @@ export const BracketsPanel: React.FC<{
 
   return (
     <div className="space-y-4">
-      <IntroCard />
-
-      {/* ✅ 这里会自动回显你以前保存的重量区间模板 */}
-      <PricingRuleEditor schemeId={detail.id} value={vm.segments} onChange={vm.setSegments} />
-
       <ZoneSelectCard
         busy={vm.busy}
         selectableZones={vm.selectableZones}
@@ -41,11 +32,11 @@ export const BracketsPanel: React.FC<{
         selectedZoneId={selectedZoneId}
         tableRows={vm.tableRows}
         currentDrafts={vm.currentDrafts}
+        currentBrackets={vm.currentBrackets}
         onSetDraft={vm.setDraftForCurrentZone}
         onSave={vm.saveCurrentZonePrices}
       />
 
-      {/* ✅ 复制：放到录价之后，更符合人类流程 */}
       <CopyBracketsCard
         schemeId={detail.id}
         zones={vm.zones}

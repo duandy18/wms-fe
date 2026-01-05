@@ -17,7 +17,7 @@ export const TemplateWorkbenchDraftSection: React.FC<{
   return (
     <div className="mt-4">
       <div className={UI.panelHint}>
-        方案编辑区（唯一允许修改结构的地方）：点击任意行进入编辑 → 修改/新增/删除 →（在上方点击）保存方案 → 启用为当前生效。最后一行 max 留空表示无上限（∞）。
+        方案编辑区：修改/新增/删除 →（在上方点击）保存方案 → 启用为当前生效。
       </div>
 
       <div className={`mt-2 ${disabled ? "opacity-70 pointer-events-none" : ""}`}>
@@ -26,11 +26,8 @@ export const TemplateWorkbenchDraftSection: React.FC<{
           value={draftSegments}
           onChange={(next) => setDraftSegments(next)}
           dirty={dirty}
+          mode="always"
         />
-      </div>
-
-      <div className="mt-2 text-xs text-slate-500">
-        提示：编辑/保存不会影响线上；只有“启用为当前生效”才会替换当前生效方案。
       </div>
     </div>
   );

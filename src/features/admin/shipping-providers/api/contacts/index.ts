@@ -1,6 +1,6 @@
-// src/features/admin/shipping-providers/api.contacts.ts
-import { apiPost, apiPatch, apiDelete } from "../../../lib/api";
-import type { ShippingProviderContact } from "./api.types";
+// src/features/admin/shipping-providers/api/contacts/index.ts
+import { apiPost, apiPatch, apiDelete } from "../../../../../lib/api";
+import type { ShippingProviderContact } from "../../api.types";
 
 export async function createShippingProviderContact(
   providerId: number,

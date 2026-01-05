@@ -8,7 +8,7 @@ export const L = {
 
   tabZones: "区域分类",
   tabSegments: "重量段方案",
-  tabBrackets: "重量区间",
+  tabBrackets: "价格录入",
   tabSurcharges: "附加费",
   tabPreview: "算价预览（摘要）",
 };

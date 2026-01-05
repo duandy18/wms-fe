@@ -11,7 +11,7 @@ export const ZoneSelectCard: React.FC<{
   selectedZone: PricingSchemeZone | null;
   currentBracketsCount: number;
   onSelectZone: (zoneId: number | null) => void;
-}> = ({ busy, selectableZones, selectedZoneId, selectedZone, currentBracketsCount, onSelectZone }) => {
+}> = ({ busy, selectableZones, selectedZoneId, onSelectZone }) => {
   return (
     <div className={UI.cardTight}>
       <div className={UI.sectionTitle}>选择区域（Zone）</div>
@@ -29,16 +29,6 @@ export const ZoneSelectCard: React.FC<{
           </option>
         ))}
       </select>
-
-      <div className={`mt-2 ${UI.tinyHelpText}`}>
-        {selectedZone ? (
-          <span className="font-mono">
-            当前编辑：{selectedZone.name} · 已有 brackets：{currentBracketsCount}
-          </span>
-        ) : (
-          <span>先选择一个 Zone，才能填写该区域的报价。</span>
-        )}
-      </div>
     </div>
   );
 };
