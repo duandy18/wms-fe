@@ -1,20 +1,14 @@
 // src/features/operations/inbound/InboundLinesCard.tsx
 // 收货任务行明细卡片（Cockpit 视角，大字号仓库版）
 // - 展示：商品信息 / 单位 / 应收 / 实收 / 差异 / 批次 / 日期
-// - 行内直接编辑：批次 / 生产日期 / 到期日期（不再藏在按钮里）
-// - 视图过滤：全部 / 仅有差异 / 仅未收完
-// - 高亮：
-//    * 最近一次操作的 item（activeItemId）
-//    * 有实收数量但缺批次（淡黄色提示 + 文案）
-//
-// 重要说明（与后端规则对齐）：
-// - “有保质期商品”：后端 commit 会强制要求 batch_code + (production_date/expiry_date 至少一项)
-// - “无保质期商品”：后端允许日期为空，且 batch_code 为空时会自动使用 NOEXP
-//
-// 因此：前端不再用“缺日期”强行阻塞流程，而是做提示；最终校验以服务端为准。
+// - metaMode=edit：行内直接编辑 批次/日期
+// - metaMode=hint：只提示缺失状态，不提供编辑入口（用于采购扫码收货 Tab）
 
 import React, { useCallback, useMemo, useState } from "react";
-import { StandardTable } from "../../../components/wmsdu/StandardTable";
+import {
+  StandardTable,
+  type ColumnDef,
+} from "../../../components/wmsdu/StandardTable";
 import type { ReceiveTaskLine } from "../../receive-tasks/api";
 import type { InboundCockpitController } from "./types";
 
@@ -24,9 +18,14 @@ import { getErrorMessage, needsBatch } from "./lines/lineUtils";
 
 interface Props {
   c: InboundCockpitController;
+  metaMode?: "edit" | "hint";
 }
 
-export const InboundLinesCard: React.FC<Props> = ({ c }) => {
+function formatYmd(v: string | null | undefined): string {
+  return v && v.trim() ? v : "-";
+}
+
+export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
   const task = c.currentTask;
   const [viewFilter, setViewFilter] = useState<ViewFilter>("all");
 
@@ -40,11 +39,17 @@ export const InboundLinesCard: React.FC<Props> = ({ c }) => {
     if (viewFilter === "all") return base;
 
     if (viewFilter === "mismatch") {
-      return base.filter((l) => l.expected_qty != null && l.scanned_qty !== l.expected_qty);
+      return base.filter(
+        (l) => l.expected_qty != null && l.scanned_qty !== l.expected_qty,
+      );
     }
 
     if (viewFilter === "unreceived") {
-      return base.filter((l) => l.expected_qty != null && (l.scanned_qty ?? 0) < (l.expected_qty ?? 0));
+      return base.filter(
+        (l) =>
+          l.expected_qty != null &&
+          (l.scanned_qty ?? 0) < (l.expected_qty ?? 0),
+      );
     }
 
     return base;
@@ -58,7 +63,7 @@ export const InboundLinesCard: React.FC<Props> = ({ c }) => {
       if (!task) return;
 
       if (task.status === "COMMITTED") {
-        setMetaError("任务已 COMMITTED，不能修改批次/日期。");
+        setMetaError("任务已入库，不能修改批次/日期。");
         return;
       }
 
@@ -66,9 +71,12 @@ export const InboundLinesCard: React.FC<Props> = ({ c }) => {
       const trimmedProd = patch.production_date?.trim();
       const trimmedExp = patch.expiry_date?.trim();
 
-      const sameBatch = trimmedBatch === undefined || trimmedBatch === (line.batch_code ?? "");
-      const sameProd = trimmedProd === undefined || trimmedProd === (line.production_date ?? "");
-      const sameExp = trimmedExp === undefined || trimmedExp === (line.expiry_date ?? "");
+      const sameBatch =
+        trimmedBatch === undefined || trimmedBatch === (line.batch_code ?? "");
+      const sameProd =
+        trimmedProd === undefined || trimmedProd === (line.production_date ?? "");
+      const sameExp =
+        trimmedExp === undefined || trimmedExp === (line.expiry_date ?? "");
 
       if (sameBatch && sameProd && sameExp) return;
 
@@ -91,14 +99,79 @@ export const InboundLinesCard: React.FC<Props> = ({ c }) => {
     [c, task],
   );
 
-  const columns = useMemo(
-    () =>
-      buildInboundLinesColumns({
-        taskStatus: task?.status ?? null,
-        onMetaBlur: (line, patch) => void handleMetaBlur(line, patch),
-      }),
-    [task?.status, handleMetaBlur],
-  );
+  const readonlyColumns: ColumnDef<ReceiveTaskLine>[] = useMemo(() => {
+    return [
+      {
+        key: "item_name",
+        header: "商品",
+        render: (l) => l.item_name ?? "-",
+      },
+      {
+        key: "expected_qty",
+        header: "应收",
+        align: "right",
+        render: (l) => (l.expected_qty ?? "-") as any,
+      },
+      {
+        key: "scanned_qty",
+        header: "实收",
+        align: "right",
+        render: (l) => l.scanned_qty as any,
+      },
+      {
+        key: "variance",
+        header: "差异",
+        align: "right",
+        render: (l) => {
+          if (l.expected_qty == null) return "-";
+          const v = l.scanned_qty - l.expected_qty;
+          const cls =
+            v === 0
+              ? "text-emerald-700"
+              : v > 0
+              ? "text-amber-700"
+              : "text-rose-700";
+          return <span className={cls}>{v}</span>;
+        },
+      },
+      {
+        key: "batch_code",
+        header: "批次",
+        render: (l) => (l.batch_code && l.batch_code.trim() ? l.batch_code : "-"),
+      },
+      {
+        key: "production_date",
+        header: "生产日期",
+        render: (l) => formatYmd(l.production_date),
+      },
+      {
+        key: "expiry_date",
+        header: "到期日期",
+        render: (l) => formatYmd(l.expiry_date),
+      },
+      {
+        key: "meta_hint",
+        header: "提示",
+        render: (l) => {
+          if (!needsBatch(l)) return <span className="text-slate-500">-</span>;
+          return <span className="text-amber-700">需要补录批次/日期</span>;
+        },
+      },
+    ];
+  }, []);
+
+  const columns = useMemo(() => {
+    // 扫码Tab：只提示，不可编辑
+    if (metaMode === "hint") {
+      return readonlyColumns;
+    }
+
+    // 默认：可编辑
+    return buildInboundLinesColumns({
+      taskStatus: task?.status ?? null,
+      onMetaBlur: (line, patch) => void handleMetaBlur(line, patch),
+    });
+  }, [metaMode, readonlyColumns, task?.status, handleMetaBlur]);
 
   return (
     <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
@@ -109,14 +182,20 @@ export const InboundLinesCard: React.FC<Props> = ({ c }) => {
         onChangeViewFilter={setViewFilter}
       />
 
-      {metaError && <div className="text-base text-red-600">{metaError}</div>}
-      {task && c.taskError && <div className="text-base text-red-600">{c.taskError}</div>}
+      {metaMode === "edit" && metaError ? (
+        <div className="text-base text-red-600">{metaError}</div>
+      ) : null}
+
+      {task && c.taskError ? (
+        <div className="text-base text-red-600">{c.taskError}</div>
+      ) : null}
 
       {task ? (
         <>
           <div className="text-lg text-slate-700 mb-2">
-            应收合计：<span className="font-mono">{c.varianceSummary.totalExpected}</span>，实收合计：
-            <span className="font-mono">{c.varianceSummary.totalScanned}</span>，差异：
+            应收合计：<span className="font-mono">{c.varianceSummary.totalExpected}</span>
+            ，实收合计：<span className="font-mono">{c.varianceSummary.totalScanned}</span>
+            ，差异：
             <span
               className={
                 c.varianceSummary.totalVariance === 0
@@ -158,11 +237,17 @@ export const InboundLinesCard: React.FC<Props> = ({ c }) => {
         </div>
       )}
 
-      {savingMetaFor !== null && (
+      {metaMode === "edit" && savingMetaFor !== null ? (
         <div className="text-base text-slate-500">
           正在保存 item_id={savingMetaFor} 的批次/日期…
         </div>
-      )}
+      ) : null}
+
+      {metaMode === "hint" ? (
+        <div className="text-sm text-slate-500">
+          扫码收货页仅提示批次/日期缺失，不在此处编辑。
+        </div>
+      ) : null}
     </section>
   );
 };

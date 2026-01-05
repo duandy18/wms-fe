@@ -2,65 +2,53 @@
 // =====================================================
 //  作业区 · 收货驾驶舱（Inbound Cockpit）
 //  - 仓库作业人员使用
-//  - 左：任务上下文 + 行明细
-//  - 右：扫码收货 + 采购单行收货 + 提交入库
+//  - 通过 Tab 切分不同收货语义的工作流
+//  - 补录（批次/日期）以抽屉形式嵌入，不作为顶级 Tab
 // =====================================================
 
 import React, { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { InboundCockpitHeader } from "./InboundCockpitHeader";
 import { useInboundCockpitController } from "./useInboundCockpitController";
-import { InboundTaskContextCard } from "./InboundTaskContextCard";
-import { InboundScanCard } from "./InboundScanCard";
-import { InboundLinesCard } from "./InboundLinesCard";
-import { InboundCommitCard } from "./InboundCommitCard";
-import { InboundManualReceiveCard } from "./InboundManualReceiveCard";
 import { InboundTabs } from "./InboundTabs";
 import type { InboundTabKey } from "./inboundTabs";
+import { InboundTabBody } from "./tabs/InboundTabBody";
+import { InboundSupplementDrawer } from "./InboundSupplementDrawer";
+import type { SupplementSourceType } from "./ReceiveSupplementPanel";
+
+function normalizeSourceParam(v: string | null): SupplementSourceType {
+  const x = (v ?? "").trim().toLowerCase();
+  if (x === "return") return "RETURN";
+  if (x === "misc") return "MISC";
+  return "PURCHASE";
+}
 
 const InboundCockpitPage: React.FC = () => {
   const c = useInboundCockpitController();
 
   const [tab, setTab] = useState<InboundTabKey>("PURCHASE_SCAN");
 
-  const showTaskContext = tab !== "MISC";
-  const showLines = tab !== "MISC";
+  const [sp, setSp] = useSearchParams();
 
-  const showScan = useMemo(() => {
-    if (tab === "PURCHASE_SCAN") return true;
-    if (tab === "RETURN") return true;
-    return false;
-  }, [tab]);
-
-  const showManual = useMemo(() => {
-    if (tab === "PURCHASE_MANUAL") return true;
-    if (tab === "RETURN") return true;
-    if (tab === "MISC") return true;
-    return false;
-  }, [tab]);
-
-  const left = (
-    <div className="space-y-4">
-      {showTaskContext ? <InboundTaskContextCard c={c} /> : null}
-      {showLines ? <InboundLinesCard c={c} /> : null}
-
-      {!showTaskContext && (
-        <section className="bg-white border border-slate-200 rounded-xl p-4">
-          <h2 className="text-sm font-semibold text-slate-800">收货上下文</h2>
-          <div className="mt-2 text-sm text-slate-600">
-            当前入口：样品 / 非采购收货
-          </div>
-        </section>
-      )}
-    </div>
+  const drawerOpen = sp.get("supplement") === "1";
+  const drawerSource = useMemo(
+    () => normalizeSourceParam(sp.get("source")),
+    [sp],
   );
 
-  const right = (
-    <div className="space-y-4">
-      {showScan ? <InboundScanCard c={c} /> : null}
-      {showManual ? <InboundManualReceiveCard c={c} /> : null}
-      <InboundCommitCard c={c} />
-    </div>
-  );
+  const openDrawer = (source: "purchase" | "return" | "misc") => {
+    const next = new URLSearchParams(sp);
+    next.set("supplement", "1");
+    next.set("source", source);
+    setSp(next);
+  };
+
+  const closeDrawer = () => {
+    const next = new URLSearchParams(sp);
+    next.delete("supplement");
+    next.delete("source");
+    setSp(next);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -68,12 +56,23 @@ const InboundCockpitPage: React.FC = () => {
 
       <div className="flex items-center justify-between gap-4">
         <InboundTabs value={tab} onChange={setTab} />
+
+        <button
+          type="button"
+          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+          onClick={() => openDrawer("purchase")}
+        >
+          补录
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-6 items-start">
-        {left}
-        {right}
-      </div>
+      <InboundTabBody tab={tab} c={c} />
+
+      <InboundSupplementDrawer
+        open={drawerOpen}
+        initialSourceType={drawerSource}
+        onClose={closeDrawer}
+      />
     </div>
   );
 };
