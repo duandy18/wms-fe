@@ -4,28 +4,18 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PageTitle from "../../components/ui/PageTitle";
 import {
-  StandardTable,
-  type ColumnDef,
-} from "../../components/wmsdu/StandardTable";
-import {
   fetchReceiveTask,
   recordReceiveScan,
   commitReceiveTask,
   type ReceiveTask,
   type ReceiveTaskLine,
 } from "./api";
-
-const formatTs = (ts: string | null | undefined) =>
-  ts ? ts.replace("T", " ").replace("Z", "") : "-";
-
-type ApiErrorShape = {
-  message?: string;
-};
-
-const getErrorMessage = (err: unknown, fallback: string): string => {
-  const e = err as ApiErrorShape;
-  return e?.message ?? fallback;
-};
+import { getErrorMessage } from "./utils";
+import {
+  ReceiveTaskInfoCard,
+  type ReceiveVarianceSummary,
+} from "./components/ReceiveTaskInfoCard";
+import { ReceiveTaskLinesTable } from "./components/ReceiveTaskLinesTable";
 
 const ReceiveTaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
@@ -38,9 +28,7 @@ const ReceiveTaskDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [updatingLineId, setUpdatingLineId] = useState<number | null>(
-    null,
-  );
+  const [updatingLineId, setUpdatingLineId] = useState<number | null>(null);
   const [committing, setCommitting] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
 
@@ -71,7 +59,7 @@ const ReceiveTaskDetailPage: React.FC = () => {
 
   const isCommitted = task?.status === "COMMITTED";
 
-  const varianceSummary = useMemo(() => {
+  const varianceSummary: ReceiveVarianceSummary = useMemo(() => {
     if (!task) {
       return {
         totalExpected: 0,
@@ -94,10 +82,7 @@ const ReceiveTaskDetailPage: React.FC = () => {
     };
   }, [task]);
 
-  async function handleChangeScanned(
-    line: ReceiveTaskLine,
-    nextScanned: number,
-  ) {
+  async function handleChangeScanned(line: ReceiveTaskLine, nextScanned: number) {
     if (!task || isCommitted) return;
 
     const normalized = Math.max(0, Math.floor(nextScanned));
@@ -153,95 +138,6 @@ const ReceiveTaskDetailPage: React.FC = () => {
     );
   }
 
-  const columns: ColumnDef<ReceiveTaskLine>[] = [
-    {
-      key: "item_id",
-      header: "Item ID",
-      render: (l) => (
-        <span className="font-mono text-[11px]">{l.item_id}</span>
-      ),
-    },
-    {
-      key: "item_name",
-      header: "商品名",
-      render: (l) => l.item_name ?? "-",
-    },
-    {
-      key: "expected_qty",
-      header: "应收数量",
-      align: "right",
-      render: (l) => l.expected_qty ?? "-",
-    },
-    {
-      key: "scanned_qty",
-      header: "实收数量",
-      align: "right",
-      render: (l) => {
-        const disabled = isCommitted || updatingLineId === l.id;
-        return (
-          <div className="flex items-center justify-end gap-1">
-            <button
-              type="button"
-              disabled={disabled}
-              className="rounded border px-1 text-xs disabled:opacity-50"
-              onClick={() =>
-                void handleChangeScanned(
-                  l,
-                  Math.max(0, l.scanned_qty - 1),
-                )
-              }
-            >
-              -
-            </button>
-            <input
-              className="w-16 rounded border border-slate-300 px-1 py-0.5 text-right text-xs"
-              type="number"
-              value={l.scanned_qty}
-              disabled={disabled}
-              onChange={(e) =>
-                void handleChangeScanned(
-                  l,
-                  Number(e.target.value || "0"),
-                )
-              }
-            />
-            <button
-              type="button"
-              disabled={disabled}
-              className="rounded border px-1 text-xs disabled:opacity-50"
-              onClick={() =>
-                void handleChangeScanned(l, l.scanned_qty + 1)
-              }
-            >
-              +
-            </button>
-          </div>
-        );
-      },
-    },
-    {
-      key: "variance",
-      header: "差异(实收-应收)",
-      align: "right",
-      render: (l) => {
-        if (l.expected_qty == null) return "-";
-        const v = l.scanned_qty - l.expected_qty;
-        const cls =
-          v === 0
-            ? "text-emerald-700"
-            : v > 0
-            ? "text-amber-700"
-            : "text-rose-700";
-        return <span className={cls}>{v}</span>;
-      },
-    },
-    {
-      key: "status",
-      header: "状态",
-      render: (l) => l.status,
-    },
-  ];
-
   return (
     <div className="p-6 space-y-6">
       <PageTitle
@@ -257,78 +153,12 @@ const ReceiveTaskDetailPage: React.FC = () => {
         ← 返回采购单列表
       </button>
 
-      {loading && (
-        <div className="text-sm text-slate-500">加载中…</div>
-      )}
-      {error && (
-        <div className="text-sm text-red-600">{error}</div>
-      )}
+      {loading && <div className="text-sm text-slate-500">加载中…</div>}
+      {error && <div className="text-sm text-red-600">{error}</div>}
 
       {task && (
         <>
-          <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-slate-800">
-                基本信息
-              </h2>
-              <span className="text-xs text-slate-500">
-                创建时间：{formatTs(task.created_at)}，状态：
-                <span className="font-medium">{task.status}</span>
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-x-8 gap-y-2 md:grid-cols-3">
-              <div>
-                <div className="text-[11px] text-slate-500">
-                  收货任务 ID
-                </div>
-                <div className="font-mono text-[13px]">
-                  {task.id}
-                  {task.po_id != null && (
-                    <span className="ml-2 text-xs text-slate-600">
-                      (PO-{task.po_id})
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] text-slate-500">
-                  供应商
-                </div>
-                <div>
-                  {task.supplier_name ??
-                    (task.supplier_id != null
-                      ? `ID=${task.supplier_id}`
-                      : "-")}
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] text-slate-500">
-                  仓库 ID
-                </div>
-                <div>{task.warehouse_id}</div>
-              </div>
-              <div>
-                <div className="text-[11px] text-slate-500">
-                  应收 vs 实收
-                </div>
-                <div>
-                  应收：{varianceSummary.totalExpected}，实收：
-                  {varianceSummary.totalScanned}，差异：
-                  <span
-                    className={
-                      varianceSummary.totalVariance === 0
-                        ? "text-emerald-700"
-                        : varianceSummary.totalVariance > 0
-                        ? "text-amber-700"
-                        : "text-rose-700"
-                    }
-                  >
-                    {varianceSummary.totalVariance}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
+          <ReceiveTaskInfoCard task={task} varianceSummary={varianceSummary} />
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
@@ -336,9 +166,7 @@ const ReceiveTaskDetailPage: React.FC = () => {
                 行明细（应收 / 实收 / 差异）
               </h2>
               <div className="flex items-center gap-2 text-xs">
-                {commitError && (
-                  <span className="text-red-600">{commitError}</span>
-                )}
+                {commitError && <span className="text-red-600">{commitError}</span>}
                 <button
                   type="button"
                   disabled={isCommitted || committing}
@@ -354,17 +182,11 @@ const ReceiveTaskDetailPage: React.FC = () => {
               </div>
             </div>
 
-            <StandardTable<ReceiveTaskLine>
-              columns={columns}
-              data={task.lines}
-              dense
-              getRowKey={(l) => l.id}
-              emptyText="暂无行数据"
-              footer={
-                <span className="text-xs text-slate-500">
-                  共 {task.lines.length} 行
-                </span>
-              }
+            <ReceiveTaskLinesTable
+              lines={task.lines}
+              isCommitted={!!isCommitted}
+              updatingLineId={updatingLineId}
+              onChangeScanned={handleChangeScanned}
             />
           </section>
         </>
