@@ -7,9 +7,9 @@
 import React from "react";
 import type { InboundCockpitController } from "./types";
 import { InboundModeBar } from "./InboundModeBar";
-import { PurchaseOrderContextPanel } from "./PurchaseOrderContextPanel";
-import { ReceiveTaskContextPanel } from "./ReceiveTaskContextPanel";
-import { useInboundTaskContextModel } from "./task-context/useInboundTaskContextModel";
+import { PurchaseOrderContextPanel } from "./purchase-context";
+import { ReceiveTaskContextPanel } from "./receive-task";
+import { useInboundTaskContextModel } from "./purchase-context";
 
 interface Props {
   c: InboundCockpitController;
@@ -39,7 +39,7 @@ export const InboundTaskContextCard: React.FC<Props> = ({ c }) => {
 
       {m.mode === "PO" ? (
         <div className="space-y-4">
-          {/* ✅ 起点：最近采购单待收清单（整块宽度，必须显眼） */}
+          {/* ✅ 起点：最近采购单待收清单 + 原版详情（左侧只保留这两块） */}
           <div>
             <PurchaseOrderContextPanel
               c={c}
@@ -49,8 +49,6 @@ export const InboundTaskContextCard: React.FC<Props> = ({ c }) => {
               poOptionsError={m.poOptionsError}
               selectedPoId={m.selectedPoId}
               onSelectPoId={m.handleSelectPoId}
-              onSelectPoChange={m.handleSelectPoChange}
-              onManualLoadPo={m.handleManualLoadPo}
             />
           </div>
 

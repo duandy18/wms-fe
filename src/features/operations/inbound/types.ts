@@ -1,7 +1,11 @@
 // src/features/operations/inbound/types.ts
 
 import type { PurchaseOrderWithLines } from "../../purchase-orders/api";
-import type { ReceiveTaskLine, ReceiveTask } from "../../receive-tasks/api";
+import type {
+  ReceiveTaskLine,
+  ReceiveTask,
+  ReceiveTaskCreateFromPoSelectedLinePayload,
+} from "../../receive-tasks/api";
 import type { ParsedBarcode } from "../scan/barcodeParser";
 
 export type InboundTabKey =
@@ -59,8 +63,16 @@ export interface InboundCockpitController {
   setActiveItemId: (v: number | null) => void;
 
   // ===== actions =====
-  loadPoById: () => Promise<void>;
+  loadPoById: (poId?: string) => Promise<void>;
+
+  /** 旧：整单/剩余应收创建（保留备用） */
   createTaskFromPo: () => Promise<void>;
+
+  /** 新：选择式创建（本次到货批次） */
+  createTaskFromPoSelected: (
+    lines: ReceiveTaskCreateFromPoSelectedLinePayload[],
+  ) => Promise<void>;
+
   bindTaskById: () => Promise<void>;
   reloadTask: () => Promise<void>;
 
@@ -79,8 +91,6 @@ export interface InboundCockpitController {
   manualReceiveLine: (itemId: number, qty: number) => Promise<void>;
   commit: () => Promise<boolean>;
 
-  // 兼容：如果别的组件仍在用 scanHistory（你现在 return 里没有）
-  // 先留成可选，避免未来有人再引入时炸编译
   scanHistory?: InboundScanHistoryEntry[];
 }
 

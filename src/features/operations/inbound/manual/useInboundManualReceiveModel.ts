@@ -1,6 +1,6 @@
 // src/features/operations/inbound/manual/useInboundManualReceiveModel.ts
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { InboundCockpitController } from "../types";
 import type { ReceiveTaskLine } from "../../../receive-tasks/api";
 
@@ -33,6 +33,42 @@ export function useInboundManualReceiveModel(c: InboundCockpitController) {
 
   const lines: ReceiveTaskLine[] = useMemo(() => (task ? task.lines : []), [task]);
 
+  // ✅ 仅在任务切换时初始化一次：默认填“剩余应收”（新任务=expected_qty）
+  const initializedTaskIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!task) {
+      initializedTaskIdRef.current = null;
+      setQtyInputs({});
+      return;
+    }
+
+    if (initializedTaskIdRef.current === task.id) return;
+
+    initializedTaskIdRef.current = task.id;
+
+    setQtyInputs((prev) => {
+      // 如果已有用户输入（理论上 task 切换时 prev 会是空，但我们仍做保护）
+      const next: QtyInputMap = { ...prev };
+
+      for (const l of task.lines ?? []) {
+        const expected = l.expected_qty ?? 0;
+        const scanned = l.scanned_qty ?? 0;
+        const remaining = Math.max(expected - scanned, 0);
+
+        // 只有在该行还没被用户输入过时才填默认值
+        if (next[l.item_id] == null) {
+          // remaining 为 0 的行不默认填，避免误点产生 0/无意义提示
+          if (remaining > 0) next[l.item_id] = String(remaining);
+        }
+      }
+
+      return next;
+    });
+
+    setError(null);
+  }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleQtyChange = (itemId: number, value: string) => {
     setQtyInputs((prev) => ({ ...prev, [itemId]: value }));
   };
@@ -48,7 +84,7 @@ export function useInboundManualReceiveModel(c: InboundCockpitController) {
       const remaining =
         l.expected_qty != null ? (l.expected_qty ?? 0) - scanned : 0;
 
-      // 空输入：默认“填剩余”（与你现有 handleReceive 行为保持一致）
+      // 空输入：默认“填剩余”（与 handleReceive 行为保持一致）
       const qty = raw.trim()
         ? parsePositiveInt(raw)
         : remaining > 0

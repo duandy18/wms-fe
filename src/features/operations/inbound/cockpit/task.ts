@@ -1,6 +1,12 @@
 // src/features/operations/inbound/cockpit/task.ts
 
-import { fetchReceiveTask, createReceiveTaskFromPo, type ReceiveTask } from "../../../receive-tasks/api";
+import {
+  fetchReceiveTask,
+  createReceiveTaskFromPo,
+  createReceiveTaskFromPoSelected,
+  type ReceiveTask,
+  type ReceiveTaskCreateFromPoSelectedLinePayload,
+} from "../../../receive-tasks/api";
 import type { PurchaseOrderWithLines } from "../../../purchase-orders/api";
 import { getErrMsg } from "./utils";
 
@@ -12,7 +18,14 @@ export async function internalLoadTask(args: {
   setCommitError: (v: string | null) => void;
   setActiveItemId: (v: number | null) => void;
 }) {
-  const { taskId, setLoadingTask, setTaskError, setCurrentTask, setCommitError, setActiveItemId } = args;
+  const {
+    taskId,
+    setLoadingTask,
+    setTaskError,
+    setCurrentTask,
+    setCommitError,
+    setActiveItemId,
+  } = args;
 
   setLoadingTask(true);
   setTaskError(null);
@@ -22,6 +35,7 @@ export async function internalLoadTask(args: {
     setCommitError(null);
     setActiveItemId(null);
   } catch (err: unknown) {
+     
     console.error("fetchReceiveTask error", err);
     setCurrentTask(null);
     setTaskError(getErrMsg(err, "加载收货任务失败"));
@@ -60,6 +74,7 @@ export async function reloadTask(args: {
   }
 }
 
+/** 旧：整单/剩余应收创建（保留备用） */
 export async function createTaskFromPo(args: {
   currentPo: PurchaseOrderWithLines | null;
   setCreatingTask: (v: boolean) => void;
@@ -97,8 +112,62 @@ export async function createTaskFromPo(args: {
     setCommitError(null);
     setActiveItemId(null);
   } catch (err: unknown) {
+     
     console.error("createReceiveTaskFromPo failed", err);
     setTaskError(getErrMsg(err, "从采购单创建收货任务失败"));
+  } finally {
+    setCreatingTask(false);
+  }
+}
+
+/** 新：选择式创建（本次到货批次） */
+export async function createTaskFromPoSelected(args: {
+  currentPo: PurchaseOrderWithLines | null;
+  selectedLines: ReceiveTaskCreateFromPoSelectedLinePayload[];
+  setCreatingTask: (v: boolean) => void;
+  setTaskError: (v: string | null) => void;
+  setCurrentTask: (v: ReceiveTask | null) => void;
+  setTaskIdInput: (v: string) => void;
+  setCommitError: (v: string | null) => void;
+  setActiveItemId: (v: number | null) => void;
+}) {
+  const {
+    currentPo,
+    selectedLines,
+    setCreatingTask,
+    setTaskError,
+    setCurrentTask,
+    setTaskIdInput,
+    setCommitError,
+    setActiveItemId,
+  } = args;
+
+  if (!currentPo) {
+    setTaskError("请先加载采购单");
+    return;
+  }
+  if (!selectedLines || selectedLines.length === 0) {
+    setTaskError("请先选择本次到货行并填写计划量");
+    return;
+  }
+
+  const poId = currentPo.id;
+
+  setCreatingTask(true);
+  setTaskError(null);
+  try {
+    const task = await createReceiveTaskFromPoSelected(poId, {
+      warehouse_id: currentPo.warehouse_id,
+      lines: selectedLines,
+    });
+    setCurrentTask(task);
+    setTaskIdInput(String(task.id));
+    setCommitError(null);
+    setActiveItemId(null);
+  } catch (err: unknown) {
+     
+    console.error("createReceiveTaskFromPoSelected failed", err);
+    setTaskError(getErrMsg(err, "创建本次到货收货任务失败"));
   } finally {
     setCreatingTask(false);
   }

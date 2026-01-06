@@ -1,6 +1,6 @@
 // src/features/operations/inbound/InboundLinesCard.tsx
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { StandardTable } from "../../../components/wmsdu/StandardTable";
 import type { ReceiveTaskLine } from "../../receive-tasks/api";
 import type { InboundCockpitController } from "./types";
@@ -21,6 +21,24 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
   const [metaError, setMetaError] = useState<string | null>(null);
   const [savingMetaFor, setSavingMetaFor] = useState<number | null>(null);
 
+  // ✅ 任务切换后自动聚焦到一行（默认选 expected_qty 最大的行）
+  useEffect(() => {
+    if (!task || !task.lines || task.lines.length === 0) return;
+
+    // 若已经有人手动选过，就不抢焦点
+    if (c.activeItemId != null) return;
+
+    const pick = [...task.lines].sort((a, b) => {
+      const ea = a.expected_qty ?? 0;
+      const eb = b.expected_qty ?? 0;
+      return eb - ea;
+    })[0];
+
+    if (pick?.item_id != null) {
+      c.setActiveItemId(pick.item_id);
+    }
+  }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const rows: ReceiveTaskLine[] = useMemo(() => {
     if (!task) return [];
     const base = task.lines;
@@ -28,17 +46,12 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
     if (viewFilter === "all") return base;
 
     if (viewFilter === "mismatch") {
-      return base.filter(
-        (l) =>
-          l.expected_qty != null && l.scanned_qty !== l.expected_qty,
-      );
+      return base.filter((l) => l.expected_qty != null && l.scanned_qty !== l.expected_qty);
     }
 
     if (viewFilter === "unreceived") {
       return base.filter(
-        (l) =>
-          l.expected_qty != null &&
-          (l.scanned_qty ?? 0) < (l.expected_qty ?? 0),
+        (l) => l.expected_qty != null && (l.scanned_qty ?? 0) < (l.expected_qty ?? 0),
       );
     }
 
@@ -66,14 +79,11 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
       const trimmedExp = patch.expiry_date?.trim();
 
       const sameBatch =
-        trimmedBatch === undefined ||
-        trimmedBatch === (line.batch_code ?? "");
+        trimmedBatch === undefined || trimmedBatch === (line.batch_code ?? "");
       const sameProd =
-        trimmedProd === undefined ||
-        trimmedProd === (line.production_date ?? "");
+        trimmedProd === undefined || trimmedProd === (line.production_date ?? "");
       const sameExp =
-        trimmedExp === undefined ||
-        trimmedExp === (line.expiry_date ?? "");
+        trimmedExp === undefined || trimmedExp === (line.expiry_date ?? "");
 
       if (sameBatch && sameProd && sameExp) return;
 
@@ -83,19 +93,14 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
       try {
         await c.updateLineMeta(line.item_id, {
           batch_code:
-            trimmedBatch !== undefined
-              ? trimmedBatch || undefined
-              : undefined,
+            trimmedBatch !== undefined ? trimmedBatch || undefined : undefined,
           production_date:
-            trimmedProd !== undefined
-              ? trimmedProd || undefined
-              : undefined,
+            trimmedProd !== undefined ? trimmedProd || undefined : undefined,
           expiry_date:
-            trimmedExp !== undefined
-              ? trimmedExp || undefined
-              : undefined,
+            trimmedExp !== undefined ? trimmedExp || undefined : undefined,
         });
       } catch (err: unknown) {
+         
         console.error("updateLineMeta failed", err);
         setMetaError(getErrorMessage(err, "更新批次/日期失败"));
       } finally {
@@ -110,8 +115,7 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
       buildInboundLinesColumns({
         taskStatus: task?.status ?? null,
         metaMode,
-        onMetaBlur: (line, patch) =>
-          void handleMetaBlur(line, patch),
+        onMetaBlur: (line, patch) => void handleMetaBlur(line, patch),
       }),
     [task?.status, metaMode, handleMetaBlur],
   );
@@ -125,24 +129,16 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
         onChangeViewFilter={setViewFilter}
       />
 
-      {metaError && (
-        <div className="text-base text-red-600">{metaError}</div>
-      )}
-      {task && c.taskError && (
-        <div className="text-base text-red-600">{c.taskError}</div>
-      )}
+      {metaError && <div className="text-base text-red-600">{metaError}</div>}
+      {task && c.taskError && <div className="text-base text-red-600">{c.taskError}</div>}
 
       {task ? (
         <>
           <div className="text-lg text-slate-700 mb-2">
             应收合计：
-            <span className="font-mono">
-              {c.varianceSummary.totalExpected}
-            </span>
+            <span className="font-mono">{c.varianceSummary.totalExpected}</span>
             ，实收合计：
-            <span className="font-mono">
-              {c.varianceSummary.totalScanned}
-            </span>
+            <span className="font-mono">{c.varianceSummary.totalScanned}</span>
             ，差异：
             <span
               className={
@@ -165,22 +161,16 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
             rowClassName={(l: ReceiveTaskLine) => {
               const cls: string[] = ["text-base", "py-3"];
               if (needsBatch(l)) cls.push("bg-amber-50");
-              if (
-                c.activeItemId != null &&
-                l.item_id === c.activeItemId
-              ) {
+              if (c.activeItemId != null && l.item_id === c.activeItemId) {
                 cls.push("ring-2 ring-sky-300");
               }
               return cls.join(" ");
             }}
-            onRowClick={(l: ReceiveTaskLine) =>
-              c.setActiveItemId(l.item_id)
-            }
+            onRowClick={(l: ReceiveTaskLine) => c.setActiveItemId(l.item_id)}
             emptyText="暂无行数据"
             footer={
               <span className="text-base text-slate-600">
-                当前视图共 {rows.length} 行（总行数{" "}
-                {task.lines.length}）
+                当前视图共 {rows.length} 行（总行数 {task.lines.length}）
               </span>
             }
           />
@@ -192,9 +182,7 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
       )}
 
       {savingMetaFor !== null && (
-        <div className="text-base text-slate-500">
-          正在保存该行的批次/日期…
-        </div>
+        <div className="text-base text-slate-500">正在保存该行的批次/日期…</div>
       )}
     </section>
   );

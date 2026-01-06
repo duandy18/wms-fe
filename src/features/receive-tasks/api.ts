@@ -56,6 +56,18 @@ export interface ReceiveTaskCreateFromPoPayload {
   include_fully_received?: boolean;
 }
 
+/** 选择式创建：本次到货行 */
+export interface ReceiveTaskCreateFromPoSelectedLinePayload {
+  po_line_id: number;
+  qty_planned: number;
+}
+
+/** 选择式创建：从采购单创建收货任务（本次到货批次） */
+export interface ReceiveTaskCreateFromPoSelectedPayload {
+  warehouse_id?: number | null;
+  lines: ReceiveTaskCreateFromPoSelectedLinePayload[];
+}
+
 /** 客户退货行（from-order 用） */
 export interface OrderReturnLineIn {
   item_id: number;
@@ -93,7 +105,7 @@ export interface ReceiveTaskListParams {
   warehouse_id?: number;
 }
 
-/** 从采购单创建收货任务 */
+/** 从采购单创建收货任务（整单/剩余应收） */
 export async function createReceiveTaskFromPo(
   poId: number,
   payload: ReceiveTaskCreateFromPoPayload = {},
@@ -101,15 +113,20 @@ export async function createReceiveTaskFromPo(
   return apiPost<ReceiveTask>(`/receive-tasks/from-po/${poId}`, payload);
 }
 
+/** 从采购单选择式创建收货任务（本次到货批次） */
+export async function createReceiveTaskFromPoSelected(
+  poId: number,
+  payload: ReceiveTaskCreateFromPoSelectedPayload,
+): Promise<ReceiveTask> {
+  return apiPost<ReceiveTask>(`/receive-tasks/from-po/${poId}/selected`, payload);
+}
+
 /** 从订单创建收货任务（客户退货 / RMA） */
 export async function createReceiveTaskFromOrder(
   orderId: number,
   payload: ReceiveTaskCreateFromOrderPayload,
 ): Promise<ReceiveTask> {
-  return apiPost<ReceiveTask>(
-    `/receive-tasks/from-order/${orderId}`,
-    payload,
-  );
+  return apiPost<ReceiveTask>(`/receive-tasks/from-order/${orderId}`, payload);
 }
 
 /** 获取收货任务详情 */

@@ -1,20 +1,16 @@
 // src/features/operations/inbound/useInboundCockpitController.ts
 // =====================================================
 //  Inbound Cockpit - 核心中控
-//
-// 重要约定（与后端规则对齐）：
-// - 有保质期商品：后端 commit 会强制 batch_code + (production_date/expiry_date 至少一项)
-// - 无保质期商品：后端允许日期为空；batch_code 为空会自动归入 NOEXP
-//
-// 因此：前端 controller 不再用“缺批次/缺日期”硬阻断 commit，避免把无保质期商品卡死。
-// 最终校验以服务端为准，前端仅展示服务端错误信息。
 // =====================================================
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ParsedBarcode } from "../scan/barcodeParser";
 
 import type { PurchaseOrderWithLines } from "../../purchase-orders/api";
-import type { ReceiveTask } from "../../receive-tasks/api";
+import type {
+  ReceiveTask,
+  ReceiveTaskCreateFromPoSelectedLinePayload,
+} from "../../receive-tasks/api";
 
 import type {
   InboundCockpitController,
@@ -28,6 +24,7 @@ import {
   bindTaskById as doBindTaskById,
   reloadTask as doReloadTask,
   createTaskFromPo as doCreateTaskFromPo,
+  createTaskFromPoSelected as doCreateTaskFromPoSelected,
 } from "./cockpit/task";
 import {
   handleScan as doHandleScan,
@@ -55,22 +52,34 @@ export function useInboundCockpitController(): InboundCockpitController {
   const [committing, setCommitting] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
 
-  // Cockpit 的 trace_id：提交时写入后台，便于 Trace / Ledger 聚合
   const [traceId, setTraceId] = useState("");
-
-  // 当前高亮 item（最近一次成功 recordReceiveScan 的行）
   const [activeItemId, setActiveItemId] = useState<number | null>(null);
 
   const varianceSummary = useMemo(() => calcVariance(currentTask), [currentTask]);
 
   // ========== PO ==========
+  const poLoadSeqRef = useRef(0);
 
-  async function loadPoById() {
+  async function loadPoById(poId?: string) {
+    const input = String((poId ?? poIdInput) ?? "").trim();
+    if (poId != null) {
+      setPoIdInput(input);
+    }
+
+    const seq = ++poLoadSeqRef.current;
+    const isLatest = () => seq === poLoadSeqRef.current;
+
+    const guarded =
+      <T,>(setter: (v: T) => void) =>
+      (v: T) => {
+        if (isLatest()) setter(v);
+      };
+
     await doLoadPoById({
-      poIdInput,
-      setPoError,
-      setLoadingPo,
-      setCurrentPo,
+      poIdInput: input,
+      setPoError: guarded(setPoError),
+      setLoadingPo: guarded(setLoadingPo),
+      setCurrentPo: guarded(setCurrentPo),
     });
   }
 
@@ -105,6 +114,21 @@ export function useInboundCockpitController(): InboundCockpitController {
   async function createTaskFromPo() {
     await doCreateTaskFromPo({
       currentPo,
+      setCreatingTask,
+      setTaskError,
+      setCurrentTask,
+      setTaskIdInput,
+      setCommitError,
+      setActiveItemId,
+    });
+  }
+
+  async function createTaskFromPoSelected(
+    lines: ReceiveTaskCreateFromPoSelectedLinePayload[],
+  ) {
+    await doCreateTaskFromPoSelected({
+      currentPo,
+      selectedLines: lines,
       setCreatingTask,
       setTaskError,
       setCurrentTask,
@@ -171,8 +195,7 @@ export function useInboundCockpitController(): InboundCockpitController {
     });
   }
 
-  // ========== commit（关键改动：不再前端硬校验批次/日期） ==========
-
+  // ========== commit ==========
   async function commit(): Promise<boolean> {
     return await doCommit({
       currentTask,
@@ -218,6 +241,7 @@ export function useInboundCockpitController(): InboundCockpitController {
     // actions
     loadPoById,
     createTaskFromPo,
+    createTaskFromPoSelected,
     bindTaskById,
     reloadTask,
 
