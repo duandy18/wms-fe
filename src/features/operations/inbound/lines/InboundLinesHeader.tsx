@@ -14,12 +14,9 @@ export const InboundLinesHeader: React.FC<{
   return (
     <div className="flex items-center justify-between gap-4">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">
-          收货明细（商品 / 单位 / 批次 / 日期 / 差异）
-        </h2>
+        <h2 className="text-2xl font-bold text-slate-900">收货明细</h2>
         <div className="mt-1 text-base text-slate-600">
-          提示：有保质期商品提交时会强制要求批次 +（生产/到期日期至少一项）；
-          无保质期商品允许日期为空，批次可留空（系统将自动使用 NOEXP）。
+          此处只展示状态与差异；批次/日期请到“补录中心”处理。
         </div>
       </div>
 
@@ -30,7 +27,7 @@ export const InboundLinesHeader: React.FC<{
             onClick={onReloadTask}
             className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-base text-slate-800 hover:bg-slate-50"
           >
-            刷新任务
+            刷新
           </button>
         )}
 
@@ -60,7 +57,7 @@ export const InboundLinesHeader: React.FC<{
             }
             onClick={() => onChangeViewFilter("mismatch")}
           >
-            仅有差异
+            仅差异
           </button>
 
           <button

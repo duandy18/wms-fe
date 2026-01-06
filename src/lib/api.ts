@@ -3,7 +3,6 @@
 // ============================================================================
 // Access Token 管理：统一使用一个键 WMS_TOKEN
 // ============================================================================
-
 let _accessToken: string | null = null;
 
 // 全系统唯一标准 token 键
@@ -102,7 +101,7 @@ async function request<T>(
   method: HttpMethod,
   path: string,
   body?: unknown,
-  options: RequestInit = {},
+  options: RequestInit = {}
 ): Promise<T> {
   const token = getAccessToken();
 
@@ -141,7 +140,7 @@ async function request<T>(
         errBody ? JSON.stringify(errBody) : resp.statusText
       }`,
       resp.status,
-      errBody,
+      errBody
     );
   }
 
@@ -156,7 +155,6 @@ async function request<T>(
 // ============================================================================
 // 对外暴露的四个标准方法
 // ============================================================================
-
 /**
  * GET 请求：
  * - apiGet(path)                         // 无 query
@@ -167,7 +165,7 @@ async function request<T>(
 export async function apiGet<T>(
   path: string,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -196,7 +194,7 @@ export async function apiPost<T>(
   path: string,
   body: unknown,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -225,7 +223,7 @@ export async function apiPut<T>(
   path: string,
   body: unknown,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -254,7 +252,7 @@ export async function apiPatch<T>(
   path: string,
   body: unknown,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -282,7 +280,7 @@ export async function apiPatch<T>(
 export async function apiDelete<T>(
   path: string,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};

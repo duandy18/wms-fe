@@ -42,12 +42,16 @@ export function useInboundTaskContextModel(c: InboundCockpitController) {
     void loadOptions();
   }, []);
 
-  async function handleSelectPo(e: React.ChangeEvent<HTMLSelectElement>) {
-    const v = e.target.value;
+  async function handleSelectPoId(poId: string) {
+    const v = String(poId ?? "").trim();
     setSelectedPoId(v);
     if (!v) return;
     c.setPoIdInput(v);
     await c.loadPoById();
+  }
+
+  async function handleSelectPoChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    await handleSelectPoId(e.target.value);
   }
 
   async function handleManualLoadPo() {
@@ -64,7 +68,8 @@ export function useInboundTaskContextModel(c: InboundCockpitController) {
     selectedPoId,
     setSelectedPoId,
 
-    handleSelectPo,
+    handleSelectPoId,
+    handleSelectPoChange,
     handleManualLoadPo,
   };
 }

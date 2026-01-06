@@ -169,7 +169,7 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
                 onClick={() => void handleCommitClick()}
                 className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
               >
-                {isCommitted ? "已入库" : !!c.committing ? "提交中…" : "确认入库"}
+                {isCommitted ? "已入库" : c.committing ? "提交中…" : "确认入库"}
               </button>
 
               <button

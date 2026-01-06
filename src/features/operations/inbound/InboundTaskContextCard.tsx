@@ -37,9 +37,10 @@ export const InboundTaskContextCard: React.FC<Props> = ({ c }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-4 text-sm">
-        <div className="space-y-2">
-          {m.mode === "PO" ? (
+      {m.mode === "PO" ? (
+        <div className="space-y-4">
+          {/* ✅ 起点：最近采购单待收清单（整块宽度，必须显眼） */}
+          <div>
             <PurchaseOrderContextPanel
               c={c}
               po={po}
@@ -47,16 +48,25 @@ export const InboundTaskContextCard: React.FC<Props> = ({ c }) => {
               loadingPoOptions={m.loadingPoOptions}
               poOptionsError={m.poOptionsError}
               selectedPoId={m.selectedPoId}
-              onSelectPo={m.handleSelectPo}
+              onSelectPoId={m.handleSelectPoId}
+              onSelectPoChange={m.handleSelectPoChange}
               onManualLoadPo={m.handleManualLoadPo}
             />
-          ) : (
-            <div className="text-xs text-slate-500">退货收货</div>
-          )}
-        </div>
+          </div>
 
-        <ReceiveTaskContextPanel c={c} mode={m.mode} po={po} task={task} />
-      </div>
+          {/* 下一步：收货任务 */}
+          <div>
+            <ReceiveTaskContextPanel c={c} mode={m.mode} po={po} task={task} />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="text-sm text-slate-700">
+            退货收货请从退货任务进入（本页不复用采购收货逻辑）。
+          </div>
+          <ReceiveTaskContextPanel c={c} mode={m.mode} po={po} task={task} />
+        </div>
+      )}
     </section>
   );
 };

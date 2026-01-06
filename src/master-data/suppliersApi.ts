@@ -9,13 +9,12 @@ export interface SupplierBasic {
 }
 
 /**
- * 统一的供应商基础数据接口（给采购 / 商品管理用）：
+ * 采购/收货用：供应商基础数据接口（轻量，不带 contacts）
  *
- * 后端 /suppliers 可能返回：
- * 1) 直接数组：Supplier[]
- * 2) 包装结构：{ ok, data: Supplier[] }
+ * 后端：GET /suppliers/basic
+ * 返回：SupplierBasic[]（数组）
  *
- * 这里做兼容解包，并映射成精简的 SupplierBasic。
+ * 为兼容潜在的 {ok,data} 包装，这里同时支持两种形态。
  */
 export async function fetchSuppliersBasic(): Promise<SupplierBasic[]> {
   type SupplierRaw = {
@@ -33,7 +32,7 @@ export async function fetchSuppliersBasic(): Promise<SupplierBasic[]> {
         data: SupplierRaw[];
       };
 
-  const res = await apiGet<ListResponseCompat>("/suppliers");
+  const res = await apiGet<ListResponseCompat>("/suppliers/basic?active=true");
 
   const list: SupplierRaw[] = Array.isArray(res)
     ? res
