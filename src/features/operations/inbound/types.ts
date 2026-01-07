@@ -32,6 +32,15 @@ export type InboundScanHistoryEntry = {
 
 export type InboundParsedScan = ParsedBarcode;
 
+export type InboundManualDraftSummary = {
+  /** 是否存在“已输入但未记录”的手工收货草稿 */
+  dirty: boolean;
+  /** 草稿涉及行数（仅统计用户有输入的行） */
+  touchedLines: number;
+  /** 草稿合计数量（仅统计用户有输入的行） */
+  totalQty: number;
+};
+
 export interface InboundCockpitController {
   // ===== state =====
   poIdInput: string;
@@ -56,11 +65,17 @@ export interface InboundCockpitController {
   traceId: string;
   activeItemId: number | null;
 
+  /** 手工收货：未落地输入摘要（用于提交入库前的刚性防呆） */
+  manualDraft: InboundManualDraftSummary;
+
   // ===== setters =====
   setPoIdInput: (v: string) => void;
   setTaskIdInput: (v: string) => void;
   setTraceId: (v: string) => void;
   setActiveItemId: (v: number | null) => void;
+
+  /** 手工收货：上报/更新草稿摘要 */
+  setManualDraft: (v: InboundManualDraftSummary) => void;
 
   // ===== actions =====
   loadPoById: (poId?: string) => Promise<void>;

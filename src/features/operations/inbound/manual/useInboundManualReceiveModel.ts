@@ -1,6 +1,6 @@
 // src/features/operations/inbound/manual/useInboundManualReceiveModel.ts
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { InboundCockpitController } from "../types";
 import type { ReceiveTaskLine } from "../../../receive-tasks/api";
 
@@ -24,98 +24,105 @@ function parsePositiveInt(raw: string): number | null {
   return i;
 }
 
+function computeQtyForLine(line: ReceiveTaskLine, raw: string): number | null {
+  const scanned = line.scanned_qty ?? 0;
+  const remaining =
+    line.expected_qty != null ? (line.expected_qty ?? 0) - scanned : 0;
+
+  // 空输入：默认“填剩余”
+  if (raw.trim() === "") {
+    return remaining > 0 ? remaining : null;
+  }
+
+  // 非空：必须是正整数
+  return parsePositiveInt(raw);
+}
+
 export function useInboundManualReceiveModel(c: InboundCockpitController) {
   const task = c.currentTask;
 
   const [qtyInputs, setQtyInputs] = useState<QtyInputMap>({});
   const [error, setError] = useState<string | null>(null);
+
   const [savingItemId, setSavingItemId] = useState<number | null>(null);
+  const [savingAll, setSavingAll] = useState<boolean>(false);
 
   const lines: ReceiveTaskLine[] = useMemo(() => (task ? task.lines : []), [task]);
 
-  // ✅ 仅在任务切换时初始化一次：默认填“剩余应收”（新任务=expected_qty）
-  const initializedTaskIdRef = useRef<number | null>(null);
-
+  // ✅ 当任务切换时，清空本地输入，并同步清空 controller 草稿
   useEffect(() => {
-    if (!task) {
-      initializedTaskIdRef.current = null;
-      setQtyInputs({});
-      return;
-    }
-
-    if (initializedTaskIdRef.current === task.id) return;
-
-    initializedTaskIdRef.current = task.id;
-
-    setQtyInputs((prev) => {
-      // 如果已有用户输入（理论上 task 切换时 prev 会是空，但我们仍做保护）
-      const next: QtyInputMap = { ...prev };
-
-      for (const l of task.lines ?? []) {
-        const expected = l.expected_qty ?? 0;
-        const scanned = l.scanned_qty ?? 0;
-        const remaining = Math.max(expected - scanned, 0);
-
-        // 只有在该行还没被用户输入过时才填默认值
-        if (next[l.item_id] == null) {
-          // remaining 为 0 的行不默认填，避免误点产生 0/无意义提示
-          if (remaining > 0) next[l.item_id] = String(remaining);
-        }
-      }
-
-      return next;
-    });
-
+    setQtyInputs({});
     setError(null);
-  }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    c.setManualDraft({ dirty: false, touchedLines: 0, totalQty: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id]);
 
   const handleQtyChange = (itemId: number, value: string) => {
     setQtyInputs((prev) => ({ ...prev, [itemId]: value }));
   };
 
-  const preview = useMemo(() => {
-    // “本次摘要”只用于展示，不影响任何业务逻辑
+  // ✅ 草稿（只统计用户真实输入的行，用于 commit 前硬阻断）
+  const draft = useMemo(() => {
     let touchedLines = 0;
     let totalQty = 0;
 
     for (const l of lines) {
-      const raw = qtyInputs[l.item_id] ?? "";
-      const scanned = l.scanned_qty ?? 0;
-      const remaining =
-        l.expected_qty != null ? (l.expected_qty ?? 0) - scanned : 0;
+      const raw = (qtyInputs[l.item_id] ?? "").trim();
+      if (!raw) continue;
 
-      // 空输入：默认“填剩余”（与 handleReceive 行为保持一致）
-      const qty = raw.trim()
-        ? parsePositiveInt(raw)
-        : remaining > 0
-        ? remaining
-        : null;
-
-      if (qty && qty > 0) {
+      const qty = parsePositiveInt(raw);
+      if (qty != null && qty > 0) {
         touchedLines += 1;
         totalQty += qty;
       }
     }
 
-    return { touchedLines, totalQty };
+    const dirty = Object.values(qtyInputs).some((v) => (v ?? "").trim() !== "");
+    return { dirty, touchedLines, totalQty };
   }, [lines, qtyInputs]);
+
+  // ✅ 上报草稿到 controller，让 commit 卡可见
+  useEffect(() => {
+    c.setManualDraft(draft);
+  }, [c, draft]);
+
+  // 批量记录预览：沿用“空输入默认剩余应收”的逻辑（用于效率）
+  const prepared = useMemo(() => {
+    const items: Array<{ line: ReceiveTaskLine; qty: number }> = [];
+
+    for (const l of lines) {
+      const raw = qtyInputs[l.item_id] ?? "";
+      const qty = computeQtyForLine(l, raw);
+      if (qty != null && qty > 0) items.push({ line: l, qty });
+    }
+
+    return items;
+  }, [lines, qtyInputs]);
+
+  const preview = useMemo(() => {
+    let touchedLines = 0;
+    let totalQty = 0;
+
+    for (const it of prepared) {
+      touchedLines += 1;
+      totalQty += it.qty;
+    }
+
+    return { touchedLines, totalQty };
+  }, [prepared]);
 
   const handleReceive = async (line: ReceiveTaskLine) => {
     setError(null);
 
-    const raw = qtyInputs[line.item_id] ?? "";
-    const scanned = line.scanned_qty ?? 0;
-    const remaining =
-      line.expected_qty != null ? (line.expected_qty ?? 0) - scanned : 0;
-
-    let qty: number;
-    if (raw.trim() === "") {
-      qty = remaining > 0 ? remaining : 0;
-    } else {
-      qty = Number(raw.trim());
+    if (savingAll) {
+      setError("正在批量记录中，请稍候…");
+      return;
     }
 
-    if (!Number.isFinite(qty) || Math.floor(qty) !== qty || qty <= 0) {
+    const raw = qtyInputs[line.item_id] ?? "";
+    const qty = computeQtyForLine(line, raw);
+
+    if (qty == null || qty <= 0) {
       setError(`「${safeName(line)}」的本次收货数量必须为正整数。`);
       return;
     }
@@ -137,6 +144,39 @@ export function useInboundManualReceiveModel(c: InboundCockpitController) {
     }
   };
 
+  const handleReceiveBatch = async () => {
+    setError(null);
+
+    if (!task) {
+      setError("尚未绑定收货任务，无法批量记录。");
+      return;
+    }
+    if (savingItemId != null || savingAll) return;
+
+    if (prepared.length === 0) {
+      setError("没有可记录的行：请先填写“本次”数量，或保持为空以默认填充剩余应收。");
+      return;
+    }
+
+    setSavingAll(true);
+    try {
+      for (const it of prepared) {
+        await c.manualReceiveLine(it.line.item_id, it.qty);
+
+        setQtyInputs((prev) => {
+          const next = { ...prev };
+          delete next[it.line.item_id];
+          return next;
+        });
+      }
+    } catch (e: unknown) {
+      const err = e as ApiErrorShape;
+      setError(err?.message ?? "批量记录失败（已记录部分行）");
+    } finally {
+      setSavingAll(false);
+    }
+  };
+
   return {
     task,
     lines,
@@ -144,10 +184,13 @@ export function useInboundManualReceiveModel(c: InboundCockpitController) {
     qtyInputs,
     error,
     savingItemId,
+    savingAll,
 
     preview,
+    draft,
 
     handleQtyChange,
     handleReceive,
+    handleReceiveBatch,
   };
 }

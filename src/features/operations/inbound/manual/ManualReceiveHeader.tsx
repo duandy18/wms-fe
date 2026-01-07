@@ -9,7 +9,7 @@ export const ManualReceiveHeader: React.FC = () => {
         <h2 className="text-sm font-semibold text-slate-800">采购单行收货（手工录入）</h2>
         <span className="text-[11px] text-slate-500">
           场景：整箱整托、不便扫码或供应商已给出清单时，可按采购单行直接录入本次收货数量。
-          批次/日期建议在左侧明细里维护；最终校验以服务端 commit 规则为准。
+          批次/日期请在“收货补录”中集中维护；最终校验以服务端提交入库（commit）规则为准。
         </span>
       </div>
 

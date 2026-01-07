@@ -29,6 +29,9 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
     );
   }
 
+  const batchDisabled =
+    !editing || m.savingAll || m.savingItemId != null || m.preview.touchedLines === 0;
+
   return (
     <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between gap-2">
@@ -47,10 +50,13 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
                 type="button"
                 className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
                 onClick={() => setEditing(false)}
+                disabled={m.savingAll || m.savingItemId != null}
               >
                 取消编辑
               </button>
-              <span className="text-[11px] text-slate-500">编辑中</span>
+              <span className="text-[11px] text-slate-500">
+                {m.savingAll ? "批量记录中…" : "编辑中"}
+              </span>
             </>
           ) : (
             <>
@@ -76,6 +82,7 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
           lines={m.lines}
           qtyInputs={m.qtyInputs}
           savingItemId={m.savingItemId}
+          savingAll={m.savingAll}
           onQtyChange={m.handleQtyChange}
           onReceive={(line) => void m.handleReceive(line)}
         />
@@ -85,7 +92,32 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
         <div className="text-[11px] text-slate-500">
           当前为锁定状态：点击“编辑”后才能修改数量并提交。
         </div>
-      ) : null}
+      ) : (
+        <div className="flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="text-[11px] text-slate-700">
+            本次摘要：将记录{" "}
+            <span className="font-mono">{m.preview.touchedLines}</span> 行，共{" "}
+            <span className="font-mono">{m.preview.totalQty}</span> 件。
+            <span className="ml-2 text-slate-500">
+              （空输入默认按“剩余应收”）
+            </span>
+          </div>
+
+          <button
+            type="button"
+            disabled={batchDisabled}
+            onClick={() => void m.handleReceiveBatch()}
+            className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+            title={
+              m.preview.touchedLines === 0
+                ? "没有可记录的行：请先填写数量，或保持为空以默认填充剩余应收"
+                : "一键记录本次（批量）"
+            }
+          >
+            {m.savingAll ? "批量记录中…" : "一键记录本次"}
+          </button>
+        </div>
+      )}
     </section>
   );
 };

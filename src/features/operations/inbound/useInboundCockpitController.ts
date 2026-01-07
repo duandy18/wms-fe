@@ -15,6 +15,7 @@ import type {
 import type {
   InboundCockpitController,
   InboundScanHistoryEntry,
+  InboundManualDraftSummary,
 } from "./types";
 
 import { calcVariance } from "./cockpit/utils";
@@ -33,6 +34,12 @@ import {
 import { updateLineMeta as doUpdateLineMeta } from "./cockpit/lineMeta";
 import { manualReceiveLine as doManualReceiveLine } from "./cockpit/manual";
 import { commit as doCommit } from "./cockpit/commit";
+
+const EMPTY_MANUAL_DRAFT: InboundManualDraftSummary = {
+  dirty: false,
+  touchedLines: 0,
+  totalQty: 0,
+};
 
 export function useInboundCockpitController(): InboundCockpitController {
   const [poIdInput, setPoIdInput] = useState("");
@@ -54,6 +61,11 @@ export function useInboundCockpitController(): InboundCockpitController {
 
   const [traceId, setTraceId] = useState("");
   const [activeItemId, setActiveItemId] = useState<number | null>(null);
+
+  // ✅ 手工收货：未落地输入（草稿）摘要，用于 commit 前硬阻断
+  const [manualDraft, setManualDraft] = useState<InboundManualDraftSummary>(
+    EMPTY_MANUAL_DRAFT,
+  );
 
   const varianceSummary = useMemo(() => calcVariance(currentTask), [currentTask]);
 
@@ -94,6 +106,9 @@ export function useInboundCockpitController(): InboundCockpitController {
       setCommitError,
       setActiveItemId,
     });
+
+    // 任务切换/重新加载时，把手工草稿清空（避免把旧输入带到新任务）
+    setManualDraft(EMPTY_MANUAL_DRAFT);
   }
 
   async function bindTaskById() {
@@ -121,6 +136,8 @@ export function useInboundCockpitController(): InboundCockpitController {
       setCommitError,
       setActiveItemId,
     });
+
+    setManualDraft(EMPTY_MANUAL_DRAFT);
   }
 
   async function createTaskFromPoSelected(
@@ -136,6 +153,8 @@ export function useInboundCockpitController(): InboundCockpitController {
       setCommitError,
       setActiveItemId,
     });
+
+    setManualDraft(EMPTY_MANUAL_DRAFT);
   }
 
   // ========== 扫码 ==========
@@ -158,6 +177,8 @@ export function useInboundCockpitController(): InboundCockpitController {
       setTaskError,
       setCommitError,
     });
+
+    // 扫码会直接更新 task.lines 的实收，不影响手工草稿
   }
 
   // ========== 行内批次元数据更新（批次/日期） ==========
@@ -193,6 +214,9 @@ export function useInboundCockpitController(): InboundCockpitController {
       setCommitError,
       setHistory,
     });
+
+    // 单行/批量记录成功后，由手工模块主动清理输入并同步 manualDraft；
+    // 这里不做推断，避免误清空。
   }
 
   // ========== commit ==========
@@ -232,11 +256,14 @@ export function useInboundCockpitController(): InboundCockpitController {
     traceId,
     activeItemId,
 
+    manualDraft,
+
     // setters
     setPoIdInput,
     setTaskIdInput,
     setTraceId,
     setActiveItemId,
+    setManualDraft,
 
     // actions
     loadPoById,

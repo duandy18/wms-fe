@@ -26,15 +26,13 @@ function normalizeSourceParam(v: string | null): SupplementSourceType {
 const InboundCockpitPage: React.FC = () => {
   const c = useInboundCockpitController();
 
-  const [tab, setTab] = useState<InboundTabKey>("PURCHASE_SCAN");
+  // ✅ 采购收货已合并扫码能力：默认进入 “采购收货”
+  const [tab, setTab] = useState<InboundTabKey>("PURCHASE_MANUAL");
 
   const [sp, setSp] = useSearchParams();
 
   const drawerOpen = sp.get("supplement") === "1";
-  const drawerSource = useMemo(
-    () => normalizeSourceParam(sp.get("source")),
-    [sp],
-  );
+  const drawerSource = useMemo(() => normalizeSourceParam(sp.get("source")), [sp]);
 
   const openDrawer = (source: "purchase" | "return" | "misc") => {
     const next = new URLSearchParams(sp);

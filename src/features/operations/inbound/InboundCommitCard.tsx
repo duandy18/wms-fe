@@ -1,8 +1,5 @@
 // src/features/operations/inbound/InboundCommitCard.tsx
 // Cockpit 提交入库卡片（commit → 真正写库存 + 台账）
-// - 支持 trace_id 输入
-// - 提交前展示差异摘要对话框，列出前几条有差异的行，防误操作
-// - 提交成功后使用 react-router navigate() 跳转到 Trace 页面（不刷新整站）
 
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +22,14 @@ type InboundCommitController = InboundCockpitController & {
 
 interface Props {
   c: InboundCommitController;
+}
+
+function safeLineName(l: { item_name?: string | null; item_sku?: string | null }) {
+  const n = (l.item_name ?? "").trim();
+  if (n) return n;
+  const sku = (l.item_sku ?? "").trim();
+  if (sku) return sku;
+  return "未命名商品";
 }
 
 export const InboundCommitCard: React.FC<Props> = ({ c }) => {
@@ -55,8 +60,14 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
     });
   }, [task]);
 
-  // 硬阻断：已有实收但缺批次（最危险）
+  const topMissingBatch = useMemo(() => missingBatchLines.slice(0, 5), [missingBatchLines]);
+  const topMissingDate = useMemo(() => missingDateLines.slice(0, 5), [missingDateLines]);
+
+  // 硬阻断 1：已有实收但缺批次（最危险）
   const commitBlocked = !isCommitted && missingBatchLines.length > 0;
+
+  // 硬阻断 2：手工收货存在“已输入但未记录”的草稿
+  const manualDraftBlocked = !isCommitted && !!c.manualDraft?.dirty;
 
   const runCommitAndRedirect = async () => {
     const ok = await c.commit();
@@ -70,6 +81,11 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
 
   const handleCommitClick = async () => {
     setBlockedMsg(null);
+
+    if (manualDraftBlocked) {
+      setBlockedMsg("手工收货存在未落地输入：请先“记录/一键记录本次”或清空输入，再提交入库。");
+      return;
+    }
 
     if (commitBlocked) {
       setBlockedMsg("存在“已收但缺批次”的行，请先补录后再提交入库。");
@@ -95,7 +111,7 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
   };
 
   const commitAreaDisabled =
-    isCommitted || !!c.committing || commitBlocked;
+    isCommitted || !!c.committing || commitBlocked || manualDraftBlocked;
 
   return (
     <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 relative">
@@ -141,17 +157,94 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
             </div>
           </div>
 
-          {/* 补录阻断/提醒 */}
+          {/* ✅ 草稿硬阻断提示（比按钮禁用更直观） */}
+          {manualDraftBlocked ? (
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 space-y-1">
+              <div className="font-semibold">检测到手工收货未落地输入，已阻止提交入库</div>
+              <div className="text-[11px] text-rose-800">
+                草稿：<span className="font-mono">{c.manualDraft.touchedLines}</span> 行，共{" "}
+                <span className="font-mono">{c.manualDraft.totalQty}</span> 件。
+                请回到“采购手工收货”点击“一键记录本次”或逐行“记录”，或者清空输入后再提交。
+              </div>
+            </div>
+          ) : null}
+
+          {/* ✅ 补录阻断/提醒：可操作清单 */}
           {commitBlocked ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-              存在需要补录的行（已收但缺批次/日期）。请先{" "}
-              <SupplementLink source="purchase">去补录</SupplementLink>{" "}
-              再提交入库。
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 space-y-2">
+              <div className="font-semibold">
+                已收但缺批次：已触发硬阻断（必须补录后才能提交入库）
+              </div>
+
+              <div className="text-[11px] text-amber-800">
+                影响行数：<span className="font-mono">{missingBatchLines.length}</span> 行。
+                请到 <SupplementLink source="purchase">收货补录</SupplementLink> 补齐批次/日期。
+              </div>
+
+              <ul className="list-disc pl-5 text-[11px] text-amber-800 space-y-1">
+                {topMissingBatch.map((l) => (
+                  <li key={l.id}>
+                    <span className="font-medium">{safeLineName(l)}</span>
+                    <span className="ml-2 text-amber-800/80">
+                      已收 <span className="font-mono">{l.scanned_qty ?? 0}</span>
+                      ，计划{" "}
+                      <span className="font-mono">
+                        {l.expected_qty != null ? l.expected_qty : "-"}
+                      </span>
+                      ，批次为空
+                    </span>
+                  </li>
+                ))}
+                {missingBatchLines.length > topMissingBatch.length ? (
+                  <li className="text-amber-800/80">
+                    还有{" "}
+                    <span className="font-mono">
+                      {missingBatchLines.length - topMissingBatch.length}
+                    </span>{" "}
+                    行未展示…
+                  </li>
+                ) : null}
+              </ul>
+
+              <div className="flex items-center gap-2">
+                <SupplementLink source="purchase">去补录</SupplementLink>
+                <span className="text-[11px] text-amber-800/80">
+                  （补录完成后回到本页再点“确认入库”）
+                </span>
+              </div>
             </div>
           ) : missingDateLines.length > 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
-              提示：有行已收但日期为空。若需要补录，可{" "}
-              <SupplementLink source="purchase">去补录</SupplementLink>。
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800 space-y-2">
+              <div className="font-semibold">提示：已收但日期为空（建议补录）</div>
+
+              <div className="text-[11px] text-slate-700">
+                影响行数：<span className="font-mono">{missingDateLines.length}</span> 行。
+                若业务要求日期完整，可{" "}
+                <SupplementLink source="purchase">去补录</SupplementLink>。
+              </div>
+
+              <ul className="list-disc pl-5 text-[11px] text-slate-700 space-y-1">
+                {topMissingDate.map((l) => (
+                  <li key={l.id}>
+                    <span className="font-medium">{safeLineName(l)}</span>
+                    <span className="ml-2 text-slate-600">
+                      已收 <span className="font-mono">{l.scanned_qty ?? 0}</span>
+                      ，批次{" "}
+                      <span className="font-mono">{(l.batch_code ?? "").trim() || "-"}</span>
+                      ，日期为空
+                    </span>
+                  </li>
+                ))}
+                {missingDateLines.length > topMissingDate.length ? (
+                  <li className="text-slate-600">
+                    还有{" "}
+                    <span className="font-mono">
+                      {missingDateLines.length - topMissingDate.length}
+                    </span>{" "}
+                    行未展示…
+                  </li>
+                ) : null}
+              </ul>
             </div>
           ) : null}
 
@@ -184,8 +277,7 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
               <span className="text-xs text-slate-500 ml-auto">
                 {commitBlocked ? (
                   <>
-                    需要补录？{" "}
-                    <SupplementLink source="purchase">去补录</SupplementLink>
+                    需要补录？ <SupplementLink source="purchase">去补录</SupplementLink>
                   </>
                 ) : (
                   <>

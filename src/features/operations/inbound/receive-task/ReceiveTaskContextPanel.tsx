@@ -97,7 +97,7 @@ export function ReceiveTaskContextPanel(props: {
             {task?.lines?.length ?? 0}
           </div>
           <div className="mt-1 text-[11px] text-emerald-800">
-            已进入执行态：请在下方“收货明细 / 手工收货 / 提交入库”继续操作。需要补录批次/日期？
+            已进入执行态：请在下方优先完成“手工收货”，需要时可展开查看“收货明细”。需要补录批次/日期？
             <SupplementLink source="purchase">去补录</SupplementLink>
           </div>
         </div>

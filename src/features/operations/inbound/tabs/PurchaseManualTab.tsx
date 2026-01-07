@@ -10,7 +10,7 @@ import { PurchaseOrderList } from "../purchase-context";
 import { PurchaseOrderDetailReadonly } from "../purchase-context";
 
 import { ReceiveTaskContextPanel } from "../receive-task";
-import { InboundLinesCard } from "../InboundLinesCard";
+import { InboundScanCard } from "../InboundScanCard";
 import { InboundManualReceiveCard } from "../InboundManualReceiveCard";
 import { InboundCommitCard } from "../InboundCommitCard";
 
@@ -86,7 +86,11 @@ export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({
   );
 
   /**
-   * 右侧：作业动作链
+   * 右侧：作业动作链（统一一个 Tab：既支持扫码定位，也支持手工录入）
+   * 1) 创建/绑定收货任务
+   * 2) 扫码/手输条码定位（同一入口）
+   * 3) 手工收货（录入数量）
+   * 4) 提交入库
    */
   const right = (
     <div className="space-y-4">
@@ -97,14 +101,10 @@ export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({
         <ReceiveTaskContextPanel c={c} mode="PO" po={po} task={task} />
       </section>
 
-      <section className="bg-white border border-slate-200 rounded-xl p-4">
-        <div className="text-sm font-semibold text-slate-800 mb-3">
-          收货明细
-        </div>
-        <InboundLinesCard c={c} metaMode="hint" />
-      </section>
+      <InboundScanCard c={c} />
 
       <InboundManualReceiveCard c={c} />
+
       <InboundCommitCard c={c} />
     </div>
   );

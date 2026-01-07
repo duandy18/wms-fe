@@ -3,7 +3,6 @@
 import React from "react";
 import type { InboundTabKey } from "../inboundTabs";
 import type { InboundCockpitController } from "../types";
-import { PurchaseScanTab } from "./PurchaseScanTab";
 import { PurchaseManualTab } from "./PurchaseManualTab";
 import { ReturnReceiveTab } from "./ReturnReceiveTab";
 import { MiscReceiveTab } from "./MiscReceiveTab";
@@ -13,8 +12,6 @@ export const InboundTabBody: React.FC<{
   c: InboundCockpitController;
 }> = ({ tab, c }) => {
   switch (tab) {
-    case "PURCHASE_SCAN":
-      return <PurchaseScanTab c={c} />;
     case "PURCHASE_MANUAL":
       return <PurchaseManualTab c={c} />;
     case "RETURN":
@@ -22,6 +19,6 @@ export const InboundTabBody: React.FC<{
     case "MISC":
       return <MiscReceiveTab c={c} />;
     default:
-      return <PurchaseScanTab c={c} />;
+      return <PurchaseManualTab c={c} />;
   }
 };

@@ -13,7 +13,7 @@ export const ScanInputCard: React.FC<{
   return (
     <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-800">扫码输入</h2>
+        <h2 className="text-sm font-semibold text-slate-800">条码 / SKU 输入</h2>
         {c.currentTask ? (
           <span className="text-[11px] text-slate-500">
             当前任务：#{c.currentTask.id}，仓库：{c.currentTask.warehouse_id}
@@ -23,9 +23,13 @@ export const ScanInputCard: React.FC<{
         )}
       </div>
 
+      <div className="text-[11px] text-slate-500">
+        支持扫码枪或键盘输入（回车提交）。定位到商品行后，请在下方“采购手工收货”录入数量并记录。
+      </div>
+
       <div className="border border-dashed border-slate-300 rounded-lg p-2">
         <ScanConsole
-          title="收货扫码"
+          title="条码 / SKU（回车提交）"
           modeLabel="收货"
           scanMode="auto"
           onScan={onScan}

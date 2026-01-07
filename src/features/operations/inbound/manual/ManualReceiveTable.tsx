@@ -34,10 +34,11 @@ export const ManualReceiveTable: React.FC<{
 
   qtyInputs: Record<number, string>;
   savingItemId: number | null;
+  savingAll?: boolean;
 
   onQtyChange: (itemId: number, value: string) => void;
   onReceive: (line: ReceiveTaskLine) => void;
-}> = ({ lines, qtyInputs, savingItemId, onQtyChange, onReceive }) => {
+}> = ({ lines, qtyInputs, savingItemId, savingAll = false, onQtyChange, onReceive }) => {
   const rows = useMemo(() => {
     return lines.map((l) => {
       const expected = l.expected_qty != null ? clampInt(l.expected_qty ?? 0) : null;
@@ -46,8 +47,7 @@ export const ManualReceiveTable: React.FC<{
 
       const raw = qtyInputs[l.item_id] ?? "";
       const parsed = parseQtyInput(raw);
-      const thisQty =
-        parsed != null ? parsed : remaining != null && remaining > 0 ? remaining : 0;
+      const thisQty = parsed != null ? parsed : remaining != null && remaining > 0 ? remaining : 0;
 
       const after = received + (thisQty > 0 ? thisQty : 0);
       const variance = expected != null ? after - expected : null;
@@ -122,10 +122,9 @@ export const ManualReceiveTable: React.FC<{
                   ? "少收"
                   : "无计划";
 
-              const varianceText =
-                r.variance == null ? "-" : String(r.variance);
+              const varianceText = r.variance == null ? "-" : String(r.variance);
 
-              const blocked = savingItemId === l.item_id;
+              const blocked = savingAll || savingItemId === l.item_id;
 
               return (
                 <tr key={l.id} className="border-t border-slate-100 align-top">
@@ -133,9 +132,7 @@ export const ManualReceiveTable: React.FC<{
                     <div className="font-medium text-slate-900">
                       {l.item_name ?? "（未命名商品）"}
                     </div>
-                    <div className="text-[11px] text-slate-500">
-                      {l.spec_text ?? "-"}
-                    </div>
+                    <div className="text-[11px] text-slate-500">{l.spec_text ?? "-"}</div>
                   </td>
 
                   <td className="px-2 py-2 text-right font-mono">
@@ -146,9 +143,7 @@ export const ManualReceiveTable: React.FC<{
                   <td className="px-2 py-2 text-right">
                     <input
                       className="w-24 rounded border border-slate-300 px-2 py-1 text-right font-mono bg-white"
-                      placeholder={
-                        r.remaining != null && r.remaining > 0 ? String(r.remaining) : ""
-                      }
+                      placeholder={r.remaining != null && r.remaining > 0 ? String(r.remaining) : ""}
                       value={qtyInputs[l.item_id] ?? ""}
                       onChange={(e) => onQtyChange(l.item_id, e.target.value)}
                       disabled={blocked}
@@ -164,13 +159,11 @@ export const ManualReceiveTable: React.FC<{
                   <td className="px-2 py-2">
                     {r.missingBatch ? (
                       <div className="text-amber-700">
-                        缺批次/日期{" "}
-                        <SupplementLink source="purchase">去补录</SupplementLink>
+                        缺批次/日期 <SupplementLink source="purchase">去补录</SupplementLink>
                       </div>
                     ) : r.missingDate ? (
                       <div className="text-slate-600">
-                        日期未填{" "}
-                        <SupplementLink source="purchase">去补录</SupplementLink>
+                        日期未填 <SupplementLink source="purchase">去补录</SupplementLink>
                       </div>
                     ) : (
                       <div className="text-slate-400">-</div>
@@ -184,7 +177,7 @@ export const ManualReceiveTable: React.FC<{
                       onClick={() => onReceive(l)}
                       className="rounded border border-slate-300 bg-white px-2 py-1 text-[12px] text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                     >
-                      {blocked ? "保存中…" : "记录"}
+                      {savingAll ? "批量中…" : blocked ? "保存中…" : "记录"}
                     </button>
                   </td>
                 </tr>
