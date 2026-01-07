@@ -1,10 +1,15 @@
 // src/features/operations/inbound/purchase-context/PurchaseOrderContextPanel.tsx
 
-import React from "react";
+import React, { useCallback, useState } from "react";
 import type { InboundCockpitController } from "../types";
 import type { PurchaseOrderWithLines } from "../../../purchase-orders/api";
 import { PurchaseOrderList } from "./PurchaseOrderList";
 import { PurchaseOrderDetailReadonly } from "./PurchaseOrderDetailReadonly";
+
+function safeErrMsg(e: unknown, fallback: string) {
+  if (e instanceof Error) return e.message || fallback;
+  return fallback;
+}
 
 export function PurchaseOrderContextPanel(props: {
   c: InboundCockpitController;
@@ -26,6 +31,41 @@ export function PurchaseOrderContextPanel(props: {
   } = props;
 
   const openingId = selectedPoId || c.poIdInput;
+
+  const [refreshingDetail, setRefreshingDetail] = useState(false);
+  const [refreshDetailErr, setRefreshDetailErr] = useState<string | null>(null);
+
+  const handleRefreshDetail = useCallback(async () => {
+    // ✅ 按钮永远可点；这里做“并发保护”
+    if (refreshingDetail) return;
+
+    setRefreshingDetail(true);
+    setRefreshDetailErr(null);
+
+    try {
+      // 1) 优先刷新采购单（po 已在内存中）
+      if (po) {
+        await c.loadPoById(String(po.id));
+      } else if (selectedPoId) {
+        // 2) 还没拿到 po，也允许刷新：用 selectedPoId 拉一次
+        await c.loadPoById(String(selectedPoId));
+      }
+
+      // 3) 若已绑定收货任务，同时刷新任务（右侧/下方同步最新已收/状态）
+      if (c.currentTask) {
+        await c.reloadTask();
+      }
+
+      // 4) 两者都没有时给明确提示（不弹窗）
+      if (!po && !selectedPoId && !c.currentTask) {
+        setRefreshDetailErr("尚未选择采购单/绑定任务，暂无可刷新内容。");
+      }
+    } catch (e: unknown) {
+      setRefreshDetailErr(safeErrMsg(e, "刷新失败"));
+    } finally {
+      setRefreshingDetail(false);
+    }
+  }, [po, selectedPoId, refreshingDetail, c]);
 
   return (
     <div className="space-y-4">
@@ -69,7 +109,16 @@ export function PurchaseOrderContextPanel(props: {
         onSelectPoId={onSelectPoId}
       />
 
-      <PurchaseOrderDetailReadonly po={po} />
+      <PurchaseOrderDetailReadonly
+        po={po}
+        // ✅ 永远提供 onRefresh：按钮永远可点
+        onRefresh={() => void handleRefreshDetail()}
+        refreshing={refreshingDetail}
+        refreshErr={refreshDetailErr}
+        rightHint={
+          c.currentTask ? <span className="text-slate-500">关联任务 #{c.currentTask.id}</span> : null
+        }
+      />
     </div>
   );
 }

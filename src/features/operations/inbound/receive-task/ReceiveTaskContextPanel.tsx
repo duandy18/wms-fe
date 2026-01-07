@@ -24,8 +24,11 @@ export function ReceiveTaskContextPanel(props: {
   mode: InboundMode;
   po: InboundCockpitController["currentPo"];
   task: InboundCockpitController["currentTask"];
+
+  /** 是否显示内层标题（外层已有标题时可关掉），注意：按钮仍会保留 */
+  showTitle?: boolean;
 }) {
-  const { c, mode, po, task } = props;
+  const { c, mode, po, task, showTitle = true } = props;
 
   const v = usePoReceiveVerification(po);
   const p = usePoReceivePlan(po);
@@ -58,32 +61,39 @@ export function ReceiveTaskContextPanel(props: {
     p.planValid &&
     !c.creatingTask;
 
+  const actionBtn =
+    mode === "PO" ? (
+      isTaskForCurrentPo ? (
+        <button
+          type="button"
+          disabled
+          className="rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-600"
+          title="当前采购单已创建收货任务，继续在下方执行收货即可"
+        >
+          已创建任务 #{task?.id}
+        </button>
+      ) : (
+        <button
+          type="button"
+          disabled={!canCreate}
+          onClick={() => void c.createTaskFromPoSelected(selectedLines)}
+          className="rounded-md bg-emerald-600 px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-60"
+        >
+          {c.creatingTask ? "创建中…" : "创建收货任务"}
+        </button>
+      )
+    ) : null;
+
   return (
     <div className="space-y-3">
+      {/* 头部：标题可隐藏，但动作按钮必须保留 */}
       <div className="flex items-center justify-between gap-2">
-        <div className="text-sm font-semibold text-slate-800">收货任务（创建 / 绑定）</div>
-
-        {mode === "PO" ? (
-          isTaskForCurrentPo ? (
-            <button
-              type="button"
-              disabled
-              className="rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-600"
-              title="当前采购单已创建收货任务，继续在下方执行收货即可"
-            >
-              已创建任务 #{task?.id}
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={!canCreate}
-              onClick={() => void c.createTaskFromPoSelected(selectedLines)}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-60"
-            >
-              {c.creatingTask ? "创建中…" : "创建收货任务"}
-            </button>
-          )
-        ) : null}
+        {showTitle ? (
+          <div className="text-sm font-semibold text-slate-800">收货任务（创建 / 绑定）</div>
+        ) : (
+          <div />
+        )}
+        <div className="shrink-0">{actionBtn}</div>
       </div>
 
       {!po && mode === "PO" ? (
@@ -97,7 +107,7 @@ export function ReceiveTaskContextPanel(props: {
             {task?.lines?.length ?? 0}
           </div>
           <div className="mt-1 text-[11px] text-emerald-800">
-            已进入执行态：请在下方优先完成“手工收货”，需要时可展开查看“收货明细”。需要补录批次/日期？
+            已进入执行态：请在下方优先完成“条码/SKU 输入”和“手工收货”。需要补录批次/日期？
             <SupplementLink source="purchase">去补录</SupplementLink>
           </div>
         </div>

@@ -24,20 +24,13 @@ export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({
 
   const openingId = m.selectedPoId || c.poIdInput;
 
-  /**
-   * 左侧：只保留两张“核心卡”
-   * 1) 采购单列表（含加载/错误提示）
-   * 2) 采购单详情（原版，只读）
-   */
   const left = (
     <div className="space-y-4">
-      {/* 核心卡 1：采购单列表 */}
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
         <div className="text-base font-semibold text-slate-900">
           需要收货的采购单
         </div>
 
-        {/* 加载 / 错误 / 重试 */}
         {c.loadingPo ? (
           <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-[12px] text-sky-800">
             正在打开采购单{openingId ? ` #${openingId}` : ""}…
@@ -80,31 +73,21 @@ export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({
         />
       </section>
 
-      {/* 核心卡 2：采购单详情（原版，只读） */}
       <PurchaseOrderDetailReadonly po={po} />
     </div>
   );
 
-  /**
-   * 右侧：作业动作链（统一一个 Tab：既支持扫码定位，也支持手工录入）
-   * 1) 创建/绑定收货任务
-   * 2) 扫码/手输条码定位（同一入口）
-   * 3) 手工收货（录入数量）
-   * 4) 提交入库
-   */
   const right = (
     <div className="space-y-4">
       <section className="bg-white border border-slate-200 rounded-xl p-4">
         <div className="text-sm font-semibold text-slate-800 mb-3">
-          收货任务（创建 / 绑定）
+          创建收货任务
         </div>
-        <ReceiveTaskContextPanel c={c} mode="PO" po={po} task={task} />
+        <ReceiveTaskContextPanel c={c} mode="PO" po={po} task={task} showTitle={false} />
       </section>
 
       <InboundScanCard c={c} />
-
       <InboundManualReceiveCard c={c} />
-
       <InboundCommitCard c={c} />
     </div>
   );

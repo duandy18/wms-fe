@@ -23,6 +23,14 @@ function normalizeSourceParam(v: string | null): SupplementSourceType {
   return "PURCHASE";
 }
 
+function parsePositiveInt(v: string | null): number | null {
+  if (!v) return null;
+  const n = Number(String(v).trim());
+  if (!Number.isFinite(n)) return null;
+  const x = Math.floor(n);
+  return x > 0 ? x : null;
+}
+
 const InboundCockpitPage: React.FC = () => {
   const c = useInboundCockpitController();
 
@@ -34,10 +42,22 @@ const InboundCockpitPage: React.FC = () => {
   const drawerOpen = sp.get("supplement") === "1";
   const drawerSource = useMemo(() => normalizeSourceParam(sp.get("source")), [sp]);
 
+  const currentTaskId = c.currentTask?.id ?? null;
+  const taskIdFromUrl = useMemo(() => parsePositiveInt(sp.get("task_id")), [sp]);
+  const drawerTaskId = taskIdFromUrl ?? currentTaskId;
+
   const openDrawer = (source: "purchase" | "return" | "misc") => {
     const next = new URLSearchParams(sp);
     next.set("supplement", "1");
     next.set("source", source);
+
+    // ✅ 抽屉口径必须可复现：写入 task_id，避免刷新/直达时串历史任务
+    if (currentTaskId != null && Number.isFinite(currentTaskId) && currentTaskId > 0) {
+      next.set("task_id", String(currentTaskId));
+    } else {
+      next.delete("task_id");
+    }
+
     setSp(next);
   };
 
@@ -45,6 +65,7 @@ const InboundCockpitPage: React.FC = () => {
     const next = new URLSearchParams(sp);
     next.delete("supplement");
     next.delete("source");
+    next.delete("task_id");
     setSp(next);
   };
 
@@ -69,6 +90,7 @@ const InboundCockpitPage: React.FC = () => {
       <InboundSupplementDrawer
         open={drawerOpen}
         initialSourceType={drawerSource}
+        taskId={drawerTaskId}
         onClose={closeDrawer}
       />
     </div>
