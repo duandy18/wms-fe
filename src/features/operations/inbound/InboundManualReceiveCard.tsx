@@ -1,9 +1,6 @@
 // src/features/operations/inbound/InboundManualReceiveCard.tsx
-// 采购单行收货卡片（手工录入）
-// - 只负责录入数量；批次/日期补录移到独立的“收货补录”页面
-// - 作业态：默认锁定，点“编辑”才允许修改，避免误触
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { InboundCockpitController } from "./types";
 import { useInboundManualReceiveModel } from "./manual/useInboundManualReceiveModel";
 import { ManualReceiveHeader } from "./manual/ManualReceiveHeader";
@@ -17,6 +14,11 @@ interface Props {
 export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
   const m = useInboundManualReceiveModel(c);
   const [editing, setEditing] = useState<boolean>(false);
+
+  const activeLine = useMemo(() => {
+    if (c.activeItemId == null) return null;
+    return (m.lines || []).find((x) => x.item_id === c.activeItemId) ?? null;
+  }, [c.activeItemId, m.lines]);
 
   if (!m.task) {
     return (
@@ -32,15 +34,50 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
   const batchDisabled =
     !editing || m.savingAll || m.savingItemId != null || m.preview.touchedLines === 0;
 
+  const hardCount = m.supplementCounts.hardCount;
+  const softCount = m.supplementCounts.softCount;
+
   return (
     <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-start justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-800">采购手工收货</h2>
+
           <div className="text-[11px] text-slate-500">
             本页只录入“本次收货数量”。批次/日期请到「
-            <SupplementLink source="purchase">收货补录</SupplementLink>」集中处理。
+            <SupplementLink source="purchase" taskId={m.taskId}>收货补录</SupplementLink>」集中处理。
           </div>
+
+          <div className="mt-1 text-[11px] text-slate-600 flex flex-wrap items-center gap-2">
+            {m.suppLoading ? (
+              <span className="text-slate-500">补录提示加载中…</span>
+            ) : m.suppErr ? (
+              <span className="text-rose-700">补录提示加载失败：{m.suppErr}</span>
+            ) : (
+              <>
+                <span>
+                  必须补录：<span className="font-mono text-amber-700">{hardCount}</span> 行
+                </span>
+                <span className="text-slate-400">·</span>
+                <span>
+                  建议补录：<span className="font-mono text-slate-700">{softCount}</span> 行
+                </span>
+                <span className="text-slate-400">·</span>
+                <SupplementLink source="purchase" taskId={m.taskId}>去补录</SupplementLink>
+              </>
+            )}
+          </div>
+
+          {activeLine ? (
+            <div className="mt-1 text-[11px] text-sky-700">
+              已定位到：<span className="font-medium">{activeLine.item_name ?? "未命名商品"}</span>
+              <span className="ml-2 text-sky-700/80">（点击表格行可切换定位）</span>
+            </div>
+          ) : (
+            <div className="mt-1 text-[11px] text-slate-500">
+              未定位：可在上方“条码 / SKU 输入”扫码或键盘回车提交，系统会自动定位到对应商品行。
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -83,8 +120,13 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
           qtyInputs={m.qtyInputs}
           savingItemId={m.savingItemId}
           savingAll={m.savingAll}
+          activeItemId={c.activeItemId}
+          taskId={m.taskId}
+          hardMissingByItemId={m.hardMissingByItemId}
+          softMissingByItemId={m.softMissingByItemId}
           onQtyChange={m.handleQtyChange}
           onReceive={(line) => void m.handleReceive(line)}
+          onRowClick={(line) => c.setActiveItemId(line.item_id)}
         />
       </div>
 
@@ -98,9 +140,6 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
             本次摘要：将记录{" "}
             <span className="font-mono">{m.preview.touchedLines}</span> 行，共{" "}
             <span className="font-mono">{m.preview.totalQty}</span> 件。
-            <span className="ml-2 text-slate-500">
-              （空输入默认按“剩余应收”）
-            </span>
           </div>
 
           <button
@@ -108,11 +147,7 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
             disabled={batchDisabled}
             onClick={() => void m.handleReceiveBatch()}
             className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
-            title={
-              m.preview.touchedLines === 0
-                ? "没有可记录的行：请先填写数量，或保持为空以默认填充剩余应收"
-                : "一键记录本次（批量）"
-            }
+            title={m.preview.touchedLines === 0 ? "请先在“本次”列填写数量" : "一键记录本次（批量）"}
           >
             {m.savingAll ? "批量记录中…" : "一键记录本次"}
           </button>
