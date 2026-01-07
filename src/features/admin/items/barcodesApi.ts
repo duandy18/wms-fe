@@ -1,11 +1,13 @@
 // src/features/admin/items/barcodesApi.ts
 // 条码管理相关 API 封装
 // 对应后端 app/api/routers/item_barcodes.py：
-//  - POST   /item-barcodes              创建条码
-//  - GET    /item-barcodes/item/{id}    按商品读取条码列表
+//  - POST   /item-barcodes                   创建条码
+//  - GET    /item-barcodes/item/{id}         按商品读取条码列表
+//  - GET    /item-barcodes/by-items          按 item_ids 批量读取条码（用于 itemsStore 避免 N+1）
 //  - POST   /item-barcodes/{id}/set-primary  设为主条码
-//  - PATCH  /item-barcodes/{id}         更新条码（暂未在前端使用）
-//  - DELETE /item-barcodes/{id}         删除条码
+//  - POST   /item-barcodes/{id}/primary      兼容旧路径（可选）
+//  - PATCH  /item-barcodes/{id}              更新条码（暂未在前端使用）
+//  - DELETE /item-barcodes/{id}              删除条码
 
 import { apiGet, apiPost, apiDelete } from "../../../lib/api";
 
@@ -21,11 +23,30 @@ export interface ItemBarcode {
 }
 
 /** 按 item_id 获取条码列表 */
-export async function fetchItemBarcodes(
-  itemId: number,
-): Promise<ItemBarcode[]> {
+export async function fetchItemBarcodes(itemId: number): Promise<ItemBarcode[]> {
   if (!itemId || itemId <= 0) throw new Error("invalid item_id");
   return apiGet<ItemBarcode[]>(`/item-barcodes/item/${itemId}`);
+}
+
+/**
+ * 批量读取条码（避免 itemsStore N+1）
+ * - activeOnly 默认 true：与后端默认一致（只返回 active=true）
+ * - 返回扁平数组，前端按 item_id 分组即可
+ */
+export async function fetchBarcodesByItems(
+  itemIds: number[],
+  activeOnly: boolean = true,
+): Promise<ItemBarcode[]> {
+  const ids = (itemIds || [])
+    .map((x) => Number(x))
+    .filter((x) => Number.isFinite(x) && x > 0);
+
+  if (ids.length === 0) return [];
+
+  return apiGet<ItemBarcode[]>("/item-barcodes/by-items", {
+    item_id: ids, // ✅ 重复 key：item_id=1&item_id=2...
+    active_only: activeOnly,
+  });
 }
 
 /** 新增条码 */

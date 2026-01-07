@@ -3,7 +3,6 @@
 // ============================================================================
 // Access Token 管理：统一使用一个键 WMS_TOKEN
 // ============================================================================
-
 let _accessToken: string | null = null;
 
 // 全系统唯一标准 token 键
@@ -60,39 +59,71 @@ export class ApiError extends Error {
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-export type QueryParams = Record<
-  string,
-  string | number | boolean | null | undefined
->;
+export type QueryPrimitive = string | number | boolean | null | undefined;
+export type QueryValue = QueryPrimitive | QueryPrimitive[];
+export type QueryParams = Record<string, QueryValue>;
 
 // 把 query params 拼到 path 上（不包含 API_BASE_URL）
+// - 支持重复 key：当 value 为数组时，使用 search.append(k, ...) 多次追加
 function buildPathWithQuery(path: string, params?: QueryParams): string {
   if (!params) return path;
 
   const search = new URLSearchParams();
+
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === null) continue;
+
+    if (Array.isArray(v)) {
+      for (const vv of v) {
+        if (vv === undefined || vv === null) continue;
+        search.append(k, String(vv));
+      }
+      continue;
+    }
+
     search.append(k, String(v));
   }
+
   const qs = search.toString();
   if (!qs) return path;
 
   return path + (path.includes("?") ? "&" : "?") + qs;
 }
 
+function isValidFetchMode(v: unknown): v is RequestMode {
+  return (
+    v === "cors" ||
+    v === "no-cors" ||
+    v === "same-origin" ||
+    v === "navigate"
+  );
+}
+
 // 判断一个对象是否像 RequestInit（用于重载识别）
+// 关键：不能因为出现 “mode” 字段就误判（业务 query 里经常有 mode=hard/soft）
 function looksLikeRequestInit(x: unknown): x is RequestInit {
   if (!x || typeof x !== "object") return false;
   const o = x as RequestInit;
-  return (
+
+  // 强特征：这些字段几乎只会出现在 RequestInit
+  if (
     "headers" in o ||
     "credentials" in o ||
-    "mode" in o ||
     "cache" in o ||
     "redirect" in o ||
     "referrer" in o ||
     "integrity" in o
-  );
+  ) {
+    return true;
+  }
+
+  // 弱特征：mode 只有在值是合法 RequestMode 时才算 RequestInit
+  if ("mode" in o) {
+    const m = (o as { mode?: unknown }).mode;
+    return isValidFetchMode(m);
+  }
+
+  return false;
 }
 
 // ============================================================================
@@ -102,7 +133,7 @@ async function request<T>(
   method: HttpMethod,
   path: string,
   body?: unknown,
-  options: RequestInit = {},
+  options: RequestInit = {}
 ): Promise<T> {
   const token = getAccessToken();
 
@@ -141,7 +172,7 @@ async function request<T>(
         errBody ? JSON.stringify(errBody) : resp.statusText
       }`,
       resp.status,
-      errBody,
+      errBody
     );
   }
 
@@ -156,18 +187,17 @@ async function request<T>(
 // ============================================================================
 // 对外暴露的四个标准方法
 // ============================================================================
-
 /**
  * GET 请求：
  * - apiGet(path)                         // 无 query
- * - apiGet(path, params)                 // 以 params 拼 query
+ * - apiGet(path, params)                 // 以 params 拼 query（支持数组=重复 key）
  * - apiGet(path, params, requestInit)    // query + 额外 fetch 选项
  * - apiGet(path, requestInit)            // 兼容旧签名：第二个参数当成 RequestInit
  */
 export async function apiGet<T>(
   path: string,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -196,7 +226,7 @@ export async function apiPost<T>(
   path: string,
   body: unknown,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -225,7 +255,7 @@ export async function apiPut<T>(
   path: string,
   body: unknown,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -254,7 +284,7 @@ export async function apiPatch<T>(
   path: string,
   body: unknown,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -282,7 +312,7 @@ export async function apiPatch<T>(
 export async function apiDelete<T>(
   path: string,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit,
+  maybeOptions?: RequestInit
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};

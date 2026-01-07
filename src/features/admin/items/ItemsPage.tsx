@@ -10,34 +10,20 @@
 // 本页的扫码逻辑：
 // - 扫码台使用 useScanProbe("items") 调用 /scan(mode=pick, probe=true) 做条码体检
 // - ItemsStore 中的 barcodeIndex 用于条码 → item_id 唯一反查
-// - 若条码唯一绑定：自动选中商品行 + 滚动定位 + 展开条码管理面板
+// - 若条码唯一绑定：自动选中商品行 + 展开条码管理面板
 
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useItemsStore } from "./itemsStore";
 import ItemsFormSection from "./ItemsFormSection";
-import { ItemsTable } from "./ItemsTable";
 import { ItemBarcodesPanel } from "./ItemBarcodesPanel";
-import { ScanConsole } from "../../../components/scan/ScanConsole";
 import { useScanProbe } from "../../operations/scan/useScanProbe";
 
-type ScanProbeError = {
-  stage?: string;
-  error?: string;
-};
-
-interface ScanProbeResponse {
-  ok: boolean;
-  committed: boolean;
-  scan_ref: string;
-  event_id?: number | null;
-  source?: string | null;
-  item_id?: number | null;
-  qty?: number | null;
-  batch_code?: string | null;
-  evidence?: Array<Record<string, unknown>>;
-  errors?: ScanProbeError[];
-}
+import type { BindInfo, ProbeInfo, ScanProbeResponse, ItemsStats } from "./page/types";
+import { StatsCards } from "./page/StatsCards";
+import { BarcodeScanCard } from "./page/BarcodeScanCard";
+import { ProbeResultSection } from "./page/ProbeResultSection";
+import { ItemsListCard } from "./page/ItemsListCard";
 
 const ItemsPage: React.FC = () => {
   const location = useLocation();
@@ -134,7 +120,7 @@ const ItemsPage: React.FC = () => {
   }, [scannedBarcode, barcodeIndex, items, setSelectedItem, setPanelOpen]);
 
   // --- 5. 顶部主条码覆盖率统计 ---
-  const stats = useMemo(() => {
+  const stats: ItemsStats = useMemo(() => {
     const total = items.length;
     const withPrimary = Object.keys(primaryBarcodes).length;
     return {
@@ -152,29 +138,29 @@ const ItemsPage: React.FC = () => {
   };
 
   // --- 7. 构造条码绑定信息 ---
-  const bindInfo = useMemo(() => {
+  const bindInfo: BindInfo | null = useMemo(() => {
     if (!scannedBarcode) return null;
     const owners = barcodeOwners[scannedBarcode] || [];
     if (owners.length === 0) {
       return {
-        status: "UNBOUND" as const,
+        status: "UNBOUND",
         msg: "当前系统中尚未绑定此条码，可在下方商品列表中选择目标商品，并在条码管理卡片中新增绑定。",
       };
     }
     if (owners.length === 1) {
       return {
-        status: "BOUND" as const,
+        status: "BOUND",
         msg: `已在主数据中绑定到商品 ID ${owners[0]}，可在条码管理卡片中查看/调整。`,
       };
     }
     return {
-      status: "CONFLICT" as const,
+      status: "CONFLICT",
       msg: `该条码被绑定到多个商品：${owners.join(", ")}，建议尽快排查并修复（严重冲突）。`,
     };
   }, [scannedBarcode, barcodeOwners]);
 
   // --- 8. 构造 probe 一致性提示 ---
-  const probeInfo = useMemo(() => {
+  const probeInfo: ProbeInfo | null = useMemo(() => {
     if (!scannedBarcode || !probeResult) return null;
 
     const owners = barcodeOwners[scannedBarcode] || [];
@@ -182,55 +168,32 @@ const ItemsPage: React.FC = () => {
 
     if (!backendId && owners.length === 0) {
       return {
-        level: "ok" as const,
+        level: "ok",
         msg: "后端 /scan 未解析出 item_id，主数据中也未绑定此条码，两边一致。",
       };
     }
 
     if (backendId && owners.length === 1 && owners[0] === backendId) {
       return {
-        level: "ok" as const,
+        level: "ok",
         msg: `后端 /scan 解析 item_id=${backendId}，与主数据绑定完全一致。`,
       };
     }
 
     if (backendId && owners.length === 0) {
       return {
-        level: "warn" as const,
+        level: "warn",
         msg: `后端 /scan 解析 item_id=${backendId}，但主数据中未绑定此条码，可考虑在条码管理中将其绑定到该商品，或检查条码规则。`,
       };
     }
 
     return {
-      level: "error" as const,
+      level: "error",
       msg: `后端 /scan 解析 item_id=${backendId}，但主数据中绑定商品为：${
         owners.length ? owners.join(", ") : "无"
       }，存在不一致，需尽快排查。`,
     };
   }, [scannedBarcode, probeResult, barcodeOwners]);
-
-  // ===== 状态筛选按钮 =====
-  const btnBase = "rounded px-2 py-1 border text-[11px] font-medium";
-  const clsAll =
-    btnBase +
-    " " +
-    (filter === "all"
-      ? "border-slate-900 bg-slate-900 text-white"
-      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50");
-
-  const clsEnabled =
-    btnBase +
-    " " +
-    (filter === "enabled"
-      ? "border-emerald-700 bg-emerald-700 text-white"
-      : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100");
-
-  const clsDisabled =
-    btnBase +
-    " " +
-    (filter === "disabled"
-      ? "border-red-700 bg-red-700 text-white"
-      : "border-red-300 bg-red-50 text-red-800 hover:bg-red-100");
 
   return (
     <div className="space-y-6 p-6">
@@ -243,135 +206,31 @@ const ItemsPage: React.FC = () => {
         </p>
       </header>
 
-      {/* 顶部统计 */}
-      <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-          <div className="text-[11px] text-slate-500">商品总数</div>
-          <div className="mt-1 text-xl font-semibold text-slate-900">{stats.total}</div>
-        </div>
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm">
-          <div className="text-[11px] text-emerald-700">已配置主条码</div>
-          <div className="mt-1 text-xl font-semibold text-emerald-900">{stats.withPrimary}</div>
-        </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
-          <div className="text-[11px] text-amber-700">未配置主条码（入库时会失败）</div>
-          <div className="mt-1 text-xl font-semibold text-amber-900">{stats.withoutPrimary}</div>
-        </div>
-      </section>
+      <StatsCards stats={stats} />
 
-      {/* 条码扫描台 */}
-      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">Items 条码扫描台</h2>
-        <p className="text-[11px] text-slate-500">
-          扫描任意条码，系统会调用 /scan(mode=pick, probe=true) 做一次条码体检，
-          并在下方展示主数据绑定情况。你可以在条码管理卡片中完成绑定或调整。
-        </p>
-        <ScanConsole
-          title="条码扫描（barcode → item）"
-          modeLabel="items-page"
-          scanMode="auto"
-          onScan={handleScan}
+      <BarcodeScanCard onScan={handleScan} />
+
+      {scannedBarcode ? (
+        <ProbeResultSection
+          scannedBarcode={scannedBarcode}
+          bindInfo={bindInfo}
+          probeLoading={probeLoading}
+          probeError={probeError}
+          probeResult={probeResult}
+          probeInfo={probeInfo}
+          barcodeOwners={barcodeOwners}
         />
-      </section>
+      ) : null}
 
-      {/* 扫描结果 + 条码体检 */}
-      {scannedBarcode && (
-        <section className="space-y-2">
-          <div className="space-y-1 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] text-sky-800">
-            <div>
-              当前条码： <span className="font-mono">{scannedBarcode}</span>
-            </div>
-            {bindInfo && <div>{bindInfo.msg}</div>}
-          </div>
-
-          <div className="space-y-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-700">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-800">条码体检（/scan probe）</span>
-              {probeLoading && <span className="text-[11px] text-slate-500">调用 /scan 中…</span>}
-            </div>
-
-            {probeError && <div className="mt-1 text-[11px] text-red-600">{probeError}</div>}
-
-            {probeResult && (
-              <>
-                <div>
-                  后端解析 item_id： <span className="font-mono">{probeResult.item_id ?? "(未解析)"}</span>
-                </div>
-                <div>
-                  主数据绑定 item_ids：{" "}
-                  <span className="font-mono">
-                    {(barcodeOwners[scannedBarcode] || []).length > 0
-                      ? (barcodeOwners[scannedBarcode] || []).join(", ")
-                      : "(无)"}
-                  </span>
-                </div>
-                {probeInfo && (
-                  <div
-                    className={
-                      "mt-1 " +
-                      (probeInfo.level === "ok"
-                        ? "text-emerald-700"
-                        : probeInfo.level === "warn"
-                        ? "text-amber-700"
-                        : "text-red-700")
-                    }
-                  >
-                    {probeInfo.msg}
-                  </div>
-                )}
-                {probeResult.errors && probeResult.errors.length > 0 && (
-                  <div className="mt-1 text-[11px] text-red-600">
-                    /scan 报告错误：
-                    {probeResult.errors.map((e: ScanProbeError, idx: number) => (
-                      <div key={idx}>
-                        [{e.stage ?? "stage"}] {e.error ?? ""}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {!probeError && !probeResult && !probeLoading && (
-              <div className="mt-1 text-[11px] text-slate-500">尚未拿到 /scan 体检结果。</div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* 错误提示 */}
-      {error && (
+      {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
           {error}
         </div>
-      )}
+      ) : null}
 
-      {/* 新建商品表单 */}
       <ItemsFormSection />
 
-      {/* 商品列表 */}
-      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-800">商品列表</h2>
-
-          <div className="flex flex-col items-end gap-1 text-[11px] text-slate-600">
-            <div className="flex items-center gap-2">
-              <span>状态筛选：</span>
-              <button type="button" className={clsAll} onClick={() => setFilter("all")}>
-                全部
-              </button>
-              <button type="button" className={clsEnabled} onClick={() => setFilter("enabled")}>
-                有效
-              </button>
-              <button type="button" className={clsDisabled} onClick={() => setFilter("disabled")}>
-                无效
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <ItemsTable />
-      </section>
+      <ItemsListCard filter={filter} onChangeFilter={setFilter} />
 
       {/* ✅ 直接渲染条码管理面板：不再包外圈 */}
       <ItemBarcodesPanel />

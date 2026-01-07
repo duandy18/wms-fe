@@ -55,8 +55,8 @@ export const BarChartSimple: React.FC<BarChartSimpleProps> = ({
             tick={{ fontSize: 10, fill: "#6b7280" }}
           />
           <Tooltip
-            formatter={(value: number | string) => [
-              `${value}${valueSuffix}`,
+            formatter={(value: number | string | undefined) => [
+              `${value ?? 0}${valueSuffix}`,
               "值",
             ]}
             labelFormatter={(l) => `${l}`}

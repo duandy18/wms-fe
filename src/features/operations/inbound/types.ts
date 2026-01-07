@@ -1,87 +1,112 @@
 // src/features/operations/inbound/types.ts
-// Inbound Cockpit 相关类型定义
 
-import type { ParsedBarcode } from "../scan/barcodeParser";
 import type { PurchaseOrderWithLines } from "../../purchase-orders/api";
-import type { ReceiveTask } from "../../receive-tasks/api";
+import type {
+  ReceiveTaskLine,
+  ReceiveTask,
+  ReceiveTaskCreateFromPoSelectedLinePayload,
+} from "../../receive-tasks/api";
+import type { ParsedBarcode } from "../scan/barcodeParser";
 
-export interface InboundScanHistoryEntry {
+export type InboundTabKey =
+  | "PURCHASE_MANUAL"
+  | "PURCHASE_SCAN"
+  | "RETURN"
+  | "MISC";
+
+export type InboundVarianceSummary = {
+  totalExpected: number;
+  totalScanned: number;
+  totalVariance: number;
+};
+
+export type InboundScanHistoryEntry = {
   id: number;
-  ts: string; // 本地时间字符串
+  ts: string;
   barcode: string;
   item_id: number | null;
   qty: number;
   ok: boolean;
   error?: string;
-}
+};
 
-export interface InboundVarianceSummary {
-  totalExpected: number;
-  totalScanned: number;
-  totalVariance: number;
-}
+export type InboundParsedScan = ParsedBarcode;
+
+export type InboundManualDraftSummary = {
+  /** 是否存在“已输入但未记录”的手工收货草稿 */
+  dirty: boolean;
+  /** 草稿涉及行数（仅统计用户有输入的行） */
+  touchedLines: number;
+  /** 草稿合计数量（仅统计用户有输入的行） */
+  totalQty: number;
+};
 
 export interface InboundCockpitController {
-  // PO 部分
+  // ===== state =====
   poIdInput: string;
   currentPo: PurchaseOrderWithLines | null;
   loadingPo: boolean;
   poError: string | null;
 
-  // 收货任务部分
   taskIdInput: string;
   currentTask: ReceiveTask | null;
   loadingTask: boolean;
   creatingTask: boolean;
   taskError: string | null;
 
-  // 扫码与解析
   lastParsed: ParsedBarcode | null;
   history: InboundScanHistoryEntry[];
 
-  // commit 状态
   committing: boolean;
   commitError: string | null;
 
-  // 差异汇总
   varianceSummary: InboundVarianceSummary;
 
-  // trace 维度（Cockpit 也可以写 trace_id）
   traceId: string;
-
-  // 当前高亮的 item（最近一次成功扫码 / 操作的行）
   activeItemId: number | null;
 
-  // setters
+  /** 手工收货：未落地输入摘要（用于提交入库前的刚性防呆） */
+  manualDraft: InboundManualDraftSummary;
+
+  // ===== setters =====
   setPoIdInput: (v: string) => void;
   setTaskIdInput: (v: string) => void;
   setTraceId: (v: string) => void;
-  setActiveItemId: (id: number | null) => void;
+  setActiveItemId: (v: number | null) => void;
 
-  // actions - PO / 任务
-  loadPoById: () => Promise<void> | void;
-  createTaskFromPo: () => Promise<void> | void;
-  bindTaskById: () => Promise<void> | void;
-  reloadTask: () => Promise<void> | void;
+  /** 手工收货：上报/更新草稿摘要 */
+  setManualDraft: (v: InboundManualDraftSummary) => void;
 
-  // actions - 扫码
+  // ===== actions =====
+  loadPoById: (poId?: string) => Promise<void>;
+
+  /** 旧：整单/剩余应收创建（保留备用） */
+  createTaskFromPo: () => Promise<void>;
+
+  /** 新：选择式创建（本次到货批次） */
+  createTaskFromPoSelected: (
+    lines: ReceiveTaskCreateFromPoSelectedLinePayload[],
+  ) => Promise<void>;
+
+  bindTaskById: () => Promise<void>;
+  reloadTask: () => Promise<void>;
+
   handleScan: (barcode: string) => void;
-  handleScanParsed: (parsed: ParsedBarcode) => Promise<void> | void;
+  handleScanParsed: (parsed: ParsedBarcode) => Promise<void>;
 
-  // actions - 行内批次元数据更新（批次 / 日期）
   updateLineMeta: (
     itemId: number,
     meta: {
-      batch_code?: string;
-      production_date?: string;
-      expiry_date?: string;
+      batch_code?: string | undefined;
+      production_date?: string | undefined;
+      expiry_date?: string | undefined;
     },
-  ) => Promise<void> | void;
+  ) => Promise<void>;
 
-  // actions - 采购单行收货（手工录入）
-  manualReceiveLine: (itemId: number, qty: number) => Promise<void> | void;
-
-  // actions - commit
-  // 返回 true 表示提交成功，可用于后续自动跳转 Trace
+  manualReceiveLine: (itemId: number, qty: number) => Promise<void>;
   commit: () => Promise<boolean>;
+
+  scanHistory?: InboundScanHistoryEntry[];
 }
+
+export type { ReceiveTaskLine };

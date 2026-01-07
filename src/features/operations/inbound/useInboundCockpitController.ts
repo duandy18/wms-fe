@@ -1,77 +1,49 @@
 // src/features/operations/inbound/useInboundCockpitController.ts
 // =====================================================
 //  Inbound Cockpit - 核心中控
-//
-// 重要约定（与后端规则对齐）：
-// - 有保质期商品：后端 commit 会强制 batch_code + (production_date/expiry_date 至少一项)
-// - 无保质期商品：后端允许日期为空；batch_code 为空会自动归入 NOEXP
-//
-// 因此：前端 controller 不再用“缺批次/缺日期”硬阻断 commit，避免把无保质期商品卡死。
-// 最终校验以服务端为准，前端仅展示服务端错误信息。
 // =====================================================
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ParsedBarcode } from "../scan/barcodeParser";
 
-import {
-  fetchPurchaseOrderV2,
-  type PurchaseOrderWithLines,
-} from "../../purchase-orders/api";
-
-import {
-  fetchReceiveTask,
-  recordReceiveScan,
-  commitReceiveTask,
-  createReceiveTaskFromPo,
-  type ReceiveTask,
+import type { PurchaseOrderWithLines } from "../../purchase-orders/api";
+import type {
+  ReceiveTask,
+  ReceiveTaskCreateFromPoSelectedLinePayload,
 } from "../../receive-tasks/api";
 
 import type {
   InboundCockpitController,
   InboundScanHistoryEntry,
-  InboundVarianceSummary,
+  InboundManualDraftSummary,
 } from "./types";
 
-let nextHistoryId = 1;
+import { calcVariance } from "./cockpit/utils";
+import { loadPoById as doLoadPoById } from "./cockpit/po";
+import {
+  internalLoadTask as doInternalLoadTask,
+  bindTaskById as doBindTaskById,
+  reloadTask as doReloadTask,
+  createTaskFromPo as doCreateTaskFromPo,
+  createTaskFromPoSelected as doCreateTaskFromPoSelected,
+} from "./cockpit/task";
+import {
+  handleScan as doHandleScan,
+  handleScanParsed as doHandleScanParsed,
+} from "./cockpit/scan";
+import { updateLineMeta as doUpdateLineMeta } from "./cockpit/lineMeta";
+import { manualReceiveLine as doManualReceiveLine } from "./cockpit/manual";
+import { commit as doCommit } from "./cockpit/commit";
 
-const fmt = (d: Date) => d.toISOString().replace("T", " ").slice(0, 19);
-
-function calcVariance(task: ReceiveTask | null): InboundVarianceSummary {
-  if (!task) return { totalExpected: 0, totalScanned: 0, totalVariance: 0 };
-
-  let expected = 0;
-  let scanned = 0;
-
-  for (const l of task.lines) {
-    scanned += l.scanned_qty;
-    if (l.expected_qty != null) expected += l.expected_qty;
-  }
-
-  return {
-    totalExpected: expected,
-    totalScanned: scanned,
-    totalVariance: scanned - expected,
-  };
-}
-
-type ApiErrorShape = {
-  message?: string;
+const EMPTY_MANUAL_DRAFT: InboundManualDraftSummary = {
+  dirty: false,
+  touchedLines: 0,
+  totalQty: 0,
 };
-
-function getErrMsg(err: unknown, fallback: string): string {
-  const e = err as ApiErrorShape;
-  return e?.message ?? fallback;
-}
-
-function makeDefaultTraceId(taskId: number): string {
-  return `inbound:cockpit:${taskId}:${Date.now()}`;
-}
 
 export function useInboundCockpitController(): InboundCockpitController {
   const [poIdInput, setPoIdInput] = useState("");
-  const [currentPo, setCurrentPo] = useState<PurchaseOrderWithLines | null>(
-    null,
-  );
+  const [currentPo, setCurrentPo] = useState<PurchaseOrderWithLines | null>(null);
   const [loadingPo, setLoadingPo] = useState(false);
   const [poError, setPoError] = useState<string | null>(null);
 
@@ -87,239 +59,141 @@ export function useInboundCockpitController(): InboundCockpitController {
   const [committing, setCommitting] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
 
-  // Cockpit 的 trace_id：提交时写入后台，便于 Trace / Ledger 聚合
   const [traceId, setTraceId] = useState("");
-
-  // 当前高亮 item（最近一次成功 recordReceiveScan 的行）
   const [activeItemId, setActiveItemId] = useState<number | null>(null);
 
-  const varianceSummary = useMemo(
-    () => calcVariance(currentTask),
-    [currentTask],
+  // ✅ 手工收货：未落地输入（草稿）摘要，用于 commit 前硬阻断
+  const [manualDraft, setManualDraft] = useState<InboundManualDraftSummary>(
+    EMPTY_MANUAL_DRAFT,
   );
 
+  const varianceSummary = useMemo(() => calcVariance(currentTask), [currentTask]);
+
   // ========== PO ==========
+  const poLoadSeqRef = useRef(0);
 
-  async function loadPoById() {
-    const raw = poIdInput.trim();
-    if (!raw) {
-      setPoError("请输入采购单 ID");
-      return;
-    }
-    const id = Number(raw);
-    if (!Number.isFinite(id) || id <= 0) {
-      setPoError("采购单 ID 必须为正整数");
-      return;
+  async function loadPoById(poId?: string) {
+    const input = String((poId ?? poIdInput) ?? "").trim();
+    if (poId != null) {
+      setPoIdInput(input);
     }
 
-    setLoadingPo(true);
-    setPoError(null);
-    try {
-      const po = await fetchPurchaseOrderV2(id);
-      setCurrentPo(po);
-    } catch (err: unknown) {
-      console.error("fetchPurchaseOrderV2 error", err);
-      setCurrentPo(null);
-      setPoError(getErrMsg(err, "加载采购单失败"));
-    } finally {
-      setLoadingPo(false);
-    }
+    const seq = ++poLoadSeqRef.current;
+    const isLatest = () => seq === poLoadSeqRef.current;
+
+    const guarded =
+      <T,>(setter: (v: T) => void) =>
+      (v: T) => {
+        if (isLatest()) setter(v);
+      };
+
+    await doLoadPoById({
+      poIdInput: input,
+      setPoError: guarded(setPoError),
+      setLoadingPo: guarded(setLoadingPo),
+      setCurrentPo: guarded(setCurrentPo),
+    });
   }
 
   // ========== 收货任务 ==========
 
   async function internalLoadTask(taskId: number) {
-    setLoadingTask(true);
-    setTaskError(null);
-    try {
-      const t = await fetchReceiveTask(taskId);
-      setCurrentTask(t);
-      setCommitError(null);
-      setActiveItemId(null);
-    } catch (err: unknown) {
-      console.error("fetchReceiveTask error", err);
-      setCurrentTask(null);
-      setTaskError(getErrMsg(err, "加载收货任务失败"));
-    } finally {
-      setLoadingTask(false);
-    }
+    await doInternalLoadTask({
+      taskId,
+      setLoadingTask,
+      setTaskError,
+      setCurrentTask,
+      setCommitError,
+      setActiveItemId,
+    });
+
+    // 任务切换/重新加载时，把手工草稿清空（避免把旧输入带到新任务）
+    setManualDraft(EMPTY_MANUAL_DRAFT);
   }
 
   async function bindTaskById() {
-    const raw = taskIdInput.trim();
-    if (!raw) {
-      setTaskError("请输入收货任务 ID");
-      return;
-    }
-    const id = Number(raw);
-    if (!Number.isFinite(id) || id <= 0) {
-      setTaskError("任务 ID 必须为正整数");
-      return;
-    }
-    await internalLoadTask(id);
+    await doBindTaskById({
+      taskIdInput,
+      setTaskError,
+      onLoad: internalLoadTask,
+    });
   }
 
   async function reloadTask() {
-    if (currentTask) {
-      await internalLoadTask(currentTask.id);
-    }
+    await doReloadTask({
+      currentTask,
+      onLoad: internalLoadTask,
+    });
   }
 
   async function createTaskFromPo() {
-    if (!currentPo) {
-      setTaskError("请先加载采购单");
-      return;
-    }
-    const poId = currentPo.id;
+    await doCreateTaskFromPo({
+      currentPo,
+      setCreatingTask,
+      setTaskError,
+      setCurrentTask,
+      setTaskIdInput,
+      setCommitError,
+      setActiveItemId,
+    });
 
-    setCreatingTask(true);
-    setTaskError(null);
-    try {
-      const task = await createReceiveTaskFromPo(poId, {
-        warehouse_id: currentPo.warehouse_id,
-        include_fully_received: false,
-      });
-      setCurrentTask(task);
-      setTaskIdInput(String(task.id));
-      setCommitError(null);
-      setActiveItemId(null);
-    } catch (err: unknown) {
-      console.error("createReceiveTaskFromPo failed", err);
-      setTaskError(getErrMsg(err, "从采购单创建收货任务失败"));
-    } finally {
-      setCreatingTask(false);
-    }
+    setManualDraft(EMPTY_MANUAL_DRAFT);
+  }
+
+  async function createTaskFromPoSelected(
+    lines: ReceiveTaskCreateFromPoSelectedLinePayload[],
+  ) {
+    await doCreateTaskFromPoSelected({
+      currentPo,
+      selectedLines: lines,
+      setCreatingTask,
+      setTaskError,
+      setCurrentTask,
+      setTaskIdInput,
+      setCommitError,
+      setActiveItemId,
+    });
+
+    setManualDraft(EMPTY_MANUAL_DRAFT);
   }
 
   // ========== 扫码 ==========
 
   function handleScan(barcode: string) {
-    const now = new Date();
-    const entry: InboundScanHistoryEntry = {
-      id: nextHistoryId++,
-      ts: fmt(now),
+    doHandleScan({
       barcode,
-      item_id: null,
-      qty: 0,
-      ok: false,
-      error: "等待解析条码",
-    };
-    setHistory((prev) => [entry, ...prev].slice(0, 100));
+      setHistory,
+    });
   }
 
   async function handleScanParsed(parsed: ParsedBarcode) {
-    setLastParsed(parsed);
+    await doHandleScanParsed({
+      parsed,
+      currentTask,
+      setLastParsed,
+      setHistory,
+      setCurrentTask,
+      setActiveItemId,
+      setTaskError,
+      setCommitError,
+    });
 
-    if (!currentTask) {
-      setTaskError("请先绑定收货任务");
-      return;
-    }
-    if (currentTask.status === "COMMITTED") {
-      setTaskError("任务已 COMMITTED，不能继续扫码");
-      return;
-    }
-
-    const now = new Date();
-    const histId = nextHistoryId++;
-    const itemId = parsed.item_id ?? null;
-    const qty = parsed.qty ?? 1;
-    const barcode = parsed.raw ?? "";
-
-    if (!itemId || itemId <= 0) {
-      const entry: InboundScanHistoryEntry = {
-        id: histId,
-        ts: fmt(now),
-        barcode,
-        item_id: null,
-        qty,
-        ok: false,
-        error: "条码中缺少 item_id",
-      };
-      setHistory((prev) => [entry, ...prev].slice(0, 100));
-
-      setTaskError("条码中缺少 item_id");
-      return;
-    }
-
-    // 从解析结果中提取批次 / 日期（如果有）
-    const batch_code = parsed.batch_code;
-    const production_date = parsed.production_date;
-    const expiry_date = parsed.expiry_date;
-
-    try {
-      const updated = await recordReceiveScan(currentTask.id, {
-        item_id: itemId,
-        qty,
-        batch_code: batch_code ?? undefined,
-        production_date: production_date ?? undefined,
-        expiry_date: expiry_date ?? undefined,
-      });
-      setCurrentTask(updated);
-      setActiveItemId(itemId);
-      setTaskError(null);
-      setCommitError(null);
-
-      const entry: InboundScanHistoryEntry = {
-        id: histId,
-        ts: fmt(now),
-        barcode,
-        item_id: itemId,
-        qty,
-        ok: true,
-      };
-      setHistory((prev) => [entry, ...prev].slice(0, 100));
-    } catch (err: unknown) {
-      console.error("recordReceiveScan failed", err);
-      const msg = getErrMsg(err, "扫码失败");
-
-      const entry: InboundScanHistoryEntry = {
-        id: histId,
-        ts: fmt(now),
-        barcode,
-        item_id: itemId,
-        qty,
-        ok: false,
-        error: msg,
-      };
-      setHistory((prev) => [entry, ...prev].slice(0, 100));
-
-      setTaskError(msg);
-    }
+    // 扫码会直接更新 task.lines 的实收，不影响手工草稿
   }
 
   // ========== 行内批次元数据更新（批次/日期） ==========
 
   async function updateLineMeta(
     itemId: number,
-    meta: {
-      batch_code?: string;
-      production_date?: string;
-      expiry_date?: string;
-    },
+    meta: { batch_code?: string; production_date?: string; expiry_date?: string },
   ): Promise<void> {
-    if (!currentTask) {
-      setTaskError("请先绑定收货任务");
-      return;
-    }
-    if (currentTask.status === "COMMITTED") {
-      setTaskError("任务已 COMMITTED，不能修改批次信息");
-      return;
-    }
-
-    try {
-      const updated = await recordReceiveScan(currentTask.id, {
-        item_id: itemId,
-        qty: 0, // 仅更新元数据
-        batch_code: meta.batch_code,
-        production_date: meta.production_date,
-        expiry_date: meta.expiry_date,
-      });
-      setCurrentTask(updated);
-      setTaskError(null);
-    } catch (err: unknown) {
-      console.error("updateLineMeta (recordReceiveScan) failed", err);
-      setTaskError(getErrMsg(err, "更新批次信息失败"));
-    }
+    await doUpdateLineMeta({
+      itemId,
+      meta,
+      currentTask,
+      setCurrentTask,
+      setTaskError,
+    });
   }
 
   // ========== 采购单行收货（手工录入） ==========
@@ -327,126 +201,35 @@ export function useInboundCockpitController(): InboundCockpitController {
   async function manualReceiveLine(
     itemId: number,
     qty: number,
-    meta?: {
-      batch_code?: string;
-      production_date?: string;
-      expiry_date?: string;
-    },
+    meta?: { batch_code?: string; production_date?: string; expiry_date?: string },
   ): Promise<void> {
-    if (!currentTask) {
-      setTaskError("请先绑定收货任务");
-      return;
-    }
-    if (currentTask.status === "COMMITTED") {
-      setTaskError("任务已 COMMITTED，不能继续收货");
-      return;
-    }
-    if (!qty || qty <= 0) {
-      setTaskError("本次收货数量必须大于 0");
-      return;
-    }
+    await doManualReceiveLine({
+      itemId,
+      qty,
+      meta,
+      currentTask,
+      setCurrentTask,
+      setActiveItemId,
+      setTaskError,
+      setCommitError,
+      setHistory,
+    });
 
-    // 找到对应行，若 meta 缺失则从行里兜底
-    const line = currentTask.lines.find((l) => l.item_id === itemId);
-    if (!line) {
-      setTaskError(`当前任务中不存在 item_id=${itemId} 的行，无法直接按行收货`);
-      return;
-    }
-
-    const batch_code =
-      meta?.batch_code !== undefined ? meta.batch_code : line.batch_code;
-    const production_date =
-      meta?.production_date !== undefined
-        ? meta.production_date
-        : line.production_date ?? undefined;
-    const expiry_date =
-      meta?.expiry_date !== undefined
-        ? meta.expiry_date
-        : line.expiry_date ?? undefined;
-
-    try {
-      const updated = await recordReceiveScan(currentTask.id, {
-        item_id: itemId,
-        qty,
-        batch_code: batch_code ?? undefined,
-        production_date,
-        expiry_date,
-      });
-      setCurrentTask(updated);
-      setActiveItemId(itemId);
-      setTaskError(null);
-      setCommitError(null);
-
-      const now = new Date();
-      const histId = nextHistoryId++;
-      const entry: InboundScanHistoryEntry = {
-        id: histId,
-        ts: fmt(now),
-        barcode: "MANUAL-LINE",
-        item_id: itemId,
-        qty,
-        ok: true,
-      };
-      setHistory((prev) => [entry, ...prev].slice(0, 100));
-    } catch (err: unknown) {
-      console.error("manualReceiveLine failed", err);
-      const msg = getErrMsg(err, "按行收货失败");
-      setTaskError(msg);
-
-      const now = new Date();
-      const histId = nextHistoryId++;
-      const entry: InboundScanHistoryEntry = {
-        id: histId,
-        ts: fmt(now),
-        barcode: "MANUAL-LINE",
-        item_id: itemId,
-        qty,
-        ok: false,
-        error: msg,
-      };
-      setHistory((prev) => [entry, ...prev].slice(0, 100));
-    }
+    // 单行/批量记录成功后，由手工模块主动清理输入并同步 manualDraft；
+    // 这里不做推断，避免误清空。
   }
 
-  // ========== commit（关键改动：不再前端硬校验批次/日期） ==========
-
+  // ========== commit ==========
   async function commit(): Promise<boolean> {
-    if (!currentTask) {
-      setCommitError("请先绑定任务");
-      return false;
-    }
-    if (currentTask.status === "COMMITTED") {
-      setCommitError("任务已 COMMITTED");
-      return false;
-    }
-
-    // ✅ 不再进行“缺批次/缺日期”的前端硬校验。
-    // 理由：无保质期商品允许日期为空，批次可由后端自动 NOEXP；
-    // 有保质期商品若缺批次/日期，后端会返回明确错误信息。
-
-    const finalTraceId =
-      traceId && traceId.trim()
-        ? traceId.trim()
-        : makeDefaultTraceId(currentTask.id);
-
-    setTraceId(finalTraceId);
-    setCommitting(true);
-    setCommitError(null);
-
-    try {
-      const updated = await commitReceiveTask(currentTask.id, {
-        trace_id: finalTraceId,
-      });
-      setCurrentTask(updated);
-      setTaskError(null);
-      return true;
-    } catch (err: unknown) {
-      console.error("commitReceiveTask failed", err);
-      setCommitError(getErrMsg(err, "确认入库失败"));
-      return false;
-    } finally {
-      setCommitting(false);
-    }
+    return await doCommit({
+      currentTask,
+      traceId,
+      setTraceId,
+      setCommitting,
+      setCommitError,
+      setCurrentTask,
+      setTaskError,
+    });
   }
 
   return {
@@ -473,15 +256,19 @@ export function useInboundCockpitController(): InboundCockpitController {
     traceId,
     activeItemId,
 
+    manualDraft,
+
     // setters
     setPoIdInput,
     setTaskIdInput,
     setTraceId,
     setActiveItemId,
+    setManualDraft,
 
     // actions
     loadPoById,
     createTaskFromPo,
+    createTaskFromPoSelected,
     bindTaskById,
     reloadTask,
 

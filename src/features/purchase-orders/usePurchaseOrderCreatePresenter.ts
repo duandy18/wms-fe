@@ -6,7 +6,6 @@
 import { useEffect, useState } from "react";
 import {
   createPurchaseOrderV2,
-  type PurchaseOrderLineCreatePayload,
   type PurchaseOrderWithLines,
 } from "./api";
 import {
@@ -18,41 +17,21 @@ import {
   type ItemBasic,
 } from "../../master-data/itemsApi";
 
-export type LineDraft = {
-  id: number;
+import {
+  type LineDraft,
+  makeEmptyLine,
+  applySelectedItemToLine,
+  buildPayloadLines,
+} from "./createV2/lineDraft";
+import {
+  datetimeLocalToIsoOrThrow,
+  getErrorMessage,
+  nowIsoMinuteForDatetimeLocal,
+} from "./createV2/utils";
+import { normalizeSupplierOptions } from "./createV2/normalize";
 
-  item_id: string;
-  item_name: string;
-  spec_text: string;
-
-  base_uom: string; // 最小单位（如 袋 / 罐 / PCS）
-  purchase_uom: string; // 采购单位（件 / 箱 / 托）
-  units_per_case: string;
-
-  qty_ordered: string;
-  supply_price: string;
-};
-
-const makeEmptyLine = (id: number): LineDraft => ({
-  id,
-  item_id: "",
-  item_name: "",
-  spec_text: "",
-  base_uom: "",
-  purchase_uom: "",
-  units_per_case: "",
-  qty_ordered: "",
-  supply_price: "",
-});
-
-type ApiErrorShape = {
-  message?: string;
-};
-
-const getErrorMessage = (err: unknown, fallback: string): string => {
-  const e = err as ApiErrorShape;
-  return e?.message ?? fallback;
-};
+// ✅ 兼容旧 import 路径：让其它组件仍可从本文件导入 LineDraft
+export type { LineDraft } from "./createV2/lineDraft";
 
 export interface PurchaseOrderCreateState {
   supplierId: number | null;
@@ -68,9 +47,9 @@ export interface PurchaseOrderCreateState {
   warehouseId: string;
 
   purchaser: string;
-  purchaseTime: string; // 形如 "2025-12-11T21:30" 的 datetime-local 字符串
+  purchaseTime: string; // datetime-local 字符串
 
-  remark: string; // 可选备注，当前 UI 可以先不用
+  remark: string;
 
   lines: LineDraft[];
 
@@ -90,11 +69,7 @@ export interface PurchaseOrderCreateActions {
   setRemark: (v: string) => void;
   setError: (v: string | null) => void;
 
-  changeLineField: (
-    lineId: number,
-    field: keyof LineDraft,
-    value: string,
-  ) => void;
+  changeLineField: (lineId: number, field: keyof LineDraft, value: string) => void;
   addLine: () => void;
   removeLine: (lineId: number) => void;
 
@@ -117,16 +92,8 @@ export function usePurchaseOrderCreatePresenter(): [
   const [itemsError, setItemsError] = useState<string | null>(null);
 
   const [warehouseId, setWarehouseId] = useState("1");
-
   const [purchaser, setPurchaser] = useState("");
-  const [purchaseTime, setPurchaseTime] = useState(() => {
-    // 初始值：当前时间截到分钟，适配 <input type="datetime-local">
-    const d = new Date();
-    const iso = d.toISOString(); // 2025-12-11T21:30:00.000Z
-    // datetime-local 需要本地时间，不带 Z，这里直接截前 16 个字符（YYYY-MM-DDTHH:mm）
-    return iso.slice(0, 16);
-  });
-
+  const [purchaseTime, setPurchaseTime] = useState(() => nowIsoMinuteForDatetimeLocal());
   const [remark, setRemark] = useState("");
 
   const [lines, setLines] = useState<LineDraft[]>([
@@ -135,24 +102,22 @@ export function usePurchaseOrderCreatePresenter(): [
     makeEmptyLine(3),
   ]);
 
-  const [lastCreatedPo, setLastCreatedPo] =
-    useState<PurchaseOrderWithLines | null>(null);
+  const [lastCreatedPo, setLastCreatedPo] = useState<PurchaseOrderWithLines | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 加载供应商
   useEffect(() => {
     const loadSuppliers = async () => {
       setSuppliersLoading(true);
       setSuppliersError(null);
       try {
         const data = await fetchSuppliersBasic();
-        setSupplierOptions(data);
+        setSupplierOptions(normalizeSupplierOptions(data, { activeOnly: true }));
       } catch (err) {
         console.error("fetchSuppliersBasic failed", err);
-        setSuppliersError(
-          getErrorMessage(err, "加载供应商列表失败"),
-        );
+        setSuppliersError(getErrorMessage(err, "加载供应商列表失败"));
       } finally {
         setSuppliersLoading(false);
       }
@@ -160,6 +125,7 @@ export function usePurchaseOrderCreatePresenter(): [
     void loadSuppliers();
   }, []);
 
+  // 加载商品
   useEffect(() => {
     const loadItems = async () => {
       setItemsLoading(true);
@@ -184,62 +150,18 @@ export function usePurchaseOrderCreatePresenter(): [
       return;
     }
     const found = supplierOptions.find((s) => s.id === id);
-    if (found) {
-      setSupplierName(found.name);
-    }
+    if (found) setSupplierName(found.name);
   };
 
   const selectItemForLine = (lineId: number, itemId: number | null) => {
     setLines((prev) =>
-      prev.map((l) => {
-        if (l.id !== lineId) return l;
-
-        if (!itemId) {
-          return {
-            ...l,
-            item_id: "",
-            item_name: "",
-            spec_text: "",
-            base_uom: "",
-            purchase_uom: "",
-          };
-        }
-
-        const found = itemOptions.find((it) => it.id === itemId);
-        if (!found) {
-          return {
-            ...l,
-            item_id: String(itemId),
-          };
-        }
-
-        // found.uom 视为最小单位（base_uom），采购单位由用户在表格中单独填写
-        return {
-          ...l,
-          item_id: String(found.id),
-          item_name: found.name,
-          spec_text: found.spec ?? "",
-          base_uom: found.uom ?? l.base_uom,
-          purchase_uom: l.purchase_uom || "",
-        };
-      }),
+      prev.map((l) => (l.id === lineId ? applySelectedItemToLine(l, itemOptions, itemId) : l)),
     );
   };
 
-  const changeLineField = (
-    lineId: number,
-    field: keyof LineDraft,
-    value: string,
-  ) => {
+  const changeLineField = (lineId: number, field: keyof LineDraft, value: string) => {
     setLines((prev) =>
-      prev.map((l) =>
-        l.id === lineId
-          ? {
-              ...l,
-              [field]: value,
-            }
-          : l,
-      ),
+      prev.map((l) => (l.id === lineId ? { ...l, [field]: value } : l)),
     );
   };
 
@@ -248,78 +170,14 @@ export function usePurchaseOrderCreatePresenter(): [
   };
 
   const removeLine = (lineId: number) => {
-    setLines((prev) =>
-      prev.length <= 1 ? prev : prev.filter((l) => l.id !== lineId),
-    );
-  };
-
-  const buildPayloadLines = (): PurchaseOrderLineCreatePayload[] => {
-    const normalized: PurchaseOrderLineCreatePayload[] = [];
-
-    for (const [idx, l] of lines.entries()) {
-      if (
-        !l.item_id.trim() &&
-        !l.qty_ordered.trim() &&
-        !l.item_name.trim()
-      ) {
-        continue;
-      }
-
-      const itemId = Number(l.item_id.trim());
-      const qty = Number(l.qty_ordered.trim());
-
-      const supplyPrice = l.supply_price.trim()
-        ? Number(l.supply_price.trim())
-        : null;
-
-      const unitsPerCase = l.units_per_case.trim()
-        ? Number(l.units_per_case.trim())
-        : null;
-
-      if (Number.isNaN(itemId) || itemId <= 0) {
-        throw new Error(`第 ${idx + 1} 行：item_id 非法`);
-      }
-      if (Number.isNaN(qty) || qty <= 0) {
-        throw new Error(`第 ${idx + 1} 行：订购数量必须 > 0`);
-      }
-      if (
-        supplyPrice != null &&
-        (Number.isNaN(supplyPrice) || supplyPrice < 0)
-      ) {
-        throw new Error(`第 ${idx + 1} 行：采购价格非法`);
-      }
-      if (
-        unitsPerCase != null &&
-        (Number.isNaN(unitsPerCase) || unitsPerCase <= 0)
-      ) {
-        throw new Error(`第 ${idx + 1} 行：每件数量必须为正整数`);
-      }
-
-      normalized.push({
-        line_no: idx + 1,
-        item_id: itemId,
-        category: null, // 当前前端不编辑分类，统一传 null
-
-        spec_text: l.spec_text.trim() || null,
-        base_uom: l.base_uom.trim() || null,
-        purchase_uom: l.purchase_uom.trim() || null,
-        units_per_case: unitsPerCase,
-
-        qty_cases: qty,
-        qty_ordered: qty,
-
-        supply_price: supplyPrice,
-      });
-    }
-
-    return normalized;
+    setLines((prev) => (prev.length <= 1 ? prev : prev.filter((l) => l.id !== lineId)));
   };
 
   const submit = async (onSuccess?: (poId: number) => void) => {
     setError(null);
 
     // 供应商必选
-    if (!supplierId || !supplierName) {
+    if (!supplierId || !supplierName.trim()) {
       setError("请选择供应商");
       return;
     }
@@ -339,31 +197,19 @@ export function usePurchaseOrderCreatePresenter(): [
     }
 
     // 采购时间必填
-    const purchaseTimeTrimmed = purchaseTime.trim();
-    if (!purchaseTimeTrimmed) {
-      setError("请填写采购时间");
-      return;
-    }
-
     let purchaseTimeIso: string;
     try {
-      const d = new Date(purchaseTimeTrimmed);
-      if (Number.isNaN(d.getTime())) {
-        throw new Error("时间格式非法");
-      }
-      purchaseTimeIso = d.toISOString();
-    } catch {
-      setError("采购时间格式非法，请重新选择");
+      purchaseTimeIso = datetimeLocalToIsoOrThrow(purchaseTime);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "采购时间格式非法，请重新选择");
       return;
     }
 
-    let normalizedLines: PurchaseOrderLineCreatePayload[];
+    let normalizedLines;
     try {
-      normalizedLines = buildPayloadLines();
+      normalizedLines = buildPayloadLines(lines);
     } catch (e) {
-      const msg =
-        e instanceof Error ? e.message : "行校验失败";
-      setError(msg);
+      setError(e instanceof Error ? e.message : "行校验失败");
       return;
     }
 
@@ -389,11 +235,7 @@ export function usePurchaseOrderCreatePresenter(): [
 
       // 重置部分字段（采购人/时间通常不重置，方便连续录入）
       setRemark("");
-      setLines([
-        makeEmptyLine(1),
-        makeEmptyLine(2),
-        makeEmptyLine(3),
-      ]);
+      setLines([makeEmptyLine(1), makeEmptyLine(2), makeEmptyLine(3)]);
 
       onSuccess?.(po.id);
     } catch (err) {
@@ -417,12 +259,12 @@ export function usePurchaseOrderCreatePresenter(): [
       itemsError,
 
       warehouseId,
-
       purchaser,
       purchaseTime,
 
       remark,
       lines,
+
       lastCreatedPo,
       submitting,
       error,
@@ -430,14 +272,17 @@ export function usePurchaseOrderCreatePresenter(): [
     {
       selectSupplier,
       selectItemForLine,
+
       setWarehouseId,
       setPurchaser,
       setPurchaseTime,
       setRemark,
       setError,
+
       changeLineField,
       addLine,
       removeLine,
+
       submit,
     },
   ];

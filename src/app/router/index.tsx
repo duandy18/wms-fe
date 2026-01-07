@@ -7,6 +7,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "../layout/AppLayout";
 import { RequireAuth, RequirePermission, ForbiddenPage, RouteLoading } from "./guards";
 import * as P from "./lazyPages";
+import { ReceiveSupplementPage } from "../../features/operations/inbound/ReceiveSupplementPage";
 
 /* 路由入口 */
 const AppRouter: React.FC = () => {
@@ -54,6 +55,14 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="operations.inbound">
                 <P.InboundCockpitPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inbound/supplement"
+            element={
+              <RequirePermission permission="operations.inbound">
+                <ReceiveSupplementPage />
               </RequirePermission>
             }
           />

@@ -23,11 +23,11 @@ export const menuSections: RouteSection[] = [
     id: "operations",
     label: "作业台",
     items: [
-      { path: "/inbound", label: "收货 Cockpit", requiredPermissions: ["operations.inbound"] },
-      { path: "/outbound/pick-tasks", label: "拣货任务 Cockpit", requiredPermissions: ["operations.outbound"] },
-      { path: "/count", label: "盘点 Cockpit", requiredPermissions: ["operations.count"] },
-      { path: "/outbound/ship", label: "发货 Cockpit", requiredPermissions: ["operations.outbound"] },
-      { path: "/outbound/internal-outbound", label: "内部出库 Cockpit", requiredPermissions: ["operations.internal_outbound"] },
+      { path: "/inbound", label: "收货", requiredPermissions: ["operations.inbound"] },
+      { path: "/outbound/pick-tasks", label: "拣货", requiredPermissions: ["operations.outbound"] },
+      { path: "/count", label: "盘点", requiredPermissions: ["operations.count"] },
+      { path: "/outbound/ship", label: "发货", requiredPermissions: ["operations.outbound"] },
+      { path: "/outbound/internal-outbound", label: "内部出库", requiredPermissions: ["operations.internal_outbound"] },
 
       // 旧版拣货页（不展示）
       { path: "/outbound/pick", label: "拣货出库（旧版）", requiredPermissions: ["operations.outbound"], showInSidebar: false },
@@ -106,7 +106,6 @@ export const menuSections: RouteSection[] = [
       { path: "/admin/suppliers", label: "供应商主数据", requiredPermissions: ["config.store.write"] },
       { path: "/admin/shipping-providers", label: "物流 / 快递公司", requiredPermissions: ["config.store.write"] },
 
-      // ✅ 运价方案独立工作台（通常从“物流/快递公司 → 方案 → 中控”跳转进入，不在侧边栏展示）
       {
         path: "/admin/shipping-providers/schemes/:schemeId/workbench",
         label: "运价方案工作台",

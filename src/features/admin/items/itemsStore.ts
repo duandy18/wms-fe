@@ -2,72 +2,10 @@
 import { create } from "zustand";
 import { fetchItems } from "./api";
 import type { Item } from "./api";
-import { fetchItemBarcodes } from "./barcodesApi";
+import type { ItemsState, ApiErrorShape } from "./store/types";
+import { buildBarcodeMaps } from "./store/buildBarcodeMaps";
 
-export type EnabledFilter = "all" | "enabled" | "disabled";
-
-type ScanProbeError = {
-  stage?: string;
-  error?: string;
-};
-
-type ScanProbeResult =
-  | {
-      ok: boolean;
-      committed: boolean;
-      scan_ref: string;
-      event_id?: number | null;
-      source?: string | null;
-      item_id?: number | null;
-      qty?: number | null;
-      batch_code?: string | null;
-      evidence?: Array<Record<string, unknown>>;
-      errors?: ScanProbeError[];
-    }
-  | null;
-
-type ItemsState = {
-  items: Item[];
-  loading: boolean;
-  error: string | null;
-
-  scannedBarcode: string | null;
-  selectedItem: Item | null;
-
-  panelOpen: boolean;
-
-  primaryBarcodes: Record<number, string>;
-  barcodeCounts: Record<number, number>;
-  barcodeOwners: Record<string, number[]>;
-  barcodeIndex: Record<string, number>;
-
-  filter: EnabledFilter;
-
-  probeResult: ScanProbeResult;
-  probeLoading: boolean;
-  probeError: string | null;
-
-  setScannedBarcode: (code: string | null) => void;
-  setSelectedItem: (item: Item | null) => void;
-  setPanelOpen: (v: boolean) => void;
-
-  setProbeState: (data: {
-    result?: ScanProbeResult;
-    loading?: boolean;
-    error?: string | null;
-  }) => void;
-
-  setPrimaryBarcodeLocal: (itemId: number, barcode: string | null) => void;
-
-  setError: (msg: string | null) => void;
-  setFilter: (f: EnabledFilter) => void;
-
-  loadItems: () => Promise<void>;
-};
-
-type ApiErrorShape = {
-  message?: string;
-};
+export type { EnabledFilter } from "./store/types";
 
 export const useItemsStore = create<ItemsState>((set) => ({
   items: [],
@@ -92,10 +30,8 @@ export const useItemsStore = create<ItemsState>((set) => ({
 
   setProbeState: ({ result, loading, error }) =>
     set((s) => ({
-      probeResult:
-        result !== undefined ? result : s.probeResult,
-      probeLoading:
-        loading !== undefined ? loading : s.probeLoading,
+      probeResult: result !== undefined ? result : s.probeResult,
+      probeLoading: loading !== undefined ? loading : s.probeLoading,
       probeError: error !== undefined ? error : s.probeError,
     })),
 
@@ -118,43 +54,16 @@ export const useItemsStore = create<ItemsState>((set) => ({
   loadItems: async () => {
     set({ loading: true, error: null });
     try {
-      const data = await fetchItems();
+      const data: Item[] = await fetchItems();
 
-      const primaryMap: Record<number, string> = {};
-      const countMap: Record<number, number> = {};
-      const ownersMap: Record<string, number[]> = {};
-
-      for (const it of data) {
-        try {
-          const bcs = await fetchItemBarcodes(it.id);
-
-          countMap[it.id] = bcs.length;
-
-          const primary = bcs.find((b) => b.is_primary);
-          if (primary) primaryMap[it.id] = primary.barcode;
-
-          for (const b of bcs) {
-            const code = b.barcode.trim();
-            if (!code) continue;
-            const arr = ownersMap[code] || (ownersMap[code] = []);
-            if (!arr.includes(it.id)) arr.push(it.id);
-          }
-        } catch {
-          countMap[it.id] = 0;
-        }
-      }
-
-      const idx: Record<string, number> = {};
-      for (const [code, owners] of Object.entries(ownersMap)) {
-        if (owners.length === 1) idx[code] = owners[0];
-      }
+      const maps = await buildBarcodeMaps(data);
 
       set({
         items: data,
-        primaryBarcodes: primaryMap,
-        barcodeCounts: countMap,
-        barcodeOwners: ownersMap,
-        barcodeIndex: idx,
+        primaryBarcodes: maps.primaryBarcodes,
+        barcodeCounts: maps.barcodeCounts,
+        barcodeOwners: maps.barcodeOwners,
+        barcodeIndex: maps.barcodeIndex,
       });
     } catch (e: unknown) {
       const err = e as ApiErrorShape;
