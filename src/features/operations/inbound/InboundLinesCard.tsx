@@ -30,6 +30,10 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
   const [metaError, setMetaError] = useState<string | null>(null);
   const [savingMetaFor, setSavingMetaFor] = useState<number | null>(null);
 
+  // ✅ 明细刷新：收起/展开都可用
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshErr, setRefreshErr] = useState<string | null>(null);
+
   // ✅ “收货明细”默认收起：执行态优先操作，不让差异噪音抢注意力
   // - 任务已入库：默认展开（更像“结果/对账视图”）
   // - 其他状态：默认收起（更像“二级视图”）
@@ -149,6 +153,21 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
       ? "text-amber-700"
       : "text-rose-700";
 
+  const handleReloadTask = useCallback(async () => {
+    if (!task) return;
+    if (refreshing) return;
+
+    setRefreshErr(null);
+    setRefreshing(true);
+    try {
+      await c.reloadTask();
+    } catch (e: unknown) {
+      setRefreshErr(getErrorMessage(e, "刷新失败"));
+    } finally {
+      setRefreshing(false);
+    }
+  }, [c, task, refreshing]);
+
   return (
     <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
       <div className="flex items-start justify-between gap-3">
@@ -169,16 +188,32 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
           ) : null}
         </div>
 
-        <div className="flex items-center gap-2">
-          {task ? (
-            <button
-              type="button"
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-              onClick={() => setOpen((v) => !v)}
-            >
-              {open ? "收起明细" : "查看明细"}
-            </button>
-          ) : null}
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            {task ? (
+              <>
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  onClick={() => void handleReloadTask()}
+                  disabled={refreshing}
+                  title="刷新收货任务与明细（用于提交后同步最新状态）"
+                >
+                  {refreshing ? "刷新中…" : "刷新"}
+                </button>
+
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                  onClick={() => setOpen((v) => !v)}
+                >
+                  {open ? "收起明细" : "查看明细"}
+                </button>
+              </>
+            ) : null}
+          </div>
+
+          {refreshErr ? <div className="text-[11px] text-rose-700">{refreshErr}</div> : null}
         </div>
       </div>
 
@@ -193,14 +228,10 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
                 <span className="text-slate-600"> / </span>
                 <span className="font-mono">{c.varianceSummary.totalScanned}</span>
                 <span className="text-slate-600">，差异：</span>
-                <span className={`font-mono ${varianceCls}`}>
-                  {c.varianceSummary.totalVariance}
-                </span>
+                <span className={`font-mono ${varianceCls}`}>{c.varianceSummary.totalVariance}</span>
               </div>
 
-              <div className="text-[11px] text-slate-500">
-                行数 {task.lines?.length ?? 0}
-              </div>
+              <div className="text-[11px] text-slate-500">行数 {task.lines?.length ?? 0}</div>
             </div>
           ) : (
             <div className="text-base text-slate-600">
@@ -215,7 +246,7 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
         <>
           <InboundLinesHeader
             hasTask={!!task}
-            onReloadTask={() => void c.reloadTask()}
+            onReloadTask={() => void handleReloadTask()}
             viewFilter={viewFilter}
             onChangeViewFilter={setViewFilter}
           />
@@ -250,9 +281,7 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
             </div>
           )}
 
-          {savingMetaFor !== null && (
-            <div className="text-base text-slate-500">正在保存该行的批次/日期…</div>
-          )}
+          {savingMetaFor !== null && <div className="text-base text-slate-500">正在保存该行的批次/日期…</div>}
         </>
       )}
     </section>
