@@ -8,15 +8,19 @@ export type SupplementSource = "purchase" | "return" | "misc";
 
 export const SupplementLink: React.FC<{
   source?: SupplementSource;
+  taskId?: number | null; // ✅ 本次任务口径（可选）
   className?: string;
   children?: React.ReactNode;
-}> = ({ source = "purchase", className, children }) => {
+}> = ({ source = "purchase", taskId = null, className, children }) => {
   const to = useMemo(() => {
     const sp = new URLSearchParams();
     sp.set("supplement", "1");
     sp.set("source", source);
+    if (taskId != null && Number.isFinite(taskId) && taskId > 0) {
+      sp.set("task_id", String(taskId));
+    }
     return `/inbound?${sp.toString()}`;
-  }, [source]);
+  }, [source, taskId]);
 
   return (
     <Link

@@ -8,8 +8,9 @@ import { ReceiveSupplementPanel, type SupplementSourceType } from "./ReceiveSupp
 export const InboundSupplementDrawer: React.FC<{
   open: boolean;
   initialSourceType: SupplementSourceType;
+  taskId?: number | null; // ✅ 本次任务口径（可选）
   onClose: () => void;
-}> = ({ open, initialSourceType, onClose }) => {
+}> = ({ open, initialSourceType, taskId, onClose }) => {
   if (!open) return null;
 
   return (
@@ -29,6 +30,7 @@ export const InboundSupplementDrawer: React.FC<{
             <div className="text-sm font-semibold text-slate-800">收货补录</div>
             <div className="text-[11px] text-slate-500">
               仅在此处编辑批次 / 生产日期 / 到期日期
+              {taskId ? <span className="ml-2">（本次任务 #{taskId}）</span> : null}
             </div>
           </div>
 
@@ -44,6 +46,7 @@ export const InboundSupplementDrawer: React.FC<{
         <div className="p-4">
           <ReceiveSupplementPanel
             initialSourceType={initialSourceType}
+            taskId={taskId ?? null}
             showTitle={false}
             compact={true}
           />

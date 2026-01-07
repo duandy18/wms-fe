@@ -2,6 +2,7 @@
 
 export type SupplementSourceType = "PURCHASE" | "RETURN" | "MISC";
 
+// 保留原枚举，避免连锁改动（但文案改为作业语言）
 export type ViewStatus = "MISSING" | "DONE" | "ALL";
 
 export const SOURCE_LABEL: Record<SupplementSourceType, string> = {
@@ -10,10 +11,11 @@ export const SOURCE_LABEL: Record<SupplementSourceType, string> = {
   MISC: "样品 / 零星",
 };
 
+// ✅ 作业语言：不暴露 hard/soft / 阻断项 等实现细节
 export const STATUS_LABEL: Record<ViewStatus, string> = {
-  MISSING: "仅阻断项（需补录）",
-  DONE: "仅已补录（暂不支持）",
-  ALL: "包含建议补录",
+  MISSING: "必须补录（入库前必做）",
+  ALL: "建议补录（不影响入库）",
+  DONE: "已补录（暂不支持）",
 };
 
 export type ReceiveSupplementMissingField =

@@ -13,6 +13,8 @@ export const SupplementFilters: React.FC<{
   loadErr: string | null;
   count: number;
 
+  taskId?: number | null; // ✅ 作业入口：本次任务口径（可选，仅用于文案展示）
+
   onChangeSourceType: (v: SupplementSourceType) => void;
   onChangeStatus: (v: ViewStatus) => void;
   onChangeKeyword: (v: string) => void;
@@ -23,6 +25,7 @@ export const SupplementFilters: React.FC<{
   loading,
   loadErr,
   count,
+  taskId,
   onChangeSourceType,
   onChangeStatus,
   onChangeKeyword,
@@ -46,17 +49,15 @@ export const SupplementFilters: React.FC<{
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-slate-600">显示范围</label>
+          <label className="text-xs text-slate-600">处理范围</label>
           <select
             className="border rounded-md px-3 py-2 text-sm"
             value={status}
             onChange={(e) => onChangeStatus(e.target.value as ViewStatus)}
           >
-            {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
+            {/* ✅ 对操作员隐藏“已补录（暂不支持）” */}
+            <option value="MISSING">{STATUS_LABEL.MISSING}</option>
+            <option value="ALL">{STATUS_LABEL.ALL}</option>
           </select>
         </div>
 
@@ -71,18 +72,25 @@ export const SupplementFilters: React.FC<{
         </div>
 
         <div className="text-xs text-slate-500 ml-auto">
-          当前：{SOURCE_LABEL[sourceType]} · {STATUS_LABEL[status]} · {count} 行
+          {taskId ? (
+            <>
+              本次任务 #{taskId} · {SOURCE_LABEL[sourceType]} · {STATUS_LABEL[status]} · {count} 行
+            </>
+          ) : (
+            <>
+              当前：{SOURCE_LABEL[sourceType]} · {STATUS_LABEL[status]} · {count} 行
+            </>
+          )}
         </div>
       </div>
 
       {loading ? <div className="text-sm text-slate-500">加载中…</div> : null}
       {loadErr ? <div className="text-sm text-red-600">{loadErr}</div> : null}
 
-      {status !== "MISSING" ? (
-        <div className="text-[11px] text-slate-500">
-          提示：当前后端接口仅返回“会阻断提交入库”的缺失项（未提供“已补录历史清单”）。
-        </div>
-      ) : null}
+      {/* ✅ 作业提示：只讲行动，不讲实现 */}
+      <div className="text-[11px] text-slate-500">
+        提示：优先处理「必须补录」，否则提交入库会被阻断。
+      </div>
     </section>
   );
 };

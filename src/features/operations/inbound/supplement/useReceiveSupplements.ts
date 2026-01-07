@@ -10,15 +10,16 @@ export function useReceiveSupplements(args: {
   status: ViewStatus;
   keyword: string;
   warehouseId?: number;
+  taskId?: number | null; // ✅ 作业入口：仅显示本次任务相关
 }) {
-  const { sourceType, status, keyword, warehouseId } = args;
+  const { sourceType, status, keyword, warehouseId, taskId } = args;
 
   const [loading, setLoading] = useState(false);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [data, setData] = useState<ReceiveSupplementLine[]>([]);
 
   // 用于重新加载补录数据
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (): Promise<ReceiveSupplementLine[]> => {
     setLoading(true);
     setLoadErr(null);
 
@@ -26,26 +27,33 @@ export function useReceiveSupplements(args: {
       // 后端 supplements 支持 mode=hard/soft；不支持 “DONE（已补录）清单”
       if (status === "DONE") {
         setData([]);
-        return;
+        return [];
       }
 
       const mode = status === "ALL" ? "soft" : "hard";
 
-      const rows = await fetchReceiveSupplements({
+      const rows0 = await fetchReceiveSupplements({
         sourceType,
         warehouseId: warehouseId ?? 1,
         limit: 200,
         mode,
+        taskId, // ✅ 关键：直接后端过滤
       });
+
+      // ✅ 二次保险：即使某环境后端尚未更新 task_id，也不会串历史任务
+      const rows = taskId ? rows0.filter((x) => x.task_id === taskId) : rows0;
+
       setData(rows);
+      return rows;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "加载补录清单失败";
       setLoadErr(msg);
       setData([]);
+      return [];
     } finally {
       setLoading(false);
     }
-  }, [sourceType, warehouseId, status]);
+  }, [sourceType, warehouseId, status, taskId]);
 
   useEffect(() => {
     void reload();
