@@ -2,7 +2,7 @@
 
 import React from "react";
 import type { InboundCockpitController } from "../types";
-import { SupplementLink } from "../SupplementLink";
+import { InboundUI } from "../ui";
 
 import { usePoReceiveVerification } from "./usePoReceiveVerification";
 import { usePoReceivePlan } from "./usePoReceivePlan";
@@ -25,7 +25,6 @@ export function ReceiveTaskContextPanel(props: {
   po: InboundCockpitController["currentPo"];
   task: InboundCockpitController["currentTask"];
 
-  /** 是否显示内层标题（外层已有标题时可关掉），注意：按钮仍会保留 */
   showTitle?: boolean;
 }) {
   const { c, mode, po, task, showTitle = true } = props;
@@ -67,8 +66,8 @@ export function ReceiveTaskContextPanel(props: {
         <button
           type="button"
           disabled
-          className="rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-600"
-          title="当前采购单已创建收货任务，继续在下方执行收货即可"
+          className={InboundUI.btnGhost}
+          title="当前采购单已创建收货任务"
         >
           已创建任务 #{task?.id}
         </button>
@@ -77,7 +76,7 @@ export function ReceiveTaskContextPanel(props: {
           type="button"
           disabled={!canCreate}
           onClick={() => void c.createTaskFromPoSelected(selectedLines)}
-          className="rounded-md bg-emerald-600 px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-60"
+          className={InboundUI.btnPrimary}
         >
           {c.creatingTask ? "创建中…" : "创建收货任务"}
         </button>
@@ -85,30 +84,23 @@ export function ReceiveTaskContextPanel(props: {
     ) : null;
 
   return (
-    <div className="space-y-3">
-      {/* 头部：标题可隐藏，但动作按钮必须保留 */}
+    <div className={InboundUI.cardGap}>
       <div className="flex items-center justify-between gap-2">
         {showTitle ? (
-          <div className="text-sm font-semibold text-slate-800">收货任务（创建 / 绑定）</div>
+          <div className={InboundUI.title}>收货任务（创建 / 绑定）</div>
         ) : (
           <div />
         )}
         <div className="shrink-0">{actionBtn}</div>
       </div>
 
-      {!po && mode === "PO" ? (
-        <div className="text-xs text-slate-500">请先选择采购单。</div>
-      ) : null}
+      {!po && mode === "PO" ? <div className={InboundUI.quiet}>请先选择采购单。</div> : null}
 
+      {/* 执行态提示已删，这里只保留事实（不解释流程） */}
       {isTaskForCurrentPo ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-900">
           <div className="font-medium">
-            当前任务：#{task?.id} · {taskStatusLabel(task?.status)} · 行数{" "}
-            {task?.lines?.length ?? 0}
-          </div>
-          <div className="mt-1 text-[11px] text-emerald-800">
-            已进入执行态：请在下方优先完成“条码/SKU 输入”和“手工收货”。需要补录批次/日期？
-            <SupplementLink source="purchase">去补录</SupplementLink>
+            当前任务：#{task?.id} · {taskStatusLabel(task?.status)} · 行数 {task?.lines?.length ?? 0}
           </div>
         </div>
       ) : null}
@@ -152,7 +144,7 @@ export function ReceiveTaskContextPanel(props: {
               <button
                 type="button"
                 onClick={p.applyDefault}
-                className="text-[11px] text-slate-700 hover:text-slate-900"
+                className="text-[12px] text-slate-700 hover:text-slate-900"
               >
                 按剩余应收填充
               </button>

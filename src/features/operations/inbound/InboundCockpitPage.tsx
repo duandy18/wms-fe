@@ -15,6 +15,7 @@ import type { InboundTabKey } from "./inboundTabs";
 import { InboundTabBody } from "./tabs/InboundTabBody";
 import { InboundSupplementDrawer } from "./InboundSupplementDrawer";
 import type { SupplementSourceType } from "./ReceiveSupplementPanel";
+import { InboundUI } from "./ui";
 
 function normalizeSourceParam(v: string | null): SupplementSourceType {
   const x = (v ?? "").trim().toLowerCase();
@@ -70,7 +71,7 @@ const InboundCockpitPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-7 space-y-6">
       <InboundCockpitHeader />
 
       <div className="flex items-center justify-between gap-4">
@@ -78,7 +79,7 @@ const InboundCockpitPage: React.FC = () => {
 
         <button
           type="button"
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+          className={InboundUI.btnGhost}
           onClick={() => openDrawer("purchase")}
         >
           补录

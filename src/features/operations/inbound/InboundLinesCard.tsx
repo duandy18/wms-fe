@@ -8,6 +8,7 @@ import type { InboundCockpitController } from "./types";
 import { InboundLinesHeader, type ViewFilter } from "./lines/InboundLinesHeader";
 import { buildInboundLinesColumns } from "./lines/buildColumns";
 import { getErrorMessage, needsBatch } from "./lines/lineUtils";
+import { InboundUI } from "./ui";
 
 interface Props {
   c: InboundCockpitController;
@@ -169,10 +170,10 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
   }, [c, task, refreshing]);
 
   return (
-    <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+    <section className={`${InboundUI.card} rounded-2xl p-6 space-y-4`}>
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <div className="text-sm font-semibold text-slate-800">收货明细</div>
+          <div className={InboundUI.title}>收货明细</div>
           {task ? (
             <div className="text-[12px] text-slate-600">
               任务 #{task.id} · {statusText} · {summaryText.replace("差异", "差异")}{" "}
@@ -182,7 +183,7 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
             <div className="text-[12px] text-slate-600">尚未绑定收货任务。</div>
           )}
           {task && String(task.status ?? "").toUpperCase() !== "COMMITTED" ? (
-            <div className="text-[11px] text-slate-500">
+            <div className={InboundUI.quiet}>
               提示：执行收货时建议先在下方“手工收货”完成录入；此处明细默认收起，避免差异信息干扰操作。
             </div>
           ) : null}
@@ -194,7 +195,7 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
               <>
                 <button
                   type="button"
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  className={InboundUI.btnGhost}
                   onClick={() => void handleReloadTask()}
                   disabled={refreshing}
                   title="刷新收货任务与明细（用于提交后同步最新状态）"
@@ -204,7 +205,7 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
 
                 <button
                   type="button"
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                  className={InboundUI.btnGhost}
                   onClick={() => setOpen((v) => !v)}
                 >
                   {open ? "收起明细" : "查看明细"}
@@ -213,11 +214,10 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
             ) : null}
           </div>
 
-          {refreshErr ? <div className="text-[11px] text-rose-700">{refreshErr}</div> : null}
+          {refreshErr ? <div className={InboundUI.danger}>{refreshErr}</div> : null}
         </div>
       </div>
 
-      {/* 收起状态：不展示表格，只留汇总与按钮 */}
       {!open ? (
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-[12px] text-slate-700">
           {task ? (
@@ -231,7 +231,7 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
                 <span className={`font-mono ${varianceCls}`}>{c.varianceSummary.totalVariance}</span>
               </div>
 
-              <div className="text-[11px] text-slate-500">行数 {task.lines?.length ?? 0}</div>
+              <div className={InboundUI.quiet}>行数 {task.lines?.length ?? 0}</div>
             </div>
           ) : (
             <div className="text-base text-slate-600">
@@ -241,7 +241,6 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
         </div>
       ) : null}
 
-      {/* 展开状态：保留你现有的全部能力 */}
       {open && (
         <>
           <InboundLinesHeader
@@ -281,7 +280,9 @@ export const InboundLinesCard: React.FC<Props> = ({ c, metaMode = "edit" }) => {
             </div>
           )}
 
-          {savingMetaFor !== null && <div className="text-base text-slate-500">正在保存该行的批次/日期…</div>}
+          {savingMetaFor !== null && (
+            <div className="text-base text-slate-500">正在保存该行的批次/日期…</div>
+          )}
         </>
       )}
     </section>

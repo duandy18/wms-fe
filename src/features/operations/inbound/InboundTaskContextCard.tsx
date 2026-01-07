@@ -10,6 +10,7 @@ import { InboundModeBar } from "./InboundModeBar";
 import { PurchaseOrderContextPanel } from "./purchase-context";
 import { ReceiveTaskContextPanel } from "./receive-task";
 import { useInboundTaskContextModel } from "./purchase-context";
+import { InboundUI } from "./ui";
 
 interface Props {
   c: InboundCockpitController;
@@ -22,46 +23,36 @@ export const InboundTaskContextCard: React.FC<Props> = ({ c }) => {
   const m = useInboundTaskContextModel(c);
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+    <section className={`${InboundUI.card} ${InboundUI.cardPad} ${InboundUI.cardGap}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-semibold text-slate-800">收货上下文</h2>
+          <h2 className={InboundUI.title}>收货上下文</h2>
           <InboundModeBar mode={m.mode} onChange={m.setMode} />
         </div>
 
         <div className="text-right space-y-1">
-          {c.poError && m.mode === "PO" && (
-            <div className="text-xs text-red-600">{c.poError}</div>
-          )}
-          {c.taskError && <div className="text-xs text-red-600">{c.taskError}</div>}
+          {c.poError && m.mode === "PO" && <div className={InboundUI.danger}>{c.poError}</div>}
+          {c.taskError && <div className={InboundUI.danger}>{c.taskError}</div>}
         </div>
       </div>
 
       {m.mode === "PO" ? (
-        <div className="space-y-4">
-          {/* ✅ 起点：最近采购单待收清单 + 原版详情（左侧只保留这两块） */}
-          <div>
-            <PurchaseOrderContextPanel
-              c={c}
-              po={po}
-              poOptions={m.poOptions}
-              loadingPoOptions={m.loadingPoOptions}
-              poOptionsError={m.poOptionsError}
-              selectedPoId={m.selectedPoId}
-              onSelectPoId={m.handleSelectPoId}
-            />
-          </div>
+        <div className={InboundUI.cardGap}>
+          <PurchaseOrderContextPanel
+            c={c}
+            po={po}
+            poOptions={m.poOptions}
+            loadingPoOptions={m.loadingPoOptions}
+            poOptionsError={m.poOptionsError}
+            selectedPoId={m.selectedPoId}
+            onSelectPoId={m.handleSelectPoId}
+          />
 
-          {/* 下一步：收货任务 */}
-          <div>
-            <ReceiveTaskContextPanel c={c} mode={m.mode} po={po} task={task} />
-          </div>
+          <ReceiveTaskContextPanel c={c} mode={m.mode} po={po} task={task} />
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="text-sm text-slate-700">
-            退货收货请从退货任务进入（本页不复用采购收货逻辑）。
-          </div>
+          <div className={InboundUI.subtitle}>退货收货请从退货任务进入（本页不复用采购收货逻辑）。</div>
           <ReceiveTaskContextPanel c={c} mode={m.mode} po={po} task={task} />
         </div>
       )}

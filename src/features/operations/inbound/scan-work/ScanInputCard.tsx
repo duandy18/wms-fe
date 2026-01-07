@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import type { InboundCockpitController } from "../types";
+import { InboundUI } from "../ui";
 
 export const ScanInputCard: React.FC<{
   c: InboundCockpitController;
@@ -24,7 +25,6 @@ export const ScanInputCard: React.FC<{
     try {
       await onScan(trimmed);
       setCode("");
-      // 扫码枪/键盘连续录入体验：提交后自动聚焦回输入框
       inputRef.current?.focus();
     } finally {
       setSubmitting(false);
@@ -32,24 +32,23 @@ export const ScanInputCard: React.FC<{
   };
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+    <section className={`${InboundUI.card} ${InboundUI.cardPad} ${InboundUI.cardGap}`}>
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-800">条码 / SKU 输入</h2>
+        <h2 className={InboundUI.title}>条码 / SKU 输入</h2>
         {task ? (
-          <span className="text-[11px] text-slate-500">
+          <span className={InboundUI.quiet}>
             任务 #{task.id} · 仓库 {task.warehouse_id}
           </span>
         ) : (
-          <span className="text-[11px] text-slate-500">未绑定收货任务</span>
+          <span className={InboundUI.quiet}>未绑定收货任务</span>
         )}
       </div>
 
-      {/* 输入区：只保留一个大输入框 + 数量 */}
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_160px] gap-3 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_180px] gap-3 items-end">
         <div className="space-y-1">
           <input
             ref={inputRef}
-            className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base font-mono focus:outline-none focus:ring-2 focus:ring-sky-300"
+            className={InboundUI.inputText}
             placeholder="请将光标置于此处并扫描条码（或键盘输入后回车）"
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -66,11 +65,11 @@ export const ScanInputCard: React.FC<{
         </div>
 
         <div className="space-y-1">
-          <label className="text-[11px] text-slate-600">本次数量</label>
+          <label className={InboundUI.hint}>本次数量</label>
           <input
             type="number"
             min={1}
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-3 text-base font-mono focus:outline-none focus:ring-2 focus:ring-sky-300"
+            className={InboundUI.inputNumber}
             value={scanQty}
             onChange={onQtyChange}
             disabled={submitting}

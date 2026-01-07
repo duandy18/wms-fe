@@ -6,7 +6,7 @@ import PageTitle from "../../../components/ui/PageTitle";
 
 export const InboundCockpitHeader: React.FC = () => {
   return (
-    <div>
+    <div className="pb-1">
       <PageTitle title="收货" />
     </div>
   );

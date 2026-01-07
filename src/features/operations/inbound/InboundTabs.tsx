@@ -18,7 +18,7 @@ export const InboundTabs: React.FC<{
             type="button"
             onClick={() => onChange(t.key)}
             className={
-              "rounded-full border px-3 py-1 text-sm " +
+              "rounded-full border px-4 py-2 text-base " +
               (active
                 ? "border-slate-900 bg-slate-900 text-white"
                 : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50")

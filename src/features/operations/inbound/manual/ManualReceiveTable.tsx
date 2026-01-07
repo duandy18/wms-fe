@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import type { ReceiveTaskLine } from "../../../receive-tasks/api";
 import { SupplementLink } from "../SupplementLink";
+import { InboundUI } from "../ui";
 
 function clampInt(n: number): number {
   if (!Number.isFinite(n)) return 0;
@@ -35,20 +36,16 @@ export const ManualReceiveTable: React.FC<{
   savingItemId: number | null;
   savingAll?: boolean;
 
-  /** 当前定位的 item_id（由扫码/输入条码选中） */
   activeItemId?: number | null;
 
-  /** ✅ 本次任务 id：用于“去补录”链接口径 */
   taskId?: number | null;
 
-  /** ✅ 后端 supplements（主数据口径） */
   hardMissingByItemId: Record<number, string[]>;
   softMissingByItemId: Record<number, string[]>;
 
   onQtyChange: (itemId: number, value: string) => void;
   onReceive: (line: ReceiveTaskLine) => void;
 
-  /** 点击行时切换定位（可选） */
   onRowClick?: (line: ReceiveTaskLine) => void;
 }> = ({
   lines,
@@ -68,7 +65,6 @@ export const ManualReceiveTable: React.FC<{
       const expected = l.expected_qty != null ? clampInt(l.expected_qty ?? 0) : null;
       const received = clampInt(l.scanned_qty ?? 0);
 
-      // 仅用于展示“合计/差异”，不用于默认填充输入框
       const raw = qtyInputs[l.item_id] ?? "";
       const parsed = parseQtyInput(raw);
       const thisQty = parsed != null ? parsed : 0;
@@ -104,26 +100,26 @@ export const ManualReceiveTable: React.FC<{
   }, [lines, qtyInputs, hardMissingByItemId, softMissingByItemId]);
 
   return (
-    <div className="max-h-72 overflow-y-auto rounded-lg bg-slate-50 border border-slate-100">
-      <table className="min-w-full border-collapse text-[12px]">
+    <div className={InboundUI.tableWrap}>
+      <table className={InboundUI.table}>
         <thead>
-          <tr className="bg-slate-100 text-slate-600">
-            <th className="px-2 py-2 text-left">商品</th>
-            <th className="px-2 py-2 text-right">计划</th>
-            <th className="px-2 py-2 text-right">已收</th>
-            <th className="px-2 py-2 text-right">本次</th>
-            <th className="px-2 py-2 text-right">合计</th>
-            <th className="px-2 py-2 text-right">差异</th>
-            <th className="px-2 py-2 text-left">判断</th>
-            <th className="px-2 py-2 text-left">补录</th>
-            <th className="px-2 py-2 text-center">操作</th>
+          <tr className={InboundUI.thRow}>
+            <th className={InboundUI.th}>商品</th>
+            <th className={InboundUI.thRight}>计划</th>
+            <th className={InboundUI.thRight}>已收</th>
+            <th className={InboundUI.thRight}>本次</th>
+            <th className={InboundUI.thRight}>合计</th>
+            <th className={InboundUI.thRight}>差异</th>
+            <th className={InboundUI.th}>判断</th>
+            <th className={InboundUI.th}>补录</th>
+            <th className={InboundUI.thCenter}>操作</th>
           </tr>
         </thead>
 
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={9} className="px-2 py-3 text-center text-slate-500">
+              <td colSpan={9} className={`${InboundUI.td} text-center text-slate-500`}>
                 当前任务没有任何行，无法进行手工收货。
               </td>
             </tr>
@@ -154,40 +150,36 @@ export const ManualReceiveTable: React.FC<{
               const blocked = savingAll || savingItemId === l.item_id;
               const isActive = activeItemId != null && l.item_id === activeItemId;
 
-              // ✅ 输入框只显示用户输入，不提供任何“剩余”提示
               const rawInput = (qtyInputs[l.item_id] ?? "").trim();
 
               return (
                 <tr
                   key={l.id}
-                  className={
-                    "border-t border-slate-100 align-top " +
-                    (isActive ? "bg-sky-50 ring-1 ring-sky-300" : "")
-                  }
+                  className={`${InboundUI.tr} ${isActive ? InboundUI.rowActive : ""}`}
                   onClick={() => onRowClick?.(l)}
                   style={{ cursor: onRowClick ? "pointer" : "default" }}
                   title={onRowClick ? "点击该行可切换定位" : undefined}
                 >
-                  <td className="px-2 py-2">
+                  <td className={InboundUI.td}>
                     <div className="flex items-center gap-2">
-                      <div className="font-medium text-slate-900">{l.item_name ?? "（未命名商品）"}</div>
+                      <div className="font-medium text-slate-900">
+                        {l.item_name ?? "（未命名商品）"}
+                      </div>
                       {isActive ? (
-                        <span className="rounded bg-sky-100 px-2 py-0.5 text-[11px] text-sky-800">
+                        <span className="rounded bg-sky-100 px-2 py-0.5 text-[12px] text-sky-800">
                           已定位
                         </span>
                       ) : null}
                     </div>
-                    <div className="text-[11px] text-slate-500">{l.spec_text ?? "-"}</div>
+                    <div className={InboundUI.quiet}>{l.spec_text ?? "-"}</div>
                   </td>
 
-                  <td className="px-2 py-2 text-right font-mono">
-                    {r.expected == null ? "-" : r.expected}
-                  </td>
-                  <td className="px-2 py-2 text-right font-mono">{r.received}</td>
+                  <td className={InboundUI.tdRight}>{r.expected == null ? "-" : r.expected}</td>
+                  <td className={InboundUI.tdRight}>{r.received}</td>
 
-                  <td className="px-2 py-2 text-right">
+                  <td className={InboundUI.tdRight}>
                     <input
-                      className="w-24 rounded border border-slate-300 px-2 py-1 text-right font-mono bg-white"
+                      className={InboundUI.tableInput}
                       placeholder=""
                       value={rawInput}
                       onChange={(e) => onQtyChange(l.item_id, e.target.value)}
@@ -196,29 +188,32 @@ export const ManualReceiveTable: React.FC<{
                     />
                   </td>
 
-                  <td className="px-2 py-2 text-right font-mono">{r.after}</td>
+                  <td className={InboundUI.tdRight}>{r.after}</td>
+                  <td className={InboundUI.tdRight}>{varianceText}</td>
 
-                  <td className="px-2 py-2 text-right font-mono">{varianceText}</td>
+                  <td className={`${InboundUI.td} ${judgeCls}`}>{judgeText}</td>
 
-                  <td className={`px-2 py-2 ${judgeCls}`}>{judgeText}</td>
-
-                  <td className="px-2 py-2">
+                  <td className={InboundUI.td}>
                     {r.showHard ? (
                       <div className="text-amber-800">
                         入库必需：缺{formatMissing(r.hardMissing)}{" "}
-                        <SupplementLink source="purchase" taskId={taskId}>去补录</SupplementLink>
+                        <SupplementLink source="purchase" taskId={taskId}>
+                          去补录
+                        </SupplementLink>
                       </div>
                     ) : r.showSoft ? (
                       <div className="text-slate-700">
                         建议补录：缺{formatMissing(r.softMissing)}{" "}
-                        <SupplementLink source="purchase" taskId={taskId}>去补录</SupplementLink>
+                        <SupplementLink source="purchase" taskId={taskId}>
+                          去补录
+                        </SupplementLink>
                       </div>
                     ) : (
                       <div className="text-slate-400">-</div>
                     )}
                   </td>
 
-                  <td className="px-2 py-2 text-center">
+                  <td className={InboundUI.tdCenter}>
                     <button
                       type="button"
                       disabled={blocked}
@@ -226,7 +221,7 @@ export const ManualReceiveTable: React.FC<{
                         e.stopPropagation();
                         onReceive(l);
                       }}
-                      className="rounded border border-slate-300 bg-white px-2 py-1 text-[12px] text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                      className={InboundUI.btnGhost}
                     >
                       {savingAll ? "批量中…" : blocked ? "保存中…" : "记录"}
                     </button>
