@@ -11,6 +11,12 @@ interface PurchaseOrderLinesTableProps {
   po: PurchaseOrderWithLines;
   selectedLineId: number | null;
   onSelectLine: (lineId: number) => void;
+
+  /**
+   * default: 其它页面保持原样（dense）
+   * inbound: 采购收货作业页（字号/行高更大，便于扫视）
+   */
+  mode?: "default" | "inbound";
 }
 
 const formatUnitExpr = (line: PurchaseOrderLine) => {
@@ -43,13 +49,16 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
   po,
   selectedLineId,
   onSelectLine,
+  mode = "default",
 }) => {
+  const isInbound = mode === "inbound";
+
   const columns: ColumnDef<PurchaseOrderLine>[] = [
     {
       key: "line_no",
       header: "行号",
       render: (line) => (
-        <span className="font-mono text-[11px]">
+        <span className={`font-mono ${isInbound ? "text-[12px]" : "text-[11px]"}`}>
           {line.line_no}
         </span>
       ),
@@ -102,19 +111,26 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     },
   ];
 
+  const cardCls = isInbound
+    ? "bg-white border border-slate-200 rounded-xl p-5 space-y-4"
+    : "bg-white border border-slate-200 rounded-xl p-4 space-y-3";
+
+  const titleCls = isInbound ? "text-base font-semibold text-slate-800" : "text-sm font-semibold text-slate-800";
+
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-      <h2 className="text-sm font-semibold text-slate-800">行明细</h2>
+    <section className={cardCls}>
+      <h2 className={titleCls}>行明细</h2>
+
       <StandardTable<PurchaseOrderLine>
         columns={columns}
         data={po.lines}
-        dense
+        dense={!isInbound}
         getRowKey={(line) => line.id}
         emptyText="暂无行数据"
         selectedKey={selectedLineId}
         onRowClick={(line) => onSelectLine(line.id)}
         footer={
-          <span className="text-xs text-slate-500">
+          <span className={isInbound ? "text-sm text-slate-500" : "text-xs text-slate-500"}>
             共 {po.lines.length} 行
           </span>
         }
