@@ -14,13 +14,15 @@ type SupplementUpdatedDetail = {
   remainingHard?: number;
 };
 
-export function useInboundCommitModel(c: InboundCockpitController & {
-  traceId: string;
-  setTraceId: (v: string) => void;
-  commit: () => Promise<boolean>;
-  committing?: boolean;
-  commitError?: string | null;
-}) {
+export function useInboundCommitModel(
+  c: InboundCockpitController & {
+    traceId: string;
+    setTraceId: (v: string) => void;
+    commit: () => Promise<boolean>;
+    committing?: boolean;
+    commitError?: string | null;
+  },
+) {
   const task = c.currentTask;
   const isCommitted = task?.status === "COMMITTED";
   const taskId = task?.id ?? null;
@@ -71,14 +73,11 @@ export function useInboundCommitModel(c: InboundCockpitController & {
   const commitBlocked = !isCommitted && hardBlockedLines.length > 0;
   const manualDraftBlocked = !isCommitted && !!c.manualDraft?.dirty;
 
-  const autoRefreshAfterCommit = async () => {
+  const autoRefreshAfterCommit = async (poIdToRefresh: number | null) => {
     setAutoRefreshErr(null);
     try {
-      await c.reloadTask();
-
-      const poId = c.currentTask?.po_id ?? task?.po_id ?? null;
-      if (poId != null) {
-        await c.loadPoById(String(poId));
+      if (poIdToRefresh != null) {
+        await c.loadPoById(String(poIdToRefresh));
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "自动刷新失败";
@@ -86,13 +85,20 @@ export function useInboundCommitModel(c: InboundCockpitController & {
     }
   };
 
-  const runCommitAndAutoRefresh = async (): Promise<boolean> => {
+  const runCommitAndFinishSession = async (): Promise<boolean> => {
     setAutoRefreshErr(null);
+
+    // commit 前先记住 poId（commit 成功后要刷新 PO，但不再 reloadTask）
+    const poIdToRefresh = c.currentTask?.po_id ?? null;
 
     const ok = await c.commit();
     if (!ok) return false;
 
-    await autoRefreshAfterCommit();
+    await autoRefreshAfterCommit(poIdToRefresh);
+
+    // ✅ 作业闭环：提交成功后立刻解绑任务，回到“未绑定任务”干净状态
+    c.endTaskSession();
+
     return true;
   };
 
@@ -115,14 +121,21 @@ export function useInboundCommitModel(c: InboundCockpitController & {
       return "OPEN_CONFIRM";
     }
 
-    await runCommitAndAutoRefresh();
+    await runCommitAndFinishSession();
     return "DONE";
   };
 
   const handleConfirmCommit = async (): Promise<void> => {
     setConfirmOpen(false);
-    await runCommitAndAutoRefresh();
+    await runCommitAndFinishSession();
   };
+
+  // ✅ 进入 COMMITTED 终态：清理“上一轮对话框/阻断提示”的残留
+  useEffect(() => {
+    if (!isCommitted) return;
+    setConfirmOpen(false);
+    setBlockedMsg(null);
+  }, [isCommitted]);
 
   // 补录保存回流：刷新 task，并在入库页明确提示
   useEffect(() => {

@@ -15,7 +15,6 @@ import type { InboundTabKey } from "./inboundTabs";
 import { InboundTabBody } from "./tabs/InboundTabBody";
 import { InboundSupplementDrawer } from "./InboundSupplementDrawer";
 import type { SupplementSourceType } from "./ReceiveSupplementPanel";
-import { InboundUI } from "./ui";
 
 function normalizeSourceParam(v: string | null): SupplementSourceType {
   const x = (v ?? "").trim().toLowerCase();
@@ -47,21 +46,6 @@ const InboundCockpitPage: React.FC = () => {
   const taskIdFromUrl = useMemo(() => parsePositiveInt(sp.get("task_id")), [sp]);
   const drawerTaskId = taskIdFromUrl ?? currentTaskId;
 
-  const openDrawer = (source: "purchase" | "return" | "misc") => {
-    const next = new URLSearchParams(sp);
-    next.set("supplement", "1");
-    next.set("source", source);
-
-    // ✅ 抽屉口径必须可复现：写入 task_id，避免刷新/直达时串历史任务
-    if (currentTaskId != null && Number.isFinite(currentTaskId) && currentTaskId > 0) {
-      next.set("task_id", String(currentTaskId));
-    } else {
-      next.delete("task_id");
-    }
-
-    setSp(next);
-  };
-
   const closeDrawer = () => {
     const next = new URLSearchParams(sp);
     next.delete("supplement");
@@ -76,14 +60,6 @@ const InboundCockpitPage: React.FC = () => {
 
       <div className="flex items-center justify-between gap-4">
         <InboundTabs value={tab} onChange={setTab} />
-
-        <button
-          type="button"
-          className={InboundUI.btnGhost}
-          onClick={() => openDrawer("purchase")}
-        >
-          补录
-        </button>
       </div>
 
       <InboundTabBody tab={tab} c={c} />

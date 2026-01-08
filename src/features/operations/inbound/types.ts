@@ -91,6 +91,9 @@ export interface InboundCockpitController {
   bindTaskById: () => Promise<void>;
   reloadTask: () => Promise<void>;
 
+  /** ✅ 作业闭环：提交入库成功后，解绑当前任务并清空执行态残留 */
+  endTaskSession: () => void;
+
   handleScan: (barcode: string) => void;
   handleScanParsed: (parsed: ParsedBarcode) => Promise<void>;
 

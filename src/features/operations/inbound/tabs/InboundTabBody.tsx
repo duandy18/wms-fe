@@ -5,7 +5,6 @@ import type { InboundTabKey } from "../inboundTabs";
 import type { InboundCockpitController } from "../types";
 import { PurchaseManualTab } from "./PurchaseManualTab";
 import { ReturnReceiveTab } from "./ReturnReceiveTab";
-import { MiscReceiveTab } from "./MiscReceiveTab";
 
 export const InboundTabBody: React.FC<{
   tab: InboundTabKey;
@@ -16,8 +15,6 @@ export const InboundTabBody: React.FC<{
       return <PurchaseManualTab c={c} />;
     case "RETURN":
       return <ReturnReceiveTab c={c} />;
-    case "MISC":
-      return <MiscReceiveTab c={c} />;
     default:
       return <PurchaseManualTab c={c} />;
   }
