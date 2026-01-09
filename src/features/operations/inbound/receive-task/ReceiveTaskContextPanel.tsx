@@ -26,8 +26,9 @@ export function ReceiveTaskContextPanel(props: {
   task: InboundCockpitController["currentTask"];
 
   showTitle?: boolean;
+  titleText?: string;
 }) {
-  const { c, mode, po, task, showTitle = true } = props;
+  const { c, mode, po, task, showTitle = true, titleText } = props;
 
   const v = usePoReceiveVerification(po);
   const p = usePoReceivePlan(po);
@@ -78,7 +79,7 @@ export function ReceiveTaskContextPanel(props: {
           onClick={() => void c.createTaskFromPoSelected(selectedLines)}
           className={InboundUI.btnPrimary}
         >
-          {c.creatingTask ? "创建中…" : "创建收货任务"}
+          {c.creatingTask ? "创建中…" : "创建"}
         </button>
       )
     ) : null;
@@ -87,7 +88,7 @@ export function ReceiveTaskContextPanel(props: {
     <div className={InboundUI.cardGap}>
       <div className="flex items-center justify-between gap-2">
         {showTitle ? (
-          <div className={InboundUI.title}>收货任务（创建 / 绑定）</div>
+          <div className={InboundUI.title}>{titleText ?? "收货任务（创建 / 绑定）"}</div>
         ) : (
           <div />
         )}
@@ -96,51 +97,54 @@ export function ReceiveTaskContextPanel(props: {
 
       {!po && mode === "PO" ? <div className={InboundUI.quiet}>请先选择采购单。</div> : null}
 
-      {/* 执行态提示已删，这里只保留事实（不解释流程） */}
       {isTaskForCurrentPo ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-900">
           <div className="font-medium">
-            当前任务：#{task?.id} · {taskStatusLabel(task?.status)} · 行数 {task?.lines?.length ?? 0}
+            当前任务：#{task?.id} · {taskStatusLabel(task?.status)} · 行数{" "}
+            {task?.lines?.length ?? 0}
           </div>
         </div>
       ) : null}
 
       {mode === "PO" && po && !isTaskForCurrentPo ? (
         <>
-          <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
-            <div className="text-xs font-medium text-slate-900">验货确认</div>
+          {/* 验货确认：横排 / 放大 / 明确 */}
+          <div className="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+            <div className="text-sm font-semibold text-slate-900">验货确认</div>
 
-            <label className="flex items-center gap-2 text-[12px]">
-              <input
-                type="checkbox"
-                checked={v.checkGoods}
-                onChange={(e) => v.setCheckGoods(e.target.checked)}
-              />
-              商品已核验
-            </label>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 text-lg font-medium">
+                <input
+                  type="checkbox"
+                  checked={v.checkGoods}
+                  onChange={(e) => v.setCheckGoods(e.target.checked)}
+                />
+                商品已核验
+              </label>
 
-            <label className="flex items-center gap-2 text-[12px]">
-              <input
-                type="checkbox"
-                checked={v.checkSpec}
-                onChange={(e) => v.setCheckSpec(e.target.checked)}
-              />
-              规格已核验
-            </label>
+              <label className="flex items-center gap-2 text-lg font-medium">
+                <input
+                  type="checkbox"
+                  checked={v.checkSpec}
+                  onChange={(e) => v.setCheckSpec(e.target.checked)}
+                />
+                规格已核验
+              </label>
 
-            <label className="flex items-center gap-2 text-[12px]">
-              <input
-                type="checkbox"
-                checked={v.checkQty}
-                onChange={(e) => v.setCheckQty(e.target.checked)}
-              />
-              数量已核验
-            </label>
+              <label className="flex items-center gap-2 text-lg font-medium">
+                <input
+                  type="checkbox"
+                  checked={v.checkQty}
+                  onChange={(e) => v.setCheckQty(e.target.checked)}
+                />
+                数量已核验
+              </label>
+            </div>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-xs font-medium text-slate-900">本次到货清单</div>
+              <div className="text-base font-semibold text-slate-900">采购计划未完成清单</div>
               <button
                 type="button"
                 onClick={p.applyDefault}

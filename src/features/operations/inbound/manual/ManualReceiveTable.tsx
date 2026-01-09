@@ -162,9 +162,7 @@ export const ManualReceiveTable: React.FC<{
                 >
                   <td className={InboundUI.td}>
                     <div className="flex items-center gap-2">
-                      <div className="font-medium text-slate-900">
-                        {l.item_name ?? "（未命名商品）"}
-                      </div>
+                      <div className="font-medium text-slate-900">{l.item_name ?? "（未命名商品）"}</div>
                       {isActive ? (
                         <span className="rounded bg-sky-100 px-2 py-0.5 text-[12px] text-sky-800">
                           已定位
@@ -195,8 +193,8 @@ export const ManualReceiveTable: React.FC<{
 
                   <td className={InboundUI.td}>
                     {r.showHard ? (
-                      <div className="text-amber-800">
-                        入库必需：缺{formatMissing(r.hardMissing)}{" "}
+                      <div className="text-rose-700 font-medium">
+                        必须补录：缺{formatMissing(r.hardMissing)}{" "}
                         <SupplementLink source="purchase" taskId={taskId}>
                           去补录
                         </SupplementLink>

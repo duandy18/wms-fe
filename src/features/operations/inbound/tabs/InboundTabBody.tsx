@@ -5,7 +5,6 @@ import type { InboundTabKey } from "../inboundTabs";
 import type { InboundCockpitController } from "../types";
 import { PurchaseManualTab } from "./PurchaseManualTab";
 import { ReturnReceiveTab } from "./ReturnReceiveTab";
-import { MiscReceiveTab } from "./MiscReceiveTab";
 
 export const InboundTabBody: React.FC<{
   tab: InboundTabKey;
@@ -14,10 +13,11 @@ export const InboundTabBody: React.FC<{
   switch (tab) {
     case "PURCHASE_MANUAL":
       return <PurchaseManualTab c={c} />;
+
     case "RETURN":
-      return <ReturnReceiveTab c={c} />;
-    case "MISC":
-      return <MiscReceiveTab c={c} />;
+      // 退货回仓已是独立作业台，不再依赖 InboundCockpitController
+      return <ReturnReceiveTab />;
+
     default:
       return <PurchaseManualTab c={c} />;
   }

@@ -75,8 +75,14 @@ export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({ c
   const right = (
     <div className="space-y-4">
       <section className={`${InboundUI.card} ${InboundUI.cardPad}`}>
-        <div className={`${InboundUI.title} mb-3`}>创建收货任务</div>
-        <ReceiveTaskContextPanel c={c} mode="PO" po={po} task={task} showTitle={false} />
+        <ReceiveTaskContextPanel
+          c={c}
+          mode="PO"
+          po={po}
+          task={task}
+          showTitle
+          titleText="创建收货任务"
+        />
       </section>
 
       <InboundScanCard c={c} />

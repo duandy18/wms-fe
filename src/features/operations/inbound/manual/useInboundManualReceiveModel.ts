@@ -105,6 +105,7 @@ export function useInboundManualReceiveModel(c: InboundCockpitController) {
   }
 
   useEffect(() => {
+    // ✅ 任务切换 / 状态进入终态：都要“清场”
     setQtyInputs({});
     setError(null);
     c.setManualDraft({ dirty: false, touchedLines: 0, totalQty: 0 });
@@ -116,9 +117,11 @@ export function useInboundManualReceiveModel(c: InboundCockpitController) {
 
     void reloadSupplements();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task?.id]);
+  }, [task?.id, task?.status]);
 
   const handleQtyChange = (itemId: number, value: string) => {
+    // ✅ 作业终态：不接受任何残留输入
+    if (task?.status === "COMMITTED") return;
     setQtyInputs((prev) => ({ ...prev, [itemId]: value }));
   };
 
@@ -168,6 +171,11 @@ export function useInboundManualReceiveModel(c: InboundCockpitController) {
   const handleReceive = async (line: ReceiveTaskLine) => {
     setError(null);
 
+    if (task?.status === "COMMITTED") {
+      setError("本次任务已入库，作业已结束：请创建新任务继续收货。");
+      return;
+    }
+
     if (savingAll) {
       setError("正在批量记录中，请稍候…");
       return;
@@ -203,6 +211,11 @@ export function useInboundManualReceiveModel(c: InboundCockpitController) {
 
   const handleReceiveBatch = async () => {
     setError(null);
+
+    if (task?.status === "COMMITTED") {
+      setError("本次任务已入库，作业已结束：请创建新任务继续收货。");
+      return;
+    }
 
     if (!task) {
       setError("尚未绑定收货任务，无法批量记录。");

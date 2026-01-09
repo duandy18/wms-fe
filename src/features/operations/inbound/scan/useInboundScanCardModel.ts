@@ -1,6 +1,6 @@
 // src/features/operations/inbound/scan/useInboundScanCardModel.ts
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { InboundCockpitController } from "../types";
 import { parseScanBarcode, type ParsedBarcode } from "../../scan/barcodeParser";
 import { useScanProbe } from "../../scan/useScanProbe";
@@ -14,6 +14,16 @@ export function useInboundScanCardModel(c: InboundCockpitController) {
 
   const { probe, loading, error: probeError } = useScanProbe("receive");
 
+  const taskId = c.currentTask?.id ?? null;
+  const isCommitted = c.currentTask?.status === "COMMITTED";
+
+  // ✅ 任务切换 / 进入终态：清理扫码卡残留（作业结束不应继续扫）
+  useEffect(() => {
+    setScanQty(1);
+    setStatusLevel("idle");
+    setStatusMsg(null);
+  }, [taskId, isCommitted]);
+
   const handleQtyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
     if (!Number.isFinite(v) || v <= 0) {
@@ -24,6 +34,12 @@ export function useInboundScanCardModel(c: InboundCockpitController) {
   };
 
   const handleScan = async (barcodeRaw: string) => {
+    if (isCommitted) {
+      setStatusLevel("warn");
+      setStatusMsg("本次任务已入库，作业已结束：请创建新任务继续收货。");
+      return;
+    }
+
     const barcode = barcodeRaw.trim();
     if (!barcode) return;
 
@@ -50,14 +66,11 @@ export function useInboundScanCardModel(c: InboundCockpitController) {
         setStatusMsg(std.message ?? "条码解析失败");
       }
 
-      const itemId =
-        (std.item_id as number | null | undefined) ?? parsedLocal.item_id ?? null;
+      const itemId = (std.item_id as number | null | undefined) ?? parsedLocal.item_id ?? null;
 
-      const qtyFromParsed =
-        (std.qty as number | null | undefined) ?? parsedLocal.qty ?? 1;
+      const qtyFromParsed = (std.qty as number | null | undefined) ?? parsedLocal.qty ?? 1;
 
-      const effectiveQty =
-        Number.isFinite(scanQty) && scanQty > 0 ? scanQty : qtyFromParsed;
+      const effectiveQty = Number.isFinite(scanQty) && scanQty > 0 ? scanQty : qtyFromParsed;
 
       const overridden: ParsedBarcode = {
         ...parsedLocal,

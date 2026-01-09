@@ -157,6 +157,23 @@ export function useInboundCockpitController(): InboundCockpitController {
     setManualDraft(EMPTY_MANUAL_DRAFT);
   }
 
+  function endTaskSession() {
+    // ✅ 解绑当前任务 + 清掉执行态残留（不影响当前采购单上下文）
+    setCurrentTask(null);
+    setTaskIdInput("");
+    setTaskError(null);
+    setLoadingTask(false);
+
+    setCommitError(null);
+    setActiveItemId(null);
+
+    setLastParsed(null);
+    setHistory([]);
+
+    setManualDraft(EMPTY_MANUAL_DRAFT);
+    setTraceId("");
+  }
+
   // ========== 扫码 ==========
 
   function handleScan(barcode: string) {
@@ -271,6 +288,7 @@ export function useInboundCockpitController(): InboundCockpitController {
     createTaskFromPoSelected,
     bindTaskById,
     reloadTask,
+    endTaskSession,
 
     handleScan,
     handleScanParsed,

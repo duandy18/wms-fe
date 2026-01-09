@@ -14,7 +14,7 @@ export function PoReceivePlanTable(props: {
   const { rows, selected, qtyMap, onToggle, onQtyChange, validate } = props;
 
   if (rows.length === 0) {
-    return <div className="text-[11px] text-slate-500">无可收货行。</div>;
+    return <div className="text-sm text-slate-500">无可收货行。</div>;
   }
 
   return (
@@ -27,31 +27,29 @@ export function PoReceivePlanTable(props: {
         return (
           <div
             key={r.poLineId}
-            className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2"
+            className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3"
           >
-            <div className="flex items-start justify-between gap-2">
-              <label className="flex items-start gap-2">
+            <div className="flex items-start justify-between gap-3">
+              <label className="flex items-start gap-3">
                 <input
                   type="checkbox"
                   checked={checked}
                   disabled={r.remain <= 0}
-                  onChange={(e) =>
-                    onToggle(r.poLineId, e.target.checked, r.remain)
-                  }
+                  onChange={(e) => onToggle(r.poLineId, e.target.checked, r.remain)}
                 />
                 <div>
-                  <div className="text-[12px] font-medium text-slate-900">
+                  <div className="text-base font-semibold text-slate-900">
                     {r.name}
                     {r.spec && <span className="ml-2 text-slate-600">· {r.spec}</span>}
                   </div>
-                  <div className="text-[11px] text-slate-600">
+                  <div className="text-sm text-slate-600">
                     剩余应收 {r.remain}（应收 {r.ordered} · 已收 {r.received}）
                   </div>
                 </div>
               </label>
 
               <input
-                className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-[12px]"
+                className="w-28 rounded-md border border-slate-300 bg-white px-3 py-2 text-base"
                 value={v}
                 disabled={!checked}
                 onChange={(e) => onQtyChange(r.poLineId, e.target.value)}
@@ -59,7 +57,7 @@ export function PoReceivePlanTable(props: {
               />
             </div>
 
-            {err && <div className="mt-1 text-[11px] text-rose-700">{err}</div>}
+            {err && <div className="mt-2 text-sm text-rose-700">{err}</div>}
           </div>
         );
       })}
