@@ -3,23 +3,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PageTitle from "../../components/ui/PageTitle";
-import {
-  fetchPurchaseOrderV2,
-  type PurchaseOrderWithLines,
-} from "./api";
+import { fetchPurchaseOrderV2, type PurchaseOrderWithLines } from "./api";
 
 import { PurchaseOrderHeaderCard } from "./PurchaseOrderHeaderCard";
 import { PurchaseOrderLinesTable } from "./PurchaseOrderLinesTable";
 import { PurchaseOrderLinksCard } from "./PurchaseOrderLinksCard";
 
-import {
-  createReceiveTaskFromPo,
-  type ReceiveTask,
-} from "../receive-tasks/api";
-import {
-  createReturnTaskFromPo,
-  type ReturnTask,
-} from "../return-tasks/api";
+import { createReceiveTaskFromPo, type ReceiveTask } from "../receive-tasks/api";
 
 const PurchaseOrderDetailPage: React.FC = () => {
   const { poId } = useParams<{ poId: string }>();
@@ -30,19 +20,11 @@ const PurchaseOrderDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // 行表选中状态（纯展示，不再直接收货）
-  const [selectedLineId, setSelectedLineId] = useState<number | null>(
-    null,
-  );
+  const [selectedLineId, setSelectedLineId] = useState<number | null>(null);
 
   // 收货任务创建状态
   const [creatingReceiveTask, setCreatingReceiveTask] = useState(false);
-  const [createReceiveTaskError, setCreateReceiveTaskError] =
-    useState<string | null>(null);
-
-  // 退货任务创建状态
-  const [creatingReturnTask, setCreatingReturnTask] = useState(false);
-  const [createReturnTaskError, setCreateReturnTaskError] =
-    useState<string | null>(null);
+  const [createReceiveTaskError, setCreateReceiveTaskError] = useState<string | null>(null);
 
   const idNum = poId ? Number(poId) : NaN;
   const isIdValid = poId && Number.isFinite(idNum);
@@ -67,8 +49,7 @@ const PurchaseOrderDetailPage: React.FC = () => {
       }
     } catch (err: unknown) {
       console.error("fetchPurchaseOrderV2 failed", err);
-      const msg =
-        err instanceof Error ? err.message : "加载采购单失败";
+      const msg = err instanceof Error ? err.message : "加载采购单失败";
       setError(msg);
       setPo(null);
     } finally {
@@ -103,31 +84,10 @@ const PurchaseOrderDetailPage: React.FC = () => {
       navigate(`/receive-tasks/${task.id}`);
     } catch (err: unknown) {
       console.error("createReceiveTaskFromPo failed", err);
-      const msg =
-        err instanceof Error ? err.message : "创建收货任务失败";
+      const msg = err instanceof Error ? err.message : "创建收货任务失败";
       setCreateReceiveTaskError(msg);
     } finally {
       setCreatingReceiveTask(false);
-    }
-  }
-
-  async function handleCreateReturnTask() {
-    if (!po || !isIdValid) return;
-    setCreatingReturnTask(true);
-    setCreateReturnTaskError(null);
-    try {
-      const task: ReturnTask = await createReturnTaskFromPo(idNum, {
-        warehouse_id: po.warehouse_id,
-        include_zero_received: false,
-      });
-      navigate(`/return-tasks/${task.id}`);
-    } catch (err: unknown) {
-      console.error("createReturnTaskFromPo failed", err);
-      const msg =
-        err instanceof Error ? err.message : "创建退货任务失败";
-      setCreateReturnTaskError(msg);
-    } finally {
-      setCreatingReturnTask(false);
     }
   }
 
@@ -142,9 +102,7 @@ const PurchaseOrderDetailPage: React.FC = () => {
         >
           ← 返回采购单列表
         </button>
-        <div className="text-sm text-red-600">
-          无效的采购单 ID（URL 中的 :poId 不是数字）。
-        </div>
+        <div className="text-sm text-red-600">无效的采购单 ID（URL 中的 :poId 不是数字）。</div>
       </div>
     );
   }
@@ -160,10 +118,7 @@ const PurchaseOrderDetailPage: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <PageTitle
-        title={`采购单详情 #${poId}`}
-        description="多行采购单 → 收货任务 / 退货任务 → 扫码/录入 → commit → 库存 & 台账联动。"
-      />
+      <PageTitle title={`采购单详情 #${poId}`} description="多行采购单 → 收货任务 → 扫码/录入 → commit → 库存 & 台账联动。" />
 
       <button
         type="button"
@@ -173,12 +128,8 @@ const PurchaseOrderDetailPage: React.FC = () => {
         ← 返回采购单列表
       </button>
 
-      {loading && (
-        <div className="text-sm text-slate-500">加载中…</div>
-      )}
-      {error && (
-        <div className="text-sm text-red-600">{error}</div>
-      )}
+      {loading && <div className="text-sm text-slate-500">加载中…</div>}
+      {error && <div className="text-sm text-red-600">{error}</div>}
 
       {po && (
         <>
@@ -191,69 +142,27 @@ const PurchaseOrderDetailPage: React.FC = () => {
           />
 
           {/* 行明细表 */}
-          <PurchaseOrderLinesTable
-            po={po}
-            selectedLineId={selectedLineId}
-            onSelectLine={setSelectedLineId}
-          />
+          <PurchaseOrderLinesTable po={po} selectedLineId={selectedLineId} onSelectLine={setSelectedLineId} />
 
           {/* 收货任务入口 */}
           <section className="space-y-2 rounded-xl border border-emerald-200 bg-white p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-emerald-800">
-                收货任务（Receive Task）
-              </h2>
+              <h2 className="text-sm font-semibold text-emerald-800">收货任务（Receive Task）</h2>
               <div className="flex items-center gap-2 text-xs">
-                {createReceiveTaskError && (
-                  <span className="text-red-600">
-                    {createReceiveTaskError}
-                  </span>
-                )}
+                {createReceiveTaskError && <span className="text-red-600">{createReceiveTaskError}</span>}
                 <button
                   type="button"
                   disabled={creatingReceiveTask}
                   onClick={() => void handleCreateReceiveTask()}
                   className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm disabled:opacity-60"
                 >
-                  {creatingReceiveTask
-                    ? "创建收货任务中…"
-                    : "创建收货任务并进入收货"}
+                  {creatingReceiveTask ? "创建收货任务中…" : "创建收货任务并进入收货"}
                 </button>
               </div>
             </div>
             <p className="text-xs text-slate-500">
-              创建收货任务后，将跳转到“收货任务详情页”，在那边通过扫码或行录入“实收数量”，最后点击
-              commit 才真正入库并写入台账与库存。
-            </p>
-          </section>
-
-          {/* 退货任务入口 */}
-          <section className="space-y-2 rounded-xl border border-rose-200 bg-white p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-rose-800">
-                采购退货任务（Return Task）
-              </h2>
-              <div className="flex items-center gap-2 text-xs">
-                {createReturnTaskError && (
-                  <span className="text-red-600">
-                    {createReturnTaskError}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  disabled={creatingReturnTask}
-                  onClick={() => void handleCreateReturnTask()}
-                  className="inline-flex items-center rounded-md bg-rose-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm disabled:opacity-60"
-                >
-                  {creatingReturnTask
-                    ? "创建退货任务中…"
-                    : "创建退货任务并进入退货"}
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500">
-              创建退货任务后，将跳转到“退货任务详情页”，在那边通过扫码或行录入“退货数量”，最后点击
-              commit 才真正出库并写入台账与库存。
+              创建收货任务后，将跳转到“收货任务详情页”，在那边通过扫码或行录入“实收数量”，最后点击 commit
+              才真正入库并写入台账与库存。
             </p>
           </section>
 

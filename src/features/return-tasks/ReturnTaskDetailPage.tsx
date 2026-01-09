@@ -3,16 +3,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PageTitle from "../../components/ui/PageTitle";
-import {
-  fetchReturnTask,
-  commitReturnTask,
-  type ReturnTask,
-} from "./api";
+import { fetchReturnTask, commitReturnTask, type ReturnTask } from "./api";
 import { getErrorMessage } from "./utils";
-import {
-  ReturnTaskInfoCard,
-  type ReturnVarianceSummary,
-} from "./components/ReturnTaskInfoCard";
+import { ReturnTaskInfoCard, type ReturnVarianceSummary } from "./components/ReturnTaskInfoCard";
 import { ReturnTaskLinesTable } from "./components/ReturnTaskLinesTable";
 
 const ReturnTaskDetailPage: React.FC = () => {
@@ -31,7 +24,7 @@ const ReturnTaskDetailPage: React.FC = () => {
 
   async function loadTask() {
     if (!isIdValid) {
-      setError("无效的退货任务 ID。");
+      setError("无效的退货回仓任务 ID。");
       setTask(null);
       return;
     }
@@ -42,7 +35,7 @@ const ReturnTaskDetailPage: React.FC = () => {
       setTask(data);
     } catch (err) {
       console.error("fetchReturnTask failed", err);
-      setError(getErrorMessage(err, "加载退货任务失败"));
+      setError(getErrorMessage(err, "加载退货回仓任务失败"));
       setTask(null);
     } finally {
       setLoading(false);
@@ -88,7 +81,7 @@ const ReturnTaskDetailPage: React.FC = () => {
       setTask(updated);
     } catch (err) {
       console.error("commitReturnTask failed", err);
-      setCommitError(getErrorMessage(err, "确认退货失败"));
+      setCommitError(getErrorMessage(err, "提交回仓失败"));
     } finally {
       setCommitting(false);
     }
@@ -97,7 +90,7 @@ const ReturnTaskDetailPage: React.FC = () => {
   if (!isIdValid) {
     return (
       <div className="p-6 space-y-4">
-        <PageTitle title="退货任务详情" />
+        <PageTitle title="退货回仓任务详情" />
         <button
           type="button"
           className="mb-2 text-xs text-slate-600 hover:text-slate-900"
@@ -105,19 +98,14 @@ const ReturnTaskDetailPage: React.FC = () => {
         >
           ← 返回采购单列表
         </button>
-        <div className="text-sm text-red-600">
-          无效的退货任务 ID（URL 中的 :taskId 不是数字）。
-        </div>
+        <div className="text-sm text-red-600">无效的任务 ID（URL 中的 :taskId 不是数字）。</div>
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6">
-      <PageTitle
-        title={`退货任务 #${taskId}`}
-        description="采购退货 → 退货任务 → 扫码/拣选 → commit 出库 → 台账与库存更新。"
-      />
+      <PageTitle title={`退货回仓任务 #${taskId}`} description="只读详情页：查看任务行与状态；可执行提交回仓（commit）。" />
 
       <button
         type="button"
@@ -136,9 +124,7 @@ const ReturnTaskDetailPage: React.FC = () => {
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-800">
-                行明细（计划退货 / 已拣选 / 差异）
-              </h2>
+              <h2 className="text-sm font-semibold text-slate-800">行明细（可退 / 已录 / 差异）</h2>
               <div className="flex items-center gap-2 text-xs">
                 {commitError && <span className="text-red-600">{commitError}</span>}
                 <button
@@ -147,11 +133,7 @@ const ReturnTaskDetailPage: React.FC = () => {
                   onClick={handleCommit}
                   className="inline-flex items-center rounded-md bg-rose-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm disabled:opacity-60"
                 >
-                  {isCommitted
-                    ? "已退货（COMMITTED）"
-                    : committing
-                    ? "确认退货中…"
-                    : "确认退货（commit）"}
+                  {isCommitted ? "已提交（COMMITTED）" : committing ? "提交中…" : "提交回仓（commit）"}
                 </button>
               </div>
             </div>

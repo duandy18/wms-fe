@@ -13,8 +13,11 @@ export const InboundTabBody: React.FC<{
   switch (tab) {
     case "PURCHASE_MANUAL":
       return <PurchaseManualTab c={c} />;
+
     case "RETURN":
-      return <ReturnReceiveTab c={c} />;
+      // 退货回仓已是独立作业台，不再依赖 InboundCockpitController
+      return <ReturnReceiveTab />;
+
     default:
       return <PurchaseManualTab c={c} />;
   }

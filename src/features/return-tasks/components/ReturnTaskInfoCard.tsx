@@ -26,21 +26,13 @@ export const ReturnTaskInfoCard: React.FC<{
 
       <div className="grid grid-cols-1 gap-x-8 gap-y-2 md:grid-cols-3">
         <div>
-          <div className="text-[11px] text-slate-500">退货任务 ID</div>
-          <div className="font-mono text-[13px]">
-            {task.id}
-            {task.po_id != null && (
-              <span className="ml-2 text-xs text-slate-600">(PO-{task.po_id})</span>
-            )}
-          </div>
+          <div className="text-[11px] text-slate-500">退货回仓任务 ID</div>
+          <div className="font-mono text-[13px]">{task.id}</div>
         </div>
 
         <div>
-          <div className="text-[11px] text-slate-500">供应商</div>
-          <div>
-            {task.supplier_name ??
-              (task.supplier_id != null ? `ID=${task.supplier_id}` : "-")}
-          </div>
+          <div className="text-[11px] text-slate-500">订单来源键（order_ref）</div>
+          <div className="font-mono text-[13px]">{task.order_id}</div>
         </div>
 
         <div>
@@ -49,10 +41,9 @@ export const ReturnTaskInfoCard: React.FC<{
         </div>
 
         <div>
-          <div className="text-[11px] text-slate-500">计划退货 vs 已拣选</div>
+          <div className="text-[11px] text-slate-500">可退（expected）vs 已录（picked）</div>
           <div>
-            计划：{varianceSummary.totalExpected}，已拣：{varianceSummary.totalPicked}
-            ，差异：
+            可退：{varianceSummary.totalExpected}，已录：{varianceSummary.totalPicked}，差异：
             <span
               className={
                 varianceSummary.totalVariance === 0
