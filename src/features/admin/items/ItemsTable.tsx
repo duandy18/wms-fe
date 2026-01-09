@@ -33,7 +33,8 @@ export const ItemsTable: React.FC = () => {
     return items;
   }, [items, filter]);
 
-  const { suppliers, supLoading, supError, ensureSuppliers, resetSuppliersError } = useSuppliersOptions();
+  const { suppliers, supLoading, supError, ensureSuppliers, resetSuppliersError } =
+    useSuppliersOptions();
 
   const [editing, setEditing] = useState<Item | null>(null);
   const [draft, setDraft] = useState<ItemDraft | null>(null);
@@ -55,6 +56,11 @@ export const ItemsTable: React.FC = () => {
 
     setDraft({
       name: it.name ?? "",
+
+      // ✅ brand/category：主数据可维护字段（空 -> ""，提交时再转 null）
+      brand: (it.brand ?? "").trim(),
+      category: (it.category ?? "").trim(),
+
       supplier_id: it.supplier_id ?? null,
       weight_kg: it.weight_kg == null ? "" : String(it.weight_kg),
 
@@ -111,6 +117,11 @@ export const ItemsTable: React.FC = () => {
         supplier_id: draft.supplier_id,
         weight_kg: weight_kg === null ? null : weight_kg,
         uom,
+
+        // ✅ 保存 brand/category（api.ts 会将空串转成 null）
+        brand: draft.brand,
+        category: draft.category,
+
         enabled: draft.enabled,
         has_shelf_life,
         ...(shelf_life_value !== undefined ? { shelf_life_value } : {}),

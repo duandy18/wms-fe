@@ -26,6 +26,10 @@ export type ReturnReceiveTaskModel = Pick<
   | "commit"
 > & {
   clearWorkArea: () => void;
+
+  // ✅ commit 成功后保留一条“查看库存”的定位信息（不自动跳转）
+  lastCommittedItemId: number | null;
+  clearLastCommitted: () => void;
 };
 
 export function useReturnReceiveTaskModel(args: {
@@ -47,6 +51,10 @@ export function useReturnReceiveTaskModel(args: {
 
   const [qtyInputs, setQtyInputs] = useState<Record<number, string>>({});
 
+  // ✅ commit 成功后给 UI 一个“查看即时库存”的按钮入口
+  const [lastCommittedItemId, setLastCommittedItemId] = useState<number | null>(null);
+  const clearLastCommitted = () => setLastCommittedItemId(null);
+
   const clearWorkArea = () => {
     setOrderRef("");
     setTask(null);
@@ -54,6 +62,8 @@ export function useReturnReceiveTaskModel(args: {
     setCommitError(null);
     setQtyInputs({});
     setCommitting(false);
+
+    // ⚠️ 不清 lastCommittedItemId：让按钮能留在界面上给人手动点
   };
 
   const canCreate = useMemo(() => {
@@ -91,6 +101,9 @@ export function useReturnReceiveTaskModel(args: {
   const createTask = async (params?: { warehouseId?: number | null }) => {
     const ref = selectedOrderRef.trim();
     if (!ref) return;
+
+    // 新任务开始：旧的“查看库存”入口不再相关
+    setLastCommittedItemId(null);
 
     setError(null);
     setCommitError(null);
@@ -150,6 +163,7 @@ export function useReturnReceiveTaskModel(args: {
 
   const clearAll = () => {
     // 只清右侧作业
+    setLastCommittedItemId(null);
     clearWorkArea();
   };
 
@@ -157,11 +171,20 @@ export function useReturnReceiveTaskModel(args: {
     if (!task) return;
     if (!canCommit) return;
 
+    // 新一次提交开始：旧入口作废
+    setLastCommittedItemId(null);
+
     setCommitError(null);
     setError(null);
     setCommitting(true);
     try {
+      // 先记住一个“可定位”的 item_id（最小实现：取第一行）
+      const itemIdForView = task.lines?.[0]?.item_id ?? null;
+
       await commitReturnTask(task.id, { trace_id: null });
+
+      // ✅ commit 成功后保留“查看库存”入口（不自动跳）
+      setLastCommittedItemId(itemIdForView);
 
       // ✅ 作业闭环：commit 成功后清场（右侧）
       clearWorkArea();
@@ -201,5 +224,8 @@ export function useReturnReceiveTaskModel(args: {
     commit,
 
     clearWorkArea,
+
+    lastCommittedItemId,
+    clearLastCommitted,
   };
 }

@@ -1,12 +1,28 @@
 // src/components/snapshot/InventoryDrawer.tsx
-import React from "react";
-import type { ItemDetailResponse } from "../../features/inventory/snapshot/api";
+import React, { useEffect, useMemo, useState } from "react";
+import type {
+  ItemDetailResponse,
+  ItemSlice,
+} from "../../features/inventory/snapshot/api";
+import { fetchLedgerList } from "../../features/diagnostics/ledger-tool/api";
+import type {
+  LedgerRow,
+  LedgerQueryPayload,
+} from "../../features/diagnostics/ledger-tool/types";
 
 interface Props {
   open: boolean;
   loading?: boolean;
   item: ItemDetailResponse | null;
   onClose: () => void;
+  onRefresh?: () => void;
+}
+
+function pickExplainSlice(slices: ItemSlice[]): ItemSlice | null {
+  if (!slices || slices.length === 0) return null;
+  // 解释优先：TOP 切片（通常最相关），否则就第一条
+  const top = slices.find((s) => s.is_top);
+  return top ?? slices[0];
 }
 
 export default function InventoryDrawer({
@@ -14,17 +30,71 @@ export default function InventoryDrawer({
   loading = false,
   item,
   onClose,
+  onRefresh,
 }: Props) {
+  const [latestLoading, setLatestLoading] = useState(false);
+  const [latestError, setLatestError] = useState<string | null>(null);
+  const [latest, setLatest] = useState<LedgerRow | null>(null);
+
+  const explainSlice = useMemo(() => {
+    return item ? pickExplainSlice(item.slices) : null;
+  }, [item]);
+
+  // 用于解释的过滤口径：尽量贴近“你正在看的切片”
+  const ledgerFilter = useMemo(() => {
+    if (!item) return null;
+    const base: Partial<LedgerQueryPayload> = { item_id: item.item_id };
+    if (explainSlice) {
+      base.warehouse_id = explainSlice.warehouse_id;
+      base.batch_code = explainSlice.batch_code;
+    }
+    return base;
+  }, [item, explainSlice]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLatest() {
+      if (!open || !item || !ledgerFilter) return;
+
+      setLatestLoading(true);
+      setLatestError(null);
+      setLatest(null);
+
+      try {
+        // 注意：后端排序规则由后端决定；我们用 limit=1 取“最新一条”。
+        // 如果你们后端默认不是按时间倒序，需要在后端加默认排序（这才符合“前端不猜测”）。
+        const payload: LedgerQueryPayload = {
+          ...ledgerFilter,
+          limit: 1,
+          offset: 0,
+        };
+
+        const res = await fetchLedgerList(payload);
+        if (cancelled) return;
+        setLatest(res.items?.[0] ?? null);
+      } catch (err) {
+        if (cancelled) return;
+        console.error("Failed to fetch latest ledger:", err);
+        setLatestError("加载最近台账失败（用于解释来源）");
+      } finally {
+        if (!cancelled) setLatestLoading(false);
+      }
+    }
+
+    void loadLatest();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, item, ledgerFilter]);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-40 flex">
       {/* 背景遮罩 */}
-      <div
-        className="flex-1 bg-black/30"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="flex-1 bg-black/30" onClick={onClose} aria-hidden="true" />
 
       {/* 右侧抽屉 */}
       <div className="w-full max-w-xl bg-white shadow-xl h-full flex flex-col">
@@ -41,22 +111,100 @@ export default function InventoryDrawer({
               </div>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="text-base text-slate-500 hover:text-slate-800"
-          >
-            关闭
-          </button>
+
+          <div className="flex items-center gap-3">
+            {onRefresh && (
+              <button
+                type="button"
+                onClick={onRefresh}
+                className="text-base text-slate-600 hover:text-slate-900"
+              >
+                刷新明细
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-base text-slate-500 hover:text-slate-800"
+            >
+              关闭
+            </button>
+          </div>
         </header>
 
         {/* 主体内容 */}
         <main className="flex-1 overflow-auto p-5 space-y-5">
-          {loading && (
-            <div className="text-base text-slate-600">加载中…</div>
-          )}
+          {loading && <div className="text-base text-slate-600">加载中…</div>}
 
           {!loading && item && (
             <>
+              {/* 最小解释：最近一条台账（事实来源） */}
+              <section className="border border-slate-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-lg font-semibold text-slate-800">
+                    最近变动（台账事实）
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    过滤口径：
+                    {explainSlice
+                      ? `仓=${explainSlice.warehouse_name} 批次=${explainSlice.batch_code}`
+                      : "按商品"}
+                  </div>
+                </div>
+
+                {latestLoading && (
+                  <div className="mt-3 text-sm text-slate-500">
+                    正在加载最近台账…
+                  </div>
+                )}
+
+                {!latestLoading && latestError && (
+                  <div className="mt-3 rounded-md bg-amber-50 p-3 text-xs text-amber-800">
+                    {latestError}
+                  </div>
+                )}
+
+                {!latestLoading && !latestError && !latest && (
+                  <div className="mt-3 text-sm text-slate-500">
+                    暂无台账记录（或当前过滤条件无法命中）。
+                  </div>
+                )}
+
+                {!latestLoading && !latestError && latest && (
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">原因</div>
+                      <div className="text-slate-900">{latest.reason}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">引用 ref</div>
+                      <div className="text-slate-900">{latest.ref ?? "-"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">变动 delta</div>
+                      <div className="text-slate-900">{latest.delta}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">时间</div>
+                      <div className="text-slate-900">{latest.occurred_at}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">仓库</div>
+                      <div className="text-slate-900">{latest.warehouse_id}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">批次</div>
+                      <div className="text-slate-900">{latest.batch_code}</div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-3 text-xs text-slate-500">
+                  解释只来自台账事实（/stock/ledger/query），前端不推导。
+                  如果你希望加“查看台账”跳转入口，把 Ledger 工具页面路由贴出来，我会按项目统一导航规范接上。
+                </div>
+              </section>
+
               {/* 汇总区域 */}
               <section className="border border-slate-200 rounded-lg p-4">
                 <div className="text-lg font-semibold text-slate-800 mb-3">
@@ -135,9 +283,7 @@ export default function InventoryDrawer({
                           <td className="px-3 py-2 whitespace-nowrap">
                             {s.batch_code}
                           </td>
-                          <td className="px-3 py-2 text-right">
-                            {s.on_hand_qty}
-                          </td>
+                          <td className="px-3 py-2 text-right">{s.on_hand_qty}</td>
                           <td className="px-3 py-2 text-right">
                             {s.available_qty}
                           </td>

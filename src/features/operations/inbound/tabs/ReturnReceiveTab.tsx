@@ -1,6 +1,7 @@
 // src/features/operations/inbound/tabs/ReturnReceiveTab.tsx
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { InboundTabShell } from "./InboundTabShell";
 import { InboundUI } from "../ui";
 
@@ -14,6 +15,7 @@ import { ReturnReceiveCreateTaskCard } from "../return-receive/ReturnReceiveCrea
 
 export const ReturnReceiveTab: React.FC = () => {
   const m = useReturnReceiveWorkbench();
+  const navigate = useNavigate();
 
   const left = (
     <div className="space-y-4">
@@ -26,7 +28,12 @@ export const ReturnReceiveTab: React.FC = () => {
         onReload={() => void m.reloadOrderRefs()}
       />
 
-      <ReturnReceiveOrderRefSummaryCard detail={m.detail} loading={m.loadingDetail} error={m.detailError} />
+      <ReturnReceiveOrderRefSummaryCard
+        detail={m.detail}
+        loading={m.loadingDetail}
+        error={m.detailError}
+        task={m.task}
+      />
     </div>
   );
 
@@ -64,6 +71,20 @@ export const ReturnReceiveTab: React.FC = () => {
               <button type="button" className={InboundUI.btnPrimary} disabled={!m.canCommit} onClick={() => void m.commit()}>
                 {m.committing ? "提交中…" : "提交回仓"}
               </button>
+
+              {m.lastCommittedItemId ? (
+                <button
+                  type="button"
+                  className={InboundUI.btnSecondary}
+                  onClick={() => {
+                    const qs = new URLSearchParams();
+                    qs.set("open_item_id", String(m.lastCommittedItemId));
+                    navigate(`/snapshot?${qs.toString()}`);
+                  }}
+                >
+                  查看即时库存（已定位）
+                </button>
+              ) : null}
 
               <span className={InboundUI.quiet}>规则：最终数量必须为正，且不超过“可退”。提交成功后自动清场。</span>
             </div>

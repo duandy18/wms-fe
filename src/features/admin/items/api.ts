@@ -8,6 +8,11 @@ export interface Item {
   spec?: string | null;
   uom?: string | null;
   barcode?: string | null;
+
+  // ✅ 新增：品牌 / 品类（主数据字段，可为空）
+  brand?: string | null;
+  category?: string | null;
+
   enabled: boolean;
 
   // ✅ DB 已 NOT NULL：不再允许空
@@ -40,6 +45,11 @@ export interface ItemCreateInput {
   spec?: string | null;
   uom: string; // ✅ 新建即完整：必填
   barcode: string; // ✅ 主条码必填
+
+  // ✅ 新增：品牌 / 品类（可选）
+  brand?: string | null;
+  category?: string | null;
+
   enabled: boolean;
 
   // ✅ DB 已 NOT NULL：必填
@@ -57,6 +67,11 @@ export interface ItemUpdateInput {
   name?: string | null;
   spec?: string | null;
   uom?: string | null;
+
+  // ✅ 新增：品牌 / 品类（可选）
+  brand?: string | null;
+  category?: string | null;
+
   enabled?: boolean;
 
   // ✅ 允许调整供应商，但不允许置空
@@ -90,6 +105,11 @@ export async function createItem(input: ItemCreateInput): Promise<Item> {
     spec: input.spec?.trim() || undefined,
     uom: input.uom.trim(),
     barcode: input.barcode.trim(),
+
+    // ✅ brand/category：可选，空串视为 null
+    brand: input.brand?.trim() ? input.brand.trim() : null,
+    category: input.category?.trim() ? input.category.trim() : null,
+
     enabled: input.enabled,
     supplier_id: supplierId,
     weight_kg: input.weight_kg,
@@ -107,6 +127,12 @@ export async function updateItem(id: number, input: ItemUpdateInput): Promise<It
   if (input.name !== undefined) body.name = input.name?.trim() || "";
   if (input.spec !== undefined) body.spec = input.spec?.trim() || null;
   if (input.uom !== undefined) body.uom = input.uom?.trim() || null;
+
+  // ✅ brand/category：可更新；空串 => null（清空）
+  if (input.brand !== undefined) body.brand = input.brand?.trim() ? input.brand.trim() : null;
+  if (input.category !== undefined)
+    body.category = input.category?.trim() ? input.category.trim() : null;
+
   if (input.enabled !== undefined) body.enabled = input.enabled;
 
   if (input.supplier_id !== undefined) {
