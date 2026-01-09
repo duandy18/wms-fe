@@ -11,6 +11,11 @@ import { ItemStatusSection } from "./edit/ItemStatusSection";
 
 export type ItemDraft = {
   name: string;
+
+  // ✅ 新增：品牌 / 品类（主数据字段）
+  brand: string;
+  category: string;
+
   supplier_id: number | null;
   weight_kg: string;
 

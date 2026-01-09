@@ -48,6 +48,11 @@ export const ItemsListTable: React.FC<{
           <th className="border px-4 py-3 text-left font-semibold">商品ID</th>
           <th className="border px-4 py-3 text-left font-semibold">主条码</th>
           <th className="border px-4 py-3 text-left font-semibold">商品名称</th>
+
+          {/* ✅ 新增：品牌 / 品类 */}
+          <th className="border px-4 py-3 text-left font-semibold">品牌</th>
+          <th className="border px-4 py-3 text-left font-semibold">品类</th>
+
           <th className="border px-4 py-3 text-left font-semibold">供货商</th>
           <th className="border px-4 py-3 text-left font-semibold">单位净重(kg)</th>
           <th className="border px-4 py-3 text-left font-semibold">最小包装单位</th>
@@ -72,6 +77,11 @@ export const ItemsListTable: React.FC<{
               <td className="px-4 py-3 font-mono">{it.id}</td>
               <td className="px-4 py-3 font-mono">{primaryBarcodes[it.id] ?? "—"}</td>
               <td className="px-4 py-3 font-medium">{it.name}</td>
+
+              {/* ✅ brand/category */}
+              <td className="px-4 py-3">{it.brand ?? "—"}</td>
+              <td className="px-4 py-3">{it.category ?? "—"}</td>
+
               <td className="px-4 py-3">{supplierLabel(it)}</td>
               <td className="px-4 py-3 font-mono">{it.weight_kg ?? "—"}</td>
               <td className="px-4 py-3">{it.uom ?? "—"}</td>

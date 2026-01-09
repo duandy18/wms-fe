@@ -81,6 +81,10 @@ export function useReturnReceiveWorkbench(): ReturnReceiveState & ReturnReceiveW
     applyInputDelta: right.applyInputDelta,
     commit: right.commit,
 
+    // ✅ 新增：commit 成功后“查看即时库存”入口
+    lastCommittedItemId: right.lastCommittedItemId,
+    clearLastCommitted: right.clearLastCommitted,
+
     // extra: 左侧上下文
     orderRefs: left.orderRefs,
     loadingOrderRefs: left.loadingOrderRefs,

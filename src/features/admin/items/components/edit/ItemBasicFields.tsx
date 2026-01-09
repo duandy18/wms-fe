@@ -25,6 +25,31 @@ export const ItemBasicFields: React.FC<{
         />
       </div>
 
+      {/* ✅ 新增：品牌 / 品类 */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <div className="text-sm font-medium">品牌</div>
+          <input
+            className="w-full rounded border px-3 py-2 text-base"
+            value={draft.brand}
+            onChange={(e) => onChangeDraft({ ...draft, brand: e.target.value })}
+            disabled={saving}
+            placeholder="可选，如：ACME"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-sm font-medium">品类</div>
+          <input
+            className="w-full rounded border px-3 py-2 text-base"
+            value={draft.category}
+            onChange={(e) => onChangeDraft({ ...draft, category: e.target.value })}
+            disabled={saving}
+            placeholder="可选，如：猫粮"
+          />
+        </div>
+      </div>
+
       <div className="space-y-2">
         <div className="text-sm font-medium">供货商</div>
         <select

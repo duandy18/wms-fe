@@ -1,8 +1,8 @@
 // src/features/operations/inbound/return-receive/ReturnReceiveOrderRefSummaryCard.tsx
 
-import React from "react";
+import React, { useMemo } from "react";
 import { InboundUI } from "../ui";
-import type { ReturnOrderRefDetailOut, ReturnOrderRefSummaryLine } from "../../../return-tasks/api";
+import type { ReturnOrderRefDetailOut, ReturnOrderRefSummaryLine, ReturnTask } from "../../../return-tasks/api";
 
 function fmtAddr(
   r?:
@@ -25,11 +25,30 @@ function lineTitle(ln: ReturnOrderRefSummaryLine): string {
   return `商品#${ln.item_id}`;
 }
 
+function keyOfLine(x: { item_id: number; batch_code: string }) {
+  return `${x.item_id}__${x.batch_code}`;
+}
+
 export const ReturnReceiveOrderRefSummaryCard: React.FC<{
   detail: ReturnOrderRefDetailOut | null;
   loading: boolean;
   error: string | null;
-}> = ({ detail, loading, error }) => {
+
+  // ✅ 传入当前右侧作业任务（若已创建），用于显示“已录入/已提交”进度
+  task?: ReturnTask | null;
+}> = ({ detail, loading, error, task }) => {
+  const taskLineMap = useMemo(() => {
+    const map = new Map<string, { picked_qty: number; committed_qty: number }>();
+    const lines = task?.lines ?? [];
+    for (const ln of lines) {
+      map.set(keyOfLine({ item_id: ln.item_id, batch_code: ln.batch_code }), {
+        picked_qty: Number(ln.picked_qty ?? 0),
+        committed_qty: Number(ln.committed_qty ?? 0),
+      });
+    }
+    return map;
+  }, [task]);
+
   return (
     <section className={`${InboundUI.card} ${InboundUI.cardPad} space-y-3`}>
       <h2 className={InboundUI.title}>订单详情（只读）</h2>
@@ -45,7 +64,8 @@ export const ReturnReceiveOrderRefSummaryCard: React.FC<{
               订单号：<span className="font-mono">{detail.order_ref}</span>
             </div>
             <div className="text-[12px] text-slate-600">
-              剩余可退：<span className="font-semibold text-slate-900">{detail.remaining_qty ?? "-"}</span> 件
+              剩余可退：<span className="font-semibold text-slate-900">{detail.remaining_qty ?? "-"}</span>{" "}
+              件
               <span className="mx-2 text-slate-400">·</span>
               平台：{detail.platform ?? "-"} / 店铺：{detail.shop_id ?? "-"}
               <span className="mx-2 text-slate-400">·</span>
@@ -71,35 +91,55 @@ export const ReturnReceiveOrderRefSummaryCard: React.FC<{
             <div className="text-[12px] text-slate-700">地址：{fmtAddr(detail.shipping?.receiver)}</div>
           </div>
 
-          {/* 出库事实（作业人员视角） */}
+          {/* 出库事实 + 本次回仓进度（作业人员视角） */}
           <div className="space-y-2">
-            <div className="text-sm font-medium text-slate-900">出库事实（只读）</div>
+            <div className="text-sm font-medium text-slate-900">出库事实 / 回仓进度（只读）</div>
             <div className="text-[12px] text-slate-600">
               出库原因：{detail.summary.ship_reasons?.length ? detail.summary.ship_reasons.join(", ") : "-"}
+              {task ? (
+                <>
+                  <span className="mx-2 text-slate-400">·</span>
+                  当前任务：#{task.id}（{task.status}）
+                </>
+              ) : null}
             </div>
 
             {detail.summary.lines.length === 0 ? (
               <div className={InboundUI.quiet}>该订单未找到可退回仓的出库行。</div>
             ) : (
               <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
-                {detail.summary.lines.map((ln, idx) => (
-                  <div key={`${ln.warehouse_id}-${ln.item_id}-${ln.batch_code}-${idx}`} className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-medium text-slate-900">{lineTitle(ln)}</div>
-                      <div className="text-sm text-slate-900">
-                        可退 <span className="font-semibold">{ln.shipped_qty}</span> 件
+                {detail.summary.lines.map((ln, idx) => {
+                  const k = keyOfLine({ item_id: ln.item_id, batch_code: ln.batch_code });
+                  const prog = taskLineMap.get(k) ?? { picked_qty: 0, committed_qty: 0 };
+
+                  return (
+                    <div
+                      key={`${ln.warehouse_id}-${ln.item_id}-${ln.batch_code}-${idx}`}
+                      className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-medium text-slate-900">{lineTitle(ln)}</div>
+
+                        {/* ✅ 把“出库事实 + 回仓进度”放在同一行，避免“看起来没数据” */}
+                        <div className="text-sm text-slate-900">
+                          可退 <span className="font-semibold">{ln.shipped_qty}</span> 件
+                          <span className="mx-2 text-slate-400">·</span>
+                          已录入 <span className="font-semibold">{prog.picked_qty}</span>
+                          <span className="mx-2 text-slate-400">·</span>
+                          已提交 <span className="font-semibold">{prog.committed_qty}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-1 text-[12px] text-slate-600">
+                        批次：<span className="font-mono">{ln.batch_code}</span>
+                        <span className="mx-2 text-slate-400">·</span>
+                        仓库 {ln.warehouse_id}
+                        <span className="mx-2 text-slate-400">·</span>
+                        <span className="text-slate-500">item_id={ln.item_id}</span>
                       </div>
                     </div>
-
-                    <div className="mt-1 text-[12px] text-slate-600">
-                      批次：<span className="font-mono">{ln.batch_code}</span>
-                      <span className="mx-2 text-slate-400">·</span>
-                      仓库 {ln.warehouse_id}
-                      <span className="mx-2 text-slate-400">·</span>
-                      <span className="text-slate-500">item_id={ln.item_id}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
