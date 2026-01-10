@@ -23,13 +23,14 @@ export default function StockLedgerPage() {
         onClear={m.clearUrlHint}
       />
 
-      {/* 保留三个日期按钮，但不再包一张卡 */}
       <LedgerRangeBar loading={m.loading} pageSize={m.pageSize} onPick={m.applyRange} />
 
       <LedgerFiltersPanel
         loading={m.loading}
         warehouseId={m.warehouseId}
         setWarehouseId={m.setWarehouseId}
+        itemId={m.itemId}
+        setItemId={m.setItemId}
         itemKeyword={m.itemKeyword}
         setItemKeyword={m.setItemKeyword}
         subReason={m.subReason}
