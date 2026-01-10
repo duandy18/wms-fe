@@ -39,9 +39,30 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
     await m.handleConfirmCommit();
   };
 
-  const handleViewInventory = () => {
-    navigate("/inventory/snapshot");
+  // --- 跳转：只做“按钮入口”，不自动跳、不自动查 ---
+  const handleViewSnapshot = () => {
+    const qs = new URLSearchParams();
+    if (m.taskId) qs.set("task_id", String(m.taskId));
+    navigate(`/snapshot${qs.toString() ? `?${qs.toString()}` : ""}`);
   };
+
+  const handleViewLedger = () => {
+    // ✅ 严格对齐 LedgerQuery：只透传它支持的字段
+    const qs = new URLSearchParams();
+    const tid = (c.traceId ?? "").trim();
+    if (tid) qs.set("trace_id", tid);
+    navigate(`/inventory/ledger${qs.toString() ? `?${qs.toString()}` : ""}`);
+  };
+
+  const handleViewTrace = () => {
+    const tid = (c.traceId ?? "").trim();
+    if (!tid) return;
+    const qs = new URLSearchParams();
+    qs.set("trace_id", tid);
+    navigate(`/trace?${qs.toString()}`);
+  };
+
+  const hasTrace = Boolean((c.traceId ?? "").trim());
 
   return (
     <section className={`${InboundUI.card} ${InboundUI.cardPad} ${InboundUI.cardGap} relative`}>
@@ -96,7 +117,7 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
           <MismatchBanner mismatchLines={m.mismatchLines} topMismatch={m.topMismatch} />
 
           <div className={commitAreaDisabled ? "pointer-events-none opacity-60" : ""}>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 disabled={commitAreaDisabled}
@@ -106,9 +127,23 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
                 {m.isCommitted ? "已入库" : c.committing ? "提交中…" : "确认入库"}
               </button>
 
-              <button type="button" onClick={handleViewInventory} className={InboundUI.btnSecondary}>
-                查看库存变化
+              <button type="button" onClick={handleViewSnapshot} className={InboundUI.btnSecondary}>
+                查看即时库存
               </button>
+
+              <button type="button" onClick={handleViewLedger} className={InboundUI.btnSecondary}>
+                查看库存台账
+              </button>
+
+              {hasTrace ? (
+                <button type="button" onClick={handleViewTrace} className={InboundUI.btnSecondary}>
+                  查看 Trace
+                </button>
+              ) : null}
+            </div>
+
+            <div className="mt-2 text-[12px] text-slate-500">
+              提交成功后建议按需查看：即时库存（余额）/ 库存台账（变动事件）/ Trace（全链路追溯）。
             </div>
           </div>
         </>
