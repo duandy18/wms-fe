@@ -117,15 +117,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 新增：库存台账（与即时库存并列） */}
-          <Route
-            path="inventory/ledger"
-            element={
-              <RequirePermission permission="report.inventory">
-                <P.StockLedgerPage />
-              </RequirePermission>
-            }
-          />
 
           <Route
             path="channel-inventory"

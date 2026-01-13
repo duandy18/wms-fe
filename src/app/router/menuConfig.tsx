@@ -49,8 +49,6 @@ export const menuSections: RouteSection[] = [
     items: [
       { path: "/snapshot", label: "即时库存 / FEFO 风险", requiredPermissions: ["report.inventory"] },
 
-      // ✅ 新增：库存台账（与即时库存并列）
-      { path: "/inventory/ledger", label: "库存台账", requiredPermissions: ["report.inventory"] },
 
       { path: "/channel-inventory", label: "渠道库存", requiredPermissions: ["report.inventory"] },
       { path: "/inventory/outbound-dashboard", label: "出库 Dashboard", requiredPermissions: ["report.outbound"] },

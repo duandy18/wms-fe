@@ -88,7 +88,7 @@ const PurchaseOrderCreateV2Page: React.FC = () => {
 
       {/* 本次采购报告：放在按钮下面 */}
       <div className="mt-10">
-        <PurchaseOrderCurrentReport po={state.lastCreatedPo} items={state.itemOptions} />
+        <PurchaseOrderCurrentReport po={state.lastCreatedPo} />
       </div>
     </div>
   );

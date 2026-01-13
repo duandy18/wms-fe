@@ -19,7 +19,6 @@ export const ShippingLabelPrintPage = lazy(() => import("../../features/operatio
 
 // 库存 & 报表
 export const SnapshotPage = lazy(() => import("../../features/inventory/snapshot/SnapshotPage"));
-export const StockLedgerPage = lazy(() => import("../../features/inventory/ledger/StockLedgerPage"));
 export const ChannelInventoryPage = lazy(() => import("../../features/inventory/channel-inventory/ChannelInventoryPage"));
 export const OutboundDashboardPage = lazy(() => import("../../features/inventory/outbound-dashboard/OutboundDashboardPage"));
 
