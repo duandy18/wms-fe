@@ -18,14 +18,38 @@ export interface PurchaseOrderLine {
   line_no: number;
 
   item_id: number;
+
+  // PO 行快照（历史兼容）
   item_name: string | null;
   item_sku: string | null;
-  category: string | null;
 
-  // 规格 & 单位
+  /** ⚠️ PO 行业务分组快照（原 category），不等于商品主数据“品类” */
+  biz_category: string | null;
+
+  // 规格 & 单位（PO 行快照）
   spec_text: string | null;
   base_uom: string | null;
   purchase_uom: string | null;
+
+  // ===== 商品主数据字段（与 ItemsListTable 列合同对齐）=====
+  sku: string | null;
+  primary_barcode: string | null;
+
+  brand: string | null;
+  /** 商品主数据“品类” */
+  category: string | null;
+
+  supplier_id: number | null;
+  supplier_name: string | null;
+
+  /** Decimal 可能以 string 返回 */
+  weight_kg: string | null;
+  uom: string | null;
+
+  has_shelf_life: boolean | null;
+  shelf_life_value: number | null;
+  shelf_life_unit: string | null;
+  enabled: boolean | null;
 
   // 价格体系
   supply_price: string | null;
@@ -101,7 +125,10 @@ export async function fetchPurchaseOrders(
 export interface PurchaseOrderLineCreatePayload {
   line_no?: number;
   item_id: number;
+
+  // 仍保留原字段（PO 行分组）
   category?: string | null;
+
   spec_text?: string | null;
   base_uom?: string | null;
   purchase_uom?: string | null;
@@ -124,7 +151,7 @@ export interface PurchaseOrderCreateV2Payload {
 
   // ⭐ 新增：采购人 + 采购时间（必填）
   purchaser: string;
-  purchase_time: string; // ISO 字符串，例如 "2025-12-11T14:05:53.264Z"
+  purchase_time: string;
 
   // 备注可选
   remark?: string | null;
@@ -140,9 +167,7 @@ export interface PurchaseOrderReceiveLinePayload {
 }
 
 /** 获取多行 PO 详情（头 + 行） */
-export async function fetchPurchaseOrderV2(
-  id: number,
-): Promise<PurchaseOrderWithLines> {
+export async function fetchPurchaseOrderV2(id: number): Promise<PurchaseOrderWithLines> {
   return apiGet<PurchaseOrderWithLines>(`/purchase-orders/${id}`);
 }
 
@@ -158,10 +183,7 @@ export async function receivePurchaseOrderLine(
   poId: number,
   payload: PurchaseOrderReceiveLinePayload,
 ): Promise<PurchaseOrderWithLines> {
-  return apiPost<PurchaseOrderWithLines>(
-    `/purchase-orders/${poId}/receive-line`,
-    payload,
-  );
+  return apiPost<PurchaseOrderWithLines>(`/purchase-orders/${poId}/receive-line`, payload);
 }
 
 /** Dev：创建 Demo 采购单（头 + 行） */

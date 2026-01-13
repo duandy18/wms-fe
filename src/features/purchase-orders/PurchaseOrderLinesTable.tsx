@@ -2,10 +2,7 @@
 
 import React from "react";
 import type { PurchaseOrderWithLines, PurchaseOrderLine } from "./api";
-import {
-  StandardTable,
-  type ColumnDef,
-} from "../../components/wmsdu/StandardTable";
+import { StandardTable, type ColumnDef } from "../../components/wmsdu/StandardTable";
 
 interface PurchaseOrderLinesTableProps {
   po: PurchaseOrderWithLines;
@@ -19,87 +16,198 @@ interface PurchaseOrderLinesTableProps {
   mode?: "default" | "inbound";
 }
 
-const formatUnitExpr = (line: PurchaseOrderLine) => {
-  if (!line.purchase_uom || !line.base_uom || !line.units_per_case) {
-    return "-";
-  }
-  return `1${line.purchase_uom} = ${line.units_per_case}${line.base_uom}`;
+function formatShelfValue(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "—";
+  return String(Math.trunc(n));
+}
+
+function formatShelfUnitCn(u: unknown): string {
+  if (!u) return "—";
+  const s = String(u).toUpperCase();
+  if (s === "MONTH") return "月";
+  if (s === "DAY") return "天";
+  return "—";
+}
+
+const StatusBadge: React.FC<{ enabled: boolean }> = ({ enabled }) => {
+  return enabled ? (
+    <span className="inline-flex items-center rounded px-2 py-1 text-sm font-semibold bg-emerald-100 text-emerald-800">
+      有效
+    </span>
+  ) : (
+    <span className="inline-flex items-center rounded px-2 py-1 text-sm font-semibold bg-red-100 text-red-800">
+      无效
+    </span>
+  );
 };
 
+function computeRemaining(line: PurchaseOrderLine): number {
+  const ordered = Number(line.qty_ordered ?? 0);
+  const received = Number(line.qty_received ?? 0);
+  const v = ordered - received;
+  return Number.isFinite(v) ? v : 0;
+}
+
 /** 作业态（只给一线用） */
-function computeWorkStatus(line: PurchaseOrderLine): {
-  text: string;
-  className: string;
-} {
+function computeWorkStatus(
+  line: PurchaseOrderLine,
+): { text: string; className: string } {
   const ordered = Number(line.qty_ordered ?? 0);
   const received = Number(line.qty_received ?? 0);
 
   if (received <= 0) {
     return { text: "未收", className: "text-slate-500" };
   }
-
   if (received < ordered) {
     return { text: "收货中", className: "text-amber-700" };
   }
-
   return { text: "已收完", className: "text-emerald-700" };
 }
 
-export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = ({
-  po,
-  selectedLineId,
-  onSelectLine,
-  mode = "default",
-}) => {
+export const PurchaseOrderLinesTable: React.FC<
+  PurchaseOrderLinesTableProps
+> = ({ po, selectedLineId, onSelectLine, mode = "default" }) => {
   const isInbound = mode === "inbound";
 
   const columns: ColumnDef<PurchaseOrderLine>[] = [
+    // PO 视图专属（弱化）
     {
       key: "line_no",
       header: "行号",
       render: (line) => (
-        <span className={`font-mono ${isInbound ? "text-[12px]" : "text-[11px]"}`}>
+        <span
+          className={`font-mono ${
+            isInbound ? "text-[12px]" : "text-[11px]"
+          } text-slate-500`}
+        >
           {line.line_no}
+        </span>
+      ),
+    },
+
+    // ===== 商品主数据列合同（与 ItemsListTable 同列同序）=====
+    {
+      key: "sku",
+      header: "SKU",
+      render: (line) => (
+        <span className="font-mono">
+          {line.sku ?? line.item_sku ?? "—"}
         </span>
       ),
     },
     {
       key: "item_id",
-      header: "Item ID",
-      render: (line) => line.item_id,
+      header: "商品ID",
+      render: (line) => (
+        <span className="font-mono">{line.item_id}</span>
+      ),
+    },
+    {
+      key: "primary_barcode",
+      header: "主条码",
+      render: (line) => (
+        <span className="font-mono">
+          {line.primary_barcode ?? "—"}
+        </span>
+      ),
     },
     {
       key: "item_name",
-      header: "商品名",
-      render: (line) => line.item_name ?? "-",
+      header: "商品名称",
+      render: (line) => (
+        <span className="font-medium">{line.item_name ?? "—"}</span>
+      ),
     },
     {
-      key: "spec_text",
-      header: "规格",
-      render: (line) => line.spec_text ?? "-",
+      key: "brand",
+      header: "品牌",
+      render: (line) => line.brand ?? "—",
     },
     {
-      key: "unit_expr",
-      header: "单位换算",
-      render: (line) => formatUnitExpr(line),
+      key: "category",
+      header: "品类",
+      render: (line) => line.category ?? "—",
     },
+    {
+      key: "supplier_name",
+      header: "供货商",
+      render: (line) => line.supplier_name ?? "—",
+    },
+    {
+      key: "weight_kg",
+      header: "单位净重(kg)",
+      render: (line) => (
+        <span className="font-mono">{line.weight_kg ?? "—"}</span>
+      ),
+    },
+    {
+      key: "uom",
+      header: "最小包装单位",
+      render: (line) => line.uom ?? "—",
+    },
+    {
+      key: "has_shelf_life",
+      header: "有效期",
+      render: (line) => {
+        if (line.has_shelf_life == null) return "—";
+        return line.has_shelf_life ? "有" : "无";
+      },
+    },
+    {
+      key: "shelf_life_value",
+      header: "默认有效期值",
+      render: (line) => {
+        if (!line.has_shelf_life) return "—";
+        const sv = formatShelfValue(line.shelf_life_value);
+        return (
+          <span className="font-mono">
+            {sv}
+            {sv === "—" ? (
+              <span className="ml-2 text-[11px] text-amber-700">
+                未配置
+              </span>
+            ) : null}
+          </span>
+        );
+      },
+    },
+    {
+      key: "shelf_life_unit",
+      header: "单位",
+      render: (line) => {
+        if (!line.has_shelf_life) return "—";
+        return formatShelfUnitCn(line.shelf_life_unit);
+      },
+    },
+    {
+      key: "enabled",
+      header: "状态",
+      render: (line) => {
+        if (line.enabled == null) return "—";
+        return <StatusBadge enabled={!!line.enabled} />;
+      },
+    },
+
+    // ===== PO 专属列 =====
     {
       key: "qty_ordered",
       header: "订购数量",
       align: "right",
-      render: (line) => line.qty_ordered,
+      render: (line) => Number(line.qty_ordered ?? 0),
     },
     {
       key: "qty_received",
       header: "已收数量",
       align: "right",
-      render: (line) => line.qty_received,
+      render: (line) => Number(line.qty_received ?? 0),
     },
     {
       key: "remaining",
       header: "剩余",
       align: "right",
-      render: (line) => line.qty_ordered - line.qty_received,
+      render: (line) => computeRemaining(line),
     },
     {
       key: "work_status",
@@ -115,7 +223,9 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     ? "bg-white border border-slate-200 rounded-xl p-5 space-y-4"
     : "bg-white border border-slate-200 rounded-xl p-4 space-y-3";
 
-  const titleCls = isInbound ? "text-base font-semibold text-slate-800" : "text-sm font-semibold text-slate-800";
+  const titleCls = isInbound
+    ? "text-base font-semibold text-slate-800"
+    : "text-sm font-semibold text-slate-800";
 
   return (
     <section className={cardCls}>
@@ -130,7 +240,11 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
         selectedKey={selectedLineId}
         onRowClick={(line) => onSelectLine(line.id)}
         footer={
-          <span className={isInbound ? "text-sm text-slate-500" : "text-xs text-slate-500"}>
+          <span
+            className={
+              isInbound ? "text-sm text-slate-500" : "text-xs text-slate-500"
+            }
+          >
             共 {po.lines.length} 行
           </span>
         }
