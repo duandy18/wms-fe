@@ -1,8 +1,8 @@
 // src/features/admin/items/store/buildBarcodeMaps.ts
 
 import type { Item } from "../api";
-import type { ItemBarcode } from "../barcodesApi";
-import { fetchBarcodesByItems } from "../barcodesApi";
+import type { ItemBarcode } from "../../../../master-data/itemBarcodesApi";
+import { fetchBarcodesByItems } from "../../../../master-data/itemBarcodesApi";
 
 /**
  * 说明：
@@ -17,7 +17,6 @@ export async function buildBarcodeMaps(items: Item[]): Promise<{
 }> {
   const itemIds = items.map((it) => it.id).filter((x) => Number.isFinite(x) && x > 0);
 
-  // 先初始化 counts（即便没有条码也给 0，避免 UI undefined）
   const countMap: Record<number, number> = {};
   for (const id of itemIds) countMap[id] = 0;
 
@@ -33,10 +32,8 @@ export async function buildBarcodeMaps(items: Item[]): Promise<{
     };
   }
 
-  // 默认只取 active=true
   const all: ItemBarcode[] = await fetchBarcodesByItems(itemIds, true);
 
-  // 分组 & 统计
   for (const b of all) {
     const itemId = Number(b.item_id);
     if (!Number.isFinite(itemId) || itemId <= 0) continue;
@@ -50,7 +47,6 @@ export async function buildBarcodeMaps(items: Item[]): Promise<{
     }
   }
 
-  // 主条码：优先 is_primary=true；若没有，则不设置（保持 UI “—”）
   for (const b of all) {
     if (!b.is_primary) continue;
     const itemId = Number(b.item_id);
@@ -59,12 +55,10 @@ export async function buildBarcodeMaps(items: Item[]): Promise<{
     const code = String(b.barcode ?? "").trim();
     if (!code) continue;
 
-    // 一般约束保证一个 item 只有一个主条码；这里防御一下
     if (primaryMap[itemId]) continue;
     primaryMap[itemId] = code;
   }
 
-  // barcodeIndex：只对“唯一绑定”的条码建立反查（供扫码自动定位）
   const idx: Record<string, number> = {};
   for (const [code, owners] of Object.entries(ownersMap)) {
     if (owners.length === 1) idx[code] = owners[0];

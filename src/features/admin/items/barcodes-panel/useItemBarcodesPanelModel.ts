@@ -8,7 +8,7 @@ import {
   deleteItemBarcode,
   setPrimaryBarcode,
   type ItemBarcode,
-} from "../barcodesApi";
+} from "../../../../master-data/itemBarcodesApi";
 import { getErrorMessage } from "./errors";
 
 export type BarcodeKind = "CUSTOM" | "EAN13" | "EAN8" | "UPC" | "INNER";
@@ -70,7 +70,6 @@ export function useItemBarcodesPanelModel() {
     }
   };
 
-  // 选中商品变化时加载条码
   useEffect(() => {
     if (!selectedItem) {
       setBarcodes([]);
@@ -105,7 +104,6 @@ export function useItemBarcodesPanelModel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItem?.id]);
 
-  // 扫码结果自动填入“新条码”
   useEffect(() => {
     if (!scannedBarcode) return;
     setNewCode(scannedBarcode);

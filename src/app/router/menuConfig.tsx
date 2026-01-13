@@ -27,10 +27,19 @@ export const menuSections: RouteSection[] = [
       { path: "/outbound/pick-tasks", label: "拣货", requiredPermissions: ["operations.outbound"] },
       { path: "/count", label: "盘点", requiredPermissions: ["operations.count"] },
       { path: "/outbound/ship", label: "发货", requiredPermissions: ["operations.outbound"] },
-      { path: "/outbound/internal-outbound", label: "内部出库", requiredPermissions: ["operations.internal_outbound"] },
+      {
+        path: "/outbound/internal-outbound",
+        label: "内部出库",
+        requiredPermissions: ["operations.internal_outbound"],
+      },
 
       // 旧版拣货页（不展示）
-      { path: "/outbound/pick", label: "拣货出库（旧版）", requiredPermissions: ["operations.outbound"], showInSidebar: false },
+      {
+        path: "/outbound/pick",
+        label: "拣货出库（旧版）",
+        requiredPermissions: ["operations.outbound"],
+        showInSidebar: false,
+      },
     ],
   },
 
@@ -39,6 +48,8 @@ export const menuSections: RouteSection[] = [
     label: "库存 & 报表",
     items: [
       { path: "/snapshot", label: "即时库存 / FEFO 风险", requiredPermissions: ["report.inventory"] },
+
+
       { path: "/channel-inventory", label: "渠道库存", requiredPermissions: ["report.inventory"] },
       { path: "/inventory/outbound-dashboard", label: "出库 Dashboard", requiredPermissions: ["report.outbound"] },
       { path: "/shipping/reports", label: "发货成本报表", requiredPermissions: ["report.outbound"] },
@@ -89,9 +100,7 @@ export const menuSections: RouteSection[] = [
   {
     id: "devtools",
     label: "开发者工具",
-    items: [
-      { path: "/dev", label: "后端调试台", requiredPermissions: ["dev.tools.access"], devOnly: true },
-    ],
+    items: [{ path: "/dev", label: "后端调试台", requiredPermissions: ["dev.tools.access"], devOnly: true }],
   },
 
   {
@@ -101,7 +110,12 @@ export const menuSections: RouteSection[] = [
       { path: "/stores", label: "店铺管理", requiredPermissions: ["config.store.write"] },
       { path: "/stores/:storeId", label: "店铺详情", requiredPermissions: ["config.store.write"], showInSidebar: false },
       { path: "/warehouses", label: "仓库管理", requiredPermissions: ["config.store.write"] },
-      { path: "/warehouses/:warehouseId", label: "仓库详情", requiredPermissions: ["config.store.write"], showInSidebar: false },
+      {
+        path: "/warehouses/:warehouseId",
+        label: "仓库详情",
+        requiredPermissions: ["config.store.write"],
+        showInSidebar: false,
+      },
       { path: "/admin/items", label: "商品主数据", requiredPermissions: ["config.store.write"] },
       { path: "/admin/suppliers", label: "供应商主数据", requiredPermissions: ["config.store.write"] },
       { path: "/admin/shipping-providers", label: "物流 / 快递公司", requiredPermissions: ["config.store.write"] },

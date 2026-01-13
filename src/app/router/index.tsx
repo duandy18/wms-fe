@@ -116,6 +116,8 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+
+
           <Route
             path="channel-inventory"
             element={
