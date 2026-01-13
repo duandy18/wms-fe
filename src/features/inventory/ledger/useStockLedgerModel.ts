@@ -1,78 +1,21 @@
 // src/features/inventory/ledger/useStockLedgerModel.ts
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { apiPost } from "../../../lib/api";
-import type { LedgerListResp, LedgerRow } from "./types";
-import { cleanStr, getErrorMessage, parsePositiveInt } from "./utils";
+import type { LedgerRow } from "./types";
+import { getErrorMessage } from "./utils";
 
-type Hint = {
-  item_id: number | null;
-  item_keyword: string | null;
-  warehouse_id: number | null;
-  batch_code: string | null;
-  reason: string | null;
-  reason_canon: string | null;
-  sub_reason: string | null;
-  ref: string | null;
-  trace_id: string | null;
-  time_from: string | null;
-  time_to: string | null;
-};
+import { fetchLedgerList, fetchLedgerListHistory } from "./api";
+import type { LedgerQueryPayload } from "./api";
 
-function buildHint(sp: URLSearchParams): Hint {
-  return {
-    item_id: parsePositiveInt(sp.get("item_id")),
-    item_keyword: cleanStr(sp.get("item_keyword")),
-    warehouse_id: parsePositiveInt(sp.get("warehouse_id")),
-    batch_code: cleanStr(sp.get("batch_code")),
-    reason: cleanStr(sp.get("reason")),
-    reason_canon: cleanStr(sp.get("reason_canon")),
-    sub_reason: cleanStr(sp.get("sub_reason")),
-    ref: cleanStr(sp.get("ref")),
-    trace_id: cleanStr(sp.get("trace_id")),
-    time_from: cleanStr(sp.get("time_from")),
-    time_to: cleanStr(sp.get("time_to")),
-  };
-}
-
-function isoDaysAgo(days: number): string {
-  const ms = days * 24 * 60 * 60 * 1000;
-  return new Date(Date.now() - ms).toISOString();
-}
-
-function parseIsoOrNull(s: string): Date | null {
-  const x = (s ?? "").trim();
-  if (!x) return null;
-  const d = new Date(x);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function rangeDays(timeFrom: string, timeTo: string): number | null {
-  const a = parseIsoOrNull(timeFrom);
-  if (!a) return null; // 没填就表示走后端默认 7 天
-  const b = parseIsoOrNull(timeTo) ?? new Date();
-  const diffMs = b.getTime() - a.getTime();
-  if (diffMs < 0) return 0;
-  return diffMs / (24 * 60 * 60 * 1000);
-}
+import { buildHint, hasAnyHint, HINT_QUERY_KEYS } from "./model/hint";
+import { isoDaysAgo, rangeDays } from "./model/timeRange";
+import { needHistoryByDays, buildHistoryHint, buildHistoryModeNote } from "./model/historyPolicy";
+import { buildPayload, hasAnchorFromForm } from "./model/payload";
 
 export function useStockLedgerModel() {
   const [sp, setSp] = useSearchParams();
   const hint = useMemo(() => buildHint(sp), [sp]);
-
-  const hasHint = Boolean(
-    hint.item_id ||
-      hint.item_keyword ||
-      hint.warehouse_id ||
-      hint.batch_code ||
-      hint.reason ||
-      hint.reason_canon ||
-      hint.sub_reason ||
-      hint.ref ||
-      hint.trace_id ||
-      hint.time_from ||
-      hint.time_to,
-  );
+  const hasHint = useMemo(() => hasAnyHint(hint), [hint]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,22 +26,19 @@ export function useStockLedgerModel() {
   const pageSize = 100;
   const [offset, setOffset] = useState(0);
 
-  // 普通筛选
+  // ---- 表单状态（从 URL hint 初始化）----
   const [itemId, setItemId] = useState<string>(hint.item_id ? String(hint.item_id) : "");
   const [itemKeyword, setItemKeyword] = useState<string>(hint.item_keyword ?? "");
   const [warehouseId, setWarehouseId] = useState<string>(hint.warehouse_id ? String(hint.warehouse_id) : "");
   const [batchCode, setBatchCode] = useState<string>(hint.batch_code ?? "");
 
-  // 原始 / 口径 / 具体操作
   const [reason, setReason] = useState<string>(hint.reason ?? "");
   const [reasonCanon, setReasonCanon] = useState<string>(hint.reason_canon ?? "");
   const [subReason, setSubReason] = useState<string>(hint.sub_reason ?? "");
 
-  // 精确定位
   const [ref, setRef] = useState<string>(hint.ref ?? "");
   const [traceId, setTraceId] = useState<string>(hint.trace_id ?? "");
 
-  // 时间（只允许高级模式改；RangeBar 也会写这里）
   const [timeFrom, setTimeFrom] = useState<string>(hint.time_from ?? "");
   const [timeTo, setTimeTo] = useState<string>(hint.time_to ?? "");
 
@@ -121,19 +61,7 @@ export function useStockLedgerModel() {
 
   const clearUrlHint = () => {
     const next = new URLSearchParams(sp);
-    [
-      "item_id",
-      "item_keyword",
-      "warehouse_id",
-      "batch_code",
-      "reason",
-      "reason_canon",
-      "sub_reason",
-      "ref",
-      "trace_id",
-      "time_from",
-      "time_to",
-    ].forEach((k) => next.delete(k));
+    HINT_QUERY_KEYS.forEach((k) => next.delete(k));
     setSp(next);
   };
 
@@ -147,62 +75,69 @@ export function useStockLedgerModel() {
     setSubReason("");
     setRef("");
     setTraceId("");
-    // 时间不强制清空：让 RangeBar 继续掌控；用户要清就手动点“默认7天”或高级里清
     setTimeFrom("");
     setTimeTo("");
   };
+
+  // ------- 自动切换 query / query-history 的“前端合同” -------
+  const days = useMemo(() => rangeDays(timeFrom, timeTo), [timeFrom, timeTo]);
+  const needHistory = useMemo(() => needHistoryByDays(days), [days]);
+
+  const hasAnchor = useMemo(
+    () =>
+      hasAnchorFromForm({
+        itemId,
+        itemKeyword,
+        warehouseId,
+        batchCode,
+        reason,
+        reasonCanon,
+        subReason,
+        ref,
+        traceId,
+        timeFrom,
+        timeTo,
+      }),
+    [itemId, itemKeyword, warehouseId, batchCode, reason, reasonCanon, subReason, ref, traceId, timeFrom, timeTo],
+  );
+
+  const historyModeNote = useMemo(() => buildHistoryModeNote(needHistory), [needHistory]);
+
+  const historyHint = useMemo(
+    () => buildHistoryHint({ needHistory, days, hasAnchor, timeFrom }),
+    [needHistory, days, hasAnchor, timeFrom],
+  );
 
   async function runQuery(nextOffset = 0) {
     setLoading(true);
     setError(null);
 
     try {
-      const payload: Record<string, unknown> = {
-        limit: pageSize,
-        offset: nextOffset,
-      };
-
-      const iid = parsePositiveInt(itemId);
-      const wid = parsePositiveInt(warehouseId);
-
-      if (iid) payload.item_id = iid;
-      else if (itemKeyword.trim()) payload.item_keyword = itemKeyword.trim();
-
-      if (wid) payload.warehouse_id = wid;
-      if (batchCode.trim()) payload.batch_code = batchCode.trim();
-
-      if (reason.trim()) payload.reason = reason.trim();
-      if (reasonCanon.trim()) payload.reason_canon = reasonCanon.trim();
-      if (subReason.trim()) payload.sub_reason = subReason.trim();
-
-      if (ref.trim()) payload.ref = ref.trim();
-      if (traceId.trim()) payload.trace_id = traceId.trim();
-
-      if (timeFrom.trim()) payload.time_from = timeFrom.trim();
-      if (timeTo.trim()) payload.time_to = timeTo.trim();
-
-      // --- 关键：决定走普通 query 还是 history query ---
-      const days = rangeDays(timeFrom, timeTo);
-      const needHistory = days != null && days > 90;
-
-      if (needHistory) {
-        const hasAnchor = Boolean(
-          traceId.trim() ||
-            ref.trim() ||
-            iid ||
-            reasonCanon.trim() ||
-            subReason.trim(),
-        );
-        if (!hasAnchor) {
-          throw new Error("查询超过 90 天时，请至少指定：trace_id / ref / 商品ID / 口径 / 具体操作（任意一项）。");
-        }
+      // ---- 前端拦截：不二次解释，文案与后端 1:1 ----
+      if (needHistory && historyHint) {
+        throw new Error(historyHint);
       }
 
-      const path = needHistory ? "/stock/ledger/query-history" : "/stock/ledger/query";
+      const payload: LedgerQueryPayload = buildPayload(
+        {
+          itemId,
+          itemKeyword,
+          warehouseId,
+          batchCode,
+          reason,
+          reasonCanon,
+          subReason,
+          ref,
+          traceId,
+          timeFrom,
+          timeTo,
+        },
+        { limit: pageSize, offset: nextOffset, forceTimeFrom: needHistory },
+      );
 
-      const data = await apiPost<LedgerListResp>(path, payload);
+      const data = needHistory ? await fetchLedgerListHistory(payload) : await fetchLedgerList(payload);
 
-      setRows(data.items ?? []);
+      setRows((data.items ?? []) as LedgerRow[]);
       setTotal(Number(data.total ?? 0));
       setOffset(nextOffset);
     } catch (e) {
@@ -255,6 +190,7 @@ export function useStockLedgerModel() {
     canPrev,
     canNext,
 
+    // filters
     itemId,
     setItemId,
     itemKeyword,
@@ -280,6 +216,12 @@ export function useStockLedgerModel() {
     setTimeFrom,
     timeTo,
     setTimeTo,
+
+    // query mode info (for UI hints)
+    days,
+    needHistory,
+    historyModeNote,
+    historyHint,
 
     clearForm,
     runQuery,

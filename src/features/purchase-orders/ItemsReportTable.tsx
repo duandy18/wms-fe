@@ -2,10 +2,7 @@
 
 import React from "react";
 import type { ItemReportRow } from "./reportsApi";
-import {
-  StandardTable,
-  type ColumnDef,
-} from "../../components/wmsdu/StandardTable";
+import { StandardTable, type ColumnDef } from "../../components/wmsdu/StandardTable";
 
 interface ItemsReportTableProps {
   rows: ItemReportRow[];
@@ -24,15 +21,20 @@ const formatMoney = (n: number): string =>
     maximumFractionDigits: 2,
   });
 
-export const ItemsReportTable: React.FC<ItemsReportTableProps> = ({
-  rows,
-  totalAmount,
-}) => {
+function clean(v: string | null | undefined): string {
+  const s = (v ?? "").trim();
+  return s ? s : "—";
+}
+
+export const ItemsReportTable: React.FC<ItemsReportTableProps> = ({ rows, totalAmount }) => {
   const handleExportCsv = () => {
     const header = [
-      "ItemID",
+      "商品ID",
       "SKU",
       "商品名称",
+      "条码",
+      "品牌",
+      "分类",
       "规格",
       "供应商",
       "单据数",
@@ -46,6 +48,9 @@ export const ItemsReportTable: React.FC<ItemsReportTableProps> = ({
       String(r.item_id),
       r.item_sku ?? "",
       r.item_name ?? "",
+      clean(r.barcode),
+      clean(r.brand),
+      clean(r.category),
       r.spec_text ?? "",
       r.supplier_name ?? "",
       String(r.order_count),
@@ -56,6 +61,9 @@ export const ItemsReportTable: React.FC<ItemsReportTableProps> = ({
     ]);
 
     const sumRow = [
+      "",
+      "",
+      "",
       "",
       "",
       "",
@@ -72,7 +80,7 @@ export const ItemsReportTable: React.FC<ItemsReportTableProps> = ({
       .map((cols) =>
         cols
           .map((c) => {
-            const v = c.replace(/"/g, '""');
+            const v = String(c ?? "").replace(/"/g, '""');
             return `"${v}"`;
           })
           .join(","),
@@ -94,19 +102,29 @@ export const ItemsReportTable: React.FC<ItemsReportTableProps> = ({
 
   const columns: ColumnDef<ItemReportRow>[] = [
     {
-      key: "item_id",
-      header: "Item ID",
-      render: (r) => r.item_id,
+      key: "item",
+      header: "商品",
+      render: (r) => (
+        <div>
+          <div className="font-medium text-slate-900">{r.item_name ?? "-"}</div>
+          <div className="mt-0.5 text-[11px] text-slate-400 font-mono">ID：{r.item_id}</div>
+        </div>
+      ),
     },
     {
-      key: "item_sku",
-      header: "SKU",
-      render: (r) => r.item_sku ?? "-",
+      key: "barcode",
+      header: "条码",
+      render: (r) => <span className="font-mono text-[12px]">{clean(r.barcode)}</span>,
     },
     {
-      key: "item_name",
-      header: "商品名称",
-      render: (r) => r.item_name ?? "-",
+      key: "brand",
+      header: "品牌",
+      render: (r) => clean(r.brand),
+    },
+    {
+      key: "category",
+      header: "分类",
+      render: (r) => clean(r.category),
     },
     {
       key: "spec_text",
@@ -154,8 +172,7 @@ export const ItemsReportTable: React.FC<ItemsReportTableProps> = ({
     <div className="space-y-2 text-sm">
       <div className="flex items-center justify-between">
         <div className="text-slate-700">
-          商品数：{rows.length}；金额合计：
-          {formatMoney(totalAmount)}
+          商品数：{rows.length}；金额合计：{formatMoney(totalAmount)}
         </div>
         <button
           type="button"
@@ -173,9 +190,7 @@ export const ItemsReportTable: React.FC<ItemsReportTableProps> = ({
         emptyText="暂无数据"
         footer={
           rows.length > 0 ? (
-            <span className="text-xs text-slate-500">
-              合计金额：{formatMoney(totalAmount)}
-            </span>
+            <span className="text-xs text-slate-500">合计金额：{formatMoney(totalAmount)}</span>
           ) : undefined
         }
       />

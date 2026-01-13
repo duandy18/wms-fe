@@ -2,14 +2,12 @@
 
 import React from "react";
 import type { SupplierReportRow } from "./reportsApi";
-import {
-  StandardTable,
-  type ColumnDef,
-} from "../../components/wmsdu/StandardTable";
+import { StandardTable, type ColumnDef } from "../../components/wmsdu/StandardTable";
 
 interface SuppliersReportTableProps {
   rows: SupplierReportRow[];
   totalAmount: number;
+  onDrilldown: (row: SupplierReportRow) => void;
 }
 
 const parseMoney = (v: string | null | undefined): number => {
@@ -24,9 +22,11 @@ const formatMoney = (n: number): string =>
     maximumFractionDigits: 2,
   });
 
-export const SuppliersReportTable: React.FC<
-  SuppliersReportTableProps
-> = ({ rows, totalAmount }) => {
+export const SuppliersReportTable: React.FC<SuppliersReportTableProps> = ({
+  rows,
+  totalAmount,
+  onDrilldown,
+}) => {
   const handleExportCsv = () => {
     const header = [
       "供应商ID",
@@ -48,15 +48,7 @@ export const SuppliersReportTable: React.FC<
       r.avg_unit_price ?? "",
     ]);
 
-    const sumRow = [
-      "",
-      "合计",
-      "",
-      "",
-      "",
-      totalAmount.toFixed(2),
-      "",
-    ];
+    const sumRow = ["", "合计", "", "", "", totalAmount.toFixed(2), ""];
 
     const csvLines = [header, ...dataRows, sumRow]
       .map((cols) =>
@@ -69,9 +61,7 @@ export const SuppliersReportTable: React.FC<
       )
       .join("\r\n");
 
-    const blob = new Blob([csvLines], {
-      type: "text/csv;charset=utf-8;",
-    });
+    const blob = new Blob([csvLines], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -86,46 +76,32 @@ export const SuppliersReportTable: React.FC<
     {
       key: "supplier_name",
       header: "供应商",
-      render: (r) => r.supplier_name,
+      render: (r) => (
+        <div className="flex items-center justify-between gap-3">
+          <span className="truncate">{r.supplier_name}</span>
+          <button
+            type="button"
+            className="text-[11px] text-slate-500 hover:text-slate-800"
+            onClick={() => onDrilldown(r)}
+            title="查看该供应商的商品明细（自动切到按商品）"
+          >
+            查看明细
+          </button>
+        </div>
+      ),
     },
-    {
-      key: "order_count",
-      header: "单据数",
-      align: "right",
-      render: (r) => r.order_count,
-    },
-    {
-      key: "total_qty_cases",
-      header: "订购件数",
-      align: "right",
-      render: (r) => r.total_qty_cases,
-    },
-    {
-      key: "total_units",
-      header: "折算最小单位数",
-      align: "right",
-      render: (r) => r.total_units,
-    },
-    {
-      key: "total_amount",
-      header: "金额合计",
-      align: "right",
-      render: (r) => formatMoney(parseMoney(r.total_amount)),
-    },
-    {
-      key: "avg_unit_price",
-      header: "平均单价(每最小单位)",
-      align: "right",
-      render: (r) => r.avg_unit_price ?? "-",
-    },
+    { key: "order_count", header: "单据数", align: "right", render: (r) => r.order_count },
+    { key: "total_qty_cases", header: "订购件数", align: "right", render: (r) => r.total_qty_cases },
+    { key: "total_units", header: "折算最小单位数", align: "right", render: (r) => r.total_units },
+    { key: "total_amount", header: "金额合计", align: "right", render: (r) => formatMoney(parseMoney(r.total_amount)) },
+    { key: "avg_unit_price", header: "平均单价(每最小单位)", align: "right", render: (r) => r.avg_unit_price ?? "-" },
   ];
 
   return (
     <div className="space-y-2 text-sm">
       <div className="flex items-center justify-between">
         <div className="text-slate-700">
-          供应商数：{rows.length}；金额合计：
-          {formatMoney(totalAmount)}
+          供应商数：{rows.length}；金额合计：{formatMoney(totalAmount)}
         </div>
         <button
           type="button"
@@ -139,15 +115,11 @@ export const SuppliersReportTable: React.FC<
       <StandardTable<SupplierReportRow>
         columns={columns}
         data={rows}
-        getRowKey={(r, idx) =>
-          `${r.supplier_id ?? "null"}-${idx}`
-        }
+        getRowKey={(r, idx) => `${r.supplier_id ?? "null"}-${idx}`}
         emptyText="暂无数据"
         footer={
           rows.length > 0 ? (
-            <span className="text-xs text-slate-500">
-              合计金额：{formatMoney(totalAmount)}
-            </span>
+            <span className="text-xs text-slate-500">合计金额：{formatMoney(totalAmount)}</span>
           ) : undefined
         }
       />

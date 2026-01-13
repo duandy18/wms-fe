@@ -47,11 +47,11 @@ export default function StockLedgerPage() {
         setTimeTo={m.setTimeTo}
         onQuery={() => void m.runQuery(0)}
         onClear={m.clearForm}
+        historyModeNote={m.historyModeNote}
+        historyHint={m.historyHint}
       />
 
-      {m.error ? (
-        <div className="rounded-md bg-red-50 p-3 text-xs text-red-700">{m.error}</div>
-      ) : null}
+      {m.error ? <div className="rounded-md bg-red-50 p-3 text-xs text-red-700">{m.error}</div> : null}
 
       <LedgerTable loading={m.loading} rows={m.rows} />
 

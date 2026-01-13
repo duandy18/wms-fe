@@ -16,6 +16,11 @@ import {
   type ReceiveVarianceSummary,
 } from "./components/ReceiveTaskInfoCard";
 import { ReceiveTaskLinesTable } from "./components/ReceiveTaskLinesTable";
+import {
+  fetchInboundReceiptsByTaskId,
+  fetchInboundReceiptDetail,
+  type InboundReceipt,
+} from "./inboundReceiptsApi";
 
 const ReceiveTaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
@@ -31,6 +36,12 @@ const ReceiveTaskDetailPage: React.FC = () => {
   const [updatingLineId, setUpdatingLineId] = useState<number | null>(null);
   const [committing, setCommitting] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
+
+  // ---- 收货单（事实）弹窗 ----
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [receiptLoading, setReceiptLoading] = useState(false);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [receipt, setReceipt] = useState<InboundReceipt | null>(null);
 
   async function loadTask() {
     if (!isIdValid) {
@@ -120,6 +131,35 @@ const ReceiveTaskDetailPage: React.FC = () => {
     }
   }
 
+  async function openReceipt() {
+    if (!task) return;
+
+    setReceiptOpen(true);
+
+    // 若已加载且仍对应当前任务，不重复请求
+    if (receipt && receipt.receive_task_id === task.id) return;
+
+    setReceiptLoading(true);
+    setReceiptError(null);
+    setReceipt(null);
+
+    try {
+      const list = await fetchInboundReceiptsByTaskId(task.id);
+      const first = list?.[0];
+      if (!first) {
+        setReceiptError("未找到对应的收货单（inbound_receipts）。");
+        return;
+      }
+      const detail = await fetchInboundReceiptDetail(first.id);
+      setReceipt(detail);
+    } catch (err) {
+      console.error("load inbound receipt failed", err);
+      setReceiptError(getErrorMessage(err, "加载收货单失败"));
+    } finally {
+      setReceiptLoading(false);
+    }
+  }
+
   if (!isIdValid) {
     return (
       <div className="p-6 space-y-4">
@@ -167,9 +207,21 @@ const ReceiveTaskDetailPage: React.FC = () => {
               </h2>
               <div className="flex items-center gap-2 text-xs">
                 {commitError && <span className="text-red-600">{commitError}</span>}
+
+                {isCommitted ? (
+                  <button
+                    type="button"
+                    onClick={() => void openReceipt()}
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    title="查看本次入库对应的收货单事实（inbound_receipts）"
+                  >
+                    查看收货单
+                  </button>
+                ) : null}
+
                 <button
                   type="button"
-                  disabled={isCommitted || committing}
+                  disabled={!!isCommitted || committing}
                   onClick={handleCommit}
                   className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm disabled:opacity-60"
                 >
@@ -189,6 +241,108 @@ const ReceiveTaskDetailPage: React.FC = () => {
               onChangeScanned={handleChangeScanned}
             />
           </section>
+
+          {receiptOpen ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div
+                className="absolute inset-0 bg-black/30"
+                onClick={() => setReceiptOpen(false)}
+              />
+              <div className="relative w-full max-w-3xl mx-4 rounded-xl bg-white border border-slate-200 shadow-xl">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+                  <div className="text-sm font-semibold text-slate-800">
+                    收货单（事实）
+                  </div>
+                  <button
+                    type="button"
+                    className="text-xs text-slate-600 hover:text-slate-900"
+                    onClick={() => setReceiptOpen(false)}
+                  >
+                    关闭
+                  </button>
+                </div>
+
+                <div className="p-5 space-y-4 text-sm">
+                  {receiptLoading ? (
+                    <div className="text-slate-500">加载中…</div>
+                  ) : null}
+                  {receiptError ? (
+                    <div className="text-red-600">{receiptError}</div>
+                  ) : null}
+
+                  {!receiptLoading && !receiptError && receipt ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">ref</div>
+                          <div className="font-mono text-[12px]">{receipt.ref}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">trace_id</div>
+                          <div className="font-mono text-[12px]">{receipt.trace_id ?? "-"}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">发生时间</div>
+                          <div className="font-mono text-[12px]">{receipt.occurred_at}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">仓库</div>
+                          <div className="font-mono text-[12px]">{receipt.warehouse_id}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">供应商</div>
+                          <div>{receipt.supplier_name ?? "-"}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">状态</div>
+                          <div>{receipt.status}</div>
+                        </div>
+                      </div>
+
+                      <div className="border border-slate-200 rounded-lg overflow-auto">
+                        <table className="min-w-[900px] w-full text-xs">
+                          <thead className="bg-slate-50 text-slate-700">
+                            <tr className="border-b">
+                              <th className="px-3 py-2 text-left">行号</th>
+                              <th className="px-3 py-2 text-left">商品</th>
+                              <th className="px-3 py-2 text-left">批次</th>
+                              <th className="px-3 py-2 text-right">收货数量</th>
+                              <th className="px-3 py-2 text-right">折算单位</th>
+                              <th className="px-3 py-2 text-right">单价</th>
+                              <th className="px-3 py-2 text-right">金额</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {receipt.lines.map((l) => (
+                              <tr key={l.id} className="border-b last:border-b-0">
+                                <td className="px-3 py-2 font-mono">{l.line_no}</td>
+                                <td className="px-3 py-2">
+                                  <div className="font-mono text-[12px]">{l.item_id}</div>
+                                  <div className="text-slate-700">{l.item_name ?? "-"}</div>
+                                </td>
+                                <td className="px-3 py-2 font-mono">{l.batch_code}</td>
+                                <td className="px-3 py-2 text-right font-mono">{l.qty_received}</td>
+                                <td className="px-3 py-2 text-right font-mono">{l.qty_units}</td>
+                                <td className="px-3 py-2 text-right font-mono">{l.unit_cost ?? "-"}</td>
+                                <td className="px-3 py-2 text-right font-mono">{l.line_amount ?? "-"}</td>
+                              </tr>
+                            ))}
+                            {receipt.lines.length === 0 ? (
+                              <tr>
+                                <td className="px-3 py-4 text-slate-500" colSpan={7}>
+                                  无明细行
+                                </td>
+                              </tr>
+                            ) : null}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </>
       )}
     </div>

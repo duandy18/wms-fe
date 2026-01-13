@@ -75,8 +75,7 @@ export function buildPayloadLines(lines: LineDraft[]): PurchaseOrderLineCreatePa
   const normalized: PurchaseOrderLineCreatePayload[] = [];
 
   for (const [idx, l] of lines.entries()) {
-    const empty =
-      !l.item_id.trim() && !l.qty_ordered.trim() && !l.item_name.trim();
+    const empty = !l.item_id.trim() && !l.qty_ordered.trim() && !l.item_name.trim();
     if (empty) continue;
 
     const itemId = Number(l.item_id.trim());
@@ -94,10 +93,7 @@ export function buildPayloadLines(lines: LineDraft[]): PurchaseOrderLineCreatePa
     if (supplyPrice != null && (Number.isNaN(supplyPrice) || supplyPrice < 0)) {
       throw new Error(`第 ${idx + 1} 行：采购单价非法`);
     }
-    if (
-      unitsPerCase != null &&
-      (Number.isNaN(unitsPerCase) || unitsPerCase <= 0)
-    ) {
+    if (unitsPerCase != null && (Number.isNaN(unitsPerCase) || unitsPerCase <= 0)) {
       throw new Error(`第 ${idx + 1} 行：每件数量必须为正整数`);
     }
 

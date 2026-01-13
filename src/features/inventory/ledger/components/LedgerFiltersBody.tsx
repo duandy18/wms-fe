@@ -2,7 +2,7 @@
 import React from "react";
 
 import type { ItemOut, WarehouseOut } from "./filters/api";
-import { CANON_OPTIONS, SUB_REASON_OPTIONS } from "./filters/options";
+import type { Option } from "./filters/options";
 import { WarehouseDatalist, ItemDatalist } from "./filters/datalists";
 
 type Props = {
@@ -24,6 +24,10 @@ type Props = {
   reasonCanon: string;
   setReasonCanon: (v: string) => void;
 
+  // ✅ 下拉 options（来自后端枚举）
+  canonOptions: Option[];
+  subReasonOptions: Option[];
+
   ref: string;
   setRef: (v: string) => void;
 
@@ -39,9 +43,17 @@ type Props = {
   onPickDateFrom: (v: string) => void;
   onPickDateTo: (v: string) => void;
   onClearDates: () => void;
+
+  // ✅ 历史查询提示（灰字说明）
+  historyModeNote?: string | null;
+
+  // ✅ 错误提示（红字）
+  historyHint?: string | null;
 };
 
 export const LedgerFiltersBody: React.FC<Props> = (p) => {
+  const refHelp = "支持：UT-OUT-2 或 UT:UT:UT-OUT-2（自动等价匹配）";
+
   return (
     <div className="p-4 space-y-4">
       <WarehouseDatalist id={p.whListId} warehouses={p.warehouses} />
@@ -77,7 +89,7 @@ export const LedgerFiltersBody: React.FC<Props> = (p) => {
             onChange={(e) => p.setSubReason(e.target.value)}
             className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
           >
-            {SUB_REASON_OPTIONS.map((x) => (
+            {p.subReasonOptions.map((x) => (
               <option key={x.value} value={x.value}>
                 {x.label}
               </option>
@@ -92,7 +104,7 @@ export const LedgerFiltersBody: React.FC<Props> = (p) => {
             onChange={(e) => p.setReasonCanon(e.target.value)}
             className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
           >
-            {CANON_OPTIONS.map((x) => (
+            {p.canonOptions.map((x) => (
               <option key={x.value} value={x.value}>
                 {x.label}
               </option>
@@ -106,7 +118,9 @@ export const LedgerFiltersBody: React.FC<Props> = (p) => {
             value={p.ref}
             onChange={(e) => p.setRef(e.target.value)}
             className="mt-1 h-9 w-full rounded-md border border-slate-200 px-3 text-sm"
+            placeholder="例如：UT-OUT-2"
           />
+          <div className="mt-1 text-[12px] text-slate-500">{refHelp}</div>
         </label>
 
         <label className="text-sm text-slate-700">
@@ -115,6 +129,7 @@ export const LedgerFiltersBody: React.FC<Props> = (p) => {
             value={p.traceId}
             onChange={(e) => p.setTraceId(e.target.value)}
             className="mt-1 h-9 w-full rounded-md border border-slate-200 px-3 text-sm"
+            placeholder="例如：trace_id"
           />
         </label>
       </div>
@@ -166,6 +181,14 @@ export const LedgerFiltersBody: React.FC<Props> = (p) => {
               </button>
             </div>
           </div>
+        ) : null}
+
+        {p.useDateRange && p.historyModeNote ? (
+          <div className="text-[12px] text-slate-500">{p.historyModeNote}</div>
+        ) : null}
+
+        {p.useDateRange && p.historyHint ? (
+          <div className="text-[12px] text-rose-700">{p.historyHint}</div>
         ) : null}
       </div>
     </div>

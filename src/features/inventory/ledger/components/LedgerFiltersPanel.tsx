@@ -5,6 +5,8 @@ import { fetchActiveWarehouses, fetchItems, type ItemOut, type WarehouseOut } fr
 import { isoToDateOnly, dateOnlyToIsoEndZ, dateOnlyToIsoStartZ } from "./filters/dateRange";
 import { applyIdFromInput, useWarehouseDisplayValue, useItemDisplayValue } from "./filters/selectorUtils";
 
+import { fetchLedgerEnums, buildCanonOptions, buildSubReasonOptions, type Option } from "./filters/options";
+
 import { LedgerFiltersHeader } from "./LedgerFiltersHeader";
 import { LedgerFiltersBody } from "./LedgerFiltersBody";
 
@@ -40,6 +42,12 @@ type Props = {
 
   onQuery: () => void;
   onClear: () => void;
+
+  // ✅ 历史查询模式灰字说明（needHistory 为 true 时给）
+  historyModeNote?: string | null;
+
+  // ✅ 历史查询错误提示（缺锚点/超范围等；需与后端 1:1）
+  historyHint?: string | null;
 };
 
 export const LedgerFiltersPanel: React.FC<Props> = (p) => {
@@ -48,6 +56,10 @@ export const LedgerFiltersPanel: React.FC<Props> = (p) => {
   const [warehouses, setWarehouses] = useState<WarehouseOut[]>([]);
   const [items, setItems] = useState<ItemOut[]>([]);
   const [optsErr, setOptsErr] = useState<string | null>(null);
+
+  // enums -> options
+  const [canonOptions, setCanonOptions] = useState<Option[]>([{ value: "", label: "不限" }]);
+  const [subReasonOptions, setSubReasonOptions] = useState<Option[]>([{ value: "", label: "不限" }]);
 
   // 日期范围（可选）
   const [useDateRange, setUseDateRange] = useState(false);
@@ -60,16 +72,21 @@ export const LedgerFiltersPanel: React.FC<Props> = (p) => {
     async function load() {
       setOptsErr(null);
       try {
-        const w = await fetchActiveWarehouses();
-        const i = await fetchItems();
+        const [w, i, enums] = await Promise.all([fetchActiveWarehouses(), fetchItems(), fetchLedgerEnums()]);
         if (!alive) return;
+
         setWarehouses(w);
         setItems(i);
+
+        setCanonOptions(buildCanonOptions(enums.reason_canons));
+        setSubReasonOptions(buildSubReasonOptions(enums.sub_reasons));
       } catch (e) {
         if (!alive) return;
         setWarehouses([]);
         setItems([]);
-        setOptsErr(e instanceof Error ? e.message : "加载仓库 / 商品失败");
+        setCanonOptions([{ value: "", label: "不限" }]);
+        setSubReasonOptions([{ value: "", label: "不限" }]);
+        setOptsErr(e instanceof Error ? e.message : "加载筛选项失败");
       }
     }
 
@@ -166,6 +183,8 @@ export const LedgerFiltersPanel: React.FC<Props> = (p) => {
           setSubReason={p.setSubReason}
           reasonCanon={p.reasonCanon}
           setReasonCanon={p.setReasonCanon}
+          canonOptions={canonOptions}
+          subReasonOptions={subReasonOptions}
           ref={p.ref}
           setRef={p.setRef}
           traceId={p.traceId}
@@ -177,6 +196,8 @@ export const LedgerFiltersPanel: React.FC<Props> = (p) => {
           onPickDateFrom={onPickDateFrom}
           onPickDateTo={onPickDateTo}
           onClearDates={clearDates}
+          historyModeNote={p.historyModeNote ?? null}
+          historyHint={p.historyHint ?? null}
         />
       )}
     </section>

@@ -2,14 +2,12 @@
 
 import React from "react";
 import type { DailyReportRow } from "./reportsApi";
-import {
-  StandardTable,
-  type ColumnDef,
-} from "../../components/wmsdu/StandardTable";
+import { StandardTable, type ColumnDef } from "../../components/wmsdu/StandardTable";
 
 interface DailyReportTableProps {
   rows: DailyReportRow[];
   totalAmount: number;
+  onDrilldown: (row: DailyReportRow) => void;
 }
 
 const parseMoney = (v: string | null | undefined): number => {
@@ -27,15 +25,10 @@ const formatMoney = (n: number): string =>
 export const DailyReportTable: React.FC<DailyReportTableProps> = ({
   rows,
   totalAmount,
+  onDrilldown,
 }) => {
   const handleExportCsv = () => {
-    const header = [
-      "日期",
-      "单据数",
-      "订购件数",
-      "折算最小单位数",
-      "金额合计",
-    ];
+    const header = ["日期", "单据数", "订购件数", "折算最小单位数", "金额合计"];
 
     const dataRows = rows.map((r) => [
       r.day,
@@ -58,9 +51,7 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
       )
       .join("\r\n");
 
-    const blob = new Blob([csvLines], {
-      type: "text/csv;charset=utf-8;",
-    });
+    const blob = new Blob([csvLines], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -75,40 +66,31 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
     {
       key: "day",
       header: "日期",
-      render: (r) => r.day,
+      render: (r) => (
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-mono text-[12px]">{r.day}</span>
+          <button
+            type="button"
+            className="text-[11px] text-slate-500 hover:text-slate-800"
+            onClick={() => onDrilldown(r)}
+            title="查看该日期的商品明细（自动切到按商品）"
+          >
+            查看明细
+          </button>
+        </div>
+      ),
     },
-    {
-      key: "order_count",
-      header: "单据数",
-      align: "right",
-      render: (r) => r.order_count,
-    },
-    {
-      key: "total_qty_cases",
-      header: "订购件数",
-      align: "right",
-      render: (r) => r.total_qty_cases,
-    },
-    {
-      key: "total_units",
-      header: "折算最小单位数",
-      align: "right",
-      render: (r) => r.total_units,
-    },
-    {
-      key: "total_amount",
-      header: "金额合计",
-      align: "right",
-      render: (r) => formatMoney(parseMoney(r.total_amount)),
-    },
+    { key: "order_count", header: "单据数", align: "right", render: (r) => r.order_count },
+    { key: "total_qty_cases", header: "订购件数", align: "right", render: (r) => r.total_qty_cases },
+    { key: "total_units", header: "折算最小单位数", align: "right", render: (r) => r.total_units },
+    { key: "total_amount", header: "金额合计", align: "right", render: (r) => formatMoney(parseMoney(r.total_amount)) },
   ];
 
   return (
     <div className="space-y-2 text-sm">
       <div className="flex items-center justify-between">
         <div className="text-slate-700">
-          天数：{rows.length}；金额合计：
-          {formatMoney(totalAmount)}
+          天数：{rows.length}；金额合计：{formatMoney(totalAmount)}
         </div>
         <button
           type="button"
@@ -127,9 +109,7 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
         emptyText="暂无数据"
         footer={
           rows.length > 0 ? (
-            <span className="text-xs text-slate-500">
-              合计金额：{formatMoney(totalAmount)}
-            </span>
+            <span className="text-xs text-slate-500">合计金额：{formatMoney(totalAmount)}</span>
           ) : undefined
         }
       />

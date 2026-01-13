@@ -1,48 +1,40 @@
 // src/features/purchase-orders/PurchaseOrderLinesTable.tsx
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { PurchaseOrderWithLines, PurchaseOrderLine } from "./api";
-import {
-  StandardTable,
-  type ColumnDef,
-} from "../../components/wmsdu/StandardTable";
+import { StandardTable, type ColumnDef } from "../../components/wmsdu/StandardTable";
+import { fetchItemsBasic, type ItemBasic } from "../../master-data/itemsApi";
 
 interface PurchaseOrderLinesTableProps {
   po: PurchaseOrderWithLines;
   selectedLineId: number | null;
   onSelectLine: (lineId: number) => void;
 
-  /**
-   * default: 其它页面保持原样（dense）
-   * inbound: 采购收货作业页（字号/行高更大，便于扫视）
-   */
   mode?: "default" | "inbound";
 }
 
 const formatUnitExpr = (line: PurchaseOrderLine) => {
-  if (!line.purchase_uom || !line.base_uom || !line.units_per_case) {
-    return "-";
-  }
+  if (!line.purchase_uom || !line.base_uom || !line.units_per_case) return "-";
   return `1${line.purchase_uom} = ${line.units_per_case}${line.base_uom}`;
 };
 
-/** 作业态（只给一线用） */
-function computeWorkStatus(line: PurchaseOrderLine): {
-  text: string;
-  className: string;
-} {
+function computeWorkStatus(line: PurchaseOrderLine): { text: string; className: string } {
   const ordered = Number(line.qty_ordered ?? 0);
   const received = Number(line.qty_received ?? 0);
 
-  if (received <= 0) {
-    return { text: "未收", className: "text-slate-500" };
-  }
-
-  if (received < ordered) {
-    return { text: "收货中", className: "text-amber-700" };
-  }
-
+  if (received <= 0) return { text: "未收", className: "text-slate-500" };
+  if (received < ordered) return { text: "收货中", className: "text-amber-700" };
   return { text: "已收完", className: "text-emerald-700" };
+}
+
+function clean(v: string | null | undefined): string {
+  const s = (v ?? "").trim();
+  return s ? s : "—";
+}
+
+function num(v: unknown, fallback = 0): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
 }
 
 export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = ({
@@ -52,6 +44,37 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
   mode = "default",
 }) => {
   const isInbound = mode === "inbound";
+
+  const [items, setItems] = useState<ItemBasic[]>([]);
+  const [itemsErr, setItemsErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      setItemsErr(null);
+      try {
+        const data = await fetchItemsBasic();
+        if (!alive) return;
+        setItems(data);
+      } catch (e) {
+         
+        console.error("fetchItemsBasic failed in PurchaseOrderLinesTable", e);
+        if (!alive) return;
+        setItems([]);
+        setItemsErr("加载商品主数据失败（条码/品牌/分类可能为空）");
+      }
+    }
+    void load();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const itemMap = useMemo(() => {
+    const m = new Map<number, ItemBasic>();
+    for (const it of items) m.set(it.id, it);
+    return m;
+  }, [items]);
 
   const columns: ColumnDef<PurchaseOrderLine>[] = [
     {
@@ -64,14 +87,38 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       ),
     },
     {
-      key: "item_id",
-      header: "Item ID",
-      render: (line) => line.item_id,
+      key: "item",
+      header: "商品",
+      render: (line) => {
+        const it = itemMap.get(line.item_id);
+        const name = it?.name?.trim()
+          ? it!.name
+          : (line.item_name ?? `（未知商品：${line.item_id}）`);
+        return (
+          <div>
+            <div className="font-medium text-slate-900">{name}</div>
+            <div className="mt-0.5 text-[11px] text-slate-400 font-mono">ID：{line.item_id}</div>
+          </div>
+        );
+      },
     },
     {
-      key: "item_name",
-      header: "商品名",
-      render: (line) => line.item_name ?? "-",
+      key: "barcode",
+      header: "条码",
+      render: (line) => {
+        const it = itemMap.get(line.item_id);
+        return <span className="font-mono text-[12px]">{clean(it?.barcode)}</span>;
+      },
+    },
+    {
+      key: "brand",
+      header: "品牌",
+      render: (line) => clean(itemMap.get(line.item_id)?.brand_name),
+    },
+    {
+      key: "category",
+      header: "分类",
+      render: (line) => clean(itemMap.get(line.item_id)?.category_name),
     },
     {
       key: "spec_text",
@@ -79,15 +126,53 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       render: (line) => line.spec_text ?? "-",
     },
     {
-      key: "unit_expr",
-      header: "单位换算",
-      render: (line) => formatUnitExpr(line),
+      key: "base_uom",
+      header: "最小单位",
+      render: (line) => line.base_uom ?? "-",
+    },
+    {
+      key: "purchase_uom",
+      header: "采购单位",
+      render: (line) => line.purchase_uom ?? "-",
+    },
+    {
+      key: "units_per_case",
+      header: "每件数量",
+      align: "right",
+      render: (line) => (line.units_per_case ?? "-"),
     },
     {
       key: "qty_ordered",
-      header: "订购数量",
+      header: "订购件数",
       align: "right",
       render: (line) => line.qty_ordered,
+    },
+    {
+      key: "qty_base",
+      header: "数量(最小单位)",
+      align: "right",
+      render: (line) => {
+        const qtyCases = num(line.qty_cases ?? line.qty_ordered, 0);
+        const units = num(line.units_per_case, 1);
+        return qtyCases * units;
+      },
+    },
+    {
+      key: "supply_price",
+      header: "单价(每最小单位)",
+      align: "right",
+      render: (line) => (line.supply_price ?? "-"),
+    },
+    {
+      key: "line_amount",
+      header: "行金额",
+      align: "right",
+      render: (line) => (line.line_amount ?? "-"),
+    },
+    {
+      key: "unit_expr",
+      header: "单位换算",
+      render: (line) => formatUnitExpr(line),
     },
     {
       key: "qty_received",
@@ -119,7 +204,10 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
 
   return (
     <section className={cardCls}>
-      <h2 className={titleCls}>行明细</h2>
+      <div className="flex items-center justify-between">
+        <h2 className={titleCls}>行明细</h2>
+        {itemsErr ? <div className="text-xs text-amber-700">{itemsErr}</div> : null}
+      </div>
 
       <StandardTable<PurchaseOrderLine>
         columns={columns}

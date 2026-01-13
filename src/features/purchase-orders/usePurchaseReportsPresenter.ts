@@ -25,21 +25,23 @@ export interface PurchaseReportsState {
 
 export interface PurchaseReportsActions {
   setActiveTab: (tab: TabKey) => void;
-  setFilters: (
-    updater: (prev: PurchaseReportFilters) => PurchaseReportFilters,
-  ) => void;
+  setFilters: (updater: (prev: PurchaseReportFilters) => PurchaseReportFilters) => void;
+  resetFilters: () => void;
   loadReports: () => Promise<void>;
 }
 
 const today = new Date();
 const pad2 = (n: number) => String(n).padStart(2, "0");
-const toYMD = (d: Date) =>
-  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const toYMD = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
 const DEFAULT_FILTERS: PurchaseReportFilters = {
   dateFrom: toYMD(firstDayOfMonth),
   dateTo: toYMD(today),
+  status: undefined,
+  warehouseId: undefined,
+  supplierId: undefined,
+  itemKeyword: undefined,
 };
 
 type ApiErrorShape = {
@@ -51,13 +53,9 @@ const getErrorMessage = (err: unknown, fallback: string): string => {
   return e?.message ?? fallback;
 };
 
-export function usePurchaseReportsPresenter(): [
-  PurchaseReportsState,
-  PurchaseReportsActions,
-] {
+export function usePurchaseReportsPresenter(): [PurchaseReportsState, PurchaseReportsActions] {
   const [activeTab, setActiveTab] = useState<TabKey>("suppliers");
-  const [filters, setFilters] =
-    useState<PurchaseReportFilters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<PurchaseReportFilters>(DEFAULT_FILTERS);
 
   const [supplierRows, setSupplierRows] = useState<SupplierReportRow[]>([]);
   const [itemRows, setItemRows] = useState<ItemReportRow[]>([]);
@@ -70,6 +68,7 @@ export function usePurchaseReportsPresenter(): [
     setLoading(true);
     setError(null);
     try {
+      // ✅ 统一语义：filters 对三张报表一致传递（是否真正生效由后端合同决定）
       if (activeTab === "suppliers") {
         const rows = await fetchSupplierReport(filters);
         setSupplierRows(rows);
@@ -100,8 +99,8 @@ export function usePurchaseReportsPresenter(): [
     },
     {
       setActiveTab,
-      setFilters: (updater) =>
-        setFilters((prev) => updater(prev)),
+      setFilters: (updater) => setFilters((prev) => updater(prev)),
+      resetFilters: () => setFilters({ ...DEFAULT_FILTERS }),
       loadReports,
     },
   ];
