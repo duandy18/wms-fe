@@ -1,10 +1,7 @@
 // src/features/purchase-orders/usePurchaseOrdersListPresenter.ts
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  fetchPurchaseOrders,
-  type PurchaseOrderWithLines,
-} from "./api";
+import { fetchPurchaseOrders, type PurchaseOrderListItem } from "./api";
 
 export type StatusFilter =
   | "ALL"
@@ -14,7 +11,7 @@ export type StatusFilter =
   | "CLOSED";
 
 export interface PurchaseOrdersListState {
-  orders: PurchaseOrderWithLines[];
+  orders: PurchaseOrderListItem[];
   loadingList: boolean;
   listError: string | null;
   supplierFilter: string;
@@ -47,13 +44,12 @@ export function usePurchaseOrdersListPresenter(): [
   PurchaseOrdersListState,
   PurchaseOrdersListActions,
 ] {
-  const [orders, setOrders] = useState<PurchaseOrderWithLines[]>([]);
+  const [orders, setOrders] = useState<PurchaseOrderListItem[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
   const [supplierFilter, setSupplierFilter] = useState("");
-  const [statusFilter, setStatusFilter] =
-    useState<StatusFilter>("ALL");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const loadOrders = useCallback(async () => {
     setLoadingList(true);

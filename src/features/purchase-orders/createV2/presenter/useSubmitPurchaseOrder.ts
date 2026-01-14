@@ -1,7 +1,7 @@
 // src/features/purchase-orders/createV2/presenter/useSubmitPurchaseOrder.ts
 
 import { useState } from "react";
-import { createPurchaseOrderV2, type PurchaseOrderWithLines } from "../../api";
+import { createPurchaseOrderV2, type PurchaseOrderDetail } from "../../api";
 import type { LineDraft } from "../lineDraft";
 import { buildPayloadLines } from "../lineDraft";
 import { datetimeLocalToIsoOrThrow, getErrorMessage } from "../utils";
@@ -16,13 +16,13 @@ export function useSubmitPurchaseOrder(args: {
   lines: LineDraft[];
   onAfterSuccessReset: () => void;
 }): {
-  lastCreatedPo: PurchaseOrderWithLines | null;
+  lastCreatedPo: PurchaseOrderDetail | null;
   submitting: boolean;
   error: string | null;
   setError: (v: string | null) => void;
   submit: (onSuccess?: (poId: number) => void) => Promise<void>;
 } {
-  const [lastCreatedPo, setLastCreatedPo] = useState<PurchaseOrderWithLines | null>(null);
+  const [lastCreatedPo, setLastCreatedPo] = useState<PurchaseOrderDetail | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -1,13 +1,13 @@
 // src/features/operations/inbound/cockpit/po.ts
 
-import { fetchPurchaseOrderV2, type PurchaseOrderWithLines } from "../../../purchase-orders/api";
+import { fetchPurchaseOrderV2, type PurchaseOrderDetail } from "../../../purchase-orders/api";
 import { getErrMsg } from "./utils";
 
 export async function loadPoById(args: {
   poIdInput: string;
   setPoError: (v: string | null) => void;
   setLoadingPo: (v: boolean) => void;
-  setCurrentPo: (v: PurchaseOrderWithLines | null) => void;
+  setCurrentPo: (v: PurchaseOrderDetail | null) => void;
 }) {
   const { poIdInput, setPoError, setLoadingPo, setCurrentPo } = args;
 

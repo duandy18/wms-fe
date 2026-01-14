@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   fetchPurchaseOrders,
-  type PurchaseOrderWithLines,
+  type PurchaseOrderListItem,
 } from "../../../purchase-orders/api";
 import type { InboundCockpitController } from "../types";
 
@@ -16,7 +16,8 @@ type ApiErrorShape = {
 export function useInboundTaskContextModel(c: InboundCockpitController) {
   const [mode, setMode] = useState<InboundMode>("PO");
 
-  const [poOptions, setPoOptions] = useState<PurchaseOrderWithLines[]>([]);
+  // ✅ 列表态：只用于下拉/快速选择，不要求详情字段（避免 qty_remaining 强合同污染列表接口）
+  const [poOptions, setPoOptions] = useState<PurchaseOrderListItem[]>([]);
   const [loadingPoOptions, setLoadingPoOptions] = useState(false);
   const [poOptionsError, setPoOptionsError] = useState<string | null>(null);
   const [selectedPoId, setSelectedPoId] = useState<string>("");

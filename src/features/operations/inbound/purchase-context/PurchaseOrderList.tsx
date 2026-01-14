@@ -1,12 +1,12 @@
 // src/features/operations/inbound/purchase-context/PurchaseOrderList.tsx
 
 import React, { useMemo } from "react";
-import type { PurchaseOrderWithLines } from "../../../purchase-orders/api";
+import type { PurchaseOrderListItem } from "../../../purchase-orders/api";
 import { formatTsCompact, statusLabel, supplierLabel } from "./poHelpers";
 import { InboundUI } from "../ui";
 
 export function PurchaseOrderList(props: {
-  poOptions: PurchaseOrderWithLines[];
+  poOptions: PurchaseOrderListItem[];
   loading: boolean;
   error: string | null;
   selectedPoId: string;
@@ -14,7 +14,6 @@ export function PurchaseOrderList(props: {
 }) {
   const { poOptions, loading, error, selectedPoId, onSelectPoId } = props;
 
-  // 作业台语义：全部都是“当前需要处理的”
   const list = useMemo(() => {
     const v = [...poOptions];
     v.sort((a, b) => b.id - a.id);
@@ -44,13 +43,11 @@ export function PurchaseOrderList(props: {
               onClick={() => void onSelectPoId(String(p.id))}
               className={[
                 "w-full text-left rounded-lg border transition",
-                // 放大触达：更高的行高、更宽的 padding
                 "px-4 py-3",
                 "bg-white border-slate-200 hover:bg-slate-50",
                 active ? "bg-sky-50 border-sky-300 ring-1 ring-sky-200" : "",
               ].join(" ")}
             >
-              {/* 单行：主信息更清晰 */}
               <div className="flex items-center justify-between gap-3">
                 <div className="truncate">
                   <span className="font-semibold text-slate-900 text-[14px]">

@@ -1,7 +1,7 @@
 // src/features/operations/inbound/receive-task/usePoReceivePlan.ts
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { PurchaseOrderWithLines } from "../../../purchase-orders/api";
+import type { PurchaseOrderDetail } from "../../../purchase-orders/api";
 
 export type PlanRow = {
   poLineId: number;
@@ -14,7 +14,7 @@ export type PlanRow = {
   remain: number;
 };
 
-export function usePoReceivePlan(po: PurchaseOrderWithLines | null) {
+export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [qtyMap, setQtyMap] = useState<Record<number, string>>({});
 

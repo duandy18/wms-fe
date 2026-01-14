@@ -1,8 +1,8 @@
 // src/features/operations/inbound/purchase-context/poHelpers.ts
 
-import type { PurchaseOrderWithLines } from "../../../purchase-orders/api";
+import type { PurchaseOrderListItem } from "../../../purchase-orders/api";
 
-export function supplierLabel(p: PurchaseOrderWithLines): string {
+export function supplierLabel(p: PurchaseOrderListItem): string {
   return p.supplier_name ?? p.supplier ?? "未知供应商";
 }
 
@@ -28,14 +28,22 @@ export function formatTsCompact(ts?: string | null): string {
   return `${mm}-${dd} ${hh}:${mi}`;
 }
 
-export function calcPoProgress(po: PurchaseOrderWithLines | null | undefined): {
+export function calcPoProgress(po: PurchaseOrderListItem | null | undefined): {
   ordered: number;
   received: number;
   pct: number;
 } {
   if (!po || !po.lines) return { ordered: 0, received: 0, pct: 0 };
-  const ordered = (po.lines ?? []).reduce((sum, l) => sum + (l.qty_ordered ?? 0), 0);
-  const received = (po.lines ?? []).reduce((sum, l) => sum + (l.qty_received ?? 0), 0);
-  const pct = ordered > 0 ? Math.min(100, Math.round((received / ordered) * 100)) : 0;
+
+  const ordered = (po.lines ?? []).reduce(
+    (sum: number, l) => sum + (l.qty_ordered ?? 0),
+    0,
+  );
+  const received = (po.lines ?? []).reduce(
+    (sum: number, l) => sum + (l.qty_received ?? 0),
+    0,
+  );
+  const pct =
+    ordered > 0 ? Math.min(100, Math.round((received / ordered) * 100)) : 0;
   return { ordered, received, pct };
 }

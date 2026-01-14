@@ -13,6 +13,9 @@ export function useLinesDraft(itemOptions: ItemBasic[]): {
   addLine: () => void;
   removeLine: (lineId: number) => void;
   resetLines: () => void;
+
+  // ✅ 语义化：切换供应商时使用（避免“带着旧商品继续提交”）
+  resetLinesForSupplierChange: () => void;
 } {
   const [lines, setLines] = useState<LineDraft[]>([
     makeEmptyLine(1),
@@ -22,7 +25,9 @@ export function useLinesDraft(itemOptions: ItemBasic[]): {
 
   const selectItemForLine = (lineId: number, itemId: number | null) => {
     setLines((prev) =>
-      prev.map((l) => (l.id === lineId ? applySelectedItemToLine(l, itemOptions, itemId) : l)),
+      prev.map((l) =>
+        l.id === lineId ? applySelectedItemToLine(l, itemOptions, itemId) : l,
+      ),
     );
   };
 
@@ -42,6 +47,10 @@ export function useLinesDraft(itemOptions: ItemBasic[]): {
     setLines([makeEmptyLine(1), makeEmptyLine(2), makeEmptyLine(3)]);
   };
 
+  const resetLinesForSupplierChange = () => {
+    resetLines();
+  };
+
   return {
     lines,
     setLines,
@@ -50,5 +59,6 @@ export function useLinesDraft(itemOptions: ItemBasic[]): {
     addLine,
     removeLine,
     resetLines,
+    resetLinesForSupplierChange,
   };
 }

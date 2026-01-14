@@ -63,8 +63,33 @@ function buildPrimaryBarcodeMap(all: ItemBarcode[]): Record<number, string> {
   return m;
 }
 
-export async function fetchItemsBasic(): Promise<ItemBasic[]> {
-  const raw = await apiGet<unknown>("/items");
+export type FetchItemsBasicParams = {
+  /**
+   * 供应商约束（采购单创建用）
+   * - 约定传给后端 query: supplier_id
+   * - 若后端暂未支持，该参数会被忽略（测试会暴露，我们再补后端）
+   */
+  supplierId?: number | null;
+
+  /**
+   * 只取启用商品（可选）
+   * - 约定传给后端 query: enabled=true
+   */
+  enabledOnly?: boolean;
+};
+
+export async function fetchItemsBasic(params: FetchItemsBasicParams = {}): Promise<ItemBasic[]> {
+  const qs = new URLSearchParams();
+
+  if (params.supplierId != null && Number.isFinite(params.supplierId) && params.supplierId > 0) {
+    qs.set("supplier_id", String(params.supplierId));
+  }
+  if (params.enabledOnly) {
+    qs.set("enabled", "true");
+  }
+
+  const path = qs.toString() ? `/items?${qs.toString()}` : "/items";
+  const raw = await apiGet<unknown>(path);
   if (!Array.isArray(raw)) return [];
 
   const base: ItemBasic[] = raw.map((row) => {
@@ -109,7 +134,6 @@ export async function fetchItemsBasic(): Promise<ItemBasic[]> {
     });
   } catch (err) {
     // 条码补齐失败不应阻断采购单录入；保持 base 返回即可
-     
     console.error("fetchBarcodesByItems failed:", err);
     return base;
   }

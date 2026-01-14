@@ -1,7 +1,7 @@
 // src/features/dev/inbound/types.ts
 
 import type { ReceiveTask } from "../../receive-tasks/api";
-import type { PurchaseOrderWithLines } from "../../purchase-orders/api";
+import type { PurchaseOrderDetail } from "../../purchase-orders/api";
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import type { LedgerRow } from "../../diagnostics/ledger-tool/types";
 import type { ItemDetailResponse } from "../../inventory/snapshot/api";
@@ -50,7 +50,7 @@ export type InboundDemoScenario = "normal" | "under" | "over";
 export interface DevInboundController {
   // PO 输入与状态
   poIdInput: string;
-  currentPo: PurchaseOrderWithLines | null;
+  currentPo: PurchaseOrderDetail | null;
   loadingPo: boolean;
   poError: string | null;
 

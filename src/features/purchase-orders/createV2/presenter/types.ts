@@ -1,6 +1,6 @@
 // src/features/purchase-orders/createV2/presenter/types.ts
 
-import type { PurchaseOrderWithLines } from "../../api";
+import type { PurchaseOrderDetail } from "../../api";
 import type { SupplierBasic } from "../../../../master-data/suppliersApi";
 import type { ItemBasic } from "../../../../master-data/itemsApi";
 import type { LineDraft } from "../lineDraft";
@@ -25,7 +25,7 @@ export interface PurchaseOrderCreateState {
 
   lines: LineDraft[];
 
-  lastCreatedPo: PurchaseOrderWithLines | null;
+  lastCreatedPo: PurchaseOrderDetail | null;
 
   submitting: boolean;
   error: string | null;

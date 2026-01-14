@@ -1,6 +1,6 @@
 // src/features/operations/inbound/types.ts
 
-import type { PurchaseOrderWithLines } from "../../purchase-orders/api";
+import type { PurchaseOrderDetail } from "../../purchase-orders/api";
 import type {
   ReceiveTaskLine,
   ReceiveTask,
@@ -44,7 +44,7 @@ export type InboundManualDraftSummary = {
 export interface InboundCockpitController {
   // ===== state =====
   poIdInput: string;
-  currentPo: PurchaseOrderWithLines | null;
+  currentPo: PurchaseOrderDetail | null;
   loadingPo: boolean;
   poError: string | null;
 

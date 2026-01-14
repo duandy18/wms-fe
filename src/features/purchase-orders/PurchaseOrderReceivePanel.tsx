@@ -1,11 +1,11 @@
 // src/features/purchase-orders/PurchaseOrderReceivePanel.tsx
 
 import React from "react";
-import type { PurchaseOrderWithLines, PurchaseOrderLine } from "./api";
+import type { PurchaseOrderDetail, PurchaseOrderDetailLine } from "./api";
 
 interface PurchaseOrderReceivePanelProps {
-  po: PurchaseOrderWithLines;
-  selectedLine: PurchaseOrderLine | null;
+  po: PurchaseOrderDetail;
+  selectedLine: PurchaseOrderDetailLine | null;
   selectedLineId: number | null;
   receiveQty: string;
   receiving: boolean;
