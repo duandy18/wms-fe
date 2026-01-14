@@ -1,57 +1,37 @@
 // src/features/purchase-orders/PurchaseOrdersTable.tsx
 
 import React, { useMemo } from "react";
-import type { PurchaseOrderWithLines } from "./api";
-import {
-  StandardTable,
-  type ColumnDef,
-} from "../../components/wmsdu/StandardTable";
+import type { PurchaseOrderListItem } from "./api";
+import { StandardTable, type ColumnDef } from "../../components/wmsdu/StandardTable";
 
 interface PurchaseOrdersTableProps {
-  orders: PurchaseOrderWithLines[];
+  orders: PurchaseOrderListItem[];
   loading: boolean;
   error: string | null;
   onRowClick: (id: number) => void;
   selectedPoId: number | null;
 }
 
-const formatMoney = (v: string | null | undefined) =>
-  v == null ? "-" : v;
+const formatMoney = (v: string | null | undefined) => (v == null ? "-" : v);
 
 const statusBadge = (s: string) => {
   const base =
     "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium";
   switch (s) {
     case "CREATED":
-      return (
-        <span className={`${base} bg-slate-100 text-slate-700`}>
-          新建
-        </span>
-      );
+      return <span className={`${base} bg-slate-100 text-slate-700`}>新建</span>;
     case "PARTIAL":
       return (
-        <span className={`${base} bg-amber-100 text-amber-800`}>
-          部分收货
-        </span>
+        <span className={`${base} bg-amber-100 text-amber-800`}>部分收货</span>
       );
     case "RECEIVED":
       return (
-        <span className={`${base} bg-emerald-100 text-emerald-800`}>
-          已收货
-        </span>
+        <span className={`${base} bg-emerald-100 text-emerald-800`}>已收货</span>
       );
     case "CLOSED":
-      return (
-        <span className={`${base} bg-slate-200 text-slate-800`}>
-          已关闭
-        </span>
-      );
+      return <span className={`${base} bg-slate-200 text-slate-800`}>已关闭</span>;
     default:
-      return (
-        <span className={`${base} bg-slate-100 text-slate-700`}>
-          {s}
-        </span>
-      );
+      return <span className={`${base} bg-slate-100 text-slate-700`}>{s}</span>;
   }
 };
 
@@ -65,25 +45,20 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
   onRowClick,
   selectedPoId,
 }) => {
-  const hasData = useMemo(
-    () => orders && orders.length > 0,
-    [orders],
-  );
+  const hasData = useMemo(() => orders && orders.length > 0, [orders]);
 
-  const totalQtyOrdered = (po: PurchaseOrderWithLines) =>
-    po.lines.reduce((sum, l) => sum + l.qty_ordered, 0);
+  const totalQtyOrdered = (po: PurchaseOrderListItem) =>
+    (po.lines ?? []).reduce((sum, l) => sum + Number(l.qty_ordered ?? 0), 0);
 
-  const totalQtyReceived = (po: PurchaseOrderWithLines) =>
-    po.lines.reduce((sum, l) => sum + l.qty_received, 0);
+  const totalQtyReceived = (po: PurchaseOrderListItem) =>
+    (po.lines ?? []).reduce((sum, l) => sum + Number(l.qty_received ?? 0), 0);
 
-  const columns: ColumnDef<PurchaseOrderWithLines>[] = [
+  const columns: ColumnDef<PurchaseOrderListItem>[] = [
     {
       key: "id",
       header: "ID",
       align: "right",
-      render: (po) => (
-        <span className="font-mono text-[11px]">{po.id}</span>
-      ),
+      render: (po) => <span className="font-mono text-[11px]">{po.id}</span>,
     },
     {
       key: "supplier_name",
@@ -109,7 +84,7 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
       key: "line_count",
       header: "行数",
       align: "right",
-      render: (po) => po.lines.length,
+      render: (po) => (po.lines ?? []).length,
     },
     {
       key: "qty_ordered",
@@ -141,20 +116,15 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
     },
   ];
 
-  // 根据状态决定空提示
   let emptyText: React.ReactNode = "暂无数据";
   if (loading) {
     emptyText = "加载中…";
   } else if (error) {
-    emptyText = (
-      <span className="text-red-600">
-        加载失败：{error}
-      </span>
-    );
+    emptyText = <span className="text-red-600">加载失败：{error}</span>;
   }
 
   return (
-    <StandardTable<PurchaseOrderWithLines>
+    <StandardTable<PurchaseOrderListItem>
       title="采购单列表"
       columns={columns}
       data={orders}

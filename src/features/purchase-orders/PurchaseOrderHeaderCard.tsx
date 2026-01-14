@@ -1,10 +1,10 @@
 // src/features/purchase-orders/PurchaseOrderHeaderCard.tsx
 
 import React from "react";
-import type { PurchaseOrderWithLines } from "./api";
+import type { PurchaseOrderDetail } from "./api";
 
 interface PurchaseOrderHeaderCardProps {
-  po: PurchaseOrderWithLines;
+  po: PurchaseOrderDetail;
   poRef: string;
   totalQtyOrdered: number;
   totalQtyReceived: number;
@@ -16,7 +16,8 @@ interface PurchaseOrderHeaderCardProps {
   mode?: "default" | "inbound";
 }
 
-const formatTs = (ts: string | null) => (ts ? ts.replace("T", " ").replace("Z", "") : "-");
+const formatTs = (ts: string | null) =>
+  ts ? ts.replace("T", " ").replace("Z", "") : "-";
 
 const formatMoney = (v: string | null) => (v == null ? "-" : v);
 
@@ -35,7 +36,9 @@ export const PurchaseOrderHeaderCard: React.FC<PurchaseOrderHeaderCardProps> = (
     ? "bg-white border border-slate-200 rounded-xl p-5 space-y-4"
     : "bg-white border border-slate-200 rounded-xl p-4 space-y-3";
 
-  const titleCls = isInbound ? "text-base font-semibold text-slate-800" : "text-sm font-semibold text-slate-800";
+  const titleCls = isInbound
+    ? "text-base font-semibold text-slate-800"
+    : "text-sm font-semibold text-slate-800";
 
   const metaCls = isInbound ? "text-sm text-slate-500" : "text-xs text-slate-500";
 
@@ -92,7 +95,9 @@ export const PurchaseOrderHeaderCard: React.FC<PurchaseOrderHeaderCardProps> = (
           <div>
             {totalQtyReceived} / {totalQtyOrdered}
             {remainingHead > 0 && (
-              <span className="ml-2 text-sm text-amber-700">（剩余 {remainingHead}）</span>
+              <span className="ml-2 text-sm text-amber-700">
+                （剩余 {remainingHead}）
+              </span>
             )}
           </div>
         </div>

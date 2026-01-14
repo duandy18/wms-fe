@@ -9,70 +9,24 @@ export type PurchaseOrderStatus =
   | string;
 
 // ----------------------
-// Phase 2：多行 PO 模型
+// ✅ 列表态：轻量类型（/purchase-orders/）
 // ----------------------
 
-export interface PurchaseOrderLine {
+export interface PurchaseOrderListLine {
   id: number;
   po_id: number;
   line_no: number;
-
   item_id: number;
 
-  // PO 行快照（历史兼容）
-  item_name: string | null;
-  item_sku: string | null;
-
-  /** ⚠️ PO 行业务分组快照（原 category），不等于商品主数据“品类” */
-  biz_category: string | null;
-
-  // 规格 & 单位（PO 行快照）
-  spec_text: string | null;
-  base_uom: string | null;
-  purchase_uom: string | null;
-
-  // ===== 商品主数据字段（与 ItemsListTable 列合同对齐）=====
-  sku: string | null;
-  primary_barcode: string | null;
-
-  brand: string | null;
-  /** 商品主数据“品类” */
-  category: string | null;
-
-  supplier_id: number | null;
-  supplier_name: string | null;
-
-  /** Decimal 可能以 string 返回 */
-  weight_kg: string | null;
-  uom: string | null;
-
-  has_shelf_life: boolean | null;
-  shelf_life_value: number | null;
-  shelf_life_unit: string | null;
-  enabled: boolean | null;
-
-  // 价格体系
-  supply_price: string | null;
-  retail_price: string | null;
-  promo_price: string | null;
-  min_price: string | null;
-
-  // 数量体系
-  qty_cases: number | null;
-  units_per_case: number | null;
   qty_ordered: number;
   qty_received: number;
-
-  // 金额 & 状态
-  line_amount: string | null;
   status: PurchaseOrderStatus;
-  remark: string | null;
 
   created_at: string;
   updated_at: string;
 }
 
-export interface PurchaseOrderWithLines {
+export interface PurchaseOrderListItem {
   id: number;
   supplier: string;
   warehouse_id: number;
@@ -81,13 +35,10 @@ export interface PurchaseOrderWithLines {
   supplier_name: string | null;
   total_amount: string | null;
 
-  // ⭐ 新增：采购人 + 采购时间（后端已支持）
   purchaser: string;
   purchase_time: string;
 
-  // 备注（可选）
   remark: string | null;
-
   status: PurchaseOrderStatus;
 
   created_at: string;
@@ -95,7 +46,7 @@ export interface PurchaseOrderWithLines {
   last_received_at: string | null;
   closed_at: string | null;
 
-  lines: PurchaseOrderLine[];
+  lines: PurchaseOrderListLine[];
 }
 
 /** 列表查询参数（v2 列表） */
@@ -106,10 +57,10 @@ export interface PurchaseOrderListParams {
   status?: string;
 }
 
-/** 查询采购单列表（v2：头 + 行，轻量版） */
+/** 查询采购单列表（列表态：轻量） */
 export async function fetchPurchaseOrders(
   params: PurchaseOrderListParams = {},
-): Promise<PurchaseOrderWithLines[]> {
+): Promise<PurchaseOrderListItem[]> {
   const qs = new URLSearchParams();
   if (params.skip != null) qs.set("skip", String(params.skip));
   if (params.limit != null) qs.set("limit", String(params.limit));
@@ -118,15 +69,102 @@ export async function fetchPurchaseOrders(
 
   const query = qs.toString();
   const path = query ? `/purchase-orders/?${query}` : "/purchase-orders/";
-  return apiGet<PurchaseOrderWithLines[]>(path);
+  return apiGet<PurchaseOrderListItem[]>(path);
 }
 
-/** 创建多行 PO 的行请求体 */
+// ----------------------
+// ✅ 详情态：强合同类型（/purchase-orders/{id}）
+// ----------------------
+
+export interface PurchaseOrderDetailLine {
+  id: number;
+  po_id: number;
+  line_no: number;
+
+  item_id: number;
+
+  item_name: string | null;
+  item_sku: string | null;
+
+  biz_category: string | null;
+
+  spec_text: string | null;
+  base_uom: string | null;
+  purchase_uom: string | null;
+
+  sku: string | null;
+  primary_barcode: string | null;
+
+  brand: string | null;
+  category: string | null;
+
+  supplier_id: number | null;
+  supplier_name: string | null;
+
+  weight_kg: string | null;
+  uom: string | null;
+
+  has_shelf_life: boolean | null;
+  shelf_life_value: number | null;
+  shelf_life_unit: string | null;
+  enabled: boolean | null;
+
+  supply_price: string | null;
+  retail_price: string | null;
+  promo_price: string | null;
+  min_price: string | null;
+
+  qty_cases: number | null;
+  units_per_case: number | null;
+  qty_ordered: number;
+  qty_received: number;
+
+  // ✅ 强合同：后端事实字段
+  qty_remaining: number;
+
+  line_amount: string | null;
+  status: PurchaseOrderStatus;
+  remark: string | null;
+
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PurchaseOrderDetail {
+  id: number;
+  supplier: string;
+  warehouse_id: number;
+
+  supplier_id: number | null;
+  supplier_name: string | null;
+  total_amount: string | null;
+
+  purchaser: string;
+  purchase_time: string;
+
+  remark: string | null;
+  status: PurchaseOrderStatus;
+
+  created_at: string;
+  updated_at: string;
+  last_received_at: string | null;
+  closed_at: string | null;
+
+  lines: PurchaseOrderDetailLine[];
+}
+
+export async function fetchPurchaseOrderV2(id: number): Promise<PurchaseOrderDetail> {
+  return apiGet<PurchaseOrderDetail>(`/purchase-orders/${id}`);
+}
+
+// ----------------------
+// Create / receive（保持不变）
+// ----------------------
+
 export interface PurchaseOrderLineCreatePayload {
   line_no?: number;
   item_id: number;
 
-  // 仍保留原字段（PO 行分组）
   category?: string | null;
 
   spec_text?: string | null;
@@ -142,51 +180,69 @@ export interface PurchaseOrderLineCreatePayload {
   remark?: string | null;
 }
 
-/** 创建多行 PO 的请求体（头 + 行） */
 export interface PurchaseOrderCreateV2Payload {
   supplier: string;
   warehouse_id: number;
   supplier_id?: number | null;
   supplier_name?: string | null;
 
-  // ⭐ 新增：采购人 + 采购时间（必填）
   purchaser: string;
   purchase_time: string;
 
-  // 备注可选
   remark?: string | null;
 
   lines: PurchaseOrderLineCreatePayload[];
 }
 
-/** 行级收货请求体（Phase 2） */
 export interface PurchaseOrderReceiveLinePayload {
   line_id?: number;
   line_no?: number;
   qty: number;
+
+  production_date?: string | null;
+  expiry_date?: string | null;
 }
 
-/** 获取多行 PO 详情（头 + 行） */
-export async function fetchPurchaseOrderV2(id: number): Promise<PurchaseOrderWithLines> {
-  return apiGet<PurchaseOrderWithLines>(`/purchase-orders/${id}`);
-}
-
-/** 创建多行 PO（头 + 行） */
 export async function createPurchaseOrderV2(
   payload: PurchaseOrderCreateV2Payload,
-): Promise<PurchaseOrderWithLines> {
-  return apiPost<PurchaseOrderWithLines>("/purchase-orders/", payload);
+): Promise<PurchaseOrderDetail> {
+  return apiPost<PurchaseOrderDetail>("/purchase-orders/", payload);
 }
 
-/** 行级收货（Phase 2） */
 export async function receivePurchaseOrderLine(
   poId: number,
   payload: PurchaseOrderReceiveLinePayload,
-): Promise<PurchaseOrderWithLines> {
-  return apiPost<PurchaseOrderWithLines>(`/purchase-orders/${poId}/receive-line`, payload);
+): Promise<PurchaseOrderDetail> {
+  return apiPost<PurchaseOrderDetail>(`/purchase-orders/${poId}/receive-line`, payload);
 }
 
-/** Dev：创建 Demo 采购单（头 + 行） */
-export async function createDemoPurchaseOrder(): Promise<PurchaseOrderWithLines> {
-  return apiPost<PurchaseOrderWithLines>("/purchase-orders/dev-demo", {});
+export async function createDemoPurchaseOrder(): Promise<PurchaseOrderDetail> {
+  return apiPost<PurchaseOrderDetail>("/purchase-orders/dev-demo", {});
+}
+
+// ----------------------
+// Receipts（事实历史）
+// ----------------------
+
+export interface PurchaseOrderReceiptEvent {
+  ref: string;
+  ref_line: number;
+
+  warehouse_id: number;
+  item_id: number;
+  line_no: number | null;
+
+  batch_code: string;
+  qty: number;
+  after_qty: number;
+
+  occurred_at: string;
+  production_date: string | null;
+  expiry_date: string | null;
+}
+
+export async function fetchPurchaseOrderReceipts(
+  poId: number,
+): Promise<PurchaseOrderReceiptEvent[]> {
+  return apiGet<PurchaseOrderReceiptEvent[]>(`/purchase-orders/${poId}/receipts`);
 }

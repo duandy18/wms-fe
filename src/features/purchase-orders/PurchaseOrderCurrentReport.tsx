@@ -2,10 +2,10 @@
 // 本次采购报告（放大版 Cockpit 视图）
 
 import React from "react";
-import type { PurchaseOrderWithLines } from "./api";
+import type { PurchaseOrderDetail } from "./api";
 
 interface Props {
-  po: PurchaseOrderWithLines | null;
+  po: PurchaseOrderDetail | null;
 }
 
 const parseMoney = (v: string | null | undefined): number => {

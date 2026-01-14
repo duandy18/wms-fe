@@ -48,9 +48,14 @@ export function applySelectedItemToLine(
 
   const found = itemOptions.find((it) => it.id === itemId);
   if (!found) {
+    // ✅ 不允许“幽灵商品”：找不到就清空
     return {
       ...line,
-      item_id: String(itemId),
+      item_id: "",
+      item_name: "",
+      spec_text: "",
+      base_uom: "",
+      purchase_uom: "",
     };
   }
 

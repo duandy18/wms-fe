@@ -3,20 +3,20 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PageTitle from "../../components/ui/PageTitle";
-import { fetchPurchaseOrderV2, type PurchaseOrderWithLines } from "./api";
+import { fetchPurchaseOrderV2, type PurchaseOrderDetail } from "./api";
 
 import { PurchaseOrderHeaderCard } from "./PurchaseOrderHeaderCard";
 import { PurchaseOrderLinesTable } from "./PurchaseOrderLinesTable";
+import { PurchaseOrderReceiptsPanel } from "./PurchaseOrderReceiptsPanel";
 
 const PurchaseOrderDetailPage: React.FC = () => {
   const { poId } = useParams<{ poId: string }>();
   const navigate = useNavigate();
 
-  const [po, setPo] = useState<PurchaseOrderWithLines | null>(null);
+  const [po, setPo] = useState<PurchaseOrderDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 行表选中状态（纯展示）
   const [selectedLineId, setSelectedLineId] = useState<number | null>(null);
 
   const idNum = poId ? Number(poId) : NaN;
@@ -76,7 +76,9 @@ const PurchaseOrderDetailPage: React.FC = () => {
         >
           ← 返回采购单列表
         </button>
-        <div className="text-sm text-red-600">无效的采购单 ID（URL 中的 :poId 不是数字）。</div>
+        <div className="text-sm text-red-600">
+          无效的采购单 ID（URL 中的 :poId 不是数字）。
+        </div>
       </div>
     );
   }
@@ -85,7 +87,10 @@ const PurchaseOrderDetailPage: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <PageTitle title={`采购单详情 #${poId}`} description="采购单是计划层（期望），收货事实以 Receipt 为唯一口径。" />
+      <PageTitle
+        title={`采购单详情 #${poId}`}
+        description="采购单是计划层（期望），历史收货以事实层（Receipts/Ledger）为唯一口径。"
+      />
 
       <button
         type="button"
@@ -100,7 +105,6 @@ const PurchaseOrderDetailPage: React.FC = () => {
 
       {po && (
         <>
-          {/* 头部信息 */}
           <PurchaseOrderHeaderCard
             po={po}
             poRef={poRef}
@@ -108,8 +112,13 @@ const PurchaseOrderDetailPage: React.FC = () => {
             totalQtyReceived={totalQtyReceived}
           />
 
-          {/* 行明细表 */}
-          <PurchaseOrderLinesTable po={po} selectedLineId={selectedLineId} onSelectLine={setSelectedLineId} />
+          <PurchaseOrderLinesTable
+            po={po}
+            selectedLineId={selectedLineId}
+            onSelectLine={setSelectedLineId}
+          />
+
+          <PurchaseOrderReceiptsPanel poId={idNum} />
         </>
       )}
     </div>
