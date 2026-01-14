@@ -1,14 +1,14 @@
 // src/features/operations/inbound/purchase-context/PurchaseOrderDetailReadonly.tsx
 
 import React, { useMemo, useState } from "react";
-import type { PurchaseOrderWithLines } from "../../../purchase-orders/api";
+import type { PurchaseOrderDetail } from "../../../purchase-orders/api";
 import { PurchaseOrderHeaderCard } from "../../../purchase-orders/PurchaseOrderHeaderCard";
 import { PurchaseOrderLinesTable } from "../../../purchase-orders/PurchaseOrderLinesTable";
 import { calcPoProgress } from "./poHelpers";
 import { InboundUI } from "../ui";
 
 export function PurchaseOrderDetailReadonly(props: {
-  po: PurchaseOrderWithLines | null;
+  po: PurchaseOrderDetail | null;
 
   onRefresh?: () => void;
   refreshing?: boolean;

@@ -1,9 +1,9 @@
 // src/features/operations/inbound/receive-task/usePoReceiveVerification.ts
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { PurchaseOrderWithLines } from "../../../purchase-orders/api";
+import type { PurchaseOrderDetail } from "../../../purchase-orders/api";
 
-export function usePoReceiveVerification(po: PurchaseOrderWithLines | null) {
+export function usePoReceiveVerification(po: PurchaseOrderDetail | null) {
   const [checkGoods, setCheckGoods] = useState(false);
   const [checkSpec, setCheckSpec] = useState(false);
   const [checkQty, setCheckQty] = useState(false);

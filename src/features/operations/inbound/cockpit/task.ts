@@ -7,7 +7,7 @@ import {
   type ReceiveTask,
   type ReceiveTaskCreateFromPoSelectedLinePayload,
 } from "../../../receive-tasks/api";
-import type { PurchaseOrderWithLines } from "../../../purchase-orders/api";
+import type { PurchaseOrderDetail } from "../../../purchase-orders/api";
 import { getErrMsg } from "./utils";
 
 export async function internalLoadTask(args: {
@@ -76,7 +76,7 @@ export async function reloadTask(args: {
 
 /** 旧：整单/剩余应收创建（保留备用） */
 export async function createTaskFromPo(args: {
-  currentPo: PurchaseOrderWithLines | null;
+  currentPo: PurchaseOrderDetail | null;
   setCreatingTask: (v: boolean) => void;
   setTaskError: (v: string | null) => void;
   setCurrentTask: (v: ReceiveTask | null) => void;
@@ -122,7 +122,7 @@ export async function createTaskFromPo(args: {
 
 /** 新：选择式创建（本次到货批次） */
 export async function createTaskFromPoSelected(args: {
-  currentPo: PurchaseOrderWithLines | null;
+  currentPo: PurchaseOrderDetail | null;
   selectedLines: ReceiveTaskCreateFromPoSelectedLinePayload[];
   setCreatingTask: (v: boolean) => void;
   setTaskError: (v: string | null) => void;

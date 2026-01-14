@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import type { InboundCockpitController } from "../types";
-import type { PurchaseOrderWithLines } from "../../../purchase-orders/api";
+import type { PurchaseOrderListItem } from "../../../purchase-orders/api";
 import { PurchaseOrderList } from "./PurchaseOrderList";
 import { PurchaseOrderDetailReadonly } from "./PurchaseOrderDetailReadonly";
 import { InboundUI } from "../ui";
@@ -15,7 +15,8 @@ function safeErrMsg(e: unknown, fallback: string) {
 export function PurchaseOrderContextPanel(props: {
   c: InboundCockpitController;
   po: InboundCockpitController["currentPo"];
-  poOptions: PurchaseOrderWithLines[];
+  // ✅ 列表态：用于选择，不要求详情字段
+  poOptions: PurchaseOrderListItem[];
   loadingPoOptions: boolean;
   poOptionsError: string | null;
   selectedPoId: string;
@@ -86,7 +87,9 @@ export function PurchaseOrderContextPanel(props: {
         </div>
       ) : selectedPoId && !po ? (
         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 flex items-center justify-between gap-2">
-          <div className="truncate">已选择采购单 #{selectedPoId}，但详情尚未加载。</div>
+          <div className="truncate">
+            已选择采购单 #{selectedPoId}，但详情尚未加载。
+          </div>
           <button
             type="button"
             className={InboundUI.btnGhost}
@@ -111,7 +114,9 @@ export function PurchaseOrderContextPanel(props: {
         refreshing={refreshingDetail}
         refreshErr={refreshDetailErr}
         rightHint={
-          c.currentTask ? <span className={InboundUI.quiet}>关联任务 #{c.currentTask.id}</span> : null
+          c.currentTask ? (
+            <span className={InboundUI.quiet}>关联任务 #{c.currentTask.id}</span>
+          ) : null
         }
       />
     </div>

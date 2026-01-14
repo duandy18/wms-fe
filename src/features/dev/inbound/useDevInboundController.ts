@@ -14,7 +14,7 @@ import type { ParsedBarcode } from "../../operations/scan/barcodeParser";
 import {
   fetchPurchaseOrderV2,
   createDemoPurchaseOrder,
-  type PurchaseOrderWithLines,
+  type PurchaseOrderDetail,
 } from "../../purchase-orders/api";
 
 import {
@@ -90,7 +90,7 @@ function calcVariance(task: ReceiveTask | null): InboundVarianceSummary {
 
 export function useDevInboundController(): DevInboundController {
   const [poIdInput, setPoIdInput] = useState("");
-  const [currentPo, setCurrentPo] = useState<PurchaseOrderWithLines | null>(
+  const [currentPo, setCurrentPo] = useState<PurchaseOrderDetail | null>(
     null,
   );
   const [loadingPo, setLoadingPo] = useState(false);

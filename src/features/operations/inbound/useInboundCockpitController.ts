@@ -6,7 +6,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { ParsedBarcode } from "../scan/barcodeParser";
 
-import type { PurchaseOrderWithLines } from "../../purchase-orders/api";
+import type { PurchaseOrderDetail } from "../../purchase-orders/api";
 import type {
   ReceiveTask,
   ReceiveTaskCreateFromPoSelectedLinePayload,
@@ -43,7 +43,7 @@ const EMPTY_MANUAL_DRAFT: InboundManualDraftSummary = {
 
 export function useInboundCockpitController(): InboundCockpitController {
   const [poIdInput, setPoIdInput] = useState("");
-  const [currentPo, setCurrentPo] = useState<PurchaseOrderWithLines | null>(null);
+  const [currentPo, setCurrentPo] = useState<PurchaseOrderDetail | null>(null);
   const [loadingPo, setLoadingPo] = useState(false);
   const [poError, setPoError] = useState<string | null>(null);
 
