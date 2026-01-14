@@ -22,6 +22,9 @@ export const SnapshotPage = lazy(() => import("../../features/inventory/snapshot
 export const ChannelInventoryPage = lazy(() => import("../../features/inventory/channel-inventory/ChannelInventoryPage"));
 export const OutboundDashboardPage = lazy(() => import("../../features/inventory/outbound-dashboard/OutboundDashboardPage"));
 
+// ✅ 库存台账（业务页）
+export const StockLedgerPage = lazy(() => import("../../features/inventory/ledger/StockLedgerPage"));
+
 // 发货成本报表 / 发货账本详情
 export const ShippingReportsPage = lazy(() => import("../../features/inventory/shipping-reports/ShippingReportsPage"));
 export const ShippingRecordDetailPage = lazy(() => import("../../features/inventory/shipping-records/ShippingRecordDetailPage"));
@@ -56,6 +59,7 @@ export const PurchaseOrdersPage = lazy(() => import("../../features/purchase-ord
 export const PurchaseOrderDetailPage = lazy(() => import("../../features/purchase-orders/PurchaseOrderDetailPage"));
 export const PurchaseOrderCreateV2Page = lazy(() => import("../../features/purchase-orders/PurchaseOrderCreateV2Page"));
 export const PurchaseReportsPage = lazy(() => import("../../features/purchase-orders/PurchaseReportsPage"));
+export const PurchaseOverviewPage = lazy(() => import("../../features/purchase-orders/PurchaseOverviewPage"));
 
 // 收货任务详情
 export const ReceiveTaskDetailPage = lazy(() => import("../../features/receive-tasks/ReceiveTaskDetailPage"));

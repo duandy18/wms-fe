@@ -1,37 +1,67 @@
-// src/features/purchase-orders/PurchaseReportsPage.tsx
+// src/features/purchase-orders/overview/PurchaseReportsTab.tsx
 
 import React, { useEffect, useMemo } from "react";
-import PageTitle from "../../components/ui/PageTitle";
-import { usePurchaseReportsPresenter, type TabKey } from "./usePurchaseReportsPresenter";
-import { PurchaseReportsFilters } from "./PurchaseReportsFilters";
-import { SuppliersReportTable } from "./SuppliersReportTable";
-import { ItemsReportTable } from "./ItemsReportTable";
-import { DailyReportTable } from "./DailyReportTable";
-import type { PurchaseReportFilters as Filters, PurchaseReportsMode } from "./reportsApi";
 
-const parseMoney = (v: string | null | undefined): number => {
-  if (!v) return 0;
-  const n = Number(v);
-  return Number.isNaN(n) ? 0 : n;
-};
+import { PurchaseReportsFilters } from "../PurchaseReportsFilters";
+import {
+  usePurchaseReportsPresenter,
+  type TabKey as ReportsTabKey,
+} from "../usePurchaseReportsPresenter";
+import { SuppliersReportTable } from "../SuppliersReportTable";
+import { ItemsReportTable } from "../ItemsReportTable";
+import { DailyReportTable } from "../DailyReportTable";
+import type { PurchaseReportFilters, PurchaseReportsMode } from "../reportsApi";
+import { parseMoney } from "./utils";
 
-const PurchaseReportsPage: React.FC = () => {
-  const [state, actions] = usePurchaseReportsPresenter();
+export const PurchaseReportsTab: React.FC = () => {
+  const [repState, repActions] = usePurchaseReportsPresenter();
+  const repMode: PurchaseReportsMode = repState.filters.mode ?? "fact";
 
-  const mode: PurchaseReportsMode = state.filters.mode ?? "fact";
+  useEffect(() => {
+    void repActions.loadReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleChangeFilter = (field: keyof Filters, value: string) => {
-    actions.setFilters((prev) => {
-      const next: Filters = { ...prev };
+  useEffect(() => {
+    void repActions.loadReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repState.activeTab]);
+
+  const supplierTotalAmount = useMemo(
+    () =>
+      repState.supplierRows.reduce(
+        (sum, r) => sum + parseMoney(r.total_amount),
+        0,
+      ),
+    [repState.supplierRows],
+  );
+
+  const itemTotalAmount = useMemo(
+    () =>
+      repState.itemRows.reduce((sum, r) => sum + parseMoney(r.total_amount), 0),
+    [repState.itemRows],
+  );
+
+  const dailyTotalAmount = useMemo(
+    () =>
+      repState.dailyRows.reduce(
+        (sum, r) => sum + parseMoney(r.total_amount),
+        0,
+      ),
+    [repState.dailyRows],
+  );
+
+  const handleChangeReportFilter = (field: keyof PurchaseReportFilters, value: string) => {
+    repActions.setFilters((prev) => {
+      const next: PurchaseReportFilters = { ...prev };
 
       if (field === "warehouseId" || field === "supplierId") {
         const n = value.trim() ? Number(value.trim()) : undefined;
         next[field] = n !== undefined && !Number.isNaN(n) ? n : undefined;
 
-        // ✅ 切换供应商：清空商品筛选（避免事实污染）
         if (field === "supplierId") {
-          next.itemKeyword = undefined;
           next.itemId = undefined;
+          next.itemKeyword = undefined;
         }
       } else if (field === "status") {
         next.status = value || undefined;
@@ -39,15 +69,13 @@ const PurchaseReportsPage: React.FC = () => {
         next[field] = value || undefined;
       } else if (field === "itemKeyword") {
         next.itemKeyword = value || undefined;
-        // itemKeyword 属于模糊筛选，写入时同时清空 itemId（避免冲突）
         if (value && value.trim()) next.itemId = undefined;
       } else if (field === "itemId") {
         const n = value.trim() ? Number(value.trim()) : undefined;
         next.itemId = n !== undefined && !Number.isNaN(n) ? n : undefined;
         if (next.itemId != null) next.itemKeyword = undefined;
       } else if (field === "mode") {
-        // 只允许 fact/plan
-        next.mode = (value === "plan" ? "plan" : "fact") as PurchaseReportsMode;
+        next.mode = value === "plan" ? "plan" : "fact";
       }
 
       return next;
@@ -55,8 +83,8 @@ const PurchaseReportsPage: React.FC = () => {
   };
 
   const handleQuickRange = (kind: "thisMonth" | "thisWeek") => {
-    actions.setFilters((prev) => {
-      const next: Filters = { ...prev };
+    repActions.setFilters((prev) => {
+      const next: PurchaseReportFilters = { ...prev };
 
       const today = new Date();
       const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -82,75 +110,40 @@ const PurchaseReportsPage: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    void actions.loadReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    void actions.loadReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.activeTab]);
-
-  const supplierTotalAmount = useMemo(
-    () =>
-      state.supplierRows.reduce((sum, r) => sum + parseMoney(r.total_amount), 0),
-    [state.supplierRows],
-  );
-
-  const itemTotalAmount = useMemo(
-    () => state.itemRows.reduce((sum, r) => sum + parseMoney(r.total_amount), 0),
-    [state.itemRows],
-  );
-
-  const dailyTotalAmount = useMemo(
-    () =>
-      state.dailyRows.reduce((sum, r) => sum + parseMoney(r.total_amount), 0),
-    [state.dailyRows],
-  );
-
   return (
-    <div className="p-6 space-y-6">
-      <PageTitle
-        title="采购报表"
-        description="从供应商、商品、时间三个视角查看采购历史。可切换“事实/计划”口径，避免把未收货误判为缺失。"
-      />
-
-      {/* ✅ 口径切换（不改 filters 组件也能先跑起来） */}
+    <>
+      {/* 口径切换 */}
       <section className="bg-white border border-slate-200 rounded-xl p-4">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="text-sm font-semibold text-slate-800">统计口径</div>
-
           <div className="inline-flex rounded-full bg-slate-100 p-1 text-xs">
             <button
               type="button"
               onClick={() => {
-                handleChangeFilter("mode", "fact");
-                void actions.loadReports();
+                handleChangeReportFilter("mode", "fact");
+                void repActions.loadReports();
               }}
               className={
                 "px-3 py-1.5 rounded-full font-medium transition-colors " +
-                (mode === "fact"
+                (repMode === "fact"
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-600 hover:bg-slate-200/70")
               }
-              title="只统计真实收货（Receipt）"
             >
               事实（收货）
             </button>
             <button
               type="button"
               onClick={() => {
-                handleChangeFilter("mode", "plan");
-                void actions.loadReports();
+                handleChangeReportFilter("mode", "plan");
+                void repActions.loadReports();
               }}
               className={
                 "px-3 py-1.5 rounded-full font-medium transition-colors " +
-                (mode === "plan"
+                (repMode === "plan"
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-600 hover:bg-slate-200/70")
               }
-              title="统计下单计划（PO），包含未收货"
             >
               计划（下单）
             </button>
@@ -158,20 +151,20 @@ const PurchaseReportsPage: React.FC = () => {
         </div>
 
         <div className="mt-2 text-[11px] text-slate-500">
-          {mode === "fact"
+          {repMode === "fact"
             ? "事实口径：仅统计已发生的收货事实（Receipt）。未收货的采购单不会出现在汇总中。"
             : "计划口径：统计采购单（PO）下单计划，包含未收货记录。"}
         </div>
       </section>
 
       <PurchaseReportsFilters
-        activeTab={state.activeTab as TabKey}
-        filters={state.filters}
-        loading={state.loading}
-        error={state.error}
-        onChangeFilter={handleChangeFilter}
+        activeTab={repState.activeTab as ReportsTabKey}
+        filters={repState.filters}
+        loading={repState.loading}
+        error={repState.error}
+        onChangeFilter={handleChangeReportFilter}
         onQuickRange={handleQuickRange}
-        onRefresh={() => void actions.loadReports()}
+        onRefresh={() => void repActions.loadReports()}
       />
 
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
@@ -179,10 +172,10 @@ const PurchaseReportsPage: React.FC = () => {
           <div className="inline-flex rounded-full bg-slate-100 p-1">
             <button
               type="button"
-              onClick={() => actions.setActiveTab("suppliers")}
+              onClick={() => repActions.setActiveTab("suppliers")}
               className={
                 "px-3 py-1.5 rounded-full text-xs font-medium transition-colors " +
-                (state.activeTab === "suppliers"
+                (repState.activeTab === "suppliers"
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-600 hover:bg-slate-200/70")
               }
@@ -191,10 +184,10 @@ const PurchaseReportsPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => actions.setActiveTab("items")}
+              onClick={() => repActions.setActiveTab("items")}
               className={
                 "px-3 py-1.5 rounded-full text-xs font-medium transition-colors " +
-                (state.activeTab === "items"
+                (repState.activeTab === "items"
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-600 hover:bg-slate-200/70")
               }
@@ -203,10 +196,10 @@ const PurchaseReportsPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => actions.setActiveTab("daily")}
+              onClick={() => repActions.setActiveTab("daily")}
               className={
                 "px-3 py-1.5 rounded-full text-xs font-medium transition-colors " +
-                (state.activeTab === "daily"
+                (repState.activeTab === "daily"
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-600 hover:bg-slate-200/70")
               }
@@ -216,23 +209,16 @@ const PurchaseReportsPage: React.FC = () => {
           </div>
         </div>
 
-        {state.activeTab === "suppliers" && (
-          <SuppliersReportTable
-            rows={state.supplierRows}
-            totalAmount={supplierTotalAmount}
-          />
+        {repState.activeTab === "suppliers" && (
+          <SuppliersReportTable rows={repState.supplierRows} totalAmount={supplierTotalAmount} />
         )}
-
-        {state.activeTab === "items" && (
-          <ItemsReportTable rows={state.itemRows} totalAmount={itemTotalAmount} />
+        {repState.activeTab === "items" && (
+          <ItemsReportTable rows={repState.itemRows} totalAmount={itemTotalAmount} />
         )}
-
-        {state.activeTab === "daily" && (
-          <DailyReportTable rows={state.dailyRows} totalAmount={dailyTotalAmount} />
+        {repState.activeTab === "daily" && (
+          <DailyReportTable rows={repState.dailyRows} totalAmount={dailyTotalAmount} />
         )}
       </section>
-    </div>
+    </>
   );
 };
-
-export default PurchaseReportsPage;
