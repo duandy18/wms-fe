@@ -1,5 +1,5 @@
 // src/features/inventory/snapshot/useSnapshotPageController.ts
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import {
   fetchInventorySnapshot,
   fetchItemDetail,
@@ -11,6 +11,40 @@ import { sortSnapshotRows, type SortDir, type SortKey } from "./snapshotSort";
 type ApiErrorShape = { message?: string };
 
 const PAGE_SIZE = 20;
+
+type SortState = {
+  key: SortKey;
+  dir: SortDir;
+};
+
+type SortAction =
+  | { type: "CHANGE_SORT"; key: SortKey }
+  | { type: "RESET"; key?: SortKey; dir?: SortDir };
+
+function defaultSortDir(key: SortKey): SortDir {
+  // ✅ 规则：库存数量类默认 desc，其它默认 asc
+  return key === "total_qty" ? "desc" : "asc";
+}
+
+function sortReducer(state: SortState, action: SortAction): SortState {
+  if (action.type === "RESET") {
+    const nextKey = action.key ?? state.key;
+    const nextDir = action.dir ?? defaultSortDir(nextKey);
+    return { key: nextKey, dir: nextDir };
+  }
+
+  if (action.type === "CHANGE_SORT") {
+    const key = action.key;
+    if (state.key === key) {
+      // ✅ 同列：稳定翻转 asc/desc
+      return { key: state.key, dir: state.dir === "asc" ? "desc" : "asc" };
+    }
+    // ✅ 换列：按规则给默认方向（原子更新，不交叉 setState）
+    return { key, dir: defaultSortDir(key) };
+  }
+
+  return state;
+}
 
 export function useSnapshotPageController() {
   const [rows, setRows] = useState<InventoryRow[]>([]);
@@ -32,8 +66,11 @@ export function useSnapshotPageController() {
 
   const [nearOnly, setNearOnly] = useState(false);
 
-  const [sortKey, setSortKey] = useState<SortKey>("item_name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  // ✅ 排序状态机（原子更新）
+  const [sortState, dispatchSort] = useReducer(sortReducer, {
+    key: "item_name",
+    dir: "asc",
+  });
 
   // 用一个 token 统一触发“事实刷新”（列表）
   const [refreshToken, setRefreshToken] = useState(0);
@@ -54,7 +91,7 @@ export function useSnapshotPageController() {
       } catch (err) {
         if (cancelled) return;
         const e = err as ApiErrorShape;
-         
+
         console.error("Failed to fetch snapshot:", err);
         setError(e?.message || "加载库存快照失败");
       } finally {
@@ -90,8 +127,8 @@ export function useSnapshotPageController() {
 
   // 排序（展示层）
   const sortedRows = useMemo(
-    () => sortSnapshotRows(filteredRows, sortKey, sortDir),
-    [filteredRows, sortKey, sortDir],
+    () => sortSnapshotRows(filteredRows, sortState.key, sortState.dir),
+    [filteredRows, sortState.key, sortState.dir],
   );
 
   const canPrev = offset > 0;
@@ -104,7 +141,6 @@ export function useSnapshotPageController() {
       const data = await fetchItemDetail(itemId);
       setDrawerItem(data);
     } catch (err) {
-       
       console.error("Failed to fetch item detail:", err);
     } finally {
       setDrawerLoading(false);
@@ -128,21 +164,25 @@ export function useSnapshotPageController() {
     triggerRefresh();
   }, [drawerItemId, loadItemDetail, triggerRefresh]);
 
+  // ✅ 排序切换：只 dispatch（不会出现交叉 setState）
   const changeSort = useCallback((key: SortKey) => {
-    setSortKey((prevKey) => {
-      if (prevKey === key) {
-        setSortDir((prevDir) => (prevDir === "asc" ? "desc" : "asc"));
-        return prevKey;
-      }
-      setSortDir(key === "total_qty" || key === "top_qty" ? "desc" : "asc");
-      return key;
-    });
+    dispatchSort({ type: "CHANGE_SORT", key });
   }, []);
 
   const submitSearch = useCallback(() => {
     setOffset(0);
-    setQ(searchInput.trim());
+    const next = searchInput.trim();
+    setQ(next); // next 为空 => 回到全量
   }, [searchInput]);
+
+  const clearSearch = useCallback(() => {
+    // ✅ 原子化清空：输入框 + 后端 q + 分页 + 临期过滤 一起归零
+    setSearchInput("");
+    setQ("");
+    setNearOnly(false);
+    setOffset(0);
+    triggerRefresh();
+  }, [triggerRefresh]);
 
   return {
     // list
@@ -156,6 +196,7 @@ export function useSnapshotPageController() {
     nearOnly,
     setNearOnly,
     submitSearch,
+    clearSearch,
 
     // paging
     total,
@@ -167,8 +208,8 @@ export function useSnapshotPageController() {
     nextPage: () => canNext && setOffset((x) => x + PAGE_SIZE),
 
     // sorting
-    sortKey,
-    sortDir,
+    sortKey: sortState.key,
+    sortDir: sortState.dir,
     changeSort,
 
     // refresh

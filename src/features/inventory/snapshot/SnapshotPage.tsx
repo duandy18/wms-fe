@@ -17,7 +17,7 @@ const SnapshotPage: React.FC = () => {
     <div className="space-y-4">
       <PageTitle
         title="即时库存 / FEFO 风险"
-        description="基于实时 stocks + batches 的库存视图，仅展示当前有库存的商品。支持按名称、库存、到期日、临期状态和 TOP 批次排序。"
+        description="基于实时 stocks + batches 的库存视图，仅展示当前有库存的切片（仓库+批次）。支持按编码/名称、仓库/批次、批次库存、到期日与临期状态排序。"
       />
 
       {/* 搜索 + 过滤 */}
@@ -28,6 +28,7 @@ const SnapshotPage: React.FC = () => {
         onChangeSearchInput={c.setSearchInput}
         onChangeNearOnly={c.setNearOnly}
         onSubmit={c.submitSearch}
+        onReset={c.clearSearch}
       />
 
       {/* 操作条：刷新（事实刷新，不猜测） */}
@@ -46,12 +47,8 @@ const SnapshotPage: React.FC = () => {
 
       {/* 主体内容：只有表格 */}
       <div className="mt-2">
-        {c.loading && (
-          <div className="py-6 text-sm text-slate-500">正在加载库存快照…</div>
-        )}
-        {c.error && (
-          <div className="rounded-md bg-red-50 p-3 text-xs text-red-700">{c.error}</div>
-        )}
+        {c.loading && <div className="py-6 text-sm text-slate-500">正在加载库存快照…</div>}
+        {c.error && <div className="rounded-md bg-red-50 p-3 text-xs text-red-700">{c.error}</div>}
 
         {!c.loading && !c.error && c.rows.length === 0 && (
           <div className="py-6 text-sm text-slate-500">当前条件下没有库存记录。</div>
@@ -72,8 +69,7 @@ const SnapshotPage: React.FC = () => {
       {/* 分页控制 */}
       <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
         <div>
-          共 {c.total} 条记录；每页 {c.pageSize} 条；当前页{" "}
-          {Math.floor(c.offset / c.pageSize) + 1}
+          共 {c.total} 条记录；每页 {c.pageSize} 条；当前页 {Math.floor(c.offset / c.pageSize) + 1}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -81,9 +77,7 @@ const SnapshotPage: React.FC = () => {
             disabled={!c.canPrev}
             onClick={c.prevPage}
             className={`inline-flex h-8 items-center rounded-full px-3 ${
-              c.canPrev
-                ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                : "cursor-not-allowed bg-slate-50 text-slate-300"
+              c.canPrev ? "bg-slate-100 text-slate-700 hover:bg-slate-200" : "cursor-not-allowed bg-slate-50 text-slate-300"
             }`}
           >
             上一页
@@ -93,9 +87,7 @@ const SnapshotPage: React.FC = () => {
             disabled={!c.canNext}
             onClick={c.nextPage}
             className={`inline-flex h-8 items-center rounded-full px-3 ${
-              c.canNext
-                ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                : "cursor-not-allowed bg-slate-50 text-slate-300"
+              c.canNext ? "bg-slate-100 text-slate-700 hover:bg-slate-200" : "cursor-not-allowed bg-slate-50 text-slate-300"
             }`}
           >
             下一页
