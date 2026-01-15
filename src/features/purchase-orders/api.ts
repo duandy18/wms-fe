@@ -18,9 +18,15 @@ export interface PurchaseOrderListLine {
   line_no: number;
   item_id: number;
 
+  // 采购单位口径（箱/件/托…）
   qty_ordered: number;
   qty_received: number;
   status: PurchaseOrderStatus;
+
+  // ✅ 为“最小单位口径”显示准备（如果后端 list 里有返回，就能直接用）
+  units_per_case?: number | null; // 每采购单位包含的最小单位数量
+  base_uom?: string | null;       // 最小单位名称（袋/个…）
+  purchase_uom?: string | null;   // 采购单位名称（件/箱…）
 
   created_at: string;
   updated_at: string;

@@ -7,9 +7,9 @@ export function PoReceivePlanTable(props: {
   rows: PlanRow[];
   selected: Record<number, boolean>;
   qtyMap: Record<number, string>;
-  onToggle: (id: number, checked: boolean, remain: number) => void;
+  onToggle: (id: number, checked: boolean, remain_base: number) => void;
   onQtyChange: (id: number, v: string) => void;
-  validate: (v: string, remain: number) => string | null;
+  validate: (v: string, remain_base: number) => string | null;
 }) {
   const { rows, selected, qtyMap, onToggle, onQtyChange, validate } = props;
 
@@ -22,7 +22,7 @@ export function PoReceivePlanTable(props: {
       {rows.map((r) => {
         const checked = !!selected[r.poLineId];
         const v = qtyMap[r.poLineId] ?? "";
-        const err = checked ? validate(v, r.remain) : null;
+        const err = checked ? validate(v, r.remain_base) : null;
 
         return (
           <div
@@ -34,16 +34,25 @@ export function PoReceivePlanTable(props: {
                 <input
                   type="checkbox"
                   checked={checked}
-                  disabled={r.remain <= 0}
-                  onChange={(e) => onToggle(r.poLineId, e.target.checked, r.remain)}
+                  disabled={r.remain_base <= 0}
+                  onChange={(e) => onToggle(r.poLineId, e.target.checked, r.remain_base)}
                 />
                 <div>
                   <div className="text-base font-semibold text-slate-900">
                     {r.name}
                     {r.spec && <span className="ml-2 text-slate-600">· {r.spec}</span>}
                   </div>
-                  <div className="text-sm text-slate-600">
-                    剩余应收 {r.remain}（应收 {r.ordered} · 已收 {r.received}）
+
+                  {/* ✅ 主口径：最小单位 */}
+                  <div className="text-sm text-slate-700">
+                    剩余应收{" "}
+                    <span className="font-mono">{r.remain_base}</span>{" "}
+                    <span className="text-slate-600">{r.base_uom}</span>
+                  </div>
+
+                  {/* ✅ 辅助口径：采购单位解释 */}
+                  <div className="text-[12px] text-slate-500">
+                    （应收 {r.ordered_purchase} {r.purchase_uom} · 已收 {r.received_purchase} {r.purchase_uom} · 每{r.purchase_uom}={r.units_per_case}{r.base_uom}）
                   </div>
                 </div>
               </label>
@@ -53,7 +62,7 @@ export function PoReceivePlanTable(props: {
                 value={v}
                 disabled={!checked}
                 onChange={(e) => onQtyChange(r.poLineId, e.target.value)}
-                placeholder={checked ? `≤${r.remain}` : "-"}
+                placeholder={checked ? `≤${r.remain_base}` : "-"}
               />
             </div>
 

@@ -28,22 +28,47 @@ export function formatTsCompact(ts?: string | null): string {
   return `${mm}-${dd} ${hh}:${mi}`;
 }
 
-export function calcPoProgress(po: PurchaseOrderListItem | null | undefined): {
-  ordered: number;
-  received: number;
+type ListLineQty = {
+  qty_ordered?: number | null; // 采购单位
+  qty_received?: number | null; // 最小单位（base）
+  units_per_case?: number | null;
+};
+
+function safeInt(v: unknown, fallback: number): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.trunc(n);
+}
+
+function lineUnitsPerCase(line: ListLineQty): number {
+  const n = safeInt(line.units_per_case ?? 1, 1);
+  return n > 0 ? n : 1;
+}
+
+export function calcPoProgress(
+  po: PurchaseOrderListItem | null | undefined,
+): {
+  ordered: number; // 最小单位
+  received: number; // 最小单位
   pct: number;
 } {
   if (!po || !po.lines) return { ordered: 0, received: 0, pct: 0 };
 
-  const ordered = (po.lines ?? []).reduce(
-    (sum: number, l) => sum + (l.qty_ordered ?? 0),
-    0,
-  );
-  const received = (po.lines ?? []).reduce(
-    (sum: number, l) => sum + (l.qty_received ?? 0),
-    0,
-  );
+  const lines = (po.lines ?? []) as unknown as ListLineQty[];
+
+  // ✅ 订购：采购单位 * upc → base
+  const ordered = lines.reduce((sum: number, l) => {
+    const upc = lineUnitsPerCase(l);
+    return sum + safeInt(l.qty_ordered ?? 0, 0) * upc;
+  }, 0);
+
+  // ✅ 已收：qty_received 已经是 base（不要再乘 upc）
+  const received = lines.reduce((sum: number, l) => {
+    return sum + safeInt(l.qty_received ?? 0, 0);
+  }, 0);
+
   const pct =
     ordered > 0 ? Math.min(100, Math.round((received / ordered) * 100)) : 0;
+
   return { ordered, received, pct };
 }

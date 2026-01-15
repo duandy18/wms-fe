@@ -2,6 +2,14 @@
 // =====================================================
 //  Inbound Cockpit - 核心中控
 // =====================================================
+//
+// ✅ 关键口径说明（非常重要）：
+// - 即时库存 / 库存台账 / Receipt / Ledger 全部使用“最小单位（base unit）”
+// - 本 Cockpit 中：
+//   * 创建收货任务时的 qty_planned / expected_qty：均为最小单位数量
+//   * 手工收货 manualReceiveLine 的 qty：亦为最小单位数量
+// - 采购单位（箱/件）仅用于展示/解释，不参与事实口径
+//
 
 import { useMemo, useRef, useState } from "react";
 import type { ParsedBarcode } from "../scan/barcodeParser";
@@ -137,12 +145,20 @@ export function useInboundCockpitController(): InboundCockpitController {
       setActiveItemId,
     });
 
+    // ✅ 创建任务后刷新 PO：把“剩余应收”等事实刷新到最新，避免下一步计划量用旧快照撞 400
+    if (currentPo) {
+      await loadPoById(String(currentPo.id));
+    }
+
     setManualDraft(EMPTY_MANUAL_DRAFT);
   }
 
   async function createTaskFromPoSelected(
     lines: ReceiveTaskCreateFromPoSelectedLinePayload[],
   ) {
+    // ✅ 口径钉死：
+    // - ReceiveTaskCreateFromPoSelectedLinePayload.qty_planned 为“最小单位数量（base unit）”
+    // - 后端会把它落到 ReceiveTaskLine.expected_qty（同样是最小单位口径）
     await doCreateTaskFromPoSelected({
       currentPo,
       selectedLines: lines,
@@ -153,6 +169,11 @@ export function useInboundCockpitController(): InboundCockpitController {
       setCommitError,
       setActiveItemId,
     });
+
+    // ✅ 创建任务后刷新 PO：确保页面剩余应收是最新的（避免计划量超出剩余导致 400）
+    if (currentPo) {
+      await loadPoById(String(currentPo.id));
+    }
 
     setManualDraft(EMPTY_MANUAL_DRAFT);
   }
@@ -220,6 +241,7 @@ export function useInboundCockpitController(): InboundCockpitController {
     qty: number,
     meta?: { batch_code?: string; production_date?: string; expiry_date?: string },
   ): Promise<void> {
+    // ✅ 口径钉死：qty 为“最小单位数量（base unit）”
     await doManualReceiveLine({
       itemId,
       qty,
@@ -238,7 +260,7 @@ export function useInboundCockpitController(): InboundCockpitController {
 
   // ========== commit ==========
   async function commit(): Promise<boolean> {
-    return await doCommit({
+    const ok = await doCommit({
       currentTask,
       traceId,
       setTraceId,
@@ -247,6 +269,13 @@ export function useInboundCockpitController(): InboundCockpitController {
       setCurrentTask,
       setTaskError,
     });
+
+    // ✅ commit 成功后刷新 PO：确保“已收/剩余/状态”立即回到最新事实（避免 UI 继续显示旧剩余）
+    if (ok && currentPo) {
+      await loadPoById(String(currentPo.id));
+    }
+
+    return ok;
   }
 
   return {
