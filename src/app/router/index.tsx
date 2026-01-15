@@ -116,7 +116,15 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
+                    {/* ✅ 库存台账（业务入口） */}
+          <Route
+            path="inventory/ledger"
+            element={
+              <RequirePermission permission="report.inventory">
+                <P.StockLedgerPage />
+              </RequirePermission>
+            }
+          />
 
           <Route
             path="channel-inventory"
@@ -212,22 +220,20 @@ const AppRouter: React.FC = () => {
           />
 
           {/* 采购系统 */}
+          {/* ✅ 一个页面：采购概览（进度 + 统计） */}
           <Route
-            path="purchase-orders"
+            path="purchase-orders/overview"
             element={
               <RequirePermission permission="purchase.manage">
-                <P.PurchaseOrdersPage />
+                <P.PurchaseOverviewPage />
               </RequirePermission>
             }
           />
-          <Route
-            path="purchase-orders/reports"
-            element={
-              <RequirePermission permission="purchase.report">
-                <P.PurchaseReportsPage />
-              </RequirePermission>
-            }
-          />
+
+          {/* 旧入口：全部重定向到 overview（实现“合到一起”） */}
+          <Route path="purchase-orders" element={<Navigate to="/purchase-orders/overview" replace />} />
+          <Route path="purchase-orders/reports" element={<Navigate to="/purchase-orders/overview" replace />} />
+
           <Route
             path="purchase-orders/new-v2"
             element={

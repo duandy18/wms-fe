@@ -53,7 +53,17 @@ export const PurchaseOrderHeaderCard: React.FC<PurchaseOrderHeaderCardProps> = (
   return (
     <section className={cardCls}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className={titleCls}>基本信息</h2>
+        <div className="flex flex-col gap-1">
+          <h2 className={titleCls}>基本信息</h2>
+
+          {/* ✅ 入库作业页：口径提示（不打断、不噪音） */}
+          {isInbound ? (
+            <div className="text-[12px] text-slate-500">
+              口径：库存 / 台账 / 收货事实均使用“最小单位”。采购单位仅用于解释。
+            </div>
+          ) : null}
+        </div>
+
         <span className={metaCls}>创建时间： {formatTs(po.created_at)}</span>
       </div>
 
@@ -91,7 +101,8 @@ export const PurchaseOrderHeaderCard: React.FC<PurchaseOrderHeaderCardProps> = (
         </div>
 
         <div>
-          <span className={labelCls}>汇总数量（已收 / 订购）</span>
+          {/* ✅ 文案统一：这里显示的是最小单位口径 */}
+          <span className={labelCls}>汇总数量（最小单位）</span>
           <div>
             {totalQtyReceived} / {totalQtyOrdered}
             {remainingHead > 0 && (

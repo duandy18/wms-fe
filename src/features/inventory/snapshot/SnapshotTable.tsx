@@ -28,15 +28,12 @@ const SnapshotTable: React.FC<Props> = ({
     return <div className="py-8 text-sm text-slate-500">当前条件下没有库存记录。</div>;
   }
 
+  /** ======================
+   *  表头排序工具
+   *  ====================== */
   const renderSortArrow = (key: SortKey) => {
-    if (sortKey !== key) {
-      return <span className="ml-1 text-[14px] text-slate-300">↕</span>;
-    }
-    return (
-      <span className="ml-1 text-[14px] text-slate-800">
-        {sortDir === "asc" ? "▲" : "▼"}
-      </span>
-    );
+    if (sortKey !== key) return <span className="ml-1 text-slate-300">↕</span>;
+    return <span className="ml-1">{sortDir === "asc" ? "▲" : "▼"}</span>;
   };
 
   const headerButton = (
@@ -46,11 +43,16 @@ const SnapshotTable: React.FC<Props> = ({
   ) => (
     <button
       type="button"
-      onClick={() => onChangeSort(key)}
-      className={`flex w-full items-center ${
+      onPointerDown={(e) => e.preventDefault()}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onChangeSort(key);
+      }}
+      className={`select-none flex w-full items-center ${
         align === "right" ? "justify-end" : "justify-start"
-      } text-base font-semibold ${
-        sortKey === key ? "text-slate-800" : "text-slate-500 hover:text-slate-700"
+      } font-semibold ${
+        sortKey === key ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
       }`}
     >
       <span>{label}</span>
@@ -58,32 +60,27 @@ const SnapshotTable: React.FC<Props> = ({
     </button>
   );
 
-  const plainHeader = (label: string, align: "left" | "right" = "left") => (
-    <div
-      className={`w-full text-base font-semibold ${
-        align === "right" ? "text-right" : "text-left"
-      } text-slate-500`}
-    >
-      {label}
-    </div>
-  );
+  /** ======================
+   *  单元格展示工具
+   *  ====================== */
+  const showText = (v: string | null | undefined) => (v && v.trim() ? v : "-");
 
   const formatDays = (v: number | null | undefined) => {
     if (v === null || v === undefined) return "-";
-    if (!Number.isFinite(v)) return "-";
     if (v < 0) return "已过期";
     return `${v} 天`;
   };
 
-  const showText = (v: string | null | undefined) => (v && v.trim() ? v.trim() : "-");
+  const rowKey = (row: InventoryRow) =>
+    `${row.warehouse_id}-${row.item_id}-${row.batch_code ?? "NOEXP"}`;
 
   return (
     <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="max-h-[540px] overflow-y-auto">
+      {/* 视口自适应高度：尽量铺满屏幕，必要时才滚动 */}
+      <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50">
+          <thead className="bg-slate-50 sticky top-0 z-10">
             <tr>
-              {/* 编码 / 名称 分列 */}
               <th className="px-4 py-3 text-left">
                 {headerButton("编码", "item_code")}
               </th>
@@ -91,123 +88,75 @@ const SnapshotTable: React.FC<Props> = ({
                 {headerButton("名称", "item_name")}
               </th>
 
-              <th className="px-4 py-3 text-left">{plainHeader("单位")}</th>
-              <th className="px-4 py-3 text-left">{plainHeader("规格")}</th>
-              <th className="px-4 py-3 text-left">{plainHeader("品牌")}</th>
-              <th className="px-4 py-3 text-left">{plainHeader("品类")}</th>
+              <th className="px-4 py-3 text-left text-slate-500">最小包装</th>
+              <th className="px-4 py-3 text-left text-slate-500">规格</th>
+              <th className="px-4 py-3 text-left text-slate-500">品牌</th>
+              <th className="px-4 py-3 text-left text-slate-500">品类</th>
+
+              <th className="px-4 py-3 text-left border-l border-slate-200">
+                {headerButton("仓库", "warehouse_id")}
+              </th>
+              <th className="px-4 py-3 text-left">
+                {headerButton("批次", "batch_code")}
+              </th>
 
               <th className="px-4 py-3 text-right">
-                {headerButton("总库存", "total_qty", "right")}
+                {headerButton("批次库存", "total_qty", "right")}
               </th>
 
-              <th className="px-4 py-3 text-left">
-                {headerButton("最早到期", "earliest_expiry")}
+              <th className="px-4 py-3 text-left border-l border-slate-200">
+                {headerButton("到期日", "expiry_date")}
               </th>
-
-              <th className="px-4 py-3 text-left">{plainHeader("剩余天数")}</th>
-
+              <th className="px-4 py-3 text-left text-slate-500">剩余天数</th>
               <th className="px-4 py-3 text-left">
                 {headerButton("风险", "near_expiry")}
-              </th>
-
-              <th className="px-4 py-3 text-left">
-                {headerButton("TOP 批次", "top_qty")}
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 text-[15px] text-slate-700">
+          <tbody className="divide-y divide-slate-100 text-slate-700">
             {items.map((row) => {
-              const first = row.top2_locations[0];
-              const second = row.top2_locations[1];
-
-              const firstLabel = first
-                ? `WH${first.warehouse_id} · ${first.batch_code} · ${first.qty}`
-                : "-";
-
-              const secondLabel = second
-                ? `WH${second.warehouse_id} · ${second.batch_code} · ${second.qty}`
-                : "";
-
-              const code = showText(row.item_code);
-              const uom = showText(row.uom);
-              const spec = showText(row.spec);
-              const brand = showText(row.brand);
-              const category = showText(row.category);
-              const barcode = row.main_barcode?.trim() || "";
-
+              const wh = `WH${row.warehouse_id}`;
+              const batch = showText(row.batch_code);
               return (
                 <tr
-                  key={row.item_id}
+                  key={rowKey(row)}
                   className="cursor-pointer hover:bg-slate-50"
                   onClick={() => onRowClick?.(row)}
                 >
-                  {/* 编码 */}
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <div className="text-[15px] font-semibold text-slate-900">{code}</div>
-                    <div className="mt-0.5 text-xs text-slate-400">
-                      商品ID：{row.item_id}
-                      {barcode ? ` · 条码：${barcode}` : ""}
-                    </div>
+                  <td className="px-4 py-2 font-semibold text-slate-900">
+                    {showText(row.item_code)}
+                    <div className="text-xs text-slate-400">ID: {row.item_id}</div>
                   </td>
 
-                  {/* 名称 */}
-                  <td className="px-4 py-2">
-                    <div className="text-[15px] font-medium text-slate-900">
-                      {row.item_name}
-                    </div>
+                  <td className="px-4 py-2">{row.item_name}</td>
+
+                  <td className="px-4 py-2">{showText(row.uom)}</td>
+                  <td className="px-4 py-2">{showText(row.spec)}</td>
+                  <td className="px-4 py-2">{showText(row.brand)}</td>
+                  <td className="px-4 py-2">{showText(row.category)}</td>
+
+                  <td className="px-4 py-2 border-l border-slate-100">{wh}</td>
+                  <td className="px-4 py-2 font-mono text-xs">{batch}</td>
+
+                  <td className="px-4 py-2 text-right font-semibold">
+                    {row.qty}
                   </td>
 
-                  {/* 单位 */}
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <span className="text-[14px] text-slate-700">{uom}</span>
+                  <td className="px-4 py-2 border-l border-slate-100">
+                    {row.expiry_date ?? "无到期日"}
                   </td>
-
-                  {/* 规格 */}
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <span className="text-[14px] text-slate-700">{spec}</span>
-                  </td>
-
-                  {/* 品牌 */}
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <span className="text-[14px] text-slate-700">{brand}</span>
-                  </td>
-
-                  {/* 品类 */}
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <span className="text-[14px] text-slate-700">{category}</span>
-                  </td>
-
-                  {/* 总库存 */}
-                  <td className="px-4 py-2 text-right">
-                    <span className="text-[15px] font-semibold text-slate-900">
-                      {row.total_qty}
-                    </span>
-                  </td>
-
-                  {/* 最早到期 */}
-                  <td className="px-4 py-2">{row.earliest_expiry ?? "无到期日"}</td>
-
-                  {/* 剩余天数 */}
                   <td className="px-4 py-2">{formatDays(row.days_to_expiry)}</td>
-
-                  {/* 风险 */}
                   <td className="px-4 py-2">
                     {row.near_expiry ? (
-                      <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
                         临期
                       </span>
                     ) : (
-                      <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
                         安全
                       </span>
                     )}
-                  </td>
-
-                  {/* TOP 批次 */}
-                  <td className="px-4 py-2 text-[14px]">
-                    <div>{firstLabel}</div>
-                    {secondLabel && <div className="text-slate-400">{secondLabel}</div>}
                   </td>
                 </tr>
               );

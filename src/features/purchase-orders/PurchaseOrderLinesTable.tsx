@@ -38,15 +38,106 @@ const StatusBadge: React.FC<{ enabled: boolean }> = ({ enabled }) => {
   );
 };
 
-function computeWorkStatus(
-  line: PurchaseOrderDetailLine,
-): { text: string; className: string } {
-  const ordered = Number(line.qty_ordered ?? 0);
-  const received = Number(line.qty_received ?? 0);
+function unitsPerCase(line: PurchaseOrderDetailLine): number {
+  const n = Number(line.units_per_case ?? 1);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 1;
+}
 
-  if (received <= 0) return { text: "未收", className: "text-slate-500" };
-  if (received < ordered) return { text: "收货中", className: "text-amber-700" };
+function baseUomLabel(line: PurchaseOrderDetailLine): string {
+  const a = (line.base_uom ?? "").trim();
+  if (a) return a;
+  const b = (line.uom ?? "").trim();
+  if (b) return b;
+  return "最小单位";
+}
+
+function purchaseUomLabel(line: PurchaseOrderDetailLine): string {
+  const p = (line.purchase_uom ?? "").trim();
+  return p || "采购单位";
+}
+
+function orderedBase(line: PurchaseOrderDetailLine): number {
+  const upc = unitsPerCase(line);
+  const orderedPurchase = Number(line.qty_ordered ?? 0);
+  return Math.trunc(Number.isFinite(orderedPurchase) ? orderedPurchase : 0) * upc;
+}
+
+function receivedBase(line: PurchaseOrderDetailLine): number {
+  // ✅ 约定：qty_received 在本系统中已为最小单位（base）
+  const n = Number(line.qty_received ?? 0);
+  return Math.trunc(Number.isFinite(n) ? n : 0);
+}
+
+function remainBase(line: PurchaseOrderDetailLine): number {
+  return Math.max(orderedBase(line) - receivedBase(line), 0);
+}
+
+function computeWorkStatus(line: PurchaseOrderDetailLine): { text: string; className: string } {
+  const o = orderedBase(line);
+  const r = receivedBase(line);
+
+  if (r <= 0) return { text: "未收", className: "text-slate-500" };
+  if (r < o) return { text: "收货中", className: "text-amber-700" };
   return { text: "已收完", className: "text-emerald-700" };
+}
+
+function renderOrderedBase(line: PurchaseOrderDetailLine) {
+  const baseQty = orderedBase(line);
+  const upc = unitsPerCase(line);
+  const baseUom = baseUomLabel(line);
+  const puom = purchaseUomLabel(line);
+  return (
+    <div className="text-right">
+      <div className="font-mono">
+        {baseQty} <span className="text-slate-600">{baseUom}</span>
+      </div>
+      <div className="text-[11px] text-slate-500">
+        （{Math.trunc(Number(line.qty_ordered ?? 0))} {puom} × {upc} {baseUom}/{puom}）
+      </div>
+    </div>
+  );
+}
+
+function renderReceivedBase(line: PurchaseOrderDetailLine) {
+  const rBase = receivedBase(line);
+  const upc = unitsPerCase(line);
+  const baseUom = baseUomLabel(line);
+  const puom = purchaseUomLabel(line);
+
+  const approxPurchase = Math.floor(rBase / upc);
+  const hasFraction = rBase % upc !== 0;
+
+  return (
+    <div className="text-right">
+      <div className="font-mono">
+        {rBase} <span className="text-slate-600">{baseUom}</span>
+      </div>
+      <div className="text-[11px] text-slate-500">
+        （≈{approxPurchase}{hasFraction ? "+" : ""} {puom}）
+      </div>
+    </div>
+  );
+}
+
+function renderRemainBase(line: PurchaseOrderDetailLine) {
+  const x = remainBase(line);
+  const upc = unitsPerCase(line);
+  const baseUom = baseUomLabel(line);
+  const puom = purchaseUomLabel(line);
+
+  const approxPurchase = Math.floor(x / upc);
+  const hasFraction = x % upc !== 0;
+
+  return (
+    <div className="text-right">
+      <div className="font-mono">
+        {x} <span className="text-slate-600">{baseUom}</span>
+      </div>
+      <div className="text-[11px] text-slate-500">
+        （≈{approxPurchase}{hasFraction ? "+" : ""} {puom}）
+      </div>
+    </div>
+  );
 }
 
 export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = ({
@@ -62,9 +153,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       key: "line_no",
       header: "行号",
       render: (line) => (
-        <span
-          className={`font-mono ${isInbound ? "text-[12px]" : "text-[11px]"} text-slate-500`}
-        >
+        <span className={`font-mono ${isInbound ? "text-[12px]" : "text-[11px]"} text-slate-500`}>
           {line.line_no}
         </span>
       ),
@@ -72,9 +161,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     {
       key: "sku",
       header: "SKU",
-      render: (line) => (
-        <span className="font-mono">{line.sku ?? line.item_sku ?? "—"}</span>
-      ),
+      render: (line) => <span className="font-mono">{line.sku ?? line.item_sku ?? "—"}</span>,
     },
     {
       key: "item_id",
@@ -84,9 +171,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     {
       key: "primary_barcode",
       header: "主条码",
-      render: (line) => (
-        <span className="font-mono">{line.primary_barcode ?? "—"}</span>
-      ),
+      render: (line) => <span className="font-mono">{line.primary_barcode ?? "—"}</span>,
     },
     {
       key: "item_name",
@@ -101,7 +186,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       header: "单位净重(kg)",
       render: (line) => <span className="font-mono">{line.weight_kg ?? "—"}</span>,
     },
-    { key: "uom", header: "最小包装单位", render: (line) => line.uom ?? "—" },
+    { key: "uom", header: "最小包装单位", render: (line) => baseUomLabel(line) },
     {
       key: "has_shelf_life",
       header: "有效期",
@@ -132,14 +217,25 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       render: (line) => (line.enabled == null ? "—" : <StatusBadge enabled={!!line.enabled} />),
     },
 
-    { key: "qty_ordered", header: "订购数量", align: "right", render: (line) => Number(line.qty_ordered ?? 0) },
-    { key: "qty_received", header: "已收数量", align: "right", render: (line) => Number(line.qty_received ?? 0) },
     {
-      key: "qty_remaining",
-      header: "剩余",
+      key: "qty_ordered_base",
+      header: "订购数量（最小单位）",
       align: "right",
-      render: (line) => Number(line.qty_remaining ?? 0),
+      render: (line) => renderOrderedBase(line),
     },
+    {
+      key: "qty_received_base",
+      header: "已收数量（最小单位）",
+      align: "right",
+      render: (line) => renderReceivedBase(line),
+    },
+    {
+      key: "qty_remaining_base",
+      header: "剩余（最小单位）",
+      align: "right",
+      render: (line) => renderRemainBase(line),
+    },
+
     {
       key: "work_status",
       header: "作业状态",
@@ -154,9 +250,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     ? "bg-white border border-slate-200 rounded-xl p-5 space-y-4"
     : "bg-white border border-slate-200 rounded-xl p-4 space-y-3";
 
-  const titleCls = isInbound
-    ? "text-base font-semibold text-slate-800"
-    : "text-sm font-semibold text-slate-800";
+  const titleCls = isInbound ? "text-base font-semibold text-slate-800" : "text-sm font-semibold text-slate-800";
 
   return (
     <section className={cardCls}>

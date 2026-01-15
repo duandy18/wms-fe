@@ -1,11 +1,11 @@
 // src/features/inventory/snapshot/api.ts
 import { apiGet, apiPost } from "../../../lib/api";
 
-// 首页 Snapshot 列表里的每一行
+// 首页 Snapshot 列表里的每一行（事实切片行：warehouse + item + batch）
 export interface InventoryRow {
   item_id: number;
 
-  // ✅ 新增：商品主数据（由后端 /snapshot/inventory 扩展返回）
+  // ✅ 商品主数据（由后端 /snapshot/inventory 扩展返回）
   // 都是 optional：后端没给时前端展示 "-"
   item_code?: string | null; // 商品编码（稳定可复制）
   uom?: string | null; // 单位（件/箱/...）
@@ -13,17 +13,20 @@ export interface InventoryRow {
   main_barcode?: string | null; // 主条码（只展示一个）
   brand?: string | null; // 品牌（可选）
   category?: string | null; // 品类（可选）
-  days_to_expiry?: number | null; // 最早到期剩余天数（后端算；前端不推导）
 
   item_name: string;
-  total_qty: number;
-  top2_locations: {
-    warehouse_id: number;
-    batch_code: string;
-    qty: number;
-  }[];
-  earliest_expiry: string | null;
+
+  // ✅ 事实维度（不可丢）
+  warehouse_id: number;
+  batch_code: string | null;
+
+  // ✅ 库存事实：该仓+该批次的 on-hand qty（base unit）
+  qty: number;
+
+  // ✅ 到期相关（后端算；前端不推导）
+  expiry_date: string | null;
   near_expiry: boolean;
+  days_to_expiry?: number | null;
 }
 
 export interface InventorySnapshotResponse {

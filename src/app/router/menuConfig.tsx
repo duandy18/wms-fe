@@ -49,6 +49,8 @@ export const menuSections: RouteSection[] = [
     items: [
       { path: "/snapshot", label: "即时库存 / FEFO 风险", requiredPermissions: ["report.inventory"] },
 
+      // ✅ 补回：库存台账（业务入口）
+      { path: "/inventory/ledger", label: "库存台账", requiredPermissions: ["report.inventory"] },
 
       { path: "/channel-inventory", label: "渠道库存", requiredPermissions: ["report.inventory"] },
       { path: "/inventory/outbound-dashboard", label: "出库 Dashboard", requiredPermissions: ["report.outbound"] },
@@ -81,9 +83,13 @@ export const menuSections: RouteSection[] = [
     id: "purchase",
     label: "采购管理",
     items: [
-      { path: "/purchase-orders", label: "采购单列表", requiredPermissions: ["purchase.manage"] },
+      // ✅ 合并：采购单列表 + 采购报表 → 采购概览
+      { path: "/purchase-orders/overview", label: "采购概览", requiredPermissions: ["purchase.manage"] },
       { path: "/purchase-orders/new-v2", label: "采购单生成", requiredPermissions: ["purchase.manage"] },
-      { path: "/purchase-orders/reports", label: "采购报表", requiredPermissions: ["purchase.report"] },
+
+      // 旧入口保留但不展示（兼容外部链接/历史书签）
+      { path: "/purchase-orders", label: "采购单列表（旧）", requiredPermissions: ["purchase.manage"], showInSidebar: false },
+      { path: "/purchase-orders/reports", label: "采购报表（旧）", requiredPermissions: ["purchase.report"], showInSidebar: false },
     ],
   },
 
