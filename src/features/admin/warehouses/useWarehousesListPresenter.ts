@@ -18,6 +18,7 @@ import type {
 } from "./types";
 import { CN_PROVINCES } from "./detail/provinces";
 import { deriveWarehouseCoverage, type FulfillmentCoverage } from "./fulfillment/deriveWarehouseCoverage";
+// CI-FINGERPRINT: route-c-coverage-import=fulfillment
 
 export type WarehouseSortKey = "id" | "name" | "code";
 
