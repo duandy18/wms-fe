@@ -17,7 +17,7 @@ import type {
   WarehouseServiceCitySplitProvincesOut,
 } from "./types";
 import { CN_PROVINCES } from "./detail/provinces";
-import { deriveWarehouseCoverage, type FulfillmentCoverage } from "./coverage/deriveWarehouseCoverage";
+import { deriveWarehouseCoverage, type FulfillmentCoverage } from "./fulfillment/deriveWarehouseCoverage";
 
 export type WarehouseSortKey = "id" | "name" | "code";
 
