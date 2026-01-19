@@ -31,24 +31,28 @@ function FulfillBadge({ label }: { label: FulfillmentCoverage["fulfill_label"] }
       : label === "对外不可命中"
         ? "bg-amber-100 text-amber-900"
         : "bg-slate-100 text-slate-800";
-  return <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${cls}`}>{label}</span>;
+  return (
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${cls}`}>
+      {label}
+    </span>
+  );
 }
 
 type Props = {
   canRead: boolean;
-  canWrite: boolean;
+  canWrite: boolean; // 兼容保留
   loading: boolean;
-  saving: boolean;
+  saving: boolean; // 兼容保留
   visibleWarehouses: WarehouseListItem[];
   showInactive: boolean;
   onToggleShowInactive: (v: boolean) => void;
   sortKey: WarehouseSortKey;
   sortAsc: boolean;
   onSort: (key: WarehouseSortKey) => void;
-  onToggleActive: (wh: WarehouseListItem) => void;
+
+  onToggleActive: (wh: WarehouseListItem) => void; // 列表页不允许改状态（兼容保留）
   onOpenDetail: (id: number) => void;
 
-  // ✅ 新增：履约覆盖信息
   coverageById: Record<number, FulfillmentCoverage>;
 };
 
@@ -93,6 +97,7 @@ export const WarehousesTable: React.FC<Props> = ({
   onOpenDetail,
   coverageById,
 }) => {
+  // ✅ 明确吞掉，避免 unused vars，同时不改变“列表页不可改状态”的裁决
   void _canWrite;
 
   if (!canRead) {
@@ -153,8 +158,8 @@ export const WarehousesTable: React.FC<Props> = ({
             <th className="px-6 text-left w-44">联系电话</th>
             <th className="px-6 text-left w-40">仓库面积 (㎡)</th>
 
-            {/* ✅ 新增列：履约覆盖 */}
-            <th className="px-6 text-left w-56">履约覆盖</th>
+            {/* ✅ 核心：履约覆盖（事实口径） */}
+            <th className="px-6 text-left w-72">履约覆盖</th>
 
             <th className="px-6 text-left w-32">运行状态</th>
             <th className="px-6 text-left w-32">操作</th>
@@ -164,7 +169,7 @@ export const WarehousesTable: React.FC<Props> = ({
         <tbody>
           {visibleWarehouses.map((w) => {
             const inactive = !w.active;
-            const cov = coverageById[w.id];
+            const cov = coverageById[w.id] ?? null;
 
             return (
               <tr
@@ -182,15 +187,29 @@ export const WarehousesTable: React.FC<Props> = ({
                 <td className="px-6">{renderNumber(w.area_sqm)}</td>
 
                 <td className="px-6">
-                  {cov ? (
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm text-slate-700">
-                        省:{cov.province_n} / 市:{cov.city_n}
-                      </div>
-                      <FulfillBadge label={cov.fulfill_label} />
-                    </div>
-                  ) : (
+                  {!cov ? (
                     <div className="text-sm text-slate-500">—</div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm text-slate-700">
+                          省:{cov.province_n} / 市:{cov.city_n == null ? "—" : cov.city_n}
+                        </div>
+                        <FulfillBadge label={cov.fulfill_label} />
+                      </div>
+
+                      {cov.fulfill_label === "对外不可命中" && (
+                        <div className="text-xs text-amber-900">
+                          当前未配置任何可命中的省/市（订单将无法命中服务仓）。
+                        </div>
+                      )}
+
+                      {cov.fulfill_label === "全国覆盖" && (
+                        <div className="text-xs text-sky-800">
+                          该仓库在省级口径覆盖全部可用省份（可能压制其它仓库的省级入口）。
+                        </div>
+                      )}
+                    </div>
                   )}
                 </td>
 
@@ -214,7 +233,7 @@ export const WarehousesTable: React.FC<Props> = ({
       </table>
 
       <div className="px-6 py-4 text-base text-slate-500">
-        说明：运行状态是主数据（active）；履约覆盖用于提示“订单是否会命中该仓库”。
+        说明：「运行状态」是主数据（active）；「履约覆盖」是 Route C 口径下的“订单能否命中该仓库”的事实提示。
       </div>
     </section>
   );

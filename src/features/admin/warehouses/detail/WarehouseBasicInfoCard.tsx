@@ -5,46 +5,54 @@ import type { WarehouseListItem } from "../types";
 
 export const WarehouseBasicInfoCard: React.FC<{
   detail: WarehouseListItem;
-
   canWrite: boolean;
   saving: boolean;
 
   name: string;
   setName: (v: string) => void;
+
+  // ✅ 与 useWarehouseDetailModel 对齐：表单态统一用 string
   code: string;
   setCode: (v: string) => void;
+
   active: boolean;
   setActive: (v: boolean) => void;
 
   address: string;
   setAddress: (v: string) => void;
+
   contactName: string;
   setContactName: (v: string) => void;
+
   contactPhone: string;
   setContactPhone: (v: string) => void;
+
+  // ✅ 表单输入态：string（允许空串）
   areaSqm: string;
   setAreaSqm: (v: string) => void;
 
   onSubmit: () => void;
 }> = (p) => {
   return (
-    <section className={UI.section}>
-      <div className="text-lg">
+    <section className="space-y-6 rounded-2xl border border-slate-200 bg-white p-10">
+      <div className={UI.title2}>仓库基础信息</div>
+
+      <div className="text-base text-slate-500">
         <span className="mr-2 text-slate-500">ID:</span>
-        <span className="font-semibold">{p.detail.id}</span>
+        <span className="font-semibold text-slate-900">{p.detail.id}</span>
       </div>
 
       <form
-        className="grid grid-cols-1 gap-6 text-lg md:grid-cols-2 lg:grid-cols-3"
+        className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
         onSubmit={(e) => {
           e.preventDefault();
           p.onSubmit();
         }}
       >
         <div className="flex flex-col gap-2">
-          <label className={UI.labelBasic}>仓库名称 *</label>
+          <label className="text-sm text-slate-600">仓库名称 *</label>
           <input
-            className={UI.inputBasic}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-base"
             value={p.name}
             onChange={(e) => p.setName(e.target.value)}
             disabled={p.saving}
@@ -52,9 +60,9 @@ export const WarehouseBasicInfoCard: React.FC<{
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className={UI.labelBasic}>仓库编码（手动填写）*</label>
+          <label className="text-sm text-slate-600">仓库编码（手动填写）*</label>
           <input
-            className={UI.inputBasicMono}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-mono"
             value={p.code}
             onChange={(e) => p.setCode(e.target.value)}
             disabled={p.saving}
@@ -62,11 +70,11 @@ export const WarehouseBasicInfoCard: React.FC<{
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className={UI.labelBasic}>状态</label>
+          <label className="text-sm text-slate-600">状态</label>
           <select
             value={p.active ? "1" : "0"}
             onChange={(e) => p.setActive(e.target.value === "1")}
-            className={UI.selectBasic}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-base"
             disabled={p.saving}
           >
             <option value="1">启用</option>
@@ -75,9 +83,9 @@ export const WarehouseBasicInfoCard: React.FC<{
         </div>
 
         <div className="flex flex-col gap-2 md:col-span-2 lg:col-span-3">
-          <label className={UI.labelBasic}>地址</label>
+          <label className="text-sm text-slate-600">地址</label>
           <input
-            className={UI.inputBasic}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-base"
             value={p.address}
             onChange={(e) => p.setAddress(e.target.value)}
             disabled={p.saving}
@@ -85,9 +93,9 @@ export const WarehouseBasicInfoCard: React.FC<{
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className={UI.labelBasic}>联系人</label>
+          <label className="text-sm text-slate-600">联系人</label>
           <input
-            className={UI.inputBasic}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-base"
             value={p.contactName}
             onChange={(e) => p.setContactName(e.target.value)}
             disabled={p.saving}
@@ -95,9 +103,9 @@ export const WarehouseBasicInfoCard: React.FC<{
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className={UI.labelBasic}>联系电话</label>
+          <label className="text-sm text-slate-600">联系电话</label>
           <input
-            className={UI.inputBasicMono}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-mono"
             value={p.contactPhone}
             onChange={(e) => p.setContactPhone(e.target.value)}
             disabled={p.saving}
@@ -105,26 +113,31 @@ export const WarehouseBasicInfoCard: React.FC<{
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className={UI.labelBasic}>仓库面积（㎡）</label>
+          <label className="text-sm text-slate-600">仓库面积（㎡）</label>
           <input
-            type="number"
-            min={0}
-            className={UI.inputBasicMono}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-mono"
             value={p.areaSqm}
             onChange={(e) => p.setAreaSqm(e.target.value)}
             disabled={p.saving}
+            placeholder="例如：800"
+            inputMode="decimal"
           />
         </div>
 
-        <div className="flex items-center lg:col-span-3">
-          <button type="submit" disabled={p.saving || !p.canWrite} className={UI.btnPrimaryBasic}>
+        {/* ✅ 保存按钮：变小 + 去黑 */}
+        <div className="flex items-center md:col-span-2 lg:col-span-3">
+          <button
+            type="submit"
+            disabled={!p.canWrite || p.saving}
+            className="rounded-lg border border-slate-300 bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 disabled:opacity-60"
+          >
             {p.saving ? "保存中…" : "保存修改"}
           </button>
         </div>
       </form>
 
       <div className="text-sm text-slate-500">
-        说明：仓库不可删除（数据库已 RESTRICT），需要停用请改状态为“停用”。
+        说明：仓库不可删除（数据库 RESTRICT），需停用请将状态改为“停用”。
       </div>
     </section>
   );
