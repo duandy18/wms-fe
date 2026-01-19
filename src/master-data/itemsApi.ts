@@ -76,6 +76,19 @@ export type FetchItemsBasicParams = {
    * - 约定传给后端 query: enabled=true
    */
   enabledOnly?: boolean;
+
+  /**
+   * 关键词搜索（主数据）
+   * - 约定传给后端 query: q
+   * - 命中：sku / name / barcode / id
+   */
+  keyword?: string;
+
+  /**
+   * 限制返回条数（可选）
+   * - 约定传给后端 query: limit
+   */
+  limit?: number;
 };
 
 export async function fetchItemsBasic(params: FetchItemsBasicParams = {}): Promise<ItemBasic[]> {
@@ -86,6 +99,14 @@ export async function fetchItemsBasic(params: FetchItemsBasicParams = {}): Promi
   }
   if (params.enabledOnly) {
     qs.set("enabled", "true");
+  }
+
+  if (params.keyword && params.keyword.trim()) {
+    qs.set("q", params.keyword.trim());
+  }
+
+  if (params.limit != null && Number.isFinite(params.limit) && params.limit > 0) {
+    qs.set("limit", String(params.limit));
   }
 
   const path = qs.toString() ? `/items?${qs.toString()}` : "/items";
