@@ -1,7 +1,7 @@
 // src/features/admin/stores/StoreBindingsTable.tsx
 
-import React from "react";
-import type { StoreBinding } from "./types";
+import React, { useMemo } from "react";
+import type { StoreBinding, WarehouseRole } from "./types";
 
 // 增强型绑定行：兼容后端扩展字段（名称 / 编码 / 是否启用）
 type StoreBindingRow = StoreBinding & {
@@ -14,46 +14,71 @@ type Props = {
   bindings: StoreBindingRow[];
   canWrite: boolean;
   saving: boolean;
-  onToggleTop: (b: StoreBindingRow) => void;
+  onChangeRole: (b: StoreBindingRow, role: WarehouseRole) => void;
   onDelete: (b: StoreBindingRow) => void;
 };
+
+function deriveRole(b: StoreBindingRow): WarehouseRole {
+  if (b.is_default) return "DEFAULT";
+  if (b.is_top) return "TOP";
+  return "NORMAL";
+}
+
+function roleLabel(role: WarehouseRole) {
+  switch (role) {
+    case "DEFAULT":
+      return "默认兜底仓";
+    case "TOP":
+      return "主仓";
+    case "NORMAL":
+    default:
+      return "普通仓";
+  }
+}
 
 export const StoreBindingsTable: React.FC<Props> = ({
   bindings,
   canWrite,
   saving,
-  onToggleTop,
+  onChangeRole,
   onDelete,
 }) => {
+  const rows = useMemo(() => {
+    // 默认：优先显示默认兜底仓，其次主仓，最后普通仓；同组按 priority
+    return [...bindings].sort((a, b) => {
+      const ra = deriveRole(a);
+      const rb = deriveRole(b);
+      const rank = (r: WarehouseRole) => (r === "DEFAULT" ? 0 : r === "TOP" ? 1 : 2);
+      const da = rank(ra);
+      const db = rank(rb);
+      if (da !== db) return da - db;
+      return (a.priority ?? 0) - (b.priority ?? 0);
+    });
+  }, [bindings]);
+
   return (
     <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-      <div className="text-base font-semibold text-slate-900">
-        仓库绑定列表
-      </div>
+      <div className="text-base font-semibold text-slate-900">仓库绑定列表</div>
 
-      {bindings.length === 0 ? (
+      {rows.length === 0 ? (
         <div className="text-sm text-slate-500">尚未绑定任何仓库。</div>
       ) : (
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-3 py-2 text-left">仓库</th>
-              <th className="px-3 py-2 text-left">是否主仓</th>
-              <th className="px-3 py-2 text-left">是否默认</th>
+              <th className="px-3 py-2 text-left">角色</th>
               <th className="px-3 py-2 text-left">优先级</th>
               <th className="px-3 py-2 text-left w-32">状态</th>
-              <th className="px-3 py-2 text-left w-36">操作</th>
+              <th className="px-3 py-2 text-left w-44">操作</th>
             </tr>
           </thead>
 
           <tbody>
-            {bindings.map((b) => {
+            {rows.map((b) => {
               const inactive = b.warehouse_active === false; // 未提供则视为启用
-              const labelParts = [
-                `WH-${b.warehouse_id}`,
-                b.warehouse_name ? `· ${b.warehouse_name}` : "",
-                b.warehouse_code ? `（${b.warehouse_code}）` : "",
-              ].filter(Boolean);
+
+              const role = deriveRole(b);
 
               return (
                 <tr
@@ -64,20 +89,22 @@ export const StoreBindingsTable: React.FC<Props> = ({
                   }
                 >
                   <td className="px-3 py-2 font-medium">
-                    <div>{labelParts.join(" ") || `WH-${b.warehouse_id}`}</div>
+                    <div>{(b.warehouse_name && b.warehouse_name.trim()) || `WH-${b.warehouse_id}`}</div>
                   </td>
 
                   <td className="px-3 py-2">
-                    {b.is_top ? (
+                    {role === "DEFAULT" ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                        {roleLabel(role)}
+                      </span>
+                    ) : role === "TOP" ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        主仓
+                        {roleLabel(role)}
                       </span>
                     ) : (
-                      "否"
+                      <span className="text-slate-600">{roleLabel(role)}</span>
                     )}
                   </td>
-
-                  <td className="px-3 py-2">{b.is_default ? "是" : "否"}</td>
 
                   <td className="px-3 py-2">{b.priority}</td>
 
@@ -95,19 +122,21 @@ export const StoreBindingsTable: React.FC<Props> = ({
 
                   <td className="px-3 py-2">
                     {canWrite ? (
-                      <div className="flex gap-2">
-                        <button
-                          disabled={saving || inactive}
-                          onClick={() => !inactive && onToggleTop(b)}
-                          className={
-                            "px-3 py-1 rounded border text-xs " +
-                            (inactive
-                              ? "border-slate-200 text-slate-300 cursor-not-allowed"
-                              : "border-slate-300 text-slate-800 hover:bg-slate-100")
-                          }
-                        >
-                          {b.is_top ? "取消主仓" : "设为主仓"}
-                        </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500">角色</span>
+                          <select
+                            value={role}
+                            onChange={(e) => onChangeRole(b, e.target.value as WarehouseRole)}
+                            disabled={saving || inactive}
+                            className="border rounded px-2 py-1 text-xs bg-white disabled:opacity-60"
+                            title={inactive ? "仓库已停用，不能修改角色" : "修改仓库角色"}
+                          >
+                            <option value="NORMAL">普通仓</option>
+                            <option value="TOP">主仓（TOP）</option>
+                            <option value="DEFAULT">默认兜底仓</option>
+                          </select>
+                        </label>
 
                         <button
                           disabled={saving}
