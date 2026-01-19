@@ -23,12 +23,73 @@ export interface WarehouseDetailResponse {
 }
 
 /**
+ * 仓库服务省份（唯一映射事实）
+ * - 省份（province_code）全局互斥：一个省只能属于一个仓
+ */
+export interface WarehouseServiceProvinces {
+  warehouse_id: number;
+  provinces: string[];
+}
+
+export interface WarehouseServiceProvincesPutIn {
+  provinces: string[];
+}
+
+/**
+ * 省份占用情况（只读）
+ */
+export interface WarehouseServiceProvinceOccupancyRow {
+  province_code: string;
+  warehouse_id: number;
+}
+
+export interface WarehouseServiceProvinceOccupancyOut {
+  rows: WarehouseServiceProvinceOccupancyRow[];
+}
+
+/**
+ * 仓库服务城市（唯一映射事实）
+ * - 城市（city_code）全局互斥：一个城市只能属于一个仓
+ */
+export interface WarehouseServiceCities {
+  warehouse_id: number;
+  cities: string[];
+}
+
+export interface WarehouseServiceCitiesPutIn {
+  cities: string[];
+}
+
+/**
+ * 城市占用情况（只读）
+ */
+export interface WarehouseServiceCityOccupancyRow {
+  city_code: string;
+  warehouse_id: number;
+}
+
+export interface WarehouseServiceCityOccupancyOut {
+  rows: WarehouseServiceCityOccupancyRow[];
+}
+
+/**
+ * 省份“按城市细分”开关（全局）
+ * - 在该列表里的省：省级规则冻结，只允许城市命中
+ */
+export interface WarehouseServiceCitySplitProvincesOut {
+  provinces: string[];
+}
+
+export interface WarehouseServiceCitySplitProvincesPutIn {
+  provinces: string[];
+}
+
+/**
  * Phase 3 延展：新建=完整事实输入
- * - 与列表列尽量一致（除机器生成字段：id/时间戳）
  */
 export interface WarehouseCreatePayload {
   name: string;
-  code: string; // ✅ 作为稳定引用编码：创建时必须有
+  code: string;
 
   active: boolean;
 

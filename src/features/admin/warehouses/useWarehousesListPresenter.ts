@@ -2,8 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../shared/useAuth";
-import { fetchWarehouses, updateWarehouse, createWarehouse } from "./api";
-import type { WarehouseListItem } from "./types";
+import {
+  fetchWarehouses,
+  updateWarehouse,
+  createWarehouse,
+  fetchWarehouseServiceProvinceOccupancy,
+  fetchWarehouseServiceCityOccupancy,
+  fetchWarehouseServiceCitySplitProvinces,
+} from "./api";
+import type {
+  WarehouseListItem,
+  WarehouseServiceProvinceOccupancyOut,
+  WarehouseServiceCityOccupancyOut,
+  WarehouseServiceCitySplitProvincesOut,
+} from "./types";
+import { CN_PROVINCES } from "./detail/provinces";
 
 export type WarehouseSortKey = "id" | "name" | "code";
 
@@ -29,6 +42,22 @@ function getSortValue(w: WarehouseListItem, key: WarehouseSortKey): string | num
   return w.code ?? "";
 }
 
+export type FulfillmentCoverage = {
+  province_n: number;
+  city_n: number;
+  fulfill_label: "全国覆盖" | "可命中" | "对外不可命中";
+};
+
+function countByWarehouseId<T extends { warehouse_id: number }>(rows: T[]): Record<number, number> {
+  const m: Record<number, number> = {};
+  for (const r of rows || []) {
+    const wid = Number(r.warehouse_id);
+    if (!Number.isFinite(wid) || wid <= 0) continue;
+    m[wid] = (m[wid] ?? 0) + 1;
+  }
+  return m;
+}
+
 export function useWarehousesListPresenter() {
   const { isAuthenticated } = useAuth();
 
@@ -37,7 +66,7 @@ export function useWarehousesListPresenter() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Create form fields
+  // Create form fields（列表页不展示创建表单，但保留逻辑兼容）
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [active, setActive] = useState(true);
@@ -53,13 +82,75 @@ export function useWarehousesListPresenter() {
   const canRead = isAuthenticated;
   const canWrite = isAuthenticated;
 
+  const [coverageById, setCoverageById] = useState<Record<number, FulfillmentCoverage>>({});
+  const [fulfillmentWarning, setFulfillmentWarning] = useState<string | null>(null);
+
   async function load() {
     if (!canRead) return;
     setLoading(true);
     setError(null);
+
     try {
+      // 1) 主数据：仓库列表
       const res = await fetchWarehouses();
-      setWarehouses(res.data);
+      const list = res.data ?? [];
+      setWarehouses(list);
+
+      // 2) 履约覆盖：并行读取 occupancy + split
+      let provOcc: WarehouseServiceProvinceOccupancyOut | null = null;
+      let cityOcc: WarehouseServiceCityOccupancyOut | null = null;
+      let split: WarehouseServiceCitySplitProvincesOut | null = null;
+
+      try {
+        [provOcc, cityOcc, split] = await Promise.all([
+          fetchWarehouseServiceProvinceOccupancy(),
+          fetchWarehouseServiceCityOccupancy(),
+          fetchWarehouseServiceCitySplitProvinces(),
+        ]);
+      } catch (e) {
+        console.error("load fulfillment coverage failed", e);
+      }
+
+      const provCountByWid = countByWarehouseId(
+        (provOcc?.rows ?? []).map((r) => ({ warehouse_id: r.warehouse_id })),
+      );
+      const cityCountByWidRaw = countByWarehouseId(
+        (cityOcc?.rows ?? []).map((r) => ({ warehouse_id: r.warehouse_id })),
+      );
+
+      // ✅ 关键语义：只有当存在“按城市配置的省”时，城市规则才参与履约命中
+      const splitCount = (split?.provinces ?? []).length;
+      const cityRuleEnabled = splitCount > 0;
+
+      const totalProvinces = CN_PROVINCES.length;
+      const effectiveProvinceUniverse = Math.max(0, totalProvinces - splitCount);
+
+      const cov: Record<number, FulfillmentCoverage> = {};
+      for (const w of list) {
+        const provN = provCountByWid[w.id] ?? 0;
+
+        // ✅ 只在城市规则启用时展示/统计市，否则显示 0（避免误导）
+        const cityN = cityRuleEnabled ? (cityCountByWidRaw[w.id] ?? 0) : 0;
+
+        let label: FulfillmentCoverage["fulfill_label"] = "可命中";
+        if (provN === 0 && cityN === 0) label = "对外不可命中";
+        else if (provN >= effectiveProvinceUniverse && effectiveProvinceUniverse > 0) label = "全国覆盖";
+
+        cov[w.id] = { province_n: provN, city_n: cityN, fulfill_label: label };
+      }
+      setCoverageById(cov);
+
+      // 3) 全局风险提示：存在全国覆盖仓 + 还有其它运行中仓
+      const activeWarehouses = list.filter((w) => !!w.active);
+      const national = activeWarehouses.filter((w) => cov[w.id]?.fulfill_label === "全国覆盖");
+      if (national.length > 0 && activeWarehouses.length > 1) {
+        const names = national.map((w) => w.code || w.name || `#${w.id}`).join("、");
+        setFulfillmentWarning(
+          `当前存在“全国覆盖”的仓库：${names}。其它仓库即使处于运行中，也可能对外不可命中（除非按城市配置或调整省份覆盖）。`,
+        );
+      } else {
+        setFulfillmentWarning(null);
+      }
     } catch (e: unknown) {
       setError(errMsg(e, "加载仓库列表失败"));
     } finally {
@@ -167,7 +258,10 @@ export function useWarehousesListPresenter() {
     return arr;
   }, [warehouses, sortKey, sortAsc]);
 
-  const visibleWarehouses = useMemo(() => (showInactive ? sortedWarehouses : sortedWarehouses.filter((w) => w.active)), [sortedWarehouses, showInactive]);
+  const visibleWarehouses = useMemo(
+    () => (showInactive ? sortedWarehouses : sortedWarehouses.filter((w) => w.active)),
+    [sortedWarehouses, showInactive],
+  );
 
   return {
     canRead,
@@ -175,6 +269,9 @@ export function useWarehousesListPresenter() {
     loading,
     saving,
     error,
+
+    coverageById,
+    fulfillmentWarning,
 
     name,
     code,

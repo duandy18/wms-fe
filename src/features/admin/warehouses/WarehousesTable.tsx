@@ -2,6 +2,7 @@
 import React from "react";
 import type { WarehouseListItem } from "./types";
 import type { WarehouseSortKey } from "./useWarehousesListPresenter";
+import type { FulfillmentCoverage } from "./useWarehousesListPresenter";
 
 function renderText(v: string | null | undefined) {
   return v && v.trim() ? v : "—";
@@ -23,22 +24,32 @@ function StatusBadge({ active }: { active: boolean }) {
   );
 }
 
+function FulfillBadge({ label }: { label: FulfillmentCoverage["fulfill_label"] }) {
+  const cls =
+    label === "全国覆盖"
+      ? "bg-sky-100 text-sky-800"
+      : label === "对外不可命中"
+        ? "bg-amber-100 text-amber-900"
+        : "bg-slate-100 text-slate-800";
+  return <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${cls}`}>{label}</span>;
+}
+
 type Props = {
   canRead: boolean;
-  canWrite: boolean; // ✅ 上层仍在传；列表页不使用，但必须保留类型兼容
+  canWrite: boolean;
   loading: boolean;
-  saving: boolean; // 兼容保留，列表页不使用
+  saving: boolean;
   visibleWarehouses: WarehouseListItem[];
   showInactive: boolean;
   onToggleShowInactive: (v: boolean) => void;
   sortKey: WarehouseSortKey;
   sortAsc: boolean;
   onSort: (key: WarehouseSortKey) => void;
-
-  // ⚠️ 列表页不允许改状态（防误操作）
   onToggleActive: (wh: WarehouseListItem) => void;
-
   onOpenDetail: (id: number) => void;
+
+  // ✅ 新增：履约覆盖信息
+  coverageById: Record<number, FulfillmentCoverage>;
 };
 
 function SortHeader({
@@ -80,8 +91,8 @@ export const WarehousesTable: React.FC<Props> = ({
   sortAsc,
   onSort,
   onOpenDetail,
+  coverageById,
 }) => {
-  // ✅ 明确吞掉，避免 unused vars，同时不改变“列表页不可改状态”的裁决
   void _canWrite;
 
   if (!canRead) {
@@ -141,6 +152,10 @@ export const WarehousesTable: React.FC<Props> = ({
             <th className="px-6 text-left w-40">联系人</th>
             <th className="px-6 text-left w-44">联系电话</th>
             <th className="px-6 text-left w-40">仓库面积 (㎡)</th>
+
+            {/* ✅ 新增列：履约覆盖 */}
+            <th className="px-6 text-left w-56">履约覆盖</th>
+
             <th className="px-6 text-left w-32">运行状态</th>
             <th className="px-6 text-left w-32">操作</th>
           </tr>
@@ -149,11 +164,14 @@ export const WarehousesTable: React.FC<Props> = ({
         <tbody>
           {visibleWarehouses.map((w) => {
             const inactive = !w.active;
+            const cov = coverageById[w.id];
 
             return (
               <tr
                 key={w.id}
-                className={"border-b border-slate-200 hover:bg-slate-50 h-14 " + (inactive ? "bg-slate-50 text-slate-400" : "")}
+                className={
+                  "border-b border-slate-200 hover:bg-slate-50 h-14 " + (inactive ? "bg-slate-50 text-slate-400" : "")
+                }
               >
                 <td className="px-6 font-medium">{w.id}</td>
                 <td className="px-6">{renderText(w.name)}</td>
@@ -162,6 +180,19 @@ export const WarehousesTable: React.FC<Props> = ({
                 <td className="px-6">{renderText(w.contact_name)}</td>
                 <td className="px-6">{renderText(w.contact_phone)}</td>
                 <td className="px-6">{renderNumber(w.area_sqm)}</td>
+
+                <td className="px-6">
+                  {cov ? (
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm text-slate-700">
+                        省:{cov.province_n} / 市:{cov.city_n}
+                      </div>
+                      <FulfillBadge label={cov.fulfill_label} />
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-500">—</div>
+                  )}
+                </td>
 
                 <td className="px-6">
                   <StatusBadge active={w.active} />
@@ -182,7 +213,9 @@ export const WarehousesTable: React.FC<Props> = ({
         </tbody>
       </table>
 
-      <div className="px-6 py-4 text-base text-slate-500">仓库运行状态只能在“编辑”页面中修改，列表页仅用于查看，避免误操作。</div>
+      <div className="px-6 py-4 text-base text-slate-500">
+        说明：运行状态是主数据（active）；履约覆盖用于提示“订单是否会命中该仓库”。
+      </div>
     </section>
   );
 };

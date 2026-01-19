@@ -116,7 +116,7 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-                    {/* ✅ 库存台账（业务入口） */}
+          {/* ✅ 库存台账（业务入口） */}
           <Route
             path="inventory/ledger"
             element={
@@ -332,6 +332,17 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+
+          {/* ✅ 新增：仓库创建页（独立页，避免列表页内嵌创建表单） */}
+          <Route
+            path="warehouses/new"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.WarehouseCreatePage />
+              </RequirePermission>
+            }
+          />
+
           <Route
             path="warehouses/:warehouseId"
             element={
