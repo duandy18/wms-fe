@@ -1,4 +1,4 @@
-// src/features/admin/warehouses/coverage/deriveWarehouseCoverage.ts
+// src/features/admin/warehouses/fulfillment/deriveWarehouseCoverage.ts
 import type {
   WarehouseListItem,
   WarehouseServiceCityOccupancyOut,
