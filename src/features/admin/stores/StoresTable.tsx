@@ -1,7 +1,7 @@
 // src/features/admin/stores/StoresTable.tsx
 
 import React from "react";
-import type { StoreListItem, RouteMode } from "./types";
+import type { StoreListItem } from "./types";
 import type { SortKey } from "./useStoresListPresenter";
 
 type StoresTableProps = {
@@ -20,15 +20,8 @@ type StoresTableProps = {
   onSort: (key: SortKey) => void;
 
   onToggleActive: (store: StoreListItem) => void;
-  onRouteModeChange: (store: StoreListItem, mode: RouteMode) => void;
   onOpenDetail: (storeId: number) => void;
 };
-
-function renderRouteModeLabel(mode: RouteMode) {
-  if (mode === "STRICT_TOP") return "主仓（严格，仅主仓）";
-  if (mode === "FALLBACK") return "主仓+备仓兜底";
-  return mode;
-}
 
 function SortHeader({
   label,
@@ -73,15 +66,12 @@ export const StoresTable: React.FC<StoresTableProps> = ({
   sortAsc,
   onSort,
   onToggleActive,
-  onRouteModeChange,
   onOpenDetail,
 }) => {
   if (!canRead) {
     return (
       <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-4 py-6 text-base text-slate-500">
-          你没有 admin.stores 权限。
-        </div>
+        <div className="px-4 py-6 text-base text-slate-500">你没有 admin.stores 权限。</div>
       </section>
     );
   }
@@ -109,8 +99,7 @@ export const StoresTable: React.FC<StoresTableProps> = ({
       {/* 顶部工具条：显示停用店铺 */}
       <div className="px-4 pt-3 pb-2 flex items-center justify-between">
         <div className="text-sm text-slate-500">
-          共 {visibleStores.length} 条（当前仅显示
-          {showInactive ? "全部店铺" : "启用店铺"}）
+          共 {visibleStores.length} 条（当前仅显示{showInactive ? "全部店铺" : "启用店铺"}）
         </div>
         <label className="text-sm text-slate-600 flex items-center gap-2">
           <input
@@ -161,12 +150,7 @@ export const StoresTable: React.FC<StoresTableProps> = ({
                 onSort={onSort}
               />
             </th>
-            <th className="px-4 py-3 text-left w-40">
-              出库路由模式
-              <span className="block text-xs text-slate-500">
-                默认：主仓（STRICT_TOP）；可选：主仓+备仓兜底（FALLBACK）
-              </span>
-            </th>
+
             <th className="px-4 py-3 text-left w-32">联系人</th>
             <th className="px-4 py-3 text-left w-32">联系电话</th>
             <th className="px-4 py-3 text-left w-56">Email</th>
@@ -192,42 +176,12 @@ export const StoresTable: React.FC<StoresTableProps> = ({
                 <td className="px-4 py-3 text-sm">{s.name}</td>
 
                 <td className="px-4 py-3 text-sm">
-                  {canWrite && !inactive ? (
-                    <select
-                      className="border rounded px-3 py-1.5 text-sm"
-                      value={s.route_mode}
-                      onChange={(e) =>
-                        onRouteModeChange(
-                          s,
-                          e.target.value as RouteMode,
-                        )
-                      }
-                    >
-                      <option value="STRICT_TOP">
-                        主仓（严格，仅主仓）
-                      </option>
-                      <option value="FALLBACK">
-                        主仓+备仓兜底（FALLBACK）
-                      </option>
-                    </select>
-                  ) : (
-                    <span>{renderRouteModeLabel(s.route_mode)}</span>
-                  )}
-                </td>
-
-                <td className="px-4 py-3 text-sm">
-                  {s.contact_name && s.contact_name.trim()
-                    ? s.contact_name
-                    : "—"}
+                  {s.contact_name && s.contact_name.trim() ? s.contact_name : "—"}
                 </td>
                 <td className="px-4 py-3 text-sm">
-                  {s.contact_phone && s.contact_phone.trim()
-                    ? s.contact_phone
-                    : "—"}
+                  {s.contact_phone && s.contact_phone.trim() ? s.contact_phone : "—"}
                 </td>
-                <td className="px-4 py-3 text-sm">
-                  {s.email && s.email.trim() ? s.email : "—"}
-                </td>
+                <td className="px-4 py-3 text-sm">{s.email && s.email.trim() ? s.email : "—"}</td>
 
                 <td className="px-4 py-3 text-sm">
                   {canWrite ? (

@@ -16,11 +16,7 @@ export default function StoresListPage() {
         <div>
           <h1 className="text-xl font-semibold">店铺管理</h1>
           <p className="text-sm text-slate-600 mt-1">
-            管理平台店铺档案与出库路由模式。
-            <span className="ml-1">
-              默认采用<strong>主仓（STRICT_TOP）</strong>；如需主仓不足时自动用备仓兜底，可切换为
-              <strong> 主仓+备仓兜底（FALLBACK）</strong>。
-            </span>
+            管理平台店铺档案。店铺详情页以「SKU → 履约仓（唯一）」为主线配置入口。
           </p>
         </div>
       </header>
@@ -56,7 +52,6 @@ export default function StoresListPage() {
         sortAsc={p.sortAsc}
         onSort={p.handleSort}
         onToggleActive={p.handleToggleActive}
-        onRouteModeChange={p.handleRouteModeChange}
         onOpenDetail={(id) => navigate(`/stores/${id}`)}
       />
     </div>

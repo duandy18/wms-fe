@@ -2,6 +2,7 @@
 import React from "react";
 import type { WarehouseListItem } from "./types";
 import type { WarehouseSortKey } from "./useWarehousesListPresenter";
+import type { FulfillmentCoverage } from "./useWarehousesListPresenter";
 
 function renderText(v: string | null | undefined) {
   return v && v.trim() ? v : "—";
@@ -23,11 +24,25 @@ function StatusBadge({ active }: { active: boolean }) {
   );
 }
 
+function FulfillBadge({ label }: { label: FulfillmentCoverage["fulfill_label"] }) {
+  const cls =
+    label === "全国覆盖"
+      ? "bg-sky-100 text-sky-800"
+      : label === "对外不可命中"
+        ? "bg-amber-100 text-amber-900"
+        : "bg-slate-100 text-slate-800";
+  return (
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
 type Props = {
   canRead: boolean;
-  canWrite: boolean; // ✅ 上层仍在传；列表页不使用，但必须保留类型兼容
+  canWrite: boolean; // 兼容保留
   loading: boolean;
-  saving: boolean; // 兼容保留，列表页不使用
+  saving: boolean; // 兼容保留
   visibleWarehouses: WarehouseListItem[];
   showInactive: boolean;
   onToggleShowInactive: (v: boolean) => void;
@@ -35,10 +50,10 @@ type Props = {
   sortAsc: boolean;
   onSort: (key: WarehouseSortKey) => void;
 
-  // ⚠️ 列表页不允许改状态（防误操作）
-  onToggleActive: (wh: WarehouseListItem) => void;
-
+  onToggleActive: (wh: WarehouseListItem) => void; // 列表页不允许改状态（兼容保留）
   onOpenDetail: (id: number) => void;
+
+  coverageById: Record<number, FulfillmentCoverage>;
 };
 
 function SortHeader({
@@ -80,6 +95,7 @@ export const WarehousesTable: React.FC<Props> = ({
   sortAsc,
   onSort,
   onOpenDetail,
+  coverageById,
 }) => {
   // ✅ 明确吞掉，避免 unused vars，同时不改变“列表页不可改状态”的裁决
   void _canWrite;
@@ -141,6 +157,10 @@ export const WarehousesTable: React.FC<Props> = ({
             <th className="px-6 text-left w-40">联系人</th>
             <th className="px-6 text-left w-44">联系电话</th>
             <th className="px-6 text-left w-40">仓库面积 (㎡)</th>
+
+            {/* ✅ 核心：履约覆盖（事实口径） */}
+            <th className="px-6 text-left w-72">履约覆盖</th>
+
             <th className="px-6 text-left w-32">运行状态</th>
             <th className="px-6 text-left w-32">操作</th>
           </tr>
@@ -149,11 +169,14 @@ export const WarehousesTable: React.FC<Props> = ({
         <tbody>
           {visibleWarehouses.map((w) => {
             const inactive = !w.active;
+            const cov = coverageById[w.id] ?? null;
 
             return (
               <tr
                 key={w.id}
-                className={"border-b border-slate-200 hover:bg-slate-50 h-14 " + (inactive ? "bg-slate-50 text-slate-400" : "")}
+                className={
+                  "border-b border-slate-200 hover:bg-slate-50 h-14 " + (inactive ? "bg-slate-50 text-slate-400" : "")
+                }
               >
                 <td className="px-6 font-medium">{w.id}</td>
                 <td className="px-6">{renderText(w.name)}</td>
@@ -162,6 +185,33 @@ export const WarehousesTable: React.FC<Props> = ({
                 <td className="px-6">{renderText(w.contact_name)}</td>
                 <td className="px-6">{renderText(w.contact_phone)}</td>
                 <td className="px-6">{renderNumber(w.area_sqm)}</td>
+
+                <td className="px-6">
+                  {!cov ? (
+                    <div className="text-sm text-slate-500">—</div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm text-slate-700">
+                          省:{cov.province_n} / 市:{cov.city_n == null ? "—" : cov.city_n}
+                        </div>
+                        <FulfillBadge label={cov.fulfill_label} />
+                      </div>
+
+                      {cov.fulfill_label === "对外不可命中" && (
+                        <div className="text-xs text-amber-900">
+                          当前未配置任何可命中的省/市（订单将无法命中服务仓）。
+                        </div>
+                      )}
+
+                      {cov.fulfill_label === "全国覆盖" && (
+                        <div className="text-xs text-sky-800">
+                          该仓库在省级口径覆盖全部可用省份（可能压制其它仓库的省级入口）。
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </td>
 
                 <td className="px-6">
                   <StatusBadge active={w.active} />
@@ -182,7 +232,9 @@ export const WarehousesTable: React.FC<Props> = ({
         </tbody>
       </table>
 
-      <div className="px-6 py-4 text-base text-slate-500">仓库运行状态只能在“编辑”页面中修改，列表页仅用于查看，避免误操作。</div>
+      <div className="px-6 py-4 text-base text-slate-500">
+        说明：「运行状态」是主数据（active）；「履约覆盖」是 Route C 口径下的“订单能否命中该仓库”的事实提示。
+      </div>
     </section>
   );
 };

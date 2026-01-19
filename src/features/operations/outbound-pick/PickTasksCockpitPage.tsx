@@ -1,11 +1,12 @@
 // src/features/operations/outbound-pick/PickTasksCockpitPage.tsx
 //
-// 拣货任务 Cockpit（条码驱动版）
+// 拣货任务 Cockpit（订单视角入口版）
+// - 左：订单列表 + 下方订单详情（像入库页）
+// - 右：创建拣货任务（必须选仓库）→ 批次与拣货 → 提交出库 → 提交后链路
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { PickTaskListPanel } from "./PickTaskListPanel";
 import { PickTaskDetailPanel } from "./PickTaskDetailPanel";
 import { PickTaskDiffPanel } from "./PickTaskDiffPanel";
 import { PickTaskScanPanel } from "./PickTaskScanPanel";
@@ -13,11 +14,21 @@ import { PickTaskCommitPanel } from "./PickTaskCommitPanel";
 import { PickTaskFefoPanel } from "./PickTaskFefoPanel";
 import { PickTaskPostCommitPanel } from "./PickTaskPostCommitPanel";
 
+import { PickTicketPrintModal, type ItemMetaMap } from "./PickTicketPrintModal";
+import { OrderPickSidebar } from "./OrderPickSidebar";
+
 import { usePickTasksCockpitController } from "./usePickTasksCockpitController";
-import type { StatusFilter } from "./types_cockpit";
+import type { OrderSummary } from "../../orders/api";
+
+import { useActiveWarehouses } from "./orderPick/useActiveWarehouses";
+import { useCreatePickTaskFromOrder } from "./orderPick/useCreatePickTaskFromOrder";
+import { CreatePickTaskCard } from "./orderPick/CreatePickTaskCard";
 
 const PickTasksCockpitPage: React.FC = () => {
   const navigate = useNavigate();
+
+  const [printOpen, setPrintOpen] = useState(false);
+  const [pickedOrder, setPickedOrder] = useState<OrderSummary | null>(null);
 
   const c = usePickTasksCockpitController({
     navigateToBarcodeBind: (barcode: string) => {
@@ -29,38 +40,60 @@ const PickTasksCockpitPage: React.FC = () => {
     },
   });
 
+  const platform = c.currentPlatformShop?.platform ?? "PDD";
+  const shopId = c.currentPlatformShop?.shop_id ?? "1";
+
+  const printableItemMetaMap = useMemo(() => {
+    return (c.itemMetaMap as unknown) as ItemMetaMap;
+  }, [c.itemMetaMap]);
+
+  // 当任务被清空时，关闭打印层（避免“幽灵打印”）
+  useEffect(() => {
+    if (!c.selectedTask && printOpen) setPrintOpen(false);
+  }, [c.selectedTask, printOpen]);
+
+  const wh = useActiveWarehouses({ preferredId: 1 });
+
+  const creator = useCreatePickTaskFromOrder({
+    pickedOrder,
+    selectedWarehouseId: wh.selectedWarehouseId,
+    loadTasks: c.loadTasks,
+    setSelectedTaskId: c.setSelectedTaskId,
+    loadTaskDetail: c.loadTaskDetail,
+  });
+
   return (
     <div className="p-6 space-y-6">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold text-slate-900">拣货</h1>
       </header>
 
-      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.0fr)_minmax(0,2.0fr)]">
-        {/* 左：任务列表 */}
-        <PickTaskListPanel
-          tasks={c.visibleTasks}
-          loading={c.loadingList}
-          error={c.listError}
-          warehouseId={c.warehouseId}
-          statusFilter={c.statusFilter}
-          sourceFilter={c.sourceFilter}
-          onChangeWarehouse={c.setWarehouseId}
-          onChangeStatus={(v) => c.setStatusFilter(v as StatusFilter)}
-          onChangeSourceFilter={c.setSourceFilter}
-          selectedTaskId={c.selectedTaskId}
-          onSelectTask={c.setSelectedTaskId}
-          onRefresh={c.loadTasks}
-        />
+      {/* 左右 1:1 平分 */}
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <OrderPickSidebar onPickOrder={setPickedOrder} />
 
-        {/* 右：总览 / 批次与拣货 / 提交 / 提交后链路 */}
         <div className="space-y-6">
+          <CreatePickTaskCard
+            pickedOrder={pickedOrder}
+            warehouses={wh.warehouses}
+            loadingWh={wh.loadingWh}
+            whError={wh.whError}
+            selectedWarehouseId={wh.selectedWarehouseId}
+            setSelectedWarehouseId={wh.setSelectedWarehouseId}
+            creatingTask={creator.creatingTask}
+            createTaskError={creator.createTaskError}
+            createdTask={creator.createdTask}
+            canCreateTask={creator.canCreateTask && !wh.loadingWh && !wh.whError}
+            onCreate={() => void creator.createTask()}
+          />
+
           {/* 卡1：任务总览 */}
           <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-slate-800">任务总览</h2>
-              {c.loadingDetail && (
+              {c.loadingDetail ? (
                 <span className="text-[11px] text-slate-500">详情加载中…</span>
-              )}
+              ) : null}
             </div>
 
             <PickTaskDetailPanel
@@ -115,9 +148,10 @@ const PickTasksCockpitPage: React.FC = () => {
               onChangeAllowDiff={c.setAllowDiff}
               committing={c.commitBusy}
               commitError={c.commitError}
-              platform={c.currentPlatformShop?.platform ?? "PDD"}
-              shopId={c.currentPlatformShop?.shop_id ?? "1"}
+              platform={platform}
+              shopId={shopId}
               onCommit={c.handleCommit}
+              onPrint={() => setPrintOpen(true)}
             />
           </section>
 
@@ -134,6 +168,18 @@ const PickTasksCockpitPage: React.FC = () => {
           </section>
         </div>
       </div>
+
+      {/* 拣货单打印层（打开即打印） */}
+      {c.selectedTask ? (
+        <PickTicketPrintModal
+          open={printOpen}
+          onClose={() => setPrintOpen(false)}
+          task={c.selectedTask}
+          platform={platform}
+          shopId={shopId}
+          itemMetaMap={printableItemMetaMap}
+        />
+      ) : null}
     </div>
   );
 };

@@ -2,6 +2,8 @@
 
 export type RouteMode = "STRICT_TOP" | "FALLBACK" | string;
 
+export type WarehouseRole = "NORMAL" | "TOP" | "DEFAULT";
+
 // 商铺列表项
 export interface StoreListItem {
   id: number;
@@ -44,6 +46,9 @@ export interface StoreDetailData {
   platform: string;
   shop_id: string;
   name: string;
+
+  // ✅ 与列表保持一致：路由模式属于店铺配置的一部分
+  route_mode?: RouteMode | null;
 
   // 主数据扩展字段（详情页可编辑）
   email: string | null;
@@ -105,3 +110,21 @@ export interface StorePlatformAuthStatus {
   expires_at: string | null;
   mall_id: string | null;
 }
+
+/* ============================================================
+ * 商铺 SKU（store_items）—— 前端视图模型（后端接口未接入时允许为空）
+ * ============================================================ */
+
+export type StoreSkuListItem = {
+  item_id: number;
+  // 可选：后端若返回
+  item_name?: string | null;
+  platform_sku?: string | null;
+};
+
+export type StoreSkuListOut = { ok: boolean; data: StoreSkuListItem[] };
+
+export type StoreSkuAddIn = { item_id: number };
+export type StoreSkuAddOut = { ok: boolean; data?: { store_id: number; item_id: number } | Record<string, unknown> };
+
+export type StoreSkuRemoveOut = { ok: boolean; data?: { store_id: number; item_id: number } | Record<string, unknown> };

@@ -2,8 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../shared/useAuth";
-import { fetchWarehouses, updateWarehouse, createWarehouse } from "./api";
-import type { WarehouseListItem } from "./types";
+import {
+  fetchWarehouses,
+  updateWarehouse,
+  createWarehouse,
+  fetchWarehouseServiceProvinceOccupancy,
+  fetchWarehouseServiceCityOccupancy,
+  fetchWarehouseServiceCitySplitProvinces,
+} from "./api";
+import type {
+  WarehouseListItem,
+  WarehouseServiceProvinceOccupancyOut,
+  WarehouseServiceCityOccupancyOut,
+  WarehouseServiceCitySplitProvincesOut,
+} from "./types";
+import { CN_PROVINCES } from "./detail/provinces";
+import { deriveWarehouseCoverage, type FulfillmentCoverage } from "./fulfillment/deriveWarehouseCoverage";
+// CI-FINGERPRINT: route-c-coverage-import=fulfillment
 
 export type WarehouseSortKey = "id" | "name" | "code";
 
@@ -29,6 +44,9 @@ function getSortValue(w: WarehouseListItem, key: WarehouseSortKey): string | num
   return w.code ?? "";
 }
 
+// ✅ 仍然对外导出，给 table 使用
+export type { FulfillmentCoverage };
+
 export function useWarehousesListPresenter() {
   const { isAuthenticated } = useAuth();
 
@@ -37,7 +55,7 @@ export function useWarehousesListPresenter() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Create form fields
+  // Create form fields（列表页不展示创建表单，但保留逻辑兼容）
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [active, setActive] = useState(true);
@@ -53,13 +71,43 @@ export function useWarehousesListPresenter() {
   const canRead = isAuthenticated;
   const canWrite = isAuthenticated;
 
+  const [coverageById, setCoverageById] = useState<Record<number, FulfillmentCoverage>>({});
+  const [fulfillmentWarning, setFulfillmentWarning] = useState<string | null>(null);
+
   async function load() {
     if (!canRead) return;
     setLoading(true);
     setError(null);
+
     try {
       const res = await fetchWarehouses();
-      setWarehouses(res.data);
+      const list = res.data ?? [];
+      setWarehouses(list);
+
+      let provOcc: WarehouseServiceProvinceOccupancyOut | null = null;
+      let cityOcc: WarehouseServiceCityOccupancyOut | null = null;
+      let split: WarehouseServiceCitySplitProvincesOut | null = null;
+
+      try {
+        [provOcc, cityOcc, split] = await Promise.all([
+          fetchWarehouseServiceProvinceOccupancy(),
+          fetchWarehouseServiceCityOccupancy(),
+          fetchWarehouseServiceCitySplitProvinces(),
+        ]);
+      } catch (e) {
+        console.error("load fulfillment coverage failed", e);
+      }
+
+      const derived = deriveWarehouseCoverage({
+        warehouses: list,
+        provincesUniverseN: CN_PROVINCES.length,
+        provOcc,
+        cityOcc,
+        split,
+      });
+
+      setCoverageById(derived.coverageById);
+      setFulfillmentWarning(derived.warning);
     } catch (e: unknown) {
       setError(errMsg(e, "加载仓库列表失败"));
     } finally {
@@ -167,7 +215,10 @@ export function useWarehousesListPresenter() {
     return arr;
   }, [warehouses, sortKey, sortAsc]);
 
-  const visibleWarehouses = useMemo(() => (showInactive ? sortedWarehouses : sortedWarehouses.filter((w) => w.active)), [sortedWarehouses, showInactive]);
+  const visibleWarehouses = useMemo(
+    () => (showInactive ? sortedWarehouses : sortedWarehouses.filter((w) => w.active)),
+    [sortedWarehouses, showInactive],
+  );
 
   return {
     canRead,
@@ -175,6 +226,9 @@ export function useWarehousesListPresenter() {
     loading,
     saving,
     error,
+
+    coverageById,
+    fulfillmentWarning,
 
     name,
     code,

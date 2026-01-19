@@ -43,6 +43,7 @@ export const UsersAdminPage = lazy(() => import("../../features/admin/users/User
 
 // 仓库管理
 export const WarehousesListPage = lazy(() => import("../../features/admin/warehouses/WarehousesListPage"));
+export const WarehouseCreatePage = lazy(() => import("../../features/admin/warehouses/WarehouseCreatePage"));
 export const WarehouseDetailPage = lazy(() => import("../../features/admin/warehouses/WarehouseDetailPage"));
 
 // 供应商主数据

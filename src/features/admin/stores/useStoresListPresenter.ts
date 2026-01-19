@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../shared/useAuth";
 import { fetchStores, updateStore, createStore } from "./api";
-import type { StoreListItem, RouteMode } from "./types";
+import type { StoreListItem } from "./types";
 
 export type SortKey = "id" | "platform" | "shop_id" | "name";
 
@@ -67,21 +67,6 @@ export function useStoresListPresenter() {
     } catch (err: unknown) {
       const e = err as ApiErrorShape | undefined;
       setError(e?.message ?? "更新店铺状态失败");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleRouteModeChange(store: StoreListItem, mode: RouteMode) {
-    if (!canWrite || !store.active) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await updateStore(store.id, { route_mode: mode });
-      await load();
-    } catch (err: unknown) {
-      const e = err as ApiErrorShape | undefined;
-      setError(e?.message ?? "更新出库路由模式失败");
     } finally {
       setSaving(false);
     }
@@ -166,10 +151,7 @@ export function useStoresListPresenter() {
   }, [stores, sortKey, sortAsc]);
 
   const visibleStores = useMemo(
-    () =>
-      showInactive
-        ? sortedStores
-        : sortedStores.filter((s) => s.active),
+    () => (showInactive ? sortedStores : sortedStores.filter((s) => s.active)),
     [sortedStores, showInactive],
   );
 
@@ -196,6 +178,5 @@ export function useStoresListPresenter() {
     handleSort,
 
     handleToggleActive,
-    handleRouteModeChange,
   };
 }
