@@ -1,4 +1,4 @@
-// src/features/inventory/channel-inventory/types.ts
+// src/features/inventory/global-available/types.ts
 
 // 单个批次在某仓的库存
 export interface BatchQty {
@@ -6,8 +6,8 @@ export interface BatchQty {
   qty: number;
 }
 
-// 单仓渠道可售（对应 ChannelInventoryModel）
-export interface ChannelInventorySingle {
+// 单仓全局可售（对应 GlobalAvailableSingle）
+export interface GlobalAvailableSingle {
   platform: string;
   shop_id: string;
   warehouse_id: number;
@@ -18,8 +18,8 @@ export interface ChannelInventorySingle {
   batches: BatchQty[];
 }
 
-// 多仓视图里的单个仓（对应 WarehouseInventoryModel）
-export interface WarehouseInventoryModel {
+// 多仓视图里的单个仓（对应 WarehouseAvailableModel）
+export interface WarehouseAvailableModel {
   warehouse_id: number;
   on_hand: number;
   reserved_open: number;
@@ -30,10 +30,10 @@ export interface WarehouseInventoryModel {
   priority: number;
 }
 
-// 多仓渠道可售（对应 ChannelInventoryMultiModel）
-export interface ChannelInventoryMultiModel {
+// 多仓全局可售（对应 GlobalAvailableMulti）
+export interface GlobalAvailableMulti {
   platform: string;
   shop_id: string;
   item_id: number;
-  warehouses: WarehouseInventoryModel[];
+  warehouses: WarehouseAvailableModel[];
 }

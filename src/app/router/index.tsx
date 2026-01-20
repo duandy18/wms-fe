@@ -127,14 +127,6 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="channel-inventory"
-            element={
-              <RequirePermission permission="report.inventory">
-                <P.ChannelInventoryPage />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="inventory/outbound-dashboard"
             element={
               <RequirePermission permission="report.outbound">

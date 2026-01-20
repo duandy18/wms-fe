@@ -1,16 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+// src/features/admin/stores/store-skus/useStoreSkusModel.ts
+
+import { useEffect, useMemo, useState } from "react";
 import { addStoreSku, fetchStoreSkus, removeStoreSku } from "../api";
-import type { StoreSkuListItem } from "../types";
-import { fetchItemsBasic, type ItemBasic } from "../../../../master-data/itemsApi";
+import type { StoreSkuListItem, StoreBinding } from "../types";
 import { errMsg, isNotImplemented } from "./errors";
+import { useItemSearch } from "./useItemSearch";
+import { useGlobalInventoryBatch } from "./useGlobalInventoryBatch";
 
 type Args = {
   storeId: number;
   canWrite: boolean;
+  platform: string;
+  shopId: string;
+  bindings: StoreBinding[];
 };
 
-export function useStoreSkusModel({ storeId, canWrite }: Args) {
-  // ---------------- store_items（店铺卖哪些 SKU） ----------------
+export type WarehouseOption = {
+  warehouse_id: number;
+  code: string; // 列头使用
+  label?: string; // tooltip/辅助
+  active?: boolean;
+};
+
+export function useStoreSkusModel({ storeId, canWrite, platform, shopId, bindings }: Args) {
+  // ---------------- store_items（售卖清单：事实绑定） ----------------
   const [rows, setRows] = useState<StoreSkuListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -28,11 +41,7 @@ export function useStoreSkusModel({ storeId, canWrite }: Args) {
 
     try {
       const resp = await fetchStoreSkus(storeId);
-      if (resp && resp.ok) setRows(resp.data ?? []);
-      else {
-        setRows([]);
-        setErr("后端合同不一致：GET /stores/{store_id}/items 应返回 { ok, data }");
-      }
+      setRows(resp?.data ?? []);
     } catch (e) {
       if (isNotImplemented(e)) {
         setApiMissing(true);
@@ -40,7 +49,7 @@ export function useStoreSkusModel({ storeId, canWrite }: Args) {
         setErr(null);
       } else {
         setRows([]);
-        setErr(errMsg(e, "加载商铺 SKU 失败"));
+        setErr(errMsg(e, "加载商铺商品失败"));
       }
     } finally {
       setLoading(false);
@@ -52,94 +61,66 @@ export function useStoreSkusModel({ storeId, canWrite }: Args) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
-  // ---------------- items 搜索（后端搜索） ----------------
-  const [kw, setKw] = useState("");
-  const [cands, setCands] = useState<ItemBasic[]>([]);
-  const [itemsLoading, setItemsLoading] = useState(false);
-  const [itemsError, setItemsError] = useState<string | null>(null);
-  const [selectedItemId, setSelectedItemId] = useState<number | "">("");
-  const [searchTick, setSearchTick] = useState(0);
-  function triggerSearch() {
-    // 立即给出反馈：进入“搜索中…”状态（不等 debounce）
-    setItemsLoading(true);
-    setItemsError(null);
-    setSearchTick((x) => x + 1);
+  // ---------------- 商品搜索（主数据） ----------------
+  const search = useItemSearch();
+
+  // ---------------- 仓库列元信息（来自 bindings） ----------------
+  const warehouseOptions: WarehouseOption[] = useMemo(() => {
+    const list = (bindings ?? []).map((b) => {
+      const name = (b.warehouse_name ?? "").trim();
+      const rawCode = (b.warehouse_code ?? "").trim();
+
+      // code：用于列头，必须稳定且短
+      const code = rawCode || `wh-${b.warehouse_id}`;
+
+      // label：用于 tooltip，允许更长更全
+      const label = name ? (rawCode ? `${name}（${rawCode}）` : name) : code;
+
+      return {
+        warehouse_id: b.warehouse_id,
+        code,
+        label,
+        active: b.warehouse_active,
+      };
+    });
+
+    return list.sort((a, b) => a.warehouse_id - b.warehouse_id);
+  }, [bindings]);
+
+  // ---------------- 批量库存（后端口径） ----------------
+  const inv = useGlobalInventoryBatch({ platform, shopId, bindings });
+
+  async function reloadAllInventories() {
+    const ids = displayRows.map((r) => r.item_id).filter((x) => Number.isFinite(x) && x > 0);
+    await inv.reloadAllInventories(ids);
   }
 
-  const prevKwRef = useRef<string>("");
-  const prevTickRef = useRef<number>(0);
-  const lastReqId = useRef(0);
-
   useEffect(() => {
-    const q = kw.trim();
-    const tickChanged = searchTick !== prevTickRef.current;
-    prevTickRef.current = searchTick;
-    prevKwRef.current = kw;
-    const delay = tickChanged ? 0 : 250;
+    if (!platform || !shopId) return;
 
-    if (!q) {
-      const t0 = window.setTimeout(async () => {
-        const reqId0 = ++lastReqId.current;
-        setItemsLoading(true);
-        setItemsError(null);
-        try {
-          const list0 = await fetchItemsBasic({ enabledOnly: true, limit: 50 });
-          if (reqId0 === lastReqId.current) {
-            const data = list0 ?? [];
-            setCands(data);
-            if (data.length === 1) setSelectedItemId(data[0].id);
-          }
-        } catch (e) {
-          if (reqId0 === lastReqId.current) {
-            setCands([]);
-            setItemsError(errMsg(e, "加载商品失败"));
-          }
-        } finally {
-          if (reqId0 === lastReqId.current) setItemsLoading(false);
-        }
-      }, 0);
-
-      return () => window.clearTimeout(t0);
+    if (displayRows.length === 0) {
+      inv.setInventoryByItemId({});
+      inv.setInvLoadingItemIds({});
+      inv.setInvError(null);
+      return;
     }
 
-    const t = window.setTimeout(async () => {
-      const reqId = ++lastReqId.current;
-      setItemsLoading(true);
-      setItemsError(null);
+    void reloadAllInventories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platform, shopId, bindings, displayRows.length]);
 
-      try {
-        // ✅ 后端搜索（主商品数据 items）
-        // 注意：这里直接按你现阶段“能用”为目标：keyword + enabledOnly + limit
-        // 若 itemsApi.ts 参数名不同，TS 会报错，你再贴 itemsApi.ts 的 params 定义我来对齐
-        const list = await fetchItemsBasic({
-          keyword: q,
-          enabledOnly: true,
-          limit: 50,
-        });
-
-        if (reqId === lastReqId.current) {
-          const data = list ?? [];
-          setCands(data);
-          if (data.length === 1) setSelectedItemId(data[0].id);
-        }
-      } catch (e) {
-        if (reqId === lastReqId.current) {
-          setCands([]);
-          setItemsError(errMsg(e, "搜索商品失败"));
-        }
-      } finally {
-        if (reqId === lastReqId.current) setItemsLoading(false);
-      }
-    }, delay);
-
-    return () => window.clearTimeout(t);
-  }, [kw, searchTick]);
-
+  // ---------------- actions：加入/移除 ----------------
   async function addSelectedSku() {
     if (!canWrite) return;
-    const iid = selectedItemId === "" ? null : Number(selectedItemId);
+
+    const iid = search.selectedItemId === "" ? null : Number(search.selectedItemId);
     if (!iid || iid <= 0) {
-      setErr("请选择要加入的商品（SKU）");
+      setErr("请选择要加入的商品");
+      return;
+    }
+
+    if (rows.some((x) => x.item_id === iid)) {
+      setErr("该商品已在售卖清单中");
       return;
     }
 
@@ -147,14 +128,15 @@ export function useStoreSkusModel({ storeId, canWrite }: Args) {
     setErr(null);
     try {
       await addStoreSku(storeId, { item_id: iid });
-      setSelectedItemId("");
+      search.setSelectedItemId("");
       await reloadStoreSkus();
+      void reloadAllInventories();
     } catch (e) {
       if (isNotImplemented(e)) {
         setApiMissing(true);
         setErr(null);
       } else {
-        setErr(errMsg(e, "加入 SKU 失败"));
+        setErr(errMsg(e, "加入商品失败"));
       }
     } finally {
       setLoading(false);
@@ -163,7 +145,7 @@ export function useStoreSkusModel({ storeId, canWrite }: Args) {
 
   async function removeSku(itemId: number) {
     if (!canWrite) return;
-    const ok = window.confirm(`确认从该商铺移除 SKU（item_id=${itemId}）？`);
+    const ok = window.confirm(`确认从该商铺移除商品（编号：${itemId}）？`);
     if (!ok) return;
 
     setLoading(true);
@@ -171,12 +153,13 @@ export function useStoreSkusModel({ storeId, canWrite }: Args) {
     try {
       await removeStoreSku(storeId, itemId);
       await reloadStoreSkus();
+      void reloadAllInventories();
     } catch (e) {
       if (isNotImplemented(e)) {
         setApiMissing(true);
         setErr(null);
       } else {
-        setErr(errMsg(e, "移除 SKU 失败"));
+        setErr(errMsg(e, "移除商品失败"));
       }
     } finally {
       setLoading(false);
@@ -192,17 +175,27 @@ export function useStoreSkusModel({ storeId, canWrite }: Args) {
     reloadStoreSkus,
 
     // items search
-    kw,
-    setKw,
-    cands,
-    itemsLoading,
-    itemsError,
-    selectedItemId,
-    setSelectedItemId,
+    kw: search.kw,
+    setKw: search.setKw,
+    cands: search.cands,
+    itemsLoading: search.itemsLoading,
+    itemsError: search.itemsError,
+    selectedItemId: search.selectedItemId,
+    setSelectedItemId: search.setSelectedItemId,
+    triggerSearch: search.triggerSearch,
+
+    // inventory
+    inventoryByItemId: inv.inventoryByItemId,
+    invLoadingItemIds: inv.invLoadingItemIds,
+    invLoadingAny: inv.invLoadingAny,
+    invError: inv.invError,
+    reloadAllInventories,
+
+    // warehouses meta
+    warehouseOptions,
 
     // actions
     addSelectedSku,
     removeSku,
-    triggerSearch,
   };
 }

@@ -51,8 +51,6 @@ export const menuSections: RouteSection[] = [
 
       // ✅ 补回：库存台账（业务入口）
       { path: "/inventory/ledger", label: "库存台账", requiredPermissions: ["report.inventory"] },
-
-      { path: "/channel-inventory", label: "渠道库存", requiredPermissions: ["report.inventory"] },
       { path: "/inventory/outbound-dashboard", label: "出库 Dashboard", requiredPermissions: ["report.outbound"] },
       { path: "/shipping/reports", label: "发货成本报表", requiredPermissions: ["report.outbound"] },
       { path: "/shipping/record", label: "发货账本详情", requiredPermissions: ["report.outbound"] },

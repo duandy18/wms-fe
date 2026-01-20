@@ -17,24 +17,41 @@ import type {
   StoreSkuRemoveOut,
 } from "./types";
 
+type OkEnvelope<T> = { ok: boolean; data: T };
+
 export async function fetchStores() {
-  return apiGet<StoreListResponse>("/stores");
+  const resp = await apiGet<StoreListResponse>("/stores");
+  // 保持返回结构不变，但合同失败直接抛错
+  assertOk(resp as unknown as OkEnvelope<unknown>, "GET /stores");
+  return resp;
 }
 
 export async function fetchStoreDetail(storeId: number) {
-  return apiGet<StoreDetailResponse>(`/stores/${storeId}`);
+  const resp = await apiGet<StoreDetailResponse>(`/stores/${storeId}`);
+  assertOk(resp as unknown as OkEnvelope<unknown>, "GET /stores/{store_id}");
+  return resp;
 }
 
 export async function createStore(payload: StoreCreatePayload) {
-  return apiPost<StoreDetailResponse>("/stores", payload);
+  const resp = await apiPost<StoreDetailResponse>("/stores", payload);
+  assertOk(resp as unknown as OkEnvelope<unknown>, "POST /stores");
+  return resp;
 }
 
 export async function updateStore(storeId: number, payload: StoreUpdatePayload) {
-  return apiPatch<StoreDetailResponse>(`/stores/${storeId}`, payload);
+  const resp = await apiPatch<StoreDetailResponse>(`/stores/${storeId}`, payload);
+  assertOk(resp as unknown as OkEnvelope<unknown>, "PATCH /stores/{store_id}");
+  return resp;
 }
 
 export async function bindWarehouse(storeId: number, payload: BindWarehousePayload) {
-  return apiPost(`/stores/${storeId}/warehouses/bind`, payload);
+  // 后端通常仍是 { ok, data }，这里用 envelope 护栏，不改变调用方行为
+  const resp = await apiPost<OkEnvelope<Record<string, unknown>>>(
+    `/stores/${storeId}/warehouses/bind`,
+    payload,
+  );
+  assertOk(resp, "POST /stores/{store_id}/warehouses/bind");
+  return resp;
 }
 
 export async function updateBinding(
@@ -42,15 +59,26 @@ export async function updateBinding(
   warehouseId: number,
   payload: UpdateBindingPayload,
 ) {
-  return apiPatch(`/stores/${storeId}/warehouses/${warehouseId}`, payload);
+  const resp = await apiPatch<OkEnvelope<Record<string, unknown>>>(
+    `/stores/${storeId}/warehouses/${warehouseId}`,
+    payload,
+  );
+  assertOk(resp, "PATCH /stores/{store_id}/warehouses/{warehouse_id}");
+  return resp;
 }
 
 export async function deleteBinding(storeId: number, warehouseId: number) {
-  return apiDelete(`/stores/${storeId}/warehouses/${warehouseId}`);
+  const resp = await apiDelete<OkEnvelope<Record<string, unknown>>>(
+    `/stores/${storeId}/warehouses/${warehouseId}`,
+  );
+  assertOk(resp, "DELETE /stores/{store_id}/warehouses/{warehouse_id}");
+  return resp;
 }
 
 export async function fetchDefaultWarehouse(storeId: number) {
-  return apiGet<DefaultWarehouseResponse>(`/stores/${storeId}/default-warehouse`);
+  const resp = await apiGet<DefaultWarehouseResponse>(`/stores/${storeId}/default-warehouse`);
+  assertOk(resp as unknown as OkEnvelope<unknown>, "GET /stores/{store_id}/default-warehouse");
+  return resp;
 }
 
 // /stores/{store_id}/platform-auth：后端返回 { ok, data }
@@ -67,6 +95,7 @@ export async function saveStorePlatformCredentials(input: {
   shopId: string;
   accessToken: string;
 }) {
+  // 这里后端未必是 { ok, data }，保持原状，不强行 assertOk
   return apiPost("/platform-shops/credentials", {
     platform: input.platform,
     shop_id: input.shopId,
@@ -76,23 +105,29 @@ export async function saveStorePlatformCredentials(input: {
 }
 
 /* ================================
- * 商铺 SKU（store_items）- 新主线
+ * 商铺 SKU（store_items）- 视图模块
  * ================================ */
 
 export async function fetchStoreSkus(storeId: number): Promise<StoreSkuListOut> {
   // 约定：GET /stores/{store_id}/items
   // 注意：后端尚未接入时可能 404；调用方负责降级提示
-  return apiGet<StoreSkuListOut>(`/stores/${storeId}/items`);
+  const resp = await apiGet<StoreSkuListOut>(`/stores/${storeId}/items`);
+  assertOk(resp as unknown as OkEnvelope<unknown>, "GET /stores/{store_id}/items");
+  return resp;
 }
 
 export async function addStoreSku(storeId: number, payload: StoreSkuAddIn): Promise<StoreSkuAddOut> {
   // 约定：POST /stores/{store_id}/items  body: { item_id }
-  return apiPost<StoreSkuAddOut>(`/stores/${storeId}/items`, payload);
+  const resp = await apiPost<StoreSkuAddOut>(`/stores/${storeId}/items`, payload);
+  assertOk(resp as unknown as OkEnvelope<unknown>, "POST /stores/{store_id}/items");
+  return resp;
 }
 
 export async function removeStoreSku(storeId: number, itemId: number): Promise<StoreSkuRemoveOut> {
   // 约定：DELETE /stores/{store_id}/items/{item_id}
-  return apiDelete<StoreSkuRemoveOut>(`/stores/${storeId}/items/${itemId}`);
+  const resp = await apiDelete<StoreSkuRemoveOut>(`/stores/${storeId}/items/${itemId}`);
+  assertOk(resp as unknown as OkEnvelope<unknown>, "DELETE /stores/{store_id}/items/{item_id}");
+  return resp;
 }
 
 // ================================
