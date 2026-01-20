@@ -58,6 +58,7 @@ const WarehousesListPage: React.FC = () => {
         onToggleActive={p.handleToggleActive}
         onOpenDetail={(id) => navigate(`/warehouses/${id}`)}
         coverageById={p.coverageById}
+        activeCarriersByWarehouseId={p.activeCarriersByWarehouseId}
       />
     </div>
   );
