@@ -1,22 +1,23 @@
 // src/features/admin/stores/useStoreDetailPresenter.ts
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   fetchStoreDetail,
   fetchStorePlatformAuth,
   saveStorePlatformCredentials,
 } from "./api";
 import type { StoreDetailData, StorePlatformAuthStatus } from "./types";
+import { apiGet } from "../../../lib/api";
+import { assertOk } from "../../../lib/assertOk";
 
 type ApiErrorShape = {
   message?: string;
 };
 
+type OAuthStartOut = { ok: boolean; data: { authorize_url: string } };
+
 export function useStoreDetailPresenter(storeId: number) {
   const id = storeId;
-  const navigate = useNavigate();
-
   // TODO：后续接 RBAC，这里先保持原行为（不做权限判断漂移）
   const canWrite = true;
 
@@ -27,6 +28,10 @@ export function useStoreDetailPresenter(storeId: number) {
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // OAuth 跳转状态（避免重复点）
+  const [oauthStarting, setOauthStarting] = useState(false);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   // 手工凭据“小弹窗”状态
   const [credentialsOpen, setCredentialsOpen] = useState(false);
@@ -67,6 +72,9 @@ export function useStoreDetailPresenter(storeId: number) {
     setCredentialsOpen(false);
     setCredentialsToken("");
     setCredentialsError(null);
+
+    setOauthStarting(false);
+    setOauthError(null);
 
     void reloadDetail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,7 +135,7 @@ export function useStoreDetailPresenter(storeId: number) {
     if (!detail) return;
 
     if (!credentialsToken.trim()) {
-      setCredentialsError("access_token 不能为空");
+      setCredentialsError("访问令牌不能为空");
       return;
     }
 
@@ -152,15 +160,47 @@ export function useStoreDetailPresenter(storeId: number) {
     }
   }
 
-  function viewChannelInventory() {
+  // ✅ 真实 OAuth：点击后拿 authorize_url 并跳转
+  async function startOAuth() {
     if (!detail) return;
-    const search = new URLSearchParams({
-      platform: detail.platform,
-      shop_id: detail.shop_id,
-    }).toString();
-    navigate(`/inventory/channel-inventory?${search}`);
-  }
+    if (oauthStarting) return;
 
+    setOauthStarting(true);
+    setOauthError(null);
+
+    try {
+      const platformNorm = (detail.platform ?? "").trim().toLowerCase(); // e.g. pdd/tb/jd
+      if (!platformNorm) {
+        setOauthError("平台信息缺失，无法发起授权");
+        return;
+      }
+
+      // 回跳到当前店铺详情页（需在后端 allowlist 内：localhost/127.0.0.1）
+      const redirectUri = `${window.location.origin}/stores/${detail.store_id}`;
+
+      const resp = await apiGet<OAuthStartOut>(
+        `/oauth/${encodeURIComponent(platformNorm)}/start?store_id=${encodeURIComponent(
+          String(detail.store_id),
+        )}&redirect_uri=${encodeURIComponent(redirectUri)}`,
+      );
+
+      const out = assertOk(resp, "GET /oauth/{platform}/start");
+      const url = (out.authorize_url ?? "").trim();
+
+      if (!url) {
+        setOauthError("授权入口返回为空");
+        return;
+      }
+
+      window.location.href = url;
+    } catch (err: unknown) {
+      console.error("oauth start failed", err);
+      const e = err as ApiErrorShape;
+      setOauthError(e?.message ?? "发起平台授权失败");
+    } finally {
+      setOauthStarting(false);
+    }
+  }
   return {
     id,
     canWrite,
@@ -172,6 +212,10 @@ export function useStoreDetailPresenter(storeId: number) {
     platformAuth,
     authLoading,
 
+    oauthStarting,
+    oauthError,
+    startOAuth,
+
     credentialsOpen,
     credentialsToken,
     credentialsError,
@@ -182,7 +226,6 @@ export function useStoreDetailPresenter(storeId: number) {
     submitCredentials,
 
     reloadDetail,
-
-    viewChannelInventory,
+    reloadPlatformAuth,
   };
 }

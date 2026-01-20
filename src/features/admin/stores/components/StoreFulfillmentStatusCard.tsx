@@ -1,20 +1,27 @@
 // src/features/admin/stores/components/StoreFulfillmentStatusCard.tsx
 
 import React, { useMemo } from "react";
-import type { StoreBinding } from "../types";
+import type { StoreBinding, RouteMode } from "../types";
 import type { StoreRoutingHealth } from "../api";
-import type { RouteMode } from "../types";
 
 type Props = {
+  // Phase 1：商铺页不展示任何策略/模式含义，但为避免调用方改动，保留入参
   routeMode?: RouteMode | null;
+
+  // 绑定事实（允许展示）
   bindings: StoreBinding[];
+
+  // Phase 1：不展示“默认仓”概念，但为避免调用方改动，保留入参
   defaultWarehouseId: number | null;
 
+  // 只读的健康检查结果（用作 BLOCKED/提示原因的来源）
   routingHealth: StoreRoutingHealth | null;
   routingHealthLoading: boolean;
   routingHealthError: string | null;
   onReloadRoutingHealth: () => void;
 };
+
+type FulfillmentFactStatus = "READY" | "BLOCKED";
 
 type UiLevel = "OK" | "WARN" | "ERROR";
 
@@ -26,87 +33,95 @@ function normalizeHealthStatus(s: string | null | undefined): UiLevel {
   return "WARN";
 }
 
-function badgeClass(level: UiLevel) {
-  switch (level) {
-    case "OK":
-      return "border-emerald-200 bg-emerald-50 text-emerald-800";
-    case "WARN":
-      return "border-amber-200 bg-amber-50 text-amber-800";
-    case "ERROR":
-      return "border-red-200 bg-red-50 text-red-800";
-  }
+function badgeClass(status: FulfillmentFactStatus, hasWarnings: boolean) {
+  if (status === "BLOCKED") return "border-red-200 bg-red-50 text-red-800";
+  if (hasWarnings) return "border-amber-200 bg-amber-50 text-amber-800";
+  return "border-emerald-200 bg-emerald-50 text-emerald-800";
 }
 
-function levelLabel(level: UiLevel) {
-  switch (level) {
-    case "OK":
-      return "正常";
-    case "WARN":
-      return "有风险";
-    case "ERROR":
-      return "不可履约";
-  }
+function statusLabel(status: FulfillmentFactStatus, hasWarnings: boolean) {
+  if (status === "BLOCKED") return "已阻断";
+  if (hasWarnings) return "可履约（有提示）";
+  return "可履约";
 }
 
 export function StoreFulfillmentStatusCard(props: Props) {
-  const {
-    routeMode,
-    bindings,
-    defaultWarehouseId,
-    routingHealth,
-    routingHealthLoading,
-    routingHealthError,
-    onReloadRoutingHealth,
-  } = props;
+  const { bindings, routingHealth, routingHealthLoading, routingHealthError, onReloadRoutingHealth } =
+    props;
 
   const derived = useMemo(() => {
     const bindingsCount = bindings.length;
     const hasBindings = bindingsCount > 0;
-    const hasDefault = defaultWarehouseId != null;
 
     const healthLevel: UiLevel = normalizeHealthStatus(routingHealth?.status);
-
-    // 业务解释层：前置条件缺失时直接升级严重性（不靠字符串猜）
-    let level: UiLevel = healthLevel;
-    if (!hasBindings) level = "ERROR";
-    else if (!hasDefault) level = routeMode === "FALLBACK" ? "WARN" : "ERROR";
-
-    const facts: string[] = [];
-    facts.push(`已绑定仓：${bindingsCount} 个`);
-    facts.push(`默认仓：${hasDefault ? `WH#${defaultWarehouseId}` : "未设置"}`);
-    facts.push(`路由模式：${routeMode ?? "未知"}`);
-
-    const nextSteps: string[] = [];
-    if (!hasBindings) nextSteps.push("先绑定至少一个仓库（否则无法路由，也无法设置默认仓）。");
-    if (hasBindings && !hasDefault) nextSteps.push("设置默认仓（FALLBACK 的兜底仓 / TOP 仓）。");
-    if (hasBindings) nextSteps.push("根据发货省份补齐省级分仓规则（STRICT_TOP 下缺规则会导致不可履约）。");
-
     const warnings = routingHealth?.warnings ?? [];
     const errors = routingHealth?.errors ?? [];
 
-    return { level, facts, nextSteps, warnings, errors };
-  }, [bindings, defaultWarehouseId, routeMode, routingHealth]);
+    // Phase 1 事实口径（不讲策略，不输出模式）：
+    // - 没绑定仓库 => 必然 BLOCKED
+    // - 健康检查 ERROR 或存在 errors => BLOCKED（只读原因）
+    // - 其余 => READY（warnings 作为“提示”展示）
+    let status: FulfillmentFactStatus = "READY";
+    const blockedReasons: string[] = [];
+
+    if (!hasBindings) {
+      status = "BLOCKED";
+      blockedReasons.push("未绑定可服务仓库");
+    }
+
+    if (errors.length > 0 || healthLevel === "ERROR") {
+      status = "BLOCKED";
+      errors.forEach((x) => blockedReasons.push(x));
+      if (errors.length === 0 && healthLevel === "ERROR") {
+        blockedReasons.push("健康检查返回不可用状态");
+      }
+    }
+
+    const hintMessages: string[] = [];
+    if (status === "READY") {
+      warnings.forEach((x) => hintMessages.push(x));
+      if (healthLevel === "WARN" && warnings.length === 0) {
+        hintMessages.push("健康检查返回提示状态");
+      }
+    }
+
+    const facts: string[] = [];
+    facts.push(`已绑定仓库：${bindingsCount} 个`);
+
+    return {
+      status,
+      facts,
+      blockedReasons,
+      hintMessages,
+      hasWarnings: status === "READY" && hintMessages.length > 0,
+    };
+  }, [bindings, routingHealth]);
 
   return (
     <div className="rounded-lg border bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-base font-semibold">履约状态</div>
+          <div className="text-base font-semibold">履约状态（只读）</div>
           <div className="mt-1 text-sm text-slate-600">
-            这张卡回答：这个店铺的订单能不能被系统“选仓并占货”（配置是否可履约）。
+            仅展示当前“是否可履约”的事实结果：可履约 / 已阻断；原因只读，不在此处修正。
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass(derived.level)}`}>
-            {levelLabel(derived.level)}
+          <span
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass(
+              derived.status,
+              derived.hasWarnings,
+            )}`}
+          >
+            {statusLabel(derived.status, derived.hasWarnings)}
           </span>
           <button
             type="button"
             className="rounded-md border px-3 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             onClick={onReloadRoutingHealth}
             disabled={routingHealthLoading}
-            title="重新拉取路由健康检查"
+            title="重新拉取状态"
           >
             {routingHealthLoading ? "刷新中…" : "刷新"}
           </button>
@@ -125,47 +140,31 @@ export function StoreFulfillmentStatusCard(props: Props) {
         </div>
 
         <div className="rounded-md border bg-slate-50 p-3">
-          <div className="text-xs font-semibold text-slate-700">下一步怎么修</div>
-          {derived.nextSteps.length === 0 ? (
-            <div className="mt-2 text-sm text-slate-700">已满足关键前置条件。继续按健康检查提示优化即可。</div>
+          <div className="text-xs font-semibold text-slate-700">
+            {derived.status === "BLOCKED" ? "阻断原因" : "提示"}
+          </div>
+
+          {derived.status === "BLOCKED" ? (
+            derived.blockedReasons.length === 0 ? (
+              <div className="mt-2 text-sm text-slate-700">未提供具体原因。</div>
+            ) : (
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                {derived.blockedReasons.map((s, idx) => (
+                  <li key={`${s}-${idx}`}>{s}</li>
+                ))}
+              </ul>
+            )
+          ) : derived.hintMessages.length === 0 ? (
+            <div className="mt-2 text-sm text-slate-700">无</div>
           ) : (
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-              {derived.nextSteps.map((s, idx) => (
+              {derived.hintMessages.map((s, idx) => (
                 <li key={`${s}-${idx}`}>{s}</li>
               ))}
             </ul>
           )}
         </div>
       </div>
-
-      {(derived.errors.length > 0 || derived.warnings.length > 0) && (
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div className="rounded-md border border-red-100 bg-red-50 p-3">
-            <div className="text-xs font-semibold text-red-700">健康检查：错误</div>
-            {derived.errors.length === 0 ? (
-              <div className="mt-2 text-sm text-red-700">无</div>
-            ) : (
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-700">
-                {derived.errors.map((x, idx) => (
-                  <li key={`${x}-${idx}`}>{x}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <div className="rounded-md border border-amber-100 bg-amber-50 p-3">
-            <div className="text-xs font-semibold text-amber-800">健康检查：提示</div>
-            {derived.warnings.length === 0 ? (
-              <div className="mt-2 text-sm text-amber-800">无</div>
-            ) : (
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-800">
-                {derived.warnings.map((x, idx) => (
-                  <li key={`${x}-${idx}`}>{x}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

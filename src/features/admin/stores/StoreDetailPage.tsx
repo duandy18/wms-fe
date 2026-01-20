@@ -43,15 +43,16 @@ export default function StoreDetailPage() {
 
   return (
     <div className="space-y-4 p-4">
-      <PageTitle title="商铺详情" description="以 SKU 为中心的履约配置" />
-
-      <button
-        type="button"
-        className="text-sm text-sky-700 underline"
-        onClick={() => navigate(-1)}
-      >
-        ← 返回商铺管理
-      </button>
+      <div className="flex items-center justify-between">
+        <PageTitle title="商铺详情" />
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+        >
+          返回商铺管理
+        </button>
+      </div>
 
       {p.error && (
         <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -90,33 +91,49 @@ export default function StoreDetailPage() {
         <div className="text-sm text-slate-500">未找到店铺。</div>
       ) : (
         <>
-          {/* 1) 基础信息 */}
-          <StoreMetaCard
-            detail={{
-              store_id: p.detail.store_id,
-              platform: p.detail.platform,
-              shop_id: p.detail.shop_id,
-              name: p.detail.name,
-              email: p.detail.email,
-              contact_name: p.detail.contact_name,
-              contact_phone: p.detail.contact_phone,
-            }}
-            canWrite={p.canWrite}
-            name={meta.name}
-            setName={meta.setName}
-            email={meta.email}
-            setEmail={meta.setEmail}
-            contactName={meta.contactName}
-            setContactName={meta.setContactName}
-            contactPhone={meta.contactPhone}
-            setContactPhone={meta.setContactPhone}
-            savingMeta={meta.savingMeta}
-            metaJustSaved={meta.metaJustSaved}
-            onDirty={meta.markDirty}
-            onSubmit={meta.save}
-          />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="min-w-0">
+              <StoreMetaCard
+                detail={{
+                  store_id: p.detail.store_id,
+                  platform: p.detail.platform,
+                  shop_id: p.detail.shop_id,
+                  name: p.detail.name,
+                  email: p.detail.email,
+                  contact_name: p.detail.contact_name,
+                  contact_phone: p.detail.contact_phone,
+                }}
+                canWrite={p.canWrite}
+                name={meta.name}
+                setName={meta.setName}
+                email={meta.email}
+                setEmail={meta.setEmail}
+                contactName={meta.contactName}
+                setContactName={meta.setContactName}
+                contactPhone={meta.contactPhone}
+                setContactPhone={meta.setContactPhone}
+                savingMeta={meta.savingMeta}
+                metaJustSaved={meta.metaJustSaved}
+                onDirty={meta.markDirty}
+                onSubmit={meta.save}
+              />
+            </div>
 
-          {/* 2) 主线：商铺 SKU（卖哪些 SKU + 每个 SKU 的履约仓） */}
+            <div className="min-w-0">
+              <StorePlatformAuthCard
+                detailPlatform={p.detail.platform}
+                detailShopId={p.detail.shop_id}
+                detailStoreId={p.detail.store_id}
+                auth={p.platformAuth}
+                loading={p.authLoading}
+                onManualCredentialsClick={p.openCredentials}
+                onOAuthClick={p.startOAuth}
+                oauthStarting={p.oauthStarting}
+                oauthError={p.oauthError}
+              />
+            </div>
+          </div>
+
           <StoreSkusCard
             canWrite={p.canWrite}
             store={{
@@ -124,18 +141,7 @@ export default function StoreDetailPage() {
               platform: p.detail.platform,
               shop_id: p.detail.shop_id,
             }}
-          />
-
-          {/* 3) 平台授权（常用，但不抢主线） */}
-          <StorePlatformAuthCard
-            detailPlatform={p.detail.platform}
-            detailShopId={p.detail.shop_id}
-            detailStoreId={p.detail.store_id}
-            auth={p.platformAuth}
-            loading={p.authLoading}
-            onManualCredentialsClick={p.openCredentials}
-            onOAuthClick={() => console.log("oauth clicked")}
-            onViewChannelInventory={p.viewChannelInventory}
+            bindings={p.detail.bindings ?? []}
           />
         </>
       )}
