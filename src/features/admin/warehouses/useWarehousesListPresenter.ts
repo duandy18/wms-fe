@@ -9,12 +9,14 @@ import {
   fetchWarehouseServiceProvinceOccupancy,
   fetchWarehouseServiceCityOccupancy,
   fetchWarehouseServiceCitySplitProvinces,
+  fetchWarehouseShippingProviders,
 } from "./api";
 import type {
   WarehouseListItem,
   WarehouseServiceProvinceOccupancyOut,
   WarehouseServiceCityOccupancyOut,
   WarehouseServiceCitySplitProvincesOut,
+  WarehouseShippingProviderListItem,
 } from "./types";
 import { CN_PROVINCES } from "./detail/provinces";
 import { deriveWarehouseCoverage, type FulfillmentCoverage } from "./fulfillment/deriveWarehouseCoverage";
@@ -47,6 +49,37 @@ function getSortValue(w: WarehouseListItem, key: WarehouseSortKey): string | num
 // ✅ 仍然对外导出，给 table 使用
 export type { FulfillmentCoverage };
 
+type ActiveCarrierSummary = {
+  labels: string[]; // e.g. ["JT", "DATONG"]
+  total: number; // active carrier count
+};
+
+function carrierLabelFromBinding(x: WarehouseShippingProviderListItem): string {
+  const code = x.provider?.code ? String(x.provider.code).trim() : "";
+  const name = x.provider?.name ? String(x.provider.name).trim() : "";
+  return code || name || "—";
+}
+
+function summarizeActiveCarriers(list: WarehouseShippingProviderListItem[]): ActiveCarrierSummary {
+  // 事实口径：必须“具备服务资格”且“正在服务”
+  const active = (list || []).filter((x) => x.active === true && x.provider?.active === true);
+
+  // 去重：按 label
+  const seen = new Set<string>();
+  const labels: string[] = [];
+  for (const x of active) {
+    const label = carrierLabelFromBinding(x);
+    if (!label || label === "—") continue;
+    if (seen.has(label)) continue;
+    seen.add(label);
+    labels.push(label);
+  }
+
+  labels.sort((a, b) => a.localeCompare(b, "zh"));
+
+  return { labels, total: labels.length };
+}
+
 export function useWarehousesListPresenter() {
   const { isAuthenticated } = useAuth();
 
@@ -73,6 +106,11 @@ export function useWarehousesListPresenter() {
 
   const [coverageById, setCoverageById] = useState<Record<number, FulfillmentCoverage>>({});
   const [fulfillmentWarning, setFulfillmentWarning] = useState<string | null>(null);
+
+  // ✅ 新增：每个仓库“正在服务”的快递公司汇总（事实展示）
+  const [activeCarriersByWarehouseId, setActiveCarriersByWarehouseId] = useState<Record<number, ActiveCarrierSummary>>(
+    {},
+  );
 
   async function load() {
     if (!canRead) return;
@@ -108,6 +146,28 @@ export function useWarehousesListPresenter() {
 
       setCoverageById(derived.coverageById);
       setFulfillmentWarning(derived.warning);
+
+      // ✅ 并行拉取每个仓库的服务资格，并汇总“正在服务”
+      try {
+        const pairs: Array<[number, ActiveCarrierSummary]> = await Promise.all(
+          list.map(async (w) => {
+            try {
+              const bindings = await fetchWarehouseShippingProviders(w.id);
+              return [w.id, summarizeActiveCarriers(bindings)] as [number, ActiveCarrierSummary];
+            } catch (e) {
+              console.warn("fetchWarehouseShippingProviders failed", w.id, e);
+              return [w.id, { labels: [], total: 0 }] as [number, ActiveCarrierSummary];
+            }
+          }),
+        );
+
+        const m: Record<number, ActiveCarrierSummary> = {};
+        for (const [wid, summary] of pairs) m[wid] = summary;
+        setActiveCarriersByWarehouseId(m);
+      } catch (e) {
+        console.warn("load active carriers summary failed", e);
+        setActiveCarriersByWarehouseId({});
+      }
     } catch (e: unknown) {
       setError(errMsg(e, "加载仓库列表失败"));
     } finally {
@@ -229,6 +289,8 @@ export function useWarehousesListPresenter() {
 
     coverageById,
     fulfillmentWarning,
+
+    activeCarriersByWarehouseId,
 
     name,
     code,

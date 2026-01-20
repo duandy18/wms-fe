@@ -109,3 +109,66 @@ export interface WarehouseUpdatePayload {
   contact_phone?: string | null;
   area_sqm?: number | null;
 }
+
+// =========================================
+// Phase 1：仓库 × 快递公司（事实绑定）
+// =========================================
+
+export interface ShippingProviderListItem {
+  id: number;
+  name: string;
+  code: string | null;
+  active: boolean;
+}
+
+export interface ShippingProviderListOut {
+  ok: boolean;
+  data: ShippingProviderListItem[];
+}
+
+export interface WarehouseShippingProviderListItem {
+  warehouse_id: number;
+  shipping_provider_id: number;
+
+  active: boolean;
+  priority: number;
+  pickup_cutoff_time: string | null;
+  remark: string | null;
+
+  provider: ShippingProviderListItem;
+}
+
+export interface WarehouseShippingProviderListOut {
+  ok: boolean;
+  data: WarehouseShippingProviderListItem[];
+}
+
+export interface WarehouseShippingProviderBindPayload {
+  shipping_provider_id: number;
+  active: boolean;
+  priority: number;
+  pickup_cutoff_time: string | null;
+  remark: string | null;
+}
+
+export interface WarehouseShippingProviderBindOut {
+  ok: boolean;
+  data: WarehouseShippingProviderListItem;
+}
+
+export interface WarehouseShippingProviderPatchPayload {
+  active?: boolean;
+  priority?: number;
+  pickup_cutoff_time?: string | null;
+  remark?: string | null;
+}
+
+export interface WarehouseShippingProviderPatchOut {
+  ok: boolean;
+  data: WarehouseShippingProviderListItem;
+}
+
+export interface WarehouseShippingProviderDeleteOut {
+  ok: boolean;
+  data: { warehouse_id: number; shipping_provider_id: number };
+}

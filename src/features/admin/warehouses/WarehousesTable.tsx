@@ -38,6 +38,22 @@ function FulfillBadge({ label }: { label: FulfillmentCoverage["fulfill_label"] }
   );
 }
 
+function ActiveCarriersCell({ labels, total }: { labels: string[]; total: number }) {
+  if (!labels || labels.length === 0 || total <= 0) return <div className="text-sm text-slate-500">—</div>;
+
+  const shown = labels.slice(0, 2);
+  const rest = total - shown.length;
+
+  const text = rest > 0 ? `${shown.join("、")} +${rest}` : shown.join("、");
+  const title = labels.join("、");
+
+  return (
+    <div className="text-sm text-slate-700" title={title}>
+      {text}
+    </div>
+  );
+}
+
 type Props = {
   canRead: boolean;
   canWrite: boolean; // 兼容保留
@@ -54,6 +70,9 @@ type Props = {
   onOpenDetail: (id: number) => void;
 
   coverageById: Record<number, FulfillmentCoverage>;
+
+  // ✅ 新增：每个仓库“正在服务的快递公司”（事实汇总）
+  activeCarriersByWarehouseId: Record<number, { labels: string[]; total: number }>;
 };
 
 function SortHeader({
@@ -96,6 +115,7 @@ export const WarehousesTable: React.FC<Props> = ({
   onSort,
   onOpenDetail,
   coverageById,
+  activeCarriersByWarehouseId,
 }) => {
   // ✅ 明确吞掉，避免 unused vars，同时不改变“列表页不可改状态”的裁决
   void _canWrite;
@@ -161,6 +181,9 @@ export const WarehousesTable: React.FC<Props> = ({
             {/* ✅ 核心：履约覆盖（事实口径） */}
             <th className="px-6 text-left w-72">履约覆盖</th>
 
+            {/* ✅ 新增：正在服务的快递公司（事实口径） */}
+            <th className="px-6 text-left w-64">正在服务的快递公司</th>
+
             <th className="px-6 text-left w-32">运行状态</th>
             <th className="px-6 text-left w-32">操作</th>
           </tr>
@@ -170,6 +193,7 @@ export const WarehousesTable: React.FC<Props> = ({
           {visibleWarehouses.map((w) => {
             const inactive = !w.active;
             const cov = coverageById[w.id] ?? null;
+            const carriers = activeCarriersByWarehouseId[w.id] ?? { labels: [], total: 0 };
 
             return (
               <tr
@@ -199,18 +223,18 @@ export const WarehousesTable: React.FC<Props> = ({
                       </div>
 
                       {cov.fulfill_label === "对外不可命中" && (
-                        <div className="text-xs text-amber-900">
-                          当前未配置任何可命中的省/市（订单将无法命中服务仓）。
-                        </div>
+                        <div className="text-xs text-amber-900">当前未配置任何可命中的省/市（订单将无法命中服务仓）。</div>
                       )}
 
                       {cov.fulfill_label === "全国覆盖" && (
-                        <div className="text-xs text-sky-800">
-                          该仓库在省级口径覆盖全部可用省份（可能压制其它仓库的省级入口）。
-                        </div>
+                        <div className="text-xs text-sky-800">该仓库在省级口径覆盖全部可用省份（可能压制其它仓库的省级入口）。</div>
                       )}
                     </div>
                   )}
+                </td>
+
+                <td className="px-6">
+                  <ActiveCarriersCell labels={carriers.labels} total={carriers.total} />
                 </td>
 
                 <td className="px-6">
@@ -233,7 +257,7 @@ export const WarehousesTable: React.FC<Props> = ({
       </table>
 
       <div className="px-6 py-4 text-base text-slate-500">
-        说明：「运行状态」是主数据（active）；「履约覆盖」是 Route C 口径下的“订单能否命中该仓库”的事实提示。
+        说明：「运行状态」是主数据（active）；「履约覆盖」是 Route C 口径下的“订单能否命中该仓库”的事实提示；「正在服务的快递公司」按“具备服务资格 + 正在服务”统计。
       </div>
     </section>
   );
