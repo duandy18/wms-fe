@@ -10,6 +10,8 @@ function formatDt(v?: string | null) {
 }
 
 type Props = {
+  canWrite: boolean;
+
   selectedProvider: ShippingProvider | null;
 
   schemes: PricingScheme[];
@@ -38,6 +40,7 @@ type Props = {
 };
 
 export const SchemesPanel: React.FC<Props> = ({
+  canWrite,
   selectedProvider,
   schemes,
   loadingSchemes,
@@ -103,6 +106,13 @@ export const SchemesPanel: React.FC<Props> = ({
         </div>
       </div>
 
+      {!canWrite && (
+        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="font-semibold">当前为只读模式</div>
+          <div className="mt-1 text-amber-800">你没有写权限（config.store.write），可查看但不能创建/启用/修复收费标准。</div>
+        </div>
+      )}
+
       {schemesError && <div className={UI.error}>{schemesError}</div>}
 
       {!selectedProvider ? (
@@ -122,8 +132,9 @@ export const SchemesPanel: React.FC<Props> = ({
                 <button
                   type="button"
                   className="inline-flex items-center rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
-                  disabled={fixingActive || loadingSchemes || settingActive}
+                  disabled={!canWrite || fixingActive || loadingSchemes || settingActive}
                   onClick={onFixMultiActive}
+                  title={!canWrite ? "只读模式：无写权限" : ""}
                 >
                   {fixingActive ? "修复中…" : "一键修复"}
                 </button>
@@ -142,6 +153,7 @@ export const SchemesPanel: React.FC<Props> = ({
                   className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
                   value={newSchemeName}
                   onChange={(e) => onChangeName(e.target.value)}
+                  disabled={!canWrite}
                 />
               </div>
 
@@ -151,6 +163,7 @@ export const SchemesPanel: React.FC<Props> = ({
                   className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono"
                   value={newSchemeCurrency}
                   onChange={(e) => onChangeCurrency(e.target.value)}
+                  disabled={!canWrite}
                 />
               </div>
 
@@ -158,8 +171,9 @@ export const SchemesPanel: React.FC<Props> = ({
                 <button
                   type="button"
                   className={UI.btnPrimaryGreen}
-                  disabled={newSchemeSaving}
+                  disabled={!canWrite || newSchemeSaving}
                   onClick={onCreateScheme}
+                  title={!canWrite ? "只读模式：无写权限" : ""}
                 >
                   {newSchemeSaving ? "创建中…" : "创建收费标准"}
                 </button>
@@ -246,8 +260,9 @@ export const SchemesPanel: React.FC<Props> = ({
                             <button
                               type="button"
                               className="inline-flex items-center rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
-                              disabled={settingActive || loadingSchemes || fixingActive}
+                              disabled={!canWrite || settingActive || loadingSchemes || fixingActive}
                               onClick={() => onSetActive(s.id)}
+                              title={!canWrite ? "只读模式：无写权限" : ""}
                             >
                               {settingActive ? "切换中…" : "设为启用"}
                             </button>

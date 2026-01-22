@@ -6,6 +6,7 @@ import React, { useMemo, useState } from "react";
 
 type Props = {
   schemeId: number | null;
+  warehouseId: number | null;
   province: string;
   city: string;
   district: string;
@@ -21,6 +22,7 @@ function buildQuery(p: Props): URLSearchParams {
   qs.set("panel", "shipping-pricing-lab");
 
   if (p.schemeId != null && p.schemeId > 0) qs.set("scheme_id", String(p.schemeId));
+  if (p.warehouseId != null && p.warehouseId > 0) qs.set("warehouse_id", String(p.warehouseId));
 
   const prov = p.province.trim();
   const city = p.city.trim();
@@ -69,6 +71,7 @@ export const ReproTools: React.FC<Props> = (p) => {
 
   const payloadCalc = useMemo(() => {
     const body: Record<string, unknown> = {
+      warehouse_id: p.warehouseId ?? 0,
       scheme_id: p.schemeId ?? 0,
       dest: {
         province: p.province.trim() || null,
@@ -76,7 +79,10 @@ export const ReproTools: React.FC<Props> = (p) => {
         district: p.district.trim() || null,
       },
       real_weight_kg: Number(p.realWeightKg.trim() || "0"),
-      flags: (p.flags ?? "").split(",").map((x) => x.trim()).filter(Boolean),
+      flags: (p.flags ?? "")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean),
     };
     const l = p.lengthCm.trim();
     const w = p.widthCm.trim();
@@ -91,6 +97,7 @@ export const ReproTools: React.FC<Props> = (p) => {
 
   const payloadRecommend = useMemo(() => {
     const body: Record<string, unknown> = {
+      warehouse_id: p.warehouseId ?? 0,
       provider_ids: [],
       dest: {
         province: p.province.trim() || null,
@@ -98,7 +105,10 @@ export const ReproTools: React.FC<Props> = (p) => {
         district: p.district.trim() || null,
       },
       real_weight_kg: Number(p.realWeightKg.trim() || "0"),
-      flags: (p.flags ?? "").split(",").map((x) => x.trim()).filter(Boolean),
+      flags: (p.flags ?? "")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean),
       max_results: 10,
     };
     const l = p.lengthCm.trim();
@@ -143,15 +153,21 @@ export const ReproTools: React.FC<Props> = (p) => {
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
           <div className="text-xs font-semibold text-slate-700">复现链接（打开即回填）</div>
           <div className="mt-2 flex gap-2">
-            <input className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-mono" value={reproUrl} readOnly />
+            <input
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-mono"
+              value={reproUrl}
+              readOnly
+            />
             <button
               type="button"
               className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              onClick={() => void (async () => {
-                const ok = await copyText(reproUrl);
-                setMsg(ok ? "已复制复现链接" : "复制失败");
-                setTimeout(() => setMsg(null), 1200);
-              })()}
+              onClick={() =>
+                void (async () => {
+                  const ok = await copyText(reproUrl);
+                  setMsg(ok ? "已复制复现链接" : "复制失败");
+                  setTimeout(() => setMsg(null), 1200);
+                })()
+              }
             >
               复制
             </button>
@@ -167,11 +183,13 @@ export const ReproTools: React.FC<Props> = (p) => {
             <button
               type="button"
               className="h-fit rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              onClick={() => void (async () => {
-                const ok = await copyText(curlCalc);
-                setMsg(ok ? "已复制 curl(calc)" : "复制失败");
-                setTimeout(() => setMsg(null), 1200);
-              })()}
+              onClick={() =>
+                void (async () => {
+                  const ok = await copyText(curlCalc);
+                  setMsg(ok ? "已复制 curl(calc)" : "复制失败");
+                  setTimeout(() => setMsg(null), 1200);
+                })()
+              }
             >
               复制
             </button>
@@ -187,11 +205,13 @@ export const ReproTools: React.FC<Props> = (p) => {
             <button
               type="button"
               className="h-fit rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              onClick={() => void (async () => {
-                const ok = await copyText(curlRecommend);
-                setMsg(ok ? "已复制 curl(recommend)" : "复制失败");
-                setTimeout(() => setMsg(null), 1200);
-              })()}
+              onClick={() =>
+                void (async () => {
+                  const ok = await copyText(curlRecommend);
+                  setMsg(ok ? "已复制 curl(recommend)" : "复制失败");
+                  setTimeout(() => setMsg(null), 1200);
+                })()
+              }
             >
               复制
             </button>

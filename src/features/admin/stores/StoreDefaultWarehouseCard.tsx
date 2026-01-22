@@ -28,9 +28,8 @@ export const StoreDefaultWarehouseCard: React.FC<Props> = ({
         .filter(Boolean)
         .join(" ");
 
-      const isActive = b.warehouse_active === undefined || b.warehouse_active === null
-        ? true
-        : Boolean(b.warehouse_active);
+      const isActive =
+        b.warehouse_active === undefined || b.warehouse_active === null ? true : Boolean(b.warehouse_active);
 
       return {
         warehouse_id: b.warehouse_id,
@@ -42,7 +41,6 @@ export const StoreDefaultWarehouseCard: React.FC<Props> = ({
 
   const [selectedId, setSelectedId] = useState<number | "">(defaultWarehouseId ?? "");
 
-  // 如果默认仓变化（刷新详情后），同步下拉选中
   React.useEffect(() => {
     setSelectedId(defaultWarehouseId ?? "");
   }, [defaultWarehouseId]);
@@ -53,7 +51,6 @@ export const StoreDefaultWarehouseCard: React.FC<Props> = ({
   const selectedNum = selectedId === "" ? null : Number(selectedId);
   const selectedOpt = selectedNum != null ? options.find((x) => x.warehouse_id === selectedNum) : null;
 
-  // 默认策略：不允许把“已停用仓”设为默认仓（避免落入不可履约/不可解释状态）
   const selectedIsInactive = selectedOpt ? !selectedOpt.isActive : false;
 
   const canSave =
@@ -65,14 +62,18 @@ export const StoreDefaultWarehouseCard: React.FC<Props> = ({
 
   return (
     <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-      <div className="text-base font-semibold text-slate-900">默认仓</div>
+      <div className="text-base font-semibold text-slate-900">主仓（优先）</div>
+
+      <div className="text-sm text-slate-600">
+        说明：主仓用于优先裁决整单同仓的起运仓。主仓不可履约时才允许切到次仓（不拆单、无隐式兜底）。
+      </div>
 
       {options.length === 0 ? (
-        <div className="text-sm text-slate-500">尚未绑定任何仓库，无法设置默认仓。</div>
+        <div className="text-sm text-slate-500">尚未绑定任何仓库，无法设置主仓。</div>
       ) : (
         <>
           <div className="text-sm text-slate-700">
-            当前默认仓：
+            当前主仓：
             {defaultWarehouseId == null ? (
               <span className="ml-1 text-slate-500">（未设置）</span>
             ) : current ? (
@@ -82,9 +83,7 @@ export const StoreDefaultWarehouseCard: React.FC<Props> = ({
                   {current.isActive ? "启用" : "已停用"}
                 </span>
                 {!current.isActive ? (
-                  <span className="ml-2 text-xs text-rose-700">
-                    （默认仓已停用：建议尽快切换）
-                  </span>
+                  <span className="ml-2 text-xs text-rose-700">（主仓已停用：建议尽快切换）</span>
                 ) : null}
               </span>
             ) : (
@@ -97,7 +96,7 @@ export const StoreDefaultWarehouseCard: React.FC<Props> = ({
 
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-slate-500">选择默认仓</span>
+              <span className="text-xs text-slate-500">选择主仓</span>
               <select
                 className="border rounded px-3 py-2 text-sm w-72 bg-white disabled:opacity-60"
                 value={selectedId}
@@ -122,21 +121,19 @@ export const StoreDefaultWarehouseCard: React.FC<Props> = ({
               disabled={!canSave}
               onClick={() => selectedNum != null && onSetDefault(selectedNum)}
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
-              title={selectedIsInactive ? "已停用仓不可设为默认仓" : undefined}
+              title={selectedIsInactive ? "已停用仓不可设为主仓" : undefined}
             >
-              {saving ? "保存中…" : "设为默认仓"}
+              {saving ? "保存中…" : "设为主仓"}
             </button>
           </div>
 
           {selectedIsInactive ? (
             <div className="text-xs text-rose-700">
-              你选择的仓库已停用：不允许设为默认仓。请先启用仓库或选择其他仓。
+              你选择的仓库已停用：不允许设为主仓。请先启用仓库或选择其他仓。
             </div>
           ) : null}
 
-          {!canWrite ? (
-            <div className="text-xs text-slate-500">只读模式（无写权限）。</div>
-          ) : null}
+          {!canWrite ? <div className="text-xs text-slate-500">只读模式（无写权限）。</div> : null}
         </>
       )}
     </section>

@@ -12,6 +12,7 @@ import { StoreMetaCard } from "./components/StoreMetaCard";
 import { StoreCredentialsPanel } from "./components/StoreCredentialsPanel";
 
 import { StoreSkusCard } from "./store-skus/StoreSkusCard";
+import StoreFulfillmentPolicyCard from "./components/StoreFulfillmentPolicyCard";
 
 export default function StoreDetailPage() {
   const { storeId } = useParams<{ storeId: string }>();
@@ -133,6 +134,14 @@ export default function StoreDetailPage() {
               />
             </div>
           </div>
+
+          {/* ✅ 选仓策略（你之前“没发现”的核心原因：以前这里没有任何绑定策略 UI） */}
+          <StoreFulfillmentPolicyCard
+            storeId={p.detail.store_id}
+            canWrite={p.canWrite}
+            bindings={p.detail.bindings ?? []}
+            onReload={p.reloadDetail}
+          />
 
           <StoreSkusCard
             canWrite={p.canWrite}

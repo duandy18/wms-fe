@@ -3,6 +3,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PageTitle from "../../../components/ui/PageTitle";
+import { useAuth } from "../../../shared/useAuth";
 import { WarehouseBasicInfoCard } from "./detail/WarehouseBasicInfoCard";
 import { WarehouseServiceProvincesCard } from "./detail/WarehouseServiceProvincesCard";
 import { WarehouseServiceCitiesCard } from "./detail/WarehouseServiceCitiesCard";
@@ -19,7 +20,10 @@ const WarehouseDetailPage: React.FC = () => {
   const id = Number(warehouseId);
   const navigate = useNavigate();
 
-  const canWrite = true;
+  // ✅ 合同：写权限必须来自 /users/me 的 permissions[]（通过 useAuth.can）
+  // 与 menuConfig.tsx 保持一致：仓库管理 requiredPermissions = ["config.store.write"]
+  const { can } = useAuth();
+  const canWrite = can("config.store.write");
 
   const m = useWarehouseDetailModel({ warehouseId: id, canWrite });
 
@@ -51,6 +55,16 @@ const WarehouseDetailPage: React.FC = () => {
           返回仓库列表
         </button>
       </div>
+
+      {/* ✅ 写权限提示（不做花活，只做事实告知） */}
+      {!canWrite && (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
+          <div className="font-semibold">当前为只读模式</div>
+          <div className="text-sm opacity-80">
+            你没有该页面的写权限（config.store.write）。如需修改，请联系管理员授权。
+          </div>
+        </div>
+      )}
 
       {m.saveOk && (
         <div className={UI.okBanner}>

@@ -31,6 +31,16 @@ const WarehousesListPage: React.FC = () => {
         </div>
       </header>
 
+      {/* ✅ 写权限提示：不做美化，只做合同告知 */}
+      {!p.canWrite && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="font-semibold">当前为只读模式</div>
+          <div className="mt-1 opacity-80">
+            你没有该页面的写权限（config.store.write）。如需创建/编辑仓库，请联系管理员授权。
+          </div>
+        </div>
+      )}
+
       {p.fulfillmentWarning && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <div className="font-semibold">履约覆盖提示</div>

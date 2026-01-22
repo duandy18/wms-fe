@@ -81,7 +81,7 @@ function summarizeActiveCarriers(list: WarehouseShippingProviderListItem[]): Act
 }
 
 export function useWarehousesListPresenter() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, can } = useAuth();
 
   const [warehouses, setWarehouses] = useState<WarehouseListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -101,8 +101,11 @@ export function useWarehousesListPresenter() {
   const [sortAsc, setSortAsc] = useState(true);
   const [showInactive, setShowInactive] = useState(false);
 
+  // ✅ 合同口径：
+  // - 读：只要登录即可读（现有系统就是这么跑的）
+  // - 写：必须具备 config.store.write（与 Sidebar/menuConfig/仓库详情/新建页保持一致）
   const canRead = isAuthenticated;
-  const canWrite = isAuthenticated;
+  const canWrite = can("config.store.write");
 
   const [coverageById, setCoverageById] = useState<Record<number, FulfillmentCoverage>>({});
   const [fulfillmentWarning, setFulfillmentWarning] = useState<string | null>(null);
@@ -181,7 +184,10 @@ export function useWarehousesListPresenter() {
   }, [canRead]);
 
   async function handleToggleActive(wh: WarehouseListItem) {
-    if (!canWrite) return;
+    if (!canWrite) {
+      setError("当前账号无写权限（config.store.write），不能更新仓库状态。");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -204,7 +210,7 @@ export function useWarehousesListPresenter() {
 
     if (!n) return setError("仓库名称不能为空");
     if (!c) return setError("仓库编码不能为空（必填，手动输入，例如 SH-MAIN）");
-    if (!canWrite) return setError("当前用户没有创建仓库的权限。");
+    if (!canWrite) return setError("当前账号无写权限（config.store.write），不能创建仓库。");
 
     const addr = address.trim();
     const cn = contactName.trim();

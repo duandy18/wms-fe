@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { apiPost } from "../../../lib/api";
 
-import type { CalcReq, CalcOut, RecommendOut, RecommendReq } from "./labTypes";
+import type { CalcOut, RecommendOut } from "./labTypes";
 import { buildExplainSummary, computeDims, dimsWarning, normalizeAddr, normalizeFlags, toNum } from "./labUtils";
 import { useLabQuerySync } from "./useLabQuerySync";
 
@@ -19,6 +19,7 @@ import ShippingRecordReconcile from "./components/ShippingRecordReconcile";
 export const ShippingPricingLabPanel: React.FC = () => {
   // ===== 输入 =====
   const [schemeIdText, setSchemeIdText] = useState("1");
+  const [warehouseIdText, setWarehouseIdText] = useState("");
 
   const [province, setProvince] = useState("广东省");
   const [city, setCity] = useState("深圳市");
@@ -63,6 +64,12 @@ export const ShippingPricingLabPanel: React.FC = () => {
     return Math.trunc(n);
   }, [schemeIdText]);
 
+  const warehouseId = useMemo(() => {
+    const n = toNum(warehouseIdText);
+    if (n == null) return null;
+    return Math.trunc(n);
+  }, [warehouseIdText]);
+
   const dims = useMemo(() => computeDims(lengthCm, widthCm, heightCm), [lengthCm, widthCm, heightCm]);
   const warnDims = useMemo(() => dimsWarning(lengthCm, widthCm, heightCm, dims), [lengthCm, widthCm, heightCm, dims]);
 
@@ -88,6 +95,10 @@ export const ShippingPricingLabPanel: React.FC = () => {
 
   // ===== 请求：calc =====
   const handleRunCalc = async () => {
+    if (!warehouseId || warehouseId <= 0) {
+      setErr("warehouse_id 必须是正整数（起运仓强前置）");
+      return;
+    }
     if (!schemeId || schemeId <= 0) {
       setErr("scheme_id 必须是正整数");
       return;
@@ -102,7 +113,8 @@ export const ShippingPricingLabPanel: React.FC = () => {
     setLoading(true);
     setCalcOut(null);
 
-    const body: CalcReq = {
+    const body: Record<string, unknown> = {
+      warehouse_id: warehouseId,
       scheme_id: schemeId,
       dest,
       real_weight_kg: w,
@@ -110,9 +122,9 @@ export const ShippingPricingLabPanel: React.FC = () => {
     };
 
     if (dims) {
-      body.length_cm = dims.length_cm;
-      body.width_cm = dims.width_cm;
-      body.height_cm = dims.height_cm;
+      body["length_cm"] = dims.length_cm;
+      body["width_cm"] = dims.width_cm;
+      body["height_cm"] = dims.height_cm;
     }
 
     try {
@@ -129,6 +141,10 @@ export const ShippingPricingLabPanel: React.FC = () => {
 
   // ===== 请求：recommend =====
   const handleRunRecommend = async () => {
+    if (!warehouseId || warehouseId <= 0) {
+      setErr("warehouse_id 必须是正整数（起运仓强前置）");
+      return;
+    }
     const w = toNum(realWeightKg);
     if (w == null || w <= 0) {
       setErr("real_weight_kg 必须是 > 0 的数字");
@@ -140,7 +156,8 @@ export const ShippingPricingLabPanel: React.FC = () => {
     setRecOut(null);
     setSelectedQuoteIdx(0);
 
-    const body: RecommendReq = {
+    const body: Record<string, unknown> = {
+      warehouse_id: warehouseId,
       provider_ids: [],
       dest,
       real_weight_kg: w,
@@ -149,9 +166,9 @@ export const ShippingPricingLabPanel: React.FC = () => {
     };
 
     if (dims) {
-      body.length_cm = dims.length_cm;
-      body.width_cm = dims.width_cm;
-      body.height_cm = dims.height_cm;
+      body["length_cm"] = dims.length_cm;
+      body["width_cm"] = dims.width_cm;
+      body["height_cm"] = dims.height_cm;
     }
 
     try {
@@ -176,6 +193,8 @@ export const ShippingPricingLabPanel: React.FC = () => {
       <LabRequestForm
         loading={loading}
         err={err}
+        warehouseIdText={warehouseIdText}
+        setWarehouseIdText={setWarehouseIdText}
         schemeIdText={schemeIdText}
         setSchemeIdText={setSchemeIdText}
         province={province}
@@ -202,6 +221,7 @@ export const ShippingPricingLabPanel: React.FC = () => {
 
       <ReproTools
         schemeId={schemeId}
+        warehouseId={warehouseId}
         province={province}
         city={city}
         district={district}
