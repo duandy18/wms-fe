@@ -50,6 +50,15 @@ export const QuotePreviewForm: React.FC<{
   disabled?: boolean;
   loading: boolean;
 
+  // ✅ Phase 4.x 合同：起运仓强前置（warehouse_id）
+  warehouseId: string;
+  warehouseOptions: Array<{ id: number; label: string }>;
+  warehousesLoading: boolean;
+  warehousesError: string | null;
+  onChangeWarehouseId: (v: string) => void;
+  onReloadWarehouses: () => void;
+  canCalc: boolean;
+
   province: string;
   city: string;
   district: string;
@@ -76,6 +85,15 @@ export const QuotePreviewForm: React.FC<{
 }> = ({
   disabled,
   loading,
+
+  warehouseId,
+  warehouseOptions,
+  warehousesLoading,
+  warehousesError,
+  onChangeWarehouseId,
+  onReloadWarehouses,
+  canCalc,
+
   province,
   city,
   district,
@@ -109,77 +127,120 @@ export const QuotePreviewForm: React.FC<{
   }, [city, keyCityOptions]);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div className="text-sm font-semibold text-slate-800">目的地</div>
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+      {/* ✅ 起运仓（强前置） */}
+      <div>
+        <div className="text-sm font-semibold text-slate-800">起运仓（强前置）</div>
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="flex flex-col md:col-span-2">
+            <label className="text-sm text-slate-600">起运仓 *</label>
+            <select
+              className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
+              value={warehouseId}
+              disabled={disabled || warehousesLoading}
+              onChange={(e) => onChangeWarehouseId(e.target.value)}
+            >
+              <option value="">请选择起运仓…</option>
+              {warehouseOptions.map((w) => (
+                <option key={w.id} value={String(w.id)}>
+                  {w.label}
+                </option>
+              ))}
+            </select>
+            {warehousesError ? <div className="mt-2 text-sm text-red-600">{warehousesError}</div> : null}
+          </div>
 
-      {/* 省 / 城市 */}
-      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-600">省</label>
-          <select
-            className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
-            value={province}
-            disabled={disabled}
-            onChange={(e) => onChangeProvince(e.target.value)}
-          >
-            {PROVINCE_OPTIONS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-end">
+            <button
+              type="button"
+              className={UI.btnSecondary}
+              disabled={disabled || warehousesLoading}
+              onClick={onReloadWarehouses}
+              title="刷新起运仓列表"
+            >
+              {warehousesLoading ? "加载中…" : "刷新仓库"}
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-600">重点城市</label>
-          <select
-            className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
-            value={selectedKeyCity}
-            disabled={disabled}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (!v) return;
-              onChangeCity(v);
-            }}
-          >
-            <option value="">—</option>
-            {keyCityOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-600">市</label>
-          <input
-            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
-            value={city}
-            disabled={disabled}
-            onChange={(e) => onChangeCity(e.target.value)}
-            onBlur={() => {
-              const norm = normalizeSpaces(city);
-              if (norm !== city) onChangeCity(norm);
-            }}
-          />
-        </div>
+        {!warehouseId ? (
+          <div className="mt-2 text-sm text-amber-700">未选择起运仓时，禁止算价（warehouse_id 为强前置）。</div>
+        ) : null}
       </div>
 
-      {/* 区/县 */}
-      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-600">区/县</label>
-          <input
-            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
-            value={district}
-            disabled={disabled}
-            onChange={(e) => onChangeDistrict(e.target.value)}
-            onBlur={() => {
-              const norm = normalizeSpaces(district);
-              if (norm !== district) onChangeDistrict(norm);
-            }}
-          />
+      {/* 目的地 */}
+      <div>
+        <div className="text-sm font-semibold text-slate-800">目的地</div>
+
+        {/* 省 / 城市 */}
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="flex flex-col">
+            <label className="text-sm text-slate-600">省</label>
+            <select
+              className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
+              value={province}
+              disabled={disabled}
+              onChange={(e) => onChangeProvince(e.target.value)}
+            >
+              {PROVINCE_OPTIONS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm text-slate-600">重点城市</label>
+            <select
+              className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
+              value={selectedKeyCity}
+              disabled={disabled}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (!v) return;
+                onChangeCity(v);
+              }}
+            >
+              <option value="">—</option>
+              {keyCityOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm text-slate-600">市</label>
+            <input
+              className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
+              value={city}
+              disabled={disabled}
+              onChange={(e) => onChangeCity(e.target.value)}
+              onBlur={() => {
+                const norm = normalizeSpaces(city);
+                if (norm !== city) onChangeCity(norm);
+              }}
+            />
+          </div>
+        </div>
+
+        {/* 区/县 */}
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="flex flex-col">
+            <label className="text-sm text-slate-600">区/县</label>
+            <input
+              className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
+              value={district}
+              disabled={disabled}
+              onChange={(e) => onChangeDistrict(e.target.value)}
+              onBlur={() => {
+                const norm = normalizeSpaces(district);
+                if (norm !== district) onChangeDistrict(norm);
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -245,7 +306,13 @@ export const QuotePreviewForm: React.FC<{
         </div>
 
         <div className="flex items-end">
-          <button className={UI.btnPrimaryGreen} type="button" disabled={disabled || loading} onClick={onCalc}>
+          <button
+            className={UI.btnPrimaryGreen}
+            type="button"
+            disabled={disabled || loading || !canCalc}
+            onClick={onCalc}
+            title={!canCalc ? "请先选择起运仓（warehouse_id）" : ""}
+          >
             {loading ? "算价中…" : "开始算价"}
           </button>
         </div>
