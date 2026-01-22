@@ -48,12 +48,26 @@ export function useWarehouseShippingProvidersModel(args: { warehouseId: number; 
 
   const providerOptions = useMemo(() => {
     const bound = new Set(items.map((x) => x.shipping_provider_id));
+
     return providers
-      .filter((p) => p.active)
-      .map((p) => ({
-        ...p,
-        disabled: bound.has(p.id),
-      }))
+      .map((p) => {
+        const disabledBecauseBound = bound.has(p.id);
+        const disabledBecauseInactive = !p.active;
+
+        const disabled = disabledBecauseBound || disabledBecauseInactive;
+
+        const disabled_reason = disabledBecauseBound
+          ? "已具备资格"
+          : disabledBecauseInactive
+          ? "主数据已禁用"
+          : null;
+
+        return {
+          ...p,
+          disabled,
+          disabled_reason,
+        };
+      })
       .sort((a, b) => a.name.localeCompare(b.name, "zh"));
   }, [providers, items]);
 
@@ -98,13 +112,28 @@ export function useWarehouseShippingProvidersModel(args: { warehouseId: number; 
       return;
     }
 
+    const picked = providers.find((x) => x.id === pid) ?? null;
+    if (!picked) {
+      setError("所选快递公司不存在，请刷新后重试");
+      return;
+    }
+    if (!picked.active) {
+      setError("该快递公司主数据已禁用，不能授予服务资格");
+      return;
+    }
+
     setBusy(true);
     setError(null);
     setSaveOk(false);
     try {
       const payload: WarehouseShippingProviderBindPayload = {
         shipping_provider_id: pid,
-        active: true,
+
+        // ✅ 关键：不再默认“开始服务”
+        // “具备服务资格”只写入资格事实；开始服务必须由用户显式勾选。
+        active: false,
+
+        // 仍需显式传入（后端 schema 必填）
         priority: 0,
         pickup_cutoff_time: null,
         remark: null,
@@ -124,10 +153,18 @@ export function useWarehouseShippingProvidersModel(args: { warehouseId: number; 
     if (!warehouseId) return;
     if (!canWrite) return;
 
+    // ✅ 合同语义：主数据 inactive 时，禁止开启服务
+    if (!item.provider.active && nextActive) {
+      setError("该快递公司主数据已禁用，不能开启服务");
+      return;
+    }
+
     // optimistic update
     const before = item.active;
     setItems((prev) =>
-      prev.map((x) => (x.shipping_provider_id === item.shipping_provider_id ? { ...x, active: nextActive } : x)),
+      prev.map((x) =>
+        x.shipping_provider_id === item.shipping_provider_id ? { ...x, active: nextActive } : x,
+      ),
     );
 
     setTogglingProviderId(item.shipping_provider_id);
@@ -140,7 +177,9 @@ export function useWarehouseShippingProvidersModel(args: { warehouseId: number; 
     } catch (err) {
       // revert
       setItems((prev) =>
-        prev.map((x) => (x.shipping_provider_id === item.shipping_provider_id ? { ...x, active: before } : x)),
+        prev.map((x) =>
+          x.shipping_provider_id === item.shipping_provider_id ? { ...x, active: before } : x,
+        ),
       );
       setError(toHumanError(err, "保存失败"));
     } finally {

@@ -9,6 +9,7 @@ import {
 import type { StoreDetailData, StorePlatformAuthStatus } from "./types";
 import { apiGet } from "../../../lib/api";
 import { assertOk } from "../../../lib/assertOk";
+import { useAuth } from "../../../shared/useAuth";
 
 type ApiErrorShape = {
   message?: string;
@@ -18,8 +19,11 @@ type OAuthStartOut = { ok: boolean; data: { authorize_url: string } };
 
 export function useStoreDetailPresenter(storeId: number) {
   const id = storeId;
-  // TODO：后续接 RBAC，这里先保持原行为（不做权限判断漂移）
-  const canWrite = true;
+
+  // ✅ 合同：店铺管理属于配置域，写权限必须来自 /users/me permissions[]
+  // 与 menuConfig.tsx 保持一致：店铺管理 requiredPermissions = ["config.store.write"]
+  const { can } = useAuth();
+  const canWrite = can("config.store.write");
 
   const [detail, setDetail] = useState<StoreDetailData | null>(null);
 
@@ -120,6 +124,12 @@ export function useStoreDetailPresenter(storeId: number) {
 
   function openCredentials() {
     if (!detail) return;
+
+    if (!canWrite) {
+      setCredentialsError("当前账号无写权限（config.store.write），不能修改凭据");
+      return;
+    }
+
     setCredentialsOpen(true);
     setCredentialsToken("");
     setCredentialsError(null);
@@ -133,6 +143,11 @@ export function useStoreDetailPresenter(storeId: number) {
   async function submitCredentials(e: React.FormEvent) {
     e.preventDefault();
     if (!detail) return;
+
+    if (!canWrite) {
+      setCredentialsError("当前账号无写权限（config.store.write），不能保存凭据");
+      return;
+    }
 
     if (!credentialsToken.trim()) {
       setCredentialsError("访问令牌不能为空");
@@ -153,8 +168,8 @@ export function useStoreDetailPresenter(storeId: number) {
       setCredentialsToken("");
     } catch (err: unknown) {
       console.error("save credentials failed", err);
-      const e = err as ApiErrorShape;
-      setCredentialsError(e?.message ?? "保存凭据失败");
+      const e2 = err as ApiErrorShape;
+      setCredentialsError(e2?.message ?? "保存凭据失败");
     } finally {
       setCredentialsSaving(false);
     }
@@ -164,6 +179,11 @@ export function useStoreDetailPresenter(storeId: number) {
   async function startOAuth() {
     if (!detail) return;
     if (oauthStarting) return;
+
+    if (!canWrite) {
+      setOauthError("当前账号无写权限（config.store.write），不能发起平台授权");
+      return;
+    }
 
     setOauthStarting(true);
     setOauthError(null);
@@ -195,8 +215,8 @@ export function useStoreDetailPresenter(storeId: number) {
       window.location.href = url;
     } catch (err: unknown) {
       console.error("oauth start failed", err);
-      const e = err as ApiErrorShape;
-      setOauthError(e?.message ?? "发起平台授权失败");
+      const e2 = err as ApiErrorShape;
+      setOauthError(e2?.message ?? "发起平台授权失败");
     } finally {
       setOauthStarting(false);
     }

@@ -16,13 +16,12 @@ type Props = {
 };
 
 const roleOptions: Array<{ value: WarehouseRole; label: string; hint: string }> = [
-  { value: "NORMAL", label: "普通仓", hint: "仅绑定：规则命中时使用，不优先、不兜底" },
-  { value: "TOP", label: "主仓（TOP）", hint: "优先倾向：可多主仓，priority 决定顺序" },
-  { value: "DEFAULT", label: "默认兜底仓", hint: "FALLBACK 下未命中规则时使用（只能有一个）" },
+  { value: "TOP", label: "主仓（优先）", hint: "整单同仓优先选择（只能有一个主仓）" },
+  { value: "DEFAULT", label: "次仓（备用）", hint: "主仓不可履约时允许切换（不拆单、不自动兜底）" },
+  { value: "NORMAL", label: "仅绑定（不优先）", hint: "作为备选记录存在，不参与默认裁决" },
 ];
 
 export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSubmit }) => {
-  // ===== 所有 Hook 必须无条件执行 =====
   const [warehouseId, setWarehouseId] = useState("");
   const [role, setRole] = useState<WarehouseRole>("NORMAL");
   const [priority, setPriority] = useState(100);
@@ -31,7 +30,6 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSu
   const [loadingWarehouses, setLoadingWarehouses] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // ===== 加载可用仓库列表 =====
   useEffect(() => {
     let cancelled = false;
 
@@ -55,7 +53,6 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSu
     };
   }, []);
 
-  // ===== Hook 全部执行完毕后，再根据 canWrite 决定是否渲染 =====
   if (!canWrite) return null;
 
   const roleHint = roleOptions.find((x) => x.value === role)?.hint ?? "";
@@ -71,7 +68,6 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSu
       priority,
     });
 
-    // 重置表单
     setWarehouseId("");
     setRole("NORMAL");
     setPriority(100);
@@ -82,7 +78,6 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSu
       <div className="text-base font-semibold text-slate-900">新增仓库绑定</div>
 
       <form onSubmit={handleSubmit} className="flex flex-wrap gap-4 items-end text-sm">
-        {/* 仓库选择 */}
         <label className="flex flex-col gap-1">
           <span className="text-slate-600">选择仓库</span>
           <select
@@ -121,9 +116,8 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSu
           {loadError && <span className="text-xs text-red-500 mt-1">{loadError}</span>}
         </label>
 
-        {/* 角色 */}
         <label className="flex flex-col gap-1">
-          <span className="text-slate-600">仓库角色</span>
+          <span className="text-slate-600">绑定角色</span>
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as WarehouseRole)}
@@ -139,7 +133,6 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSu
           <span className="text-xs text-slate-500">{roleHint}</span>
         </label>
 
-        {/* 优先级 */}
         <label className="flex flex-col gap-1">
           <span className="text-slate-600">优先级</span>
           <input
@@ -151,7 +144,6 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSu
           />
         </label>
 
-        {/* 提交 */}
         <button
           type="submit"
           disabled={saving || loadingWarehouses || warehouses.length === 0 || !warehouseId}

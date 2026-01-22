@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageTitle from "../../../components/ui/PageTitle";
+import { useAuth } from "../../../shared/useAuth";
 import { createWarehouse } from "./api";
 
 function toHumanError(e: unknown, fallback: string): string {
@@ -15,7 +16,11 @@ function toHumanError(e: unknown, fallback: string): string {
 
 export default function WarehouseCreatePage() {
   const navigate = useNavigate();
-  const canWrite = true;
+
+  // ✅ 合同：仓库管理属于配置域，写权限必须来自 /users/me permissions[]
+  // 与 menuConfig.tsx 保持一致：仓库管理 requiredPermissions = ["config.store.write"]
+  const { can } = useAuth();
+  const canWrite = can("config.store.write");
 
   const [saving, setSaving] = useState(false);
   const [ok, setOk] = useState(false);
@@ -44,7 +49,10 @@ export default function WarehouseCreatePage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!canWrite) return;
+    if (!canWrite) {
+      setErr("当前账号无写权限（config.store.write），不能创建仓库");
+      return;
+    }
 
     const n = name.trim();
     const c = code.trim();
@@ -85,6 +93,15 @@ export default function WarehouseCreatePage() {
     <div className="space-y-8 p-10">
       <PageTitle title="创建仓库" />
 
+      {!canWrite && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
+          <div className="font-semibold">当前为只读模式</div>
+          <div className="text-sm opacity-80">
+            你没有该页面的写权限（config.store.write）。如需创建仓库，请联系管理员授权。
+          </div>
+        </div>
+      )}
+
       {err && (
         <div className="rounded-xl px-5 py-4 text-xl text-red-700 bg-red-50 border border-red-100">{err}</div>
       )}
@@ -97,7 +114,7 @@ export default function WarehouseCreatePage() {
               className="rounded-2xl border px-4 py-3 text-lg"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={saving}
+              disabled={saving || !canWrite}
               placeholder="例如：上海主仓 / 北京冷链仓"
             />
           </div>
@@ -108,7 +125,7 @@ export default function WarehouseCreatePage() {
               className="rounded-2xl border px-4 py-3 text-lg font-mono"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              disabled={saving}
+              disabled={saving || !canWrite}
               placeholder="例如：SH-MAIN / BJ-COLD / EAST-3PL"
             />
           </div>
@@ -119,7 +136,7 @@ export default function WarehouseCreatePage() {
               value={active ? "1" : "0"}
               onChange={(e) => setActive(e.target.value === "1")}
               className="rounded-2xl border px-4 py-3 text-lg"
-              disabled={saving}
+              disabled={saving || !canWrite}
             >
               <option value="1">启用</option>
               <option value="0">停用</option>
@@ -132,7 +149,7 @@ export default function WarehouseCreatePage() {
               className="rounded-2xl border px-4 py-3 text-lg"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              disabled={saving}
+              disabled={saving || !canWrite}
               placeholder="例如：上海市 · 某某区 · 某某路"
             />
           </div>
@@ -143,7 +160,7 @@ export default function WarehouseCreatePage() {
               className="rounded-2xl border px-4 py-3 text-lg"
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
-              disabled={saving}
+              disabled={saving || !canWrite}
               placeholder="例如：张三"
             />
           </div>
@@ -154,7 +171,7 @@ export default function WarehouseCreatePage() {
               className="rounded-2xl border px-4 py-3 text-lg font-mono"
               value={contactPhone}
               onChange={(e) => setContactPhone(e.target.value)}
-              disabled={saving}
+              disabled={saving || !canWrite}
               placeholder="手机/座机/分机"
             />
           </div>
@@ -167,7 +184,7 @@ export default function WarehouseCreatePage() {
               className="rounded-2xl border px-4 py-3 text-lg font-mono"
               value={areaSqm}
               onChange={(e) => setAreaSqm(e.target.value)}
-              disabled={saving}
+              disabled={saving || !canWrite}
               placeholder="例如：800"
             />
           </div>
