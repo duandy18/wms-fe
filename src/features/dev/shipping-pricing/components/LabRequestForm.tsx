@@ -6,6 +6,9 @@ export const LabRequestForm: React.FC<{
   loading: boolean;
   err: string | null;
 
+  warehouseIdText: string;
+  setWarehouseIdText: (v: string) => void;
+
   schemeIdText: string;
   setSchemeIdText: (v: string) => void;
 
@@ -38,25 +41,35 @@ export const LabRequestForm: React.FC<{
   const {
     loading,
     err,
+
+    warehouseIdText,
+    setWarehouseIdText,
+
     schemeIdText,
     setSchemeIdText,
+
     province,
     setProvince,
     city,
     setCity,
     district,
     setDistrict,
+
     realWeightKg,
     setRealWeightKg,
+
     lengthCm,
     setLengthCm,
     widthCm,
     setWidthCm,
     heightCm,
     setHeightCm,
+
     flags,
     setFlags,
+
     dimsWarning,
+
     onRunCalc,
     onRunRecommend,
     onClear,
@@ -67,6 +80,17 @@ export const LabRequestForm: React.FC<{
       <div className="text-sm font-semibold text-slate-800">构造算价请求（calc / recommend）</div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-6">
+        <div className="md:col-span-2 flex flex-col">
+          <label className="text-xs text-slate-600">warehouse_id（起运仓，必填）*</label>
+          <input
+            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono"
+            value={warehouseIdText}
+            onChange={(e) => setWarehouseIdText(e.target.value)}
+            placeholder="例如 1"
+            disabled={loading}
+          />
+        </div>
+
         <div className="md:col-span-2 flex flex-col">
           <label className="text-xs text-slate-600">scheme_id（calc 用）</label>
           <input
@@ -101,30 +125,60 @@ export const LabRequestForm: React.FC<{
 
         <div className="md:col-span-2 flex flex-col">
           <label className="text-xs text-slate-600">province</label>
-          <input className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm" value={province} onChange={(e) => setProvince(e.target.value)} disabled={loading} />
+          <input
+            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm"
+            value={province}
+            onChange={(e) => setProvince(e.target.value)}
+            disabled={loading}
+          />
         </div>
 
         <div className="md:col-span-2 flex flex-col">
           <label className="text-xs text-slate-600">city</label>
-          <input className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm" value={city} onChange={(e) => setCity(e.target.value)} disabled={loading} />
+          <input
+            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            disabled={loading}
+          />
         </div>
 
         <div className="md:col-span-2 flex flex-col">
           <label className="text-xs text-slate-600">district</label>
-          <input className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm" value={district} onChange={(e) => setDistrict(e.target.value)} disabled={loading} />
+          <input
+            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm"
+            value={district}
+            onChange={(e) => setDistrict(e.target.value)}
+            disabled={loading}
+          />
         </div>
 
         <div className="md:col-span-2 flex flex-col">
           <label className="text-xs text-slate-600">length_cm</label>
-          <input className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono" value={lengthCm} onChange={(e) => setLengthCm(e.target.value)} disabled={loading} />
+          <input
+            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono"
+            value={lengthCm}
+            onChange={(e) => setLengthCm(e.target.value)}
+            disabled={loading}
+          />
         </div>
         <div className="md:col-span-2 flex flex-col">
           <label className="text-xs text-slate-600">width_cm</label>
-          <input className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono" value={widthCm} onChange={(e) => setWidthCm(e.target.value)} disabled={loading} />
+          <input
+            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono"
+            value={widthCm}
+            onChange={(e) => setWidthCm(e.target.value)}
+            disabled={loading}
+          />
         </div>
         <div className="md:col-span-2 flex flex-col">
           <label className="text-xs text-slate-600">height_cm</label>
-          <input className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} disabled={loading} />
+          <input
+            className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono"
+            value={heightCm}
+            onChange={(e) => setHeightCm(e.target.value)}
+            disabled={loading}
+          />
         </div>
       </div>
 
@@ -133,7 +187,10 @@ export const LabRequestForm: React.FC<{
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className={"rounded-xl px-4 py-2 text-sm font-semibold " + (loading ? "bg-slate-200 text-slate-500" : "bg-slate-900 text-white hover:bg-slate-800")}
+          className={
+            "rounded-xl px-4 py-2 text-sm font-semibold " +
+            (loading ? "bg-slate-200 text-slate-500" : "bg-slate-900 text-white hover:bg-slate-800")
+          }
           onClick={onRunCalc}
           disabled={loading}
         >
@@ -142,7 +199,10 @@ export const LabRequestForm: React.FC<{
 
         <button
           type="button"
-          className={"rounded-xl px-4 py-2 text-sm font-semibold " + (loading ? "bg-slate-200 text-slate-500" : "border border-slate-300 text-slate-700 hover:bg-slate-50")}
+          className={
+            "rounded-xl px-4 py-2 text-sm font-semibold " +
+            (loading ? "bg-slate-200 text-slate-500" : "border border-slate-300 text-slate-700 hover:bg-slate-50")
+          }
           onClick={onRunRecommend}
           disabled={loading}
           title="对比多个 provider 的报价（recommend）"

@@ -42,6 +42,9 @@ export interface ShipQuote {
 }
 
 export interface ShipCalcRequest {
+  // ✅ Phase 3/4 合同：recommend 必须有起运仓（强前置）
+  warehouse_id: number;
+
   real_weight_kg: number;
   province?: string;
   city?: string;
@@ -69,6 +72,7 @@ function normalizeReasons(v: unknown): string[] {
 
 export async function calcShipQuotes(payload: ShipCalcRequest): Promise<ShipCalcResponse> {
   const res = await apiPost<ShipCalcResponse>("/shipping-quote/recommend", {
+    warehouse_id: payload.warehouse_id,
     provider_ids: payload.provider_ids ?? [],
     dest: {
       province: payload.province ?? null,
@@ -106,6 +110,31 @@ export interface ShipPrepareRequest {
   ext_order_no: string;
 }
 
+/**
+ * ✅ 新合同：候选仓来自省级路由命中集合（不兜底、不预设）
+ */
+export interface CandidateWarehouse {
+  warehouse_id: number;
+  warehouse_name?: string | null;
+  warehouse_code?: string | null;
+  warehouse_active: boolean;
+  priority: number;
+}
+
+export interface FulfillmentMissingLine {
+  item_id: number;
+  need: number;
+  available: number;
+}
+
+export type FulfillmentScanStatus = "OK" | "INSUFFICIENT" | string;
+
+export interface FulfillmentScanWarehouse {
+  warehouse_id: number;
+  status: FulfillmentScanStatus;
+  missing: FulfillmentMissingLine[];
+}
+
 export interface ShipPrepareResponse {
   ok: boolean;
   order_id: number;
@@ -127,6 +156,20 @@ export interface ShipPrepareResponse {
   weight_kg?: number | null;
 
   trace_id?: string | null;
+
+  /**
+   * ✅ 不预设：warehouse_id 通常为 null，让操作员选择
+   * warehouse_reason 用于提示 “为什么需要人工/为什么 blocked”
+   */
+  warehouse_id?: number | null;
+  warehouse_reason?: string | null;
+
+  candidate_warehouses?: CandidateWarehouse[];
+  fulfillment_scan?: FulfillmentScanWarehouse[];
+
+  fulfillment_status?: "OK" | "FULFILLMENT_BLOCKED" | string;
+  blocked_reasons?: string[];
+  blocked_detail?: Record<string, unknown> | null;
 }
 
 export async function prepareShipFromOrder(payload: ShipPrepareRequest): Promise<ShipPrepareResponse> {
@@ -173,7 +216,9 @@ export interface ShipWithWaybillResponse {
 export async function shipWithWaybill(payload: ShipWithWaybillPayload): Promise<ShipWithWaybillResponse> {
   const { platform, shop_id, ext_order_no, quote_snapshot, ...body } = payload;
 
-  const path = `/orders/${encodeURIComponent(platform)}/${encodeURIComponent(shop_id)}/${encodeURIComponent(ext_order_no)}/ship-with-waybill`;
+  const path = `/orders/${encodeURIComponent(platform)}/${encodeURIComponent(shop_id)}/${encodeURIComponent(
+    ext_order_no,
+  )}/ship-with-waybill`;
 
   const finalBody: Record<string, unknown> = { ...body };
   finalBody["meta"] = { quote_snapshot };

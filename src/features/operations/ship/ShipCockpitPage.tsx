@@ -1,14 +1,13 @@
 // src/features/operations/ship/ShipCockpitPage.tsx
 //
 // 发货 Ship Cockpit（作业台）
-// - 左：ShipInputPanel（订单 / 重量 / 地址 / 电子称）
+// - 左：ShipInputPanel（订单 / 重量 / 地址 / 电子称 + prepare + 候选仓扫描 + 人工裁决）
 // - 中：OrderSummaryPanel（订单明细占位）
 // - 右：QuoteComparePanel（报价对比）
 //
-// Phase 3 → Phase 4 过渡裁决：
-// - 报价必须可解释（reasons）
-// - 关键输入变化 → 旧报价失效（前端防呆）
-// - 发货固化 quote_snapshot（input + selected_quote）
+// Phase 4.x：
+// - calc/recommend/confirm 必须在“起运仓事实”边界内执行
+// - prepare-from-order：不预设、不兜底；返回候选仓 + 扫描报告（OK/缺货），作业员人工选择
 
 import React from "react";
 import PageTitle from "../../../components/ui/PageTitle";
@@ -34,6 +33,14 @@ const ShipCockpitPage: React.FC = () => {
         <ShipInputPanel
           orderRef={c.orderRef}
           onOrderRefChange={c.setOrderRef}
+          preparing={c.preparing}
+          onPrepare={c.handlePrepare}
+          candidateWarehouses={c.candidateWarehouses}
+          scanRows={c.scanRows}
+          fulfillmentStatus={c.fulfillmentStatus}
+          warehouseReason={c.warehouseReason}
+          selectedWarehouseId={c.selectedWarehouseId}
+          onSelectWarehouseId={c.setSelectedWarehouseId}
           weightKg={c.weightKg}
           onWeightChange={c.setWeightKg}
           packagingWeightKg={c.packagingWeightKg}
@@ -45,6 +52,7 @@ const ShipCockpitPage: React.FC = () => {
           onCityChange={c.setCity}
           onDistrictChange={c.setDistrict}
           loadingCalc={c.loadingCalc}
+          canCalc={c.canCalc}
           onCalc={c.handleCalc}
         />
 
@@ -75,7 +83,7 @@ const ShipCockpitPage: React.FC = () => {
           <button
             type="button"
             className={`${UI.btnPrimary} mt-4 w-full`}
-            disabled={!c.selectedQuote || c.confirming}
+            disabled={!c.canConfirm}
             onClick={c.handleConfirmShip}
           >
             {c.confirming ? "提交中…" : "确认发货"}
