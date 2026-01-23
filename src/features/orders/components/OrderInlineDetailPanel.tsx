@@ -1,12 +1,10 @@
 // src/features/orders/components/OrderInlineDetailPanel.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import type { OrderFacts, OrderSummary, OrderView, WarehouseOption } from "../api/index";
 
 import { OrderInlineDetailHeader } from "./inline-detail/OrderInlineDetailHeader";
-import { ManualAssignBanner } from "./inline-detail/ManualAssignBanner";
 import { OrderInlineDetailMetaGrid } from "./inline-detail/OrderInlineDetailMetaGrid";
 import { OrderInlineDetailFactsTable } from "./inline-detail/OrderInlineDetailFactsTable";
-import { ManualAssignWarehouseModal } from "./inline-detail/ManualAssignWarehouseModal";
 
 type OrderWithFulfillment = OrderView["order"] & {
   fulfillment_status?: string | null;
@@ -22,10 +20,10 @@ export const OrderInlineDetailPanel: React.FC<{
   onClose: () => void;
   onReload: () => void;
 
-  // ✅ 候选执行仓由后端 summary 给出（前端不得自行拉 /warehouses）
+  // ✅ 候选仓由 summary 给出（只读展示可能会用到；这里保持入参兼容）
   warehouses: WarehouseOption[];
 
-  // ⚠️ 为兼容调用方保留，但本面板不再展示 DevConsole 入口
+  // ⚠️ 为兼容调用方保留（PickSidebar 仍在传）
   devConsoleHref: () => string;
 }> = ({
   selectedSummary,
@@ -40,6 +38,7 @@ export const OrderInlineDetailPanel: React.FC<{
 }) => {
   // ✅ 显式标记为“已使用”，避免 eslint no-unused-vars
   void _devConsoleHref;
+  void warehouses;
 
   const detailOrder = selectedView?.order ?? null;
   const facts = useMemo(() => selectedFacts?.items ?? [], [selectedFacts]);
@@ -58,16 +57,11 @@ export const OrderInlineDetailPanel: React.FC<{
     );
   }, [facts]);
 
-  // Phase 5.2：展示字段来自后端（只读事实）
+  // 展示字段来自后端（只读事实）
   const o = (detailOrder ?? undefined) as OrderWithFulfillment | undefined;
   const fulfillmentStatus = o?.fulfillment_status ?? null;
-  const serviceWarehouseId = o?.service_warehouse_id ?? null;
-  const execWarehouseId = detailOrder?.warehouse_id ?? null;
-
-  // ✅ 后端对齐：是否需要人工指定执行仓，直接消费 summary 布尔字段（前端不得推导）
-  const needManualAssign = selectedSummary.can_manual_assign_execution_warehouse === true;
-
-  const [assignOpen, setAssignOpen] = useState(false);
+  const defaultWarehouseId = o?.service_warehouse_id ?? null;
+  const shipWarehouseId = detailOrder?.warehouse_id ?? null;
 
   return (
     <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">
@@ -78,29 +72,25 @@ export const OrderInlineDetailPanel: React.FC<{
 
       {detailOrder && (
         <>
-          <ManualAssignBanner show={needManualAssign} onOpen={() => setAssignOpen(true)} />
-
+          {/* ✅ 只读详情：不在拣货侧边栏提供“人工指定发货仓库”等操作入口 */}
           <OrderInlineDetailMetaGrid
             order={detailOrder}
             fulfillmentStatus={fulfillmentStatus}
-            serviceWarehouseId={serviceWarehouseId}
-            execWarehouseId={execWarehouseId}
+            serviceWarehouseId={defaultWarehouseId}
+            execWarehouseId={shipWarehouseId}
           />
 
           <OrderInlineDetailFactsTable facts={facts} totals={totals} />
 
-          <ManualAssignWarehouseModal
-            open={assignOpen}
-            onClose={() => setAssignOpen(false)}
-            selectedSummary={selectedSummary}
-            serviceWarehouseId={serviceWarehouseId}
-            execWarehouseId={execWarehouseId}
-            warehouses={warehouses}
-            onSuccess={() => {
-              setAssignOpen(false);
-              onReload();
-            }}
-          />
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              type="button"
+              className="rounded-md border border-slate-300 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-100"
+              onClick={onReload}
+            >
+              刷新
+            </button>
+          </div>
         </>
       )}
     </section>

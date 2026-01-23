@@ -39,6 +39,40 @@ export type OrdersSummaryResponse = {
   warehouses: WarehouseOption[];
 };
 
+// ------------------------------
+// Phase 5.3 Explain（只读对齐）
+// ------------------------------
+
+export type WarehouseBrief = {
+  id: number;
+  code: string | null;
+  name: string | null;
+};
+
+export type OrderWarehouseAvailabilityLine = {
+  item_id: number;
+  req_qty: number;
+  sku_id: string | null;
+  title: string | null;
+};
+
+export type OrderWarehouseAvailabilityCell = {
+  warehouse_id: number;
+  item_id: number;
+  available: number;
+  shortage: number;
+  status: "ENOUGH" | "SHORTAGE" | string;
+};
+
+export type OrderWarehouseAvailabilityResponse = {
+  ok: boolean;
+  order_id: number;
+  scope: "DEFAULT_SERVICE_EXECUTION" | "EXPLICIT_WAREHOUSE_IDS" | string;
+  warehouses: WarehouseBrief[];
+  lines: OrderWarehouseAvailabilityLine[];
+  matrix: OrderWarehouseAvailabilityCell[];
+};
+
 // 详情/事实暂复用 DevConsole
 export type OrderView = DevOrderView;
 export type OrderFacts = DevOrderFacts;

@@ -4,7 +4,13 @@ import { apiGet, apiPost } from "../../../lib/api";
 import type { DevOrderView, DevOrderFacts } from "../../dev/orders/api/index";
 import { fetchDevOrderView, fetchDevOrderFacts } from "../../dev/orders/api/index";
 
-import type { OrderFacts, OrderView, OrdersSummaryResponse, OrderSummary } from "./types";
+import type {
+  OrderFacts,
+  OrderView,
+  OrdersSummaryResponse,
+  OrderSummary,
+  OrderWarehouseAvailabilityResponse,
+} from "./types";
 
 export async function fetchOrdersSummary(
   params: {
@@ -81,4 +87,49 @@ export async function manualAssignFulfillmentWarehouse(args: {
   });
 
   return { ok: true };
+}
+
+// ------------------------------
+// Phase 5.3 Explain（只读对齐）
+// ------------------------------
+
+export async function fetchOrderWarehouseAvailability(args: {
+  orderId: number;
+  warehouseIds?: number[];
+}): Promise<OrderWarehouseAvailabilityResponse> {
+  const oid = Number(args.orderId);
+  if (!Number.isFinite(oid) || oid <= 0) {
+    return { ok: false, order_id: 0, scope: "DEFAULT_SERVICE_EXECUTION", warehouses: [], lines: [], matrix: [] };
+  }
+
+  const wids = (args.warehouseIds || [])
+    .map((x) => Number(x))
+    .filter((x) => Number.isFinite(x) && x > 0);
+
+  const qs = new URLSearchParams();
+  if (wids.length > 0) qs.set("warehouse_ids", wids.join(","));
+
+  const query = qs.toString();
+  const path = query
+    ? `/orders/${encodeURIComponent(String(oid))}/warehouse-availability?${query}`
+    : `/orders/${encodeURIComponent(String(oid))}/warehouse-availability`;
+
+  const resp = await apiGet<OrderWarehouseAvailabilityResponse>(path);
+  if (!resp || typeof resp !== "object") {
+    return { ok: false, order_id: oid, scope: "DEFAULT_SERVICE_EXECUTION", warehouses: [], lines: [], matrix: [] };
+  }
+  const scopeRaw = (resp as { scope?: unknown }).scope;
+  const scope = typeof scopeRaw === "string" && scopeRaw.trim() ? scopeRaw : "DEFAULT_SERVICE_EXECUTION";
+
+  if (resp.ok !== true) {
+    return { ok: false, order_id: oid, scope, warehouses: [], lines: [], matrix: [] };
+  }
+  return {
+    ok: true,
+    order_id: Number(resp.order_id) || oid,
+    scope: resp.scope ?? "DEFAULT_SERVICE_EXECUTION",
+    warehouses: Array.isArray(resp.warehouses) ? resp.warehouses : [],
+    lines: Array.isArray(resp.lines) ? resp.lines : [],
+    matrix: Array.isArray(resp.matrix) ? resp.matrix : [],
+  };
 }
