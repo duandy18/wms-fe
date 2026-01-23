@@ -2,69 +2,45 @@
 import React from "react";
 import PageTitle from "../../components/ui/PageTitle";
 
-import { OrdersFiltersPanel } from "./components/OrdersFiltersPanel";
 import { OrdersTable } from "./components/OrdersTable";
-import { OrderInlineDetailPanel } from "./components/OrderInlineDetailPanel";
+import { ManualShipDecisionCard } from "./components/ManualShipDecisionCard";
 
 import { useOrdersList } from "./hooks/useOrdersList";
-import { useOrderInlineDetail } from "./hooks/useOrderInlineDetail";
+import type { OrderSummary } from "./api/index";
 
 const OrdersPage: React.FC = () => {
-  const list = useOrdersList({ initialPlatform: "PDD" });
-  const detail = useOrderInlineDetail();
+  const list = useOrdersList({ initialPlatform: "PDD", limit: 100 });
 
+  const [selectedForManual, setSelectedForManual] = React.useState<OrderSummary | null>(null);
+
+  // 列表刷新后，若选中订单不在“未发运列表”里，自动关闭处理卡
   React.useEffect(() => {
-    if (!detail.selectedSummary) return;
-    const exists = list.rows.some((r) => r.id === detail.selectedSummary?.id);
-    if (!exists) {
-      detail.closeDetail();
-    }
-  }, [list.rows, detail]);
-
-  function devConsoleHref() {
-    const o = detail.detailOrder;
-    if (!o) return "/dev";
-    const qs = new URLSearchParams();
-    qs.set("platform", o.platform);
-    qs.set("shop_id", o.shop_id);
-    qs.set("ext_order_no", o.ext_order_no);
-    return `/dev?${qs.toString()}`;
-  }
+    if (!selectedForManual) return;
+    const exists = list.rows.some((r) => r.id === selectedForManual.id);
+    if (!exists) setSelectedForManual(null);
+  }, [list.rows, selectedForManual]);
 
   return (
     <div className="space-y-4 p-6">
       <PageTitle
         title="订单管理"
-        description="按平台 / 店铺 / 状态 / 时间窗口浏览订单。在下方列表中选择一行，在列表下方查看详情；更深入的退货、对账、Trace 在 DevConsole 中完成。"
-      />
-
-      <OrdersFiltersPanel
-        filters={list.filters}
-        setFilters={(patch) => list.setFilters((prev) => ({ ...prev, ...patch }))}
-        loading={list.loading}
-        onSearch={() => void list.loadList()}
-        error={list.error}
+        description="本页只展示未发运订单（用于处理与发货决策）。已发运订单请在「订单统计」中查看。"
       />
 
       <OrdersTable
         rows={list.rows}
         warehouses={list.warehouses}
         loading={list.loading}
-        onSelect={(r) => void detail.loadDetail(r)}
         onReload={() => void list.loadList()}
+        onOpenManual={(row) => setSelectedForManual(row)}
       />
 
-      {detail.selectedSummary && (
-        <OrderInlineDetailPanel
-          selectedSummary={detail.selectedSummary}
-          selectedView={detail.selectedView}
-          selectedFacts={detail.selectedFacts}
-          detailLoading={detail.detailLoading}
-          detailError={detail.detailError}
-          onClose={detail.closeDetail}
-          onReload={() => void detail.reloadDetail()}
-          devConsoleHref={devConsoleHref}
+      {selectedForManual && (
+        <ManualShipDecisionCard
+          selected={selectedForManual}
           warehouses={list.warehouses}
+          onClose={() => setSelectedForManual(null)}
+          onReload={() => void list.loadList()}
         />
       )}
     </div>

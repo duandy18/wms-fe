@@ -1,77 +1,97 @@
 // src/features/orders/components/OrdersTable.tsx
 import React from "react";
 import { StandardTable, type ColumnDef } from "../../../components/wmsdu/StandardTable";
-import { manualAssignFulfillmentWarehouse, type OrderSummary, type WarehouseOption } from "../api/index";
+
+import type { OrderSummary, WarehouseOption } from "../api/index";
 import { formatTs, renderFulfillmentStatus, renderStatus } from "../ui/format";
 
-function whLabel(id: number | null | undefined) {
-  if (id == null) return "—";
-  return `WH${id}`;
-}
+import type { OrderWarehouseAvailabilityCell, OrderWarehouseAvailabilityLine } from "../api/types";
+import { useOrdersExplainMap } from "./orders-table/useOrdersExplainMap";
+import { assignModeBadge, isNeedManualAssign, whLabel } from "./orders-table/utils";
 
-function assignModeBadge(modeRaw: string | null | undefined) {
-  const mode = (modeRaw ?? "").toUpperCase();
-  if (mode === "AUTO_FROM_SERVICE") {
-    return (
-      <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-        AUTO
-      </span>
-    );
+function buildCellMap(matrix: OrderWarehouseAvailabilityCell[]) {
+  const m = new Map<number, Map<number, OrderWarehouseAvailabilityCell>>();
+  for (const c of matrix || []) {
+    const wid = Number(c.warehouse_id);
+    const iid = Number(c.item_id);
+    if (!Number.isFinite(wid) || !Number.isFinite(iid)) continue;
+    if (!m.has(wid)) m.set(wid, new Map());
+    m.get(wid)!.set(iid, c);
   }
-  if (mode === "MANUAL") {
-    return (
-      <span className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-        手工
-      </span>
-    );
-  }
-  return null;
+  return m;
 }
 
-function needManualAssign(r: OrderSummary) {
-  return r.can_manual_assign_execution_warehouse === true;
+function lineLabel(ln: OrderWarehouseAvailabilityLine) {
+  const t = (ln.title ?? "").trim();
+  const sku = (ln.sku_id ?? "").trim();
+  if (sku && t) return `${sku} · ${t}`;
+  if (sku) return sku;
+  if (t) return t;
+  return `商品#${ln.item_id}`;
 }
 
-function whOptionLabel(w: WarehouseOption) {
-  const code = (w.code ?? "").trim();
-  const name = (w.name ?? "").trim();
-  if (code && name) return `${code} · ${name}`;
-  if (code) return code;
-  if (name) return name;
-  return `#${w.id}`;
+function renderOrderLines(lines: OrderWarehouseAvailabilityLine[]) {
+  if (!lines.length) return <span className="text-slate-400">—</span>;
+  return (
+    <div className="space-y-1">
+      {lines.map((ln) => (
+        <div key={ln.item_id} className="flex items-center justify-between gap-2">
+          <span className="truncate">{lineLabel(ln)}</span>
+          <span className="font-mono text-slate-800">× {ln.req_qty}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function renderWarehouseAvail(lines: OrderWarehouseAvailabilityLine[], cellMap: Map<number, OrderWarehouseAvailabilityCell>) {
+  if (!lines.length) return <span className="text-slate-400">—</span>;
+
+  return (
+    <div className="space-y-1">
+      {lines.map((ln) => {
+        const cell = cellMap.get(ln.item_id);
+        if (!cell) return <div key={ln.item_id} className="text-slate-400">—</div>;
+
+        const status = (cell.status ?? "").toUpperCase();
+        const shortage = Number(cell.shortage ?? 0) || 0;
+        const available = Number(cell.available ?? 0) || 0;
+
+        return (
+          <div key={ln.item_id} className="flex items-center justify-between gap-2">
+            <span className="font-mono text-slate-900">{available}</span>
+            {status === "SHORTAGE" && shortage > 0 ? (
+              <span className="rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[11px] font-medium text-red-700">
+                缺 {shortage}
+              </span>
+            ) : (
+              <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700">
+                够
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export const OrdersTable: React.FC<{
   rows: OrderSummary[];
   warehouses: WarehouseOption[];
   loading: boolean;
-  onSelect: (row: OrderSummary) => void;
   onReload: () => void;
-}> = ({ rows, warehouses, loading, onSelect, onReload }) => {
-  const [rowSubmitting, setRowSubmitting] = React.useState<Record<number, boolean>>({});
-  const [rowError, setRowError] = React.useState<Record<number, string | null>>({});
+  onOpenManual: (row: OrderSummary) => void;
+}> = ({ rows, warehouses, loading, onOpenManual }) => {
+  const { explainMap, explainWarehouseIds } = useOrdersExplainMap({
+    rows,
+    warehouses,
+    enabled: true,
+    concurrency: 6,
+  });
 
-  async function handleManualAssign(row: OrderSummary, warehouseId: number) {
-    setRowSubmitting((p) => ({ ...p, [row.id]: true }));
-    setRowError((p) => ({ ...p, [row.id]: null }));
-
-    try {
-      await manualAssignFulfillmentWarehouse({
-        platform: row.platform,
-        shop_id: row.shop_id,
-        ext_order_no: row.ext_order_no,
-        warehouse_id: warehouseId,
-        reason: "OPERATOR_CONFIRM_EXECUTION_WAREHOUSE",
-        note: null,
-      });
-      onReload();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "人工指定执行仓失败";
-      setRowError((p) => ({ ...p, [row.id]: msg }));
-    } finally {
-      setRowSubmitting((p) => ({ ...p, [row.id]: false }));
-    }
-  }
+  const whA = explainWarehouseIds[0] ?? null;
+  const whB = explainWarehouseIds[1] ?? null;
 
   const columns: ColumnDef<OrderSummary>[] = [
     { key: "platform", header: "平台", render: (r) => r.platform },
@@ -81,25 +101,21 @@ export const OrdersTable: React.FC<{
       header: "外部订单号",
       render: (r) => <span className="font-mono text-[11px]">{r.ext_order_no}</span>,
     },
-
     {
       key: "fulfillment_status",
-      header: "履约状态",
+      header: "发货状态",
       render: (r) => (r.fulfillment_status ? renderFulfillmentStatus(r.fulfillment_status) : renderStatus(r.status)),
     },
-
     {
       key: "service_warehouse",
-      header: "服务仓",
+      header: "默认仓库",
       render: (r) => <span className="font-mono text-[12px] text-slate-900">{whLabel(r.service_warehouse_id)}</span>,
     },
-
     {
       key: "execution_warehouse",
-      header: "执行仓",
+      header: "发货仓库",
       render: (r) => {
         const execId = r.warehouse_id ?? null;
-
         if (execId != null) {
           const badge = assignModeBadge(r.warehouse_assign_mode);
           return (
@@ -109,64 +125,74 @@ export const OrdersTable: React.FC<{
             </span>
           );
         }
-
-        if (needManualAssign(r)) {
-          const submitting = rowSubmitting[r.id] === true;
-          const err = rowError[r.id];
-
-          return (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <select
-                  className="h-8 rounded border border-slate-300 bg-white px-2 text-[12px] text-slate-700 disabled:bg-slate-50"
-                  disabled={submitting || warehouses.length === 0}
-                  defaultValue=""
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (!v) return;
-                    const wid = Number(v);
-                    if (!Number.isFinite(wid) || wid <= 0) return;
-                    void handleManualAssign(r, wid);
-                    e.currentTarget.value = "";
-                  }}
-                >
-                  <option value="" disabled>
-                    {warehouses.length === 0 ? "无候选仓" : "选择执行仓…"}
-                  </option>
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={String(w.id)}>
-                      {whOptionLabel(w)}
-                    </option>
-                  ))}
-                </select>
-
-                {submitting && <span className="text-[11px] text-slate-500">提交中…</span>}
-              </div>
-
-              {err && <span className="text-[11px] text-red-600">{err}</span>}
-            </div>
-          );
-        }
-
-        return <span className="text-[12px] text-slate-400">未指定</span>;
+        return <span className="text-[12px] text-slate-400">未选择</span>;
       },
     },
-
+    {
+      key: "order_lines",
+      header: "订单行（SKU×数量）",
+      render: (r) => {
+        const st = explainMap[r.id];
+        if (!st) return <span className="text-slate-400">—</span>;
+        if (st.loading) return <span className="text-slate-400">加载中…</span>;
+        if (st.error) return <span className="text-red-600 text-[11px]">失败</span>;
+        const lines = st.data?.lines ?? [];
+        return renderOrderLines(lines);
+      },
+    },
+    ...(whA
+      ? ([
+          {
+            key: `wh_${whA}`,
+            header: `WH${whA} 可用`,
+            render: (r: OrderSummary) => {
+              const st = explainMap[r.id];
+              if (!st) return <span className="text-slate-400">—</span>;
+              if (st.loading) return <span className="text-slate-400">…</span>;
+              if (st.error) return <span className="text-red-600 text-[11px]">!</span>;
+              const lines = st.data?.lines ?? [];
+              const byWh = buildCellMap(st.data?.matrix ?? []).get(whA);
+              if (!byWh) return <span className="text-slate-400">—</span>;
+              return renderWarehouseAvail(lines, byWh);
+            },
+          },
+        ] as ColumnDef<OrderSummary>[])
+      : []),
+    ...(whB
+      ? ([
+          {
+            key: `wh_${whB}`,
+            header: `WH${whB} 可用`,
+            render: (r: OrderSummary) => {
+              const st = explainMap[r.id];
+              if (!st) return <span className="text-slate-400">—</span>;
+              if (st.loading) return <span className="text-slate-400">…</span>;
+              if (st.error) return <span className="text-red-600 text-[11px]">!</span>;
+              const lines = st.data?.lines ?? [];
+              const byWh = buildCellMap(st.data?.matrix ?? []).get(whB);
+              if (!byWh) return <span className="text-slate-400">—</span>;
+              return renderWarehouseAvail(lines, byWh);
+            },
+          },
+        ] as ColumnDef<OrderSummary>[])
+      : []),
     { key: "created_at", header: "创建时间", render: (r) => formatTs(r.created_at) },
-
     {
       key: "actions",
       header: "操作",
       render: (r) => (
         <div className="flex items-center gap-2">
-          {needManualAssign(r) && (
-            <span className="rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
-              {r.manual_assign_hint?.trim() || "待指定执行仓"}
-            </span>
+          {isNeedManualAssign(r) ? (
+            <button
+              type="button"
+              className="rounded-md border border-slate-300 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-100"
+              onClick={() => onOpenManual(r)}
+            >
+              去处理
+            </button>
+          ) : (
+            <span className="text-[12px] text-slate-400">—</span>
           )}
-          <button type="button" className="text-xs text-sky-700 hover:underline" onClick={() => onSelect(r)}>
-            查看详情
-          </button>
         </div>
       ),
     },
@@ -179,8 +205,12 @@ export const OrdersTable: React.FC<{
         data={rows}
         dense
         getRowKey={(r) => r.id}
-        emptyText={loading ? "加载中…" : "暂无订单，可以先在 DevConsole 或平台回放生成一些订单。"}
-        footer={<span className="text-xs text-slate-500">共 {rows.length} 条记录（当前页）</span>}
+        emptyText={loading ? "加载中…" : "暂无订单"}
+        footer={
+          <span className="text-xs text-slate-500">
+            共 {rows.length} 条记录（当前页）{explainWarehouseIds.length > 2 ? ` · 候选仓>2，仅展示前2列` : ""}
+          </span>
+        }
       />
     </section>
   );
