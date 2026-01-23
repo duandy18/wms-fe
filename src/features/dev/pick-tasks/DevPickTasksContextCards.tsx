@@ -1,7 +1,7 @@
 // src/features/dev/pick-tasks/DevPickTasksContextCards.tsx
 
 import React from "react";
-import type { DevOrderView } from "../orders/api";
+import type { DevOrderView } from "../orders/api/index";
 import type { PickTask } from "../../operations/outbound-pick/pickTasksApi";
 
 interface Props {

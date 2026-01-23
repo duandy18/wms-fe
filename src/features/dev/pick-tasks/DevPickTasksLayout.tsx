@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import type { DevOrderView } from "../orders/api";
+import type { DevOrderView } from "../orders/api/index";
 import type {
   PickTask,
   PickTaskDiffSummary,

@@ -2,7 +2,7 @@
 // 订单生命周期 Timeline（仅负责展示 lifecycle v2 的 stages）
 
 import React from "react";
-import type { OrderLifecycleStageV2 } from "./api";
+import type { OrderLifecycleStageV2 } from "./api/index";
 
 type Props = {
   stages: OrderLifecycleStageV2[];

@@ -2,7 +2,7 @@
 // 订单头信息 + 商品概要 + trace 区（纯 UI 模块）
 
 import React from "react";
-import type { DevOrderInfo, DevOrderItemFact } from "./api";
+import type { DevOrderInfo, DevOrderItemFact } from "./api/index";
 
 type Props = {
   order: DevOrderInfo | null;
@@ -14,6 +14,23 @@ type Props = {
   onViewOrderLifecycle: () => void;
   onViewLedgerCockpit: () => void;
 };
+
+function assignModeLabel(mode?: string | null): { text: string; cls: string } {
+  const m = (mode || "").toUpperCase();
+  if (m === "AUTO_FROM_SERVICE") {
+    return { text: "自动（服务仓确认）", cls: "border-sky-200 bg-sky-50 text-sky-800" };
+  }
+  if (m === "MANUAL") {
+    return { text: "人工改派", cls: "border-violet-200 bg-violet-50 text-violet-800" };
+  }
+  if (m === "UNASSIGNED") {
+    return { text: "未指定执行仓", cls: "border-amber-200 bg-amber-50 text-amber-800" };
+  }
+  if (!m) {
+    return { text: "—", cls: "border-slate-200 bg-slate-50 text-slate-700" };
+  }
+  return { text: mode || "OTHER", cls: "border-slate-200 bg-slate-50 text-slate-700" };
+}
 
 export const DevOrderHeaderCard: React.FC<Props> = ({
   order,
@@ -28,8 +45,9 @@ export const DevOrderHeaderCard: React.FC<Props> = ({
   if (!order) return null;
 
   const totalLines = orderFacts?.length ?? 0;
-  const totalQtyOrdered =
-    orderFacts?.reduce((acc, f) => acc + (f.qty_ordered ?? 0), 0) ?? 0;
+  const totalQtyOrdered = orderFacts?.reduce((acc, f) => acc + (f.qty_ordered ?? 0), 0) ?? 0;
+
+  const modeBadge = assignModeLabel(order.warehouse_assign_mode ?? null);
 
   return (
     <div className="space-y-3 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
@@ -94,15 +112,26 @@ export const DevOrderHeaderCard: React.FC<Props> = ({
           <span className="font-medium text-gray-500">仓库：</span>
           {order.warehouse_id ?? "-"}
         </div>
+
+        {/* ✅ Phase 5.2：执行仓来源 */}
+        <div className="col-span-2">
+          <span className="font-medium text-gray-500">执行仓来源：</span>
+          <span
+            className={
+              "ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium " +
+              modeBadge.cls
+            }
+          >
+            {modeBadge.text}
+          </span>
+        </div>
       </div>
 
       {/* 订单概要（商品 & 数量） */}
       {orderFacts && orderFacts.length > 0 && (
         <div className="mt-2 rounded-md bg-slate-50 px-3 py-2 text-[11px] text-slate-700">
           <div className="mb-1 flex items-center justify-between">
-            <span className="font-semibold text-slate-800">
-              订单概要（商品 & 数量）
-            </span>
+            <span className="font-semibold text-slate-800">订单概要（商品 & 数量）</span>
             <span className="text-[10px] text-slate-500">
               行数：{totalLines} · 总下单数量：{totalQtyOrdered}
             </span>
@@ -128,19 +157,13 @@ export const DevOrderHeaderCard: React.FC<Props> = ({
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md bg-slate-50 px-3 py-2">
         <div className="text-xs text-slate-700">
           <span className="font-medium text-slate-500">trace_id：</span>
-          <span className="font-mono">
-            {traceId ?? "（暂无 trace_id）"}
-          </span>
+          <span className="font-mono">{traceId ?? "（暂无 trace_id）"}</span>
         </div>
 
         {traceId && (
           <a
-            href={`/trace?trace_id=${encodeURIComponent(
-              String(traceId),
-            )}${
-              orderRef
-                ? `&focus_ref=${encodeURIComponent(orderRef)}`
-                : ""
+            href={`/trace?trace_id=${encodeURIComponent(String(traceId))}${
+              orderRef ? `&focus_ref=${encodeURIComponent(orderRef)}` : ""
             }`}
             className="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100"
           >

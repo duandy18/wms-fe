@@ -1,8 +1,43 @@
 // src/features/orders/components/OrdersTable.tsx
 import React from "react";
 import { StandardTable, type ColumnDef } from "../../../components/wmsdu/StandardTable";
-import type { OrderSummary } from "../api";
-import { formatTs, renderStatus } from "../ui/format";
+import type { OrderSummary } from "../api/index";
+import { formatTs, renderFulfillmentStatus, renderStatus } from "../ui/format";
+
+function whLabel(id: number | null | undefined) {
+  if (id == null) return "-";
+  return `WH${id}`;
+}
+
+function renderWarehouseCell(r: OrderSummary) {
+  const execId = r.warehouse_id ?? null;
+  const serviceId = r.service_warehouse_id ?? null;
+
+  if (execId != null) {
+    return (
+      <div className="flex flex-col">
+        <span className="text-[11px] text-slate-500">执行仓</span>
+        <span className="font-mono text-[12px] text-slate-900">{whLabel(execId)}</span>
+      </div>
+    );
+  }
+
+  if (serviceId != null) {
+    return (
+      <div className="flex flex-col">
+        <span className="text-[11px] text-slate-500">服务仓</span>
+        <span className="font-mono text-[12px] text-slate-900">{whLabel(serviceId)}</span>
+      </div>
+    );
+  }
+
+  return <span className="text-slate-400">-</span>;
+}
+
+function needManualAssign(r: OrderSummary) {
+  const fs = (r.fulfillment_status ?? "").toUpperCase();
+  return fs === "SERVICE_ASSIGNED" && r.warehouse_id == null;
+}
 
 export const OrdersTable: React.FC<{
   rows: OrderSummary[];
@@ -17,24 +52,41 @@ export const OrdersTable: React.FC<{
       header: "外部订单号",
       render: (r) => <span className="font-mono text-[11px]">{r.ext_order_no}</span>,
     },
-    { key: "status", header: "状态", render: (r) => renderStatus(r.status) },
+
+    // ✅ Phase 5.2：优先展示 fulfillment_status（履约状态），缺失则降级显示旧 status
     {
-      key: "warehouse_id",
-      header: "仓库",
-      render: (r) => r.warehouse_id ?? "-",
+      key: "fulfillment_status",
+      header: "履约",
+      render: (r) => (r.fulfillment_status ? renderFulfillmentStatus(r.fulfillment_status) : renderStatus(r.status)),
     },
+
+    // ✅ Phase 5.2：仓库列语义分裂（执行仓 vs 服务仓）
+    {
+      key: "warehouse",
+      header: "仓库",
+      render: (r) => renderWarehouseCell(r),
+    },
+
     { key: "created_at", header: "创建时间", render: (r) => formatTs(r.created_at) },
+
     {
       key: "actions",
       header: "操作",
       render: (r) => (
-        <button
-          type="button"
-          className="text-xs text-sky-700 hover:underline"
-          onClick={() => onSelect(r)}
-        >
-          查看详情
-        </button>
+        <div className="flex items-center gap-2">
+          {needManualAssign(r) && (
+            <span className="rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
+              需指定执行仓
+            </span>
+          )}
+          <button
+            type="button"
+            className="text-xs text-sky-700 hover:underline"
+            onClick={() => onSelect(r)}
+          >
+            查看详情
+          </button>
+        </div>
       ),
     },
   ];

@@ -10,7 +10,7 @@ import { apiGet } from "../../../lib/api";
 import type {
   OrderLifecycleStageV2,
   OrderLifecycleSummaryV2,
-} from "../../dev/orders/api";
+} from "../../dev/orders/api/index";
 
 type LifecycleV2Response = {
   ok: boolean;

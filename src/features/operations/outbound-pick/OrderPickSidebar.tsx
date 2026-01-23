@@ -55,9 +55,7 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
   return (
     <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-800">
-          订单列表（可履约）
-        </h2>
+        <h2 className="text-sm font-semibold text-slate-800">订单列表（可履约）</h2>
         <button
           type="button"
           onClick={() => void list.loadList()}
@@ -75,9 +73,7 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
           <input
             className="h-8 w-20 rounded border border-slate-300 px-2 text-[12px]"
             value={list.filters.platform}
-            onChange={(e) =>
-              list.setFilters((prev) => ({ ...prev, platform: e.target.value }))
-            }
+            onChange={(e) => list.setFilters((prev) => ({ ...prev, platform: e.target.value }))}
             placeholder="如 PDD"
           />
         </div>
@@ -87,9 +83,7 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
           <input
             className="h-8 w-24 rounded border border-slate-300 px-2 text-[12px]"
             value={list.filters.shopId}
-            onChange={(e) =>
-              list.setFilters((prev) => ({ ...prev, shopId: e.target.value }))
-            }
+            onChange={(e) => list.setFilters((prev) => ({ ...prev, shopId: e.target.value }))}
             placeholder="可选"
           />
         </div>
@@ -112,17 +106,13 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
           查询
         </button>
 
-        {list.error && (
-          <div className="text-[11px] text-red-600">{list.error}</div>
-        )}
+        {list.error && <div className="text-[11px] text-red-600">{list.error}</div>}
       </div>
 
       {/* 上：订单列表（整行可点） */}
       <div className="border border-slate-200 rounded-lg max-h-[360px] overflow-auto text-xs">
         {list.rows.length === 0 ? (
-          <div className="px-3 py-2 text-slate-500">
-            {list.loading ? "加载中…" : "暂无可履约订单（CREATED）。"}
-          </div>
+          <div className="px-3 py-2 text-slate-500">{list.loading ? "加载中…" : "暂无可履约订单（CREATED）。"}</div>
         ) : (
           <table className="min-w-full border-collapse">
             <thead className="bg-slate-50 sticky top-0">
@@ -140,19 +130,14 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
                 return (
                   <tr
                     key={r.id}
-                    className={
-                      "cursor-pointer border-t border-slate-100 " +
-                      (active ? "bg-sky-50" : "hover:bg-slate-50")
-                    }
+                    className={"cursor-pointer border-t border-slate-100 " + (active ? "bg-sky-50" : "hover:bg-slate-50")}
                     onClick={() => void detail.loadDetail(r)}
                     title="点击查看订单详情（只读）"
                   >
                     <td className="px-2 py-2">{r.platform}</td>
                     <td className="px-2 py-2">{r.shop_id}</td>
                     <td className="px-2 py-2">
-                      <span className="font-mono text-[11px]">
-                        {r.ext_order_no}
-                      </span>
+                      <span className="font-mono text-[11px]">{r.ext_order_no}</span>
                     </td>
                     <td className="px-2 py-2">{renderStatus(r.status)}</td>
                     <td className="px-2 py-2">{formatTs(r.created_at)}</td>
@@ -174,6 +159,7 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
             detailLoading={detail.detailLoading}
             detailError={detail.detailError}
             onClose={detail.closeDetail}
+            onReload={() => void detail.reloadDetail()}
             devConsoleHref={devConsoleHref}
           />
         </div>

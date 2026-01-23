@@ -8,7 +8,7 @@ import {
   type OrdersDailyStats,
   type OrdersTrendItem,
   type OrdersSlaStats,
-} from "./api";
+} from "./api/index";
 
 const todayYmd = () => new Date().toISOString().slice(0, 10);
 const formatDate = (s: string) =>

@@ -1,6 +1,6 @@
 // src/features/orders/components/OrderBasicsCard.tsx
 import React from "react";
-import type { OrderView } from "../api";
+import type { OrderView } from "../api/index";
 import { formatTs } from "../ui/format";
 import { OrderDetailActionsBar } from "./OrderDetailActionsBar";
 

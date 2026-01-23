@@ -22,7 +22,7 @@ import {
   ensureOrderWarehouse,
   fetchDevOrderView,
   type DevOrderView,
-} from "./orders/api";
+} from "./orders/api/index";
 
 import {
   createPickTaskFromOrder,

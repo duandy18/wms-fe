@@ -3,7 +3,7 @@ import React from "react";
 import type {
   OrderLifecycleStageV2,
   OrderLifecycleSummaryV2,
-} from "./api";
+} from "./api/index";
 
 type Props = {
   traceId: string | null | undefined;

@@ -10,7 +10,7 @@ import type {
   DevOrderReconcileResult,
   OrderLifecycleStageV2,
   OrderLifecycleSummaryV2,
-} from "./api";
+} from "./api/index";
 
 export const DevOrderFlowPanel: React.FC<{
   order: DevOrderInfo;

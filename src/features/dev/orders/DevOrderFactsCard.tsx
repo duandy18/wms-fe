@@ -5,7 +5,7 @@ import React from "react";
 import type {
   DevOrderItemFact,
   DevOrderReconcileResult,
-} from "./api";
+} from "./api/index";
 
 type Props = {
   orderFacts: DevOrderItemFact[] | null;

@@ -1,6 +1,6 @@
 // src/features/orders/hooks/useOrdersList.ts
 import { useCallback, useEffect, useState } from "react";
-import { fetchOrdersList, type OrderSummary } from "../api";
+import { fetchOrdersList, type OrderSummary } from "../api/index";
 
 export type OrdersListFilters = {
   platform: string;
