@@ -1,6 +1,6 @@
 // src/features/orders/hooks/useOrderInlineDetail.ts
 import { useCallback, useMemo, useState } from "react";
-import { fetchOrderFacts, fetchOrderView, type OrderFacts, type OrderSummary, type OrderView } from "../api";
+import { fetchOrderFacts, fetchOrderView, type OrderFacts, type OrderSummary, type OrderView } from "../api/index";
 
 export function useOrderInlineDetail() {
   const [selectedSummary, setSelectedSummary] = useState<OrderSummary | null>(null);
@@ -67,6 +67,33 @@ export function useOrderInlineDetail() {
     }
   }, []);
 
+  const reloadDetail = useCallback(async () => {
+    if (!selectedSummary) return;
+    setDetailError(null);
+    setDetailLoading(true);
+    try {
+      const ov = await fetchOrderView({
+        platform: selectedSummary.platform,
+        shopId: selectedSummary.shop_id,
+        extOrderNo: selectedSummary.ext_order_no,
+      });
+      setSelectedView(ov);
+
+      const of = await fetchOrderFacts({
+        platform: selectedSummary.platform,
+        shopId: selectedSummary.shop_id,
+        extOrderNo: selectedSummary.ext_order_no,
+      });
+      setSelectedFacts(of);
+    } catch (err: unknown) {
+      console.error("reload order detail failed", err);
+      const msg = err instanceof Error ? err.message : "刷新订单详情失败";
+      setDetailError(msg);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, [selectedSummary]);
+
   return {
     selectedSummary,
     selectedView,
@@ -74,6 +101,7 @@ export function useOrderInlineDetail() {
     detailLoading,
     detailError,
     loadDetail,
+    reloadDetail,
     closeDetail,
 
     detailOrder,

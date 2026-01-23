@@ -10,8 +10,8 @@ import type {
   DevOrderItemFact,
   OrderLifecycleStageV2,
   OrderLifecycleSummaryV2,
-} from "./api";
-import { fetchOrderLifecycleV2 } from "./api";
+} from "./api/index";
+import { fetchOrderLifecycleV2 } from "./api/index";
 
 export type DevOrderLifecycleState = {
   stages: OrderLifecycleStageV2[];

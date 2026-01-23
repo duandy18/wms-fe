@@ -9,7 +9,7 @@
 // =====================================================
 
 import React from "react";
-import type { DevOrderInfo, DevOrderItemFact } from "./api";
+import type { DevOrderInfo, DevOrderItemFact } from "./api/index";
 import type { ScenarioType } from "./DevOrdersPanel";
 
 type Props = {

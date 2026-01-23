@@ -1,7 +1,7 @@
 // src/features/orders/components/OrderFactsTable.tsx
 import React from "react";
-import type { OrderFacts } from "../api";
-import type { DevOrderReconcileResult } from "../../dev/orders/api";
+import type { OrderFacts } from "../api/index";
+import type { DevOrderReconcileResult } from "../../dev/orders/api/index";
 
 type Totals = {
   ordered: number;

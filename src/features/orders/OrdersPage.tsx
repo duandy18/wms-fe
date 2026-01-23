@@ -57,6 +57,7 @@ const OrdersPage: React.FC = () => {
           detailLoading={detail.detailLoading}
           detailError={detail.detailError}
           onClose={detail.closeDetail}
+          onReload={() => void detail.reloadDetail()}
           devConsoleHref={devConsoleHref}
         />
       )}
