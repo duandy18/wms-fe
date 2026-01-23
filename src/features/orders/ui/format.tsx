@@ -1,8 +1,7 @@
 // src/features/orders/ui/format.tsx
 import React from "react";
 
-export const formatTs = (ts: string | null | undefined) =>
-  ts ? ts.replace("T", " ").replace("Z", "") : "-";
+export const formatTs = (ts: string | null | undefined) => (ts ? ts.replace("T", " ").replace("Z", "") : "-");
 
 function badgeBase(cls: string, text: string) {
   return (
@@ -15,7 +14,7 @@ function badgeBase(cls: string, text: string) {
 /**
  * 订单“业务流程状态”（旧口径）
  * - 如 CREATED/PAID/RESERVED/SHIPPED/RETURNED...
- * - Phase 5.2 仍可能作为筛选条件保留，但列表展示应优先展示 fulfillment_status。
+ * - 仍可能作为筛选条件保留；列表展示优先展示“发货状态”（fulfillment_status 的 UI 映射）。
  */
 export function renderStatus(status?: string | null) {
   if (!status) return badgeBase("bg-slate-100 text-slate-600 border-slate-200", "-");
@@ -32,21 +31,29 @@ export function renderStatus(status?: string | null) {
 }
 
 /**
- * Phase 5.2：履约状态（新口径）
- * - SERVICE_ASSIGNED：只写 service_warehouse_id，warehouse_id 仍为空
- * - MANUALLY_ASSIGNED：人工指定 warehouse_id 成功
- * - READY_TO_FULFILL：可进入 reserve/pick/ship
- * - FULFILLMENT_BLOCKED：缺省/缺市/未配置服务范围等显式阻断
+ * Phase 5.x：发货状态（UI 口径，人话）
+ *
+ * 后端 fulfillment_status → UI 发货状态：
+ * - SERVICE_ASSIGNED   → 待指定仓库
+ * - READY_TO_FULFILL   → 可发货
+ * - MANUALLY_ASSIGNED  → 已指定仓库
+ * - SHIPPED            → 已发货
+ * - FULFILLMENT_BLOCKED→ 待处理（受阻）
+ *
+ * 说明：
+ * - UI 绝不暴露 SERVICE_ASSIGNED / READY_TO_FULFILL 等工程枚举
+ * - 兜底仍保留原值展示，避免未来新增状态导致空白
  */
 export function renderFulfillmentStatus(status?: string | null) {
   if (!status) return badgeBase("bg-slate-100 text-slate-600 border-slate-200", "-");
 
   const s = status.toUpperCase();
 
-  if (s === "SERVICE_ASSIGNED") return badgeBase("bg-sky-50 text-sky-700 border-sky-200", "待指定执行仓");
-  if (s === "MANUALLY_ASSIGNED") return badgeBase("bg-violet-50 text-violet-700 border-violet-200", "已人工指定");
-  if (s === "READY_TO_FULFILL") return badgeBase("bg-emerald-50 text-emerald-700 border-emerald-200", "可履约");
-  if (s === "FULFILLMENT_BLOCKED") return badgeBase("bg-red-50 text-red-700 border-red-200", "履约受阻");
+  if (s === "SERVICE_ASSIGNED") return badgeBase("bg-sky-50 text-sky-700 border-sky-200", "待指定仓库");
+  if (s === "READY_TO_FULFILL") return badgeBase("bg-emerald-50 text-emerald-700 border-emerald-200", "可发货");
+  if (s === "MANUALLY_ASSIGNED") return badgeBase("bg-violet-50 text-violet-700 border-violet-200", "已指定仓库");
+  if (s === "SHIPPED") return badgeBase("bg-indigo-50 text-indigo-700 border-indigo-200", "已发货");
+  if (s === "FULFILLMENT_BLOCKED") return badgeBase("bg-red-50 text-red-700 border-red-200", "待处理（受阻）");
 
   // 兜底：展示原值（避免后端未来加新状态导致 UI 空白）
   return badgeBase("bg-slate-50 text-slate-700 border-slate-200", status);

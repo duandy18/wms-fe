@@ -37,7 +37,7 @@ export const OrderInlineDetailMetaGrid: React.FC<{
       </div>
 
       <div>
-        <div className="text-[11px] text-slate-500">履约状态</div>
+        <div className="text-[11px] text-slate-500">发货状态</div>
         <div>{fulfillmentStatus ? renderFulfillmentStatus(fulfillmentStatus) : renderStatus(order.status)}</div>
       </div>
 
