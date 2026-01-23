@@ -159,7 +159,11 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
             detailLoading={detail.detailLoading}
             detailError={detail.detailError}
             onClose={detail.closeDetail}
-            onReload={() => void detail.reloadDetail()}
+            onReload={() => {
+              void detail.reloadDetail();
+              void list.loadList();
+            }}
+            warehouses={list.warehouses}
             devConsoleHref={devConsoleHref}
           />
         </div>

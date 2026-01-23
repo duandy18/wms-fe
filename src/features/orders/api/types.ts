@@ -1,32 +1,6 @@
 // src/features/orders/api/types.ts
 
-// --- 复用 DevConsole 的类型（后端 /dev/orders 已包含 Phase 5 字段） ---
-import type { DevOrderSummary, DevOrderView, DevOrderFacts } from "../../dev/orders/api/index";
-
-// ================================
-// 订单列表 & 详情（复用 DevConsole）
-// ================================
-
-export type OrderSummary = DevOrderSummary & {
-  // Phase 5.2（后端已补齐）：只读事实
-  fulfillment_status?: string | null;
-  service_warehouse_id?: number | null;
-  warehouse_assign_mode?: string | null;
-};
-
-export type OrderView = DevOrderView & {
-  order: DevOrderView["order"] & {
-    fulfillment_status?: string | null;
-    service_warehouse_id?: number | null;
-    warehouse_assign_mode?: string | null;
-  };
-};
-
-export type OrderFacts = DevOrderFacts;
-
-// ================================
-// Phase 5.2：仓库下拉 / 人工指定执行仓
-// ================================
+import type { DevOrderView, DevOrderFacts } from "../../dev/orders/api/index";
 
 export type WarehouseOption = {
   id: number;
@@ -34,3 +8,37 @@ export type WarehouseOption = {
   name: string | null;
   active: boolean | null;
 };
+
+export type OrderSummary = {
+  id: number;
+  platform: string;
+  shop_id: string;
+  ext_order_no: string;
+
+  status?: string | null;
+  created_at: string; // ISO
+  updated_at?: string | null;
+
+  warehouse_id?: number | null;
+  service_warehouse_id?: number | null;
+  fulfillment_status?: string | null;
+
+  warehouse_assign_mode?: string | null;
+
+  // ✅ 后端对齐（前端不得推导）
+  can_manual_assign_execution_warehouse?: boolean;
+  manual_assign_hint?: string | null;
+
+  order_amount?: number | null;
+  pay_amount?: number | null;
+};
+
+export type OrdersSummaryResponse = {
+  ok: boolean;
+  data: OrderSummary[];
+  warehouses: WarehouseOption[];
+};
+
+// 详情/事实暂复用 DevConsole
+export type OrderView = DevOrderView;
+export type OrderFacts = DevOrderFacts;
