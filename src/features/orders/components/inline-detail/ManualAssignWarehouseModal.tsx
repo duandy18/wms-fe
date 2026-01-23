@@ -1,25 +1,42 @@
 // src/features/orders/components/inline-detail/ManualAssignWarehouseModal.tsx
 import React, { useEffect, useState } from "react";
 import type { OrderSummary, WarehouseOption } from "../../api";
-import { fetchWarehousesForSelect, manualAssignFulfillmentWarehouse } from "../../api";
+import { manualAssignFulfillmentWarehouse } from "../../api";
 
 function whText(id: number | null | undefined) {
   if (id == null) return "-";
   return `WH${id}`;
 }
 
+function whOptionLabel(w: WarehouseOption) {
+  const name = (w.name ?? "").trim();
+  const code = (w.code ?? "").trim();
+  if (code && name) return `${code} · ${name}`;
+  if (code) return code;
+  if (name) return name;
+  return whText(w.id);
+}
+
 export const ManualAssignWarehouseModal: React.FC<{
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+
   selectedSummary: OrderSummary;
   serviceWarehouseId: number | null;
   execWarehouseId: number | null;
-}> = ({ open, onClose, onSuccess, selectedSummary, serviceWarehouseId, execWarehouseId }) => {
-  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
-  const [whLoading, setWhLoading] = useState(false);
-  const [whError, setWhError] = useState<string | null>(null);
 
+  // ✅ 候选执行仓由后端给出（前端不得自行拉 /warehouses）
+  warehouses: WarehouseOption[];
+}> = ({
+  open,
+  onClose,
+  onSuccess,
+  selectedSummary,
+  serviceWarehouseId,
+  execWarehouseId,
+  warehouses,
+}) => {
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [reason, setReason] = useState<string>("");
   const [note, setNote] = useState<string>("");
@@ -37,21 +54,8 @@ export const ManualAssignWarehouseModal: React.FC<{
 
   useEffect(() => {
     if (!open) return;
-    setWhLoading(true);
-    setWhError(null);
-
-    void (async () => {
-      try {
-        const list = await fetchWarehousesForSelect();
-        setWarehouses(list);
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "加载仓库列表失败";
-        setWhError(msg);
-        setWarehouses([]);
-      } finally {
-        setWhLoading(false);
-      }
-    })();
+    // 打开时清一下错误，保留用户输入（更符合操作习惯）
+    setSubmitError(null);
   }, [open]);
 
   async function submit() {
@@ -84,6 +88,8 @@ export const ManualAssignWarehouseModal: React.FC<{
 
   if (!open) return null;
 
+  const options = (warehouses || []).filter((w) => w.active !== false);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-lg rounded-xl bg-white p-4 shadow-lg">
@@ -108,45 +114,47 @@ export const ManualAssignWarehouseModal: React.FC<{
           </div>
 
           <div>
-            <div className="text-[11px] text-slate-500 mb-1">执行仓（必选）</div>
+            <div className="mb-1 text-[11px] text-slate-500">执行仓（必选）</div>
             <select
-              className="h-9 w-full rounded border border-slate-300 px-2 text-sm"
+              className="h-9 w-full rounded border border-slate-300 px-2 text-sm disabled:bg-slate-50"
               value={warehouseId}
               onChange={(e) => setWarehouseId(e.target.value)}
-              disabled={whLoading}
+              disabled={options.length === 0 || submitLoading}
             >
               <option value="">请选择仓库</option>
-              {warehouses.map((w) => (
+              {options.map((w) => (
                 <option key={w.id} value={String(w.id)}>
-                  {w.name?.trim() ? w.name : whText(w.id)} {w.code ? `(${w.code})` : ""}
-                  {w.active === false ? "（已停用）" : ""}
+                  {whOptionLabel(w)} {w.active === false ? "（已停用）" : ""}
                 </option>
               ))}
             </select>
-            {whLoading && <div className="mt-1 text-[11px] text-slate-500">加载仓库列表中…</div>}
-            {whError && <div className="mt-1 text-[11px] text-red-600">{whError}</div>}
-            {warehouses.length === 0 && !whLoading && (
-              <div className="mt-1 text-[11px] text-amber-700">未能加载仓库列表，请稍后再试或检查后端接口。</div>
+
+            {options.length === 0 && (
+              <div className="mt-1 text-[11px] text-amber-700">
+                当前无候选仓（候选仓由后端 summary 给出）。请刷新列表或检查后端 /orders/summary 返回。
+              </div>
             )}
           </div>
 
           <div>
-            <div className="text-[11px] text-slate-500 mb-1">原因（必填）</div>
+            <div className="mb-1 text-[11px] text-slate-500">原因（必填）</div>
             <input
               className="h-9 w-full rounded border border-slate-300 px-2 text-sm"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="例如：该仓当前可履约 / 人工改派 / 客诉加急"
+              disabled={submitLoading}
             />
           </div>
 
           <div>
-            <div className="text-[11px] text-slate-500 mb-1">备注（可选）</div>
+            <div className="mb-1 text-[11px] text-slate-500">备注（可选）</div>
             <input
               className="h-9 w-full rounded border border-slate-300 px-2 text-sm"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="补充说明（可留空）"
+              disabled={submitLoading}
             />
           </div>
 

@@ -1,6 +1,6 @@
 // src/features/orders/components/OrderInlineDetailPanel.tsx
 import React, { useMemo, useState } from "react";
-import type { OrderFacts, OrderSummary, OrderView } from "../api/index";
+import type { OrderFacts, OrderSummary, OrderView, WarehouseOption } from "../api/index";
 
 import { OrderInlineDetailHeader } from "./inline-detail/OrderInlineDetailHeader";
 import { ManualAssignBanner } from "./inline-detail/ManualAssignBanner";
@@ -22,6 +22,9 @@ export const OrderInlineDetailPanel: React.FC<{
   onClose: () => void;
   onReload: () => void;
 
+  // ✅ 候选执行仓由后端 summary 给出（前端不得自行拉 /warehouses）
+  warehouses: WarehouseOption[];
+
   // ⚠️ 为兼容调用方保留，但本面板不再展示 DevConsole 入口
   devConsoleHref: () => string;
 }> = ({
@@ -32,6 +35,7 @@ export const OrderInlineDetailPanel: React.FC<{
   detailError,
   onClose,
   onReload,
+  warehouses,
   devConsoleHref: _devConsoleHref,
 }) => {
   // ✅ 显式标记为“已使用”，避免 eslint no-unused-vars
@@ -54,15 +58,14 @@ export const OrderInlineDetailPanel: React.FC<{
     );
   }, [facts]);
 
-  // Phase 5.2：履约字段来自后端（只读事实）。
-  // OrderView 的静态类型未必声明它们，这里用最小扩展类型补齐，避免 any。
+  // Phase 5.2：展示字段来自后端（只读事实）
   const o = (detailOrder ?? undefined) as OrderWithFulfillment | undefined;
   const fulfillmentStatus = o?.fulfillment_status ?? null;
   const serviceWarehouseId = o?.service_warehouse_id ?? null;
   const execWarehouseId = detailOrder?.warehouse_id ?? null;
 
-  const needManualAssign =
-    (fulfillmentStatus ?? "").toUpperCase() === "SERVICE_ASSIGNED" && execWarehouseId == null;
+  // ✅ 后端对齐：是否需要人工指定执行仓，直接消费 summary 布尔字段（前端不得推导）
+  const needManualAssign = selectedSummary.can_manual_assign_execution_warehouse === true;
 
   const [assignOpen, setAssignOpen] = useState(false);
 
@@ -92,6 +95,7 @@ export const OrderInlineDetailPanel: React.FC<{
             selectedSummary={selectedSummary}
             serviceWarehouseId={serviceWarehouseId}
             execWarehouseId={execWarehouseId}
+            warehouses={warehouses}
             onSuccess={() => {
               setAssignOpen(false);
               onReload();

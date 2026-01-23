@@ -1,14 +1,23 @@
 // src/features/orders/hooks/useOrdersList.ts
 import { useCallback, useEffect, useState } from "react";
-import { fetchOrdersList, type OrderSummary } from "../api/index";
+import { fetchOrdersSummary, type OrderSummary, type WarehouseOption } from "../api/index";
 
 export type OrdersListFilters = {
   platform: string;
   shopId: string;
   status: string;
   timeFrom: string; // YYYY-MM-DD
-  timeTo: string;   // YYYY-MM-DD
+  timeTo: string; // YYYY-MM-DD
   limit: number;
+};
+
+type OrdersSummaryQuery = {
+  platform?: string;
+  shopId?: string;
+  status?: string;
+  time_from?: string;
+  time_to?: string;
+  limit?: number;
 };
 
 export function useOrdersList(args?: { initialPlatform?: string }) {
@@ -22,6 +31,7 @@ export function useOrdersList(args?: { initialPlatform?: string }) {
   });
 
   const [rows, setRows] = useState<OrderSummary[]>([]);
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,20 +39,23 @@ export function useOrdersList(args?: { initialPlatform?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const params: Record<string, unknown> = { limit: filters.limit };
+      const params: OrdersSummaryQuery = { limit: filters.limit };
+
       if (filters.platform.trim()) params.platform = filters.platform.trim();
       if (filters.shopId.trim()) params.shopId = filters.shopId.trim();
       if (filters.status.trim()) params.status = filters.status.trim();
       if (filters.timeFrom.trim()) params.time_from = `${filters.timeFrom.trim()}T00:00:00Z`;
       if (filters.timeTo.trim()) params.time_to = `${filters.timeTo.trim()}T23:59:59Z`;
 
-      const list = await fetchOrdersList(params);
-      setRows(list);
+      const resp = await fetchOrdersSummary(params);
+      setRows(resp.data || []);
+      setWarehouses(resp.warehouses || []);
     } catch (err: unknown) {
-      console.error("fetchOrdersList failed", err);
+      console.error("fetchOrdersSummary failed", err);
       const msg = err instanceof Error ? err.message : "加载订单列表失败";
       setError(msg);
       setRows([]);
+      setWarehouses([]);
     } finally {
       setLoading(false);
     }
@@ -56,6 +69,7 @@ export function useOrdersList(args?: { initialPlatform?: string }) {
     filters,
     setFilters,
     rows,
+    warehouses,
     loading,
     error,
     loadList,

@@ -13,7 +13,6 @@ const OrdersPage: React.FC = () => {
   const list = useOrdersList({ initialPlatform: "PDD" });
   const detail = useOrderInlineDetail();
 
-  // 如果当前选中的订单已经不在列表里了，清掉详情（保持行为与原来一致）
   React.useEffect(() => {
     if (!detail.selectedSummary) return;
     const exists = list.rows.some((r) => r.id === detail.selectedSummary?.id);
@@ -47,7 +46,13 @@ const OrdersPage: React.FC = () => {
         error={list.error}
       />
 
-      <OrdersTable rows={list.rows} loading={list.loading} onSelect={(r) => void detail.loadDetail(r)} />
+      <OrdersTable
+        rows={list.rows}
+        warehouses={list.warehouses}
+        loading={list.loading}
+        onSelect={(r) => void detail.loadDetail(r)}
+        onReload={() => void list.loadList()}
+      />
 
       {detail.selectedSummary && (
         <OrderInlineDetailPanel
@@ -59,6 +64,7 @@ const OrdersPage: React.FC = () => {
           onClose={detail.closeDetail}
           onReload={() => void detail.reloadDetail()}
           devConsoleHref={devConsoleHref}
+          warehouses={list.warehouses}
         />
       )}
     </div>
