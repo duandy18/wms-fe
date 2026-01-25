@@ -75,14 +75,6 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="outbound/pick"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.OutboundPickV2Page />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="outbound/pick-tasks"
             element={
               <RequirePermission permission="operations.outbound">
@@ -107,7 +99,19 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 库存 & 报表 */}
+          {/* ✅ 出库看板：订单出库域专题页（新 URL） */}
+          <Route
+            path="outbound/dashboard"
+            element={
+              <RequirePermission permission="report.outbound">
+                <P.OutboundDashboardPage />
+              </RequirePermission>
+            }
+          />
+          {/* ✅ 旧 URL：重定向到新 URL */}
+          <Route path="inventory/outbound-dashboard" element={<Navigate to="/outbound/dashboard" replace />} />
+
+          {/* 库存 */}
           <Route
             path="snapshot"
             element={
@@ -116,7 +120,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          {/* ✅ 库存台账（业务入口） */}
           <Route
             path="inventory/ledger"
             element={
@@ -126,14 +129,7 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          <Route
-            path="inventory/outbound-dashboard"
-            element={
-              <RequirePermission permission="report.outbound">
-                <P.OutboundDashboardPage />
-              </RequirePermission>
-            }
-          />
+          {/* 订单出库：发货成本/账本 */}
           <Route
             path="shipping/reports"
             element={
@@ -211,8 +207,110 @@ const AppRouter: React.FC = () => {
             }
           />
 
+          {/* ✅ 权限与账号：三个子页面 */}
+          <Route
+            path="iam/users"
+            element={
+              <RequirePermission permission="system.user.manage">
+                <P.UsersManagePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="iam/roles"
+            element={
+              <RequirePermission permission="system.role.manage">
+                <P.RolesManagePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="iam/perms"
+            element={
+              <RequirePermission permission="system.permission.manage">
+                <P.PermissionsDictPage />
+              </RequirePermission>
+            }
+          />
+          {/* ✅ 旧入口：保留但重定向到新子页 */}
+          <Route
+            path="admin/users-admin"
+            element={
+              <RequirePermission permission="system.user.manage">
+                <Navigate to="/iam/users" replace />
+              </RequirePermission>
+            }
+          />
+
+          {/* ✅ 运维中心（新） */}
+          <Route
+            path="ops"
+            element={
+              <RequirePermission permission="dev.tools.access">
+                <P.OpsOverviewPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="ops/health"
+            element={
+              <RequirePermission permission="dev.tools.access">
+                <P.OpsHealthPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="ops/tasks"
+            element={
+              <RequirePermission permission="dev.tools.access">
+                <P.OpsTasksPage />
+              </RequirePermission>
+            }
+          />
+
+          {/* ✅ 运维中心 / 后端调试台：Tab → 页面化 */}
+          <Route
+            path="ops/dev/orders"
+            element={
+              <RequirePermission permission="dev.tools.access">
+                <P.OpsDevOrdersPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="ops/dev/pick"
+            element={
+              <RequirePermission permission="dev.tools.access">
+                <P.OpsDevPickPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="ops/dev/inbound"
+            element={
+              <RequirePermission permission="dev.tools.access">
+                <P.OpsDevInboundPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="ops/dev/count"
+            element={
+              <RequirePermission permission="dev.tools.access">
+                <P.OpsDevCountPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="ops/dev/platform"
+            element={
+              <RequirePermission permission="dev.tools.access">
+                <P.OpsDevPlatformPage />
+              </RequirePermission>
+            }
+          />
+
           {/* 采购系统 */}
-          {/* ✅ 一个页面：采购概览（进度 + 统计） */}
           <Route
             path="purchase-orders/overview"
             element={
@@ -221,8 +319,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
-          {/* 旧入口：全部重定向到 overview（实现“合到一起”） */}
           <Route path="purchase-orders" element={<Navigate to="/purchase-orders/overview" replace />} />
           <Route path="purchase-orders/reports" element={<Navigate to="/purchase-orders/overview" replace />} />
 
@@ -252,7 +348,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
           {/* 退货任务 */}
           <Route
             path="return-tasks/:taskId"
@@ -263,7 +358,7 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 诊断 & 工具 */}
+          {/* 诊断 & 工具（归入运维中心） */}
           <Route
             path="trace"
             element={
@@ -289,7 +384,7 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* DevConsole */}
+          {/* ✅ /dev：兼容入口（保留旧 query 语义，内部跳转 /ops/dev/*） */}
           <Route
             path="dev"
             element={
@@ -299,7 +394,7 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 系统管理 */}
+          {/* 主数据 */}
           <Route
             path="stores"
             element={
@@ -324,8 +419,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
-          {/* ✅ 新增：仓库创建页（独立页，避免列表页内嵌创建表单） */}
           <Route
             path="warehouses/new"
             element={
@@ -334,7 +427,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
           <Route
             path="warehouses/:warehouseId"
             element={
@@ -367,23 +459,11 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
-          {/* ✅ 运价方案独立工作台 */}
           <Route
             path="admin/shipping-providers/schemes/:schemeId/workbench"
             element={
               <RequirePermission permission="config.store.write">
                 <P.SchemeWorkbenchPage />
-              </RequirePermission>
-            }
-          />
-
-          {/* 用户管理总控页 */}
-          <Route
-            path="admin/users-admin"
-            element={
-              <RequirePermission permission="system.user.manage">
-                <P.UsersAdminPage />
               </RequirePermission>
             }
           />

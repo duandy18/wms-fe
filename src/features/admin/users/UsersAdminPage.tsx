@@ -92,7 +92,6 @@ export default function UsersAdminPage() {
   if (!hasAnyTab) {
     return (
       <div className="space-y-4">
-        <h1 className="text-lg font-semibold">用户 & 权限管理</h1>
         <p className="text-sm text-slate-600">
           当前账号未拥有任何 system.* 管理权限。请联系管理员开通。
         </p>
@@ -100,21 +99,11 @@ export default function UsersAdminPage() {
     );
   }
 
-  const safeRoles = Array.isArray(rolesPresenter.roles)
-    ? rolesPresenter.roles
-    : [];
+  const safeRoles = Array.isArray(rolesPresenter.roles) ? rolesPresenter.roles : [];
   const safePermissions = Array.isArray(permissions) ? permissions : [];
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <header>
-        <h1 className="text-lg font-semibold">用户 & 权限管理中心</h1>
-        <p className="mt-1 text-xs text-slate-500">
-          管理系统用户、角色与权限的统一中枢。
-        </p>
-      </header>
-
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200 pb-1">
         {visibleTabs.map((tab) => (

@@ -157,8 +157,7 @@ export function UsersPanel({ presenter, roles }: Props) {
 
   return (
     <div className="space-y-4 text-sm">
-      <h2 className="text-lg font-semibold">用户管理</h2>
-
+      
       {error && (
         <div className="border border-red-200 bg-red-50 text-red-600 px-3 py-2 rounded">
           {error}

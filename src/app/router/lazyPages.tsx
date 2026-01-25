@@ -10,7 +10,6 @@ export const LoginPage = lazy(() => import("../../features/auth/LoginPage"));
 
 // 作业台 (Cockpits)
 export const CountCockpitPage = lazy(() => import("../../features/operations/count/CountCockpitPage"));
-export const OutboundPickV2Page = lazy(() => import("../../features/operations/outbound-pick/OutboundPickV2Page"));
 export const InboundCockpitPage = lazy(() => import("../../features/operations/inbound/InboundCockpitPage"));
 export const PickTasksCockpitPage = lazy(() => import("../../features/operations/outbound-pick/PickTasksCockpitPage"));
 export const ShipCockpitPage = lazy(() => import("../../features/operations/ship/ShipCockpitPage"));
@@ -34,11 +33,28 @@ export const InventoryStudioPage = lazy(() => import("../../features/diagnostics
 export const LedgerStudioPage = lazy(() => import("../../features/diagnostics/ledger-tool/LedgerStudioPage"));
 export const DevConsolePage = lazy(() => import("../../features/dev/DevConsolePage"));
 
-// 系统管理
+// ✅ 运维中心（新）
+export const OpsOverviewPage = lazy(() => import("../../features/ops/OpsOverviewPage"));
+export const OpsHealthPage = lazy(() => import("../../features/ops/OpsHealthPage"));
+export const OpsTasksPage = lazy(() => import("../../features/ops/OpsTasksPage"));
+
+// ✅ 运维中心 / 后端调试台（Tab → 页面化）
+export const OpsDevOrdersPage = lazy(() => import("../../features/ops/dev/OpsDevOrdersPage"));
+export const OpsDevPickPage = lazy(() => import("../../features/ops/dev/OpsDevPickPage"));
+export const OpsDevInboundPage = lazy(() => import("../../features/ops/dev/OpsDevInboundPage"));
+export const OpsDevCountPage = lazy(() => import("../../features/ops/dev/OpsDevCountPage"));
+export const OpsDevPlatformPage = lazy(() => import("../../features/ops/dev/OpsDevPlatformPage"));
+
+// 主数据
 export const StoresListPage = lazy(() => import("../../features/admin/stores/StoresListPage"));
 export const StoreDetailPage = lazy(() => import("../../features/admin/stores/StoreDetailPage"));
 export const ItemsPage = lazy(() => import("../../features/admin/items/ItemsPage"));
-export const UsersAdminPage = lazy(() => import("../../features/admin/users/UsersAdminPage"));
+export const UsersAdminPage = lazy(() => import("../../features/admin/users/UsersAdminPage")); // 旧页保留（兼容）
+
+// ✅ 权限与账号：3 个子页面（/iam/*）
+export const UsersManagePage = lazy(() => import("../../features/admin/users/iam/UsersManagePage"));
+export const RolesManagePage = lazy(() => import("../../features/admin/users/iam/RolesManagePage"));
+export const PermissionsDictPage = lazy(() => import("../../features/admin/users/iam/PermissionsDictPage"));
 
 // 仓库管理
 export const WarehousesListPage = lazy(() => import("../../features/admin/warehouses/WarehousesListPage"));
