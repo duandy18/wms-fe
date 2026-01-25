@@ -50,23 +50,7 @@ export function PermissionsPanel({
 
   return (
     <div className="space-y-4 text-sm">
-      <header className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">权限字典</h2>
-          <p className="mt-1 text-xs text-slate-600">
-            系统内所有权限（Permission Code）列表，例如
-            <span className="font-mono text-[11px] bg-slate-100 px-1 rounded">
-              operations.inbound
-            </span>{" "}
-            或{" "}
-            <span className="font-mono text-[11px] bg-slate-100 px-1 rounded">
-              config.store.write
-            </span>
-            。
-          </p>
-        </div>
-      </header>
-
+      
       {mergedError && (
         <div className="border border-red-200 bg-red-50 rounded px-3 py-2 text-red-600">
           {mergedError}
