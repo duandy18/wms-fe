@@ -3,6 +3,11 @@
 //
 // 注意：这里只负责菜单元信息（path / label / 权限 / 显示规则）。
 // 权限码必须与后端 /users/me 返回的 permissions[] 一致。
+//
+// Phase 6 延展收尾：
+// - “物流 / 承运商”页面语义已回归为主数据（与仓库 / 店铺并列）
+// - 菜单层不再单独作为一级业务域展示
+// - 兼容深链入口保留，但隐藏（showInSidebar:false）
 
 export interface RouteItem {
   path: string;
@@ -85,13 +90,36 @@ export const menuSections: RouteSection[] = [
     items: [
       { path: "/stores", label: "店铺管理", requiredPermissions: ["config.store.write"] },
       { path: "/stores/:storeId", label: "店铺详情", requiredPermissions: ["config.store.write"], showInSidebar: false },
+
       { path: "/warehouses", label: "仓库管理", requiredPermissions: ["config.store.write"] },
       { path: "/warehouses/:warehouseId", label: "仓库详情", requiredPermissions: ["config.store.write"], showInSidebar: false },
+
+      // ✅ 物流 / 承运商（主数据归位）
+      // 语义：Shipping Provider = 仓库可用的快递网点（warehouse_id 是事实边界）
+      { path: "/admin/shipping-providers", label: "快递网点", requiredPermissions: ["config.store.write"] },
+
       { path: "/admin/items", label: "商品主数据", requiredPermissions: ["config.store.write"] },
       { path: "/admin/suppliers", label: "供应商主数据", requiredPermissions: ["config.store.write"] },
-      { path: "/admin/shipping-providers", label: "物流 / 快递公司", requiredPermissions: ["config.store.write"] },
+
+      // ✅ 兼容深链：语义别名入口（隐藏）
       {
-        path: "/admin/shipping-providers/schemes/:schemeId/workbench",
+        path: "/logistics/providers",
+        label: "快递网点（别名）",
+        requiredPermissions: ["config.store.write"],
+        showInSidebar: false,
+      },
+
+      // ✅ 兼容深链：Provider 详情（Tab → 子页面）
+      {
+        path: "/admin/shipping-providers/:providerId/*",
+        label: "快递网点详情",
+        requiredPermissions: ["config.store.write"],
+        showInSidebar: false,
+      },
+
+      // ✅ 兼容深链：运价方案工作台（Tab → 子页面）
+      {
+        path: "/admin/shipping-providers/schemes/:schemeId/workbench/*",
         label: "运价方案工作台",
         requiredPermissions: ["config.store.write"],
         showInSidebar: false,

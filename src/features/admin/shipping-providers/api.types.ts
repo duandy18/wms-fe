@@ -14,6 +14,11 @@ export interface ShippingProviderContact {
 
 export interface ShippingProvider {
   id: number;
+
+  // ✅ Phase 6：事实边界（仓库归属）
+  // 后端字段为 warehouse_id，前端以该字段为准（不做推导）
+  warehouse_id: number;
+
   name: string;
   code?: string | null;
   active: boolean;

@@ -1,6 +1,6 @@
 // src/features/admin/shipping-providers/api/brackets/index.ts
 import { apiPost, apiPatch, apiDelete } from "../../../../../lib/api";
-import type { PricingSchemeZoneBracket } from "../../api.types";
+import type { PricingSchemeZoneBracket } from "../../api/types";
 import type { CreateZoneBracketPayload, PatchZoneBracketPayload } from "./types";
 
 export async function createZoneBracket(

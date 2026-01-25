@@ -1,6 +1,6 @@
 // src/features/admin/shipping-providers/api/schemes/index.ts
 import { apiGet, apiPost, apiPatch } from "../../../../../lib/api";
-import type { PricingScheme, PricingSchemeDetail, SchemeListResponse, SchemeDetailResponse } from "../../api.types";
+import type { PricingScheme, PricingSchemeDetail, SchemeListResponse, SchemeDetailResponse } from "../../api/types";
 
 export async function fetchPricingSchemes(providerId: number, params?: { active?: boolean }): Promise<PricingScheme[]> {
   const qs = new URLSearchParams();

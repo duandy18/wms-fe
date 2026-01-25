@@ -1,6 +1,6 @@
 // src/features/admin/shipping-providers/scheme/SchemeWorkbenchPage.tsx
 
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { UI } from "./ui";
 import { L } from "./labels";
@@ -48,15 +48,46 @@ function buildZoneNameFromProvinces(provinces: string[]): string {
   return cleaned.join("、");
 }
 
+const TAB_KEYS: SchemeTabKey[] = ["zones", "segments", "brackets", "surcharges", "preview"];
+
+function isSchemeTabKey(v: unknown): v is SchemeTabKey {
+  return typeof v === "string" && (TAB_KEYS as string[]).includes(v);
+}
+
 export const SchemeWorkbenchPage: React.FC = () => {
   const navigate = useNavigate();
-  const params = useParams<{ schemeId: string }>();
+  const params = useParams<{ schemeId: string; tab?: string }>();
   const schemeId = params.schemeId ? Number(params.schemeId) : null;
 
+  // ✅ Tab → 子页面：从 URL 读取 tab（不读 query，不改原业务逻辑）
+  const routeTab: SchemeTabKey | null = useMemo(() => {
+    if (!params.tab) return null;
+    return isSchemeTabKey(params.tab) ? params.tab : null;
+  }, [params.tab]);
+
   const wb = useSchemeWorkbench({ open: true, schemeId });
-  const setTab = (k: SchemeTabKey) => wb.setTab(k);
 
   const pageDisabled = wb.loading || wb.refreshing || wb.mutating;
+
+  // ✅ /workbench 直接落到 /workbench/zones（保持深链干净）
+  useEffect(() => {
+    if (!schemeId || schemeId <= 0) return;
+    if (params.tab) return; // 已有 tab，不做跳转
+    navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/zones`, { replace: true });
+  }, [navigate, params.tab, schemeId]);
+
+  // ✅ URL 驱动 tab：routeTab 变化时同步到 wb.tab
+  useEffect(() => {
+    if (!routeTab) return;
+    if (wb.tab === routeTab) return;
+    wb.setTab(routeTab);
+  }, [routeTab, wb]);
+
+  // ✅ Tab 点击：改为导航（一对一子页面），同时保持原 UI/交互
+  const goTab = (k: SchemeTabKey) => {
+    if (!schemeId || schemeId <= 0) return;
+    navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/${k}`);
+  };
 
   return (
     <div className={UI.page}>
@@ -73,26 +104,26 @@ export const SchemeWorkbenchPage: React.FC = () => {
       {wb.error ? <div className={UI.error}>{wb.error}</div> : null}
 
       <div className={UI.tabsWrap}>
-        <TabButton label={L.tabZones} active={wb.tab === "zones"} disabled={pageDisabled} onClick={() => setTab("zones")} />
+        <TabButton label={L.tabZones} active={wb.tab === "zones"} disabled={pageDisabled} onClick={() => goTab("zones")} />
         <TabButton
           label={L.tabSegments}
           active={wb.tab === "segments"}
           disabled={pageDisabled}
-          onClick={() => setTab("segments")}
+          onClick={() => goTab("segments")}
         />
         <TabButton
           label={L.tabBrackets}
           active={wb.tab === "brackets"}
           disabled={pageDisabled}
-          onClick={() => setTab("brackets")}
+          onClick={() => goTab("brackets")}
         />
         <TabButton
           label={L.tabSurcharges}
           active={wb.tab === "surcharges"}
           disabled={pageDisabled}
-          onClick={() => setTab("surcharges")}
+          onClick={() => goTab("surcharges")}
         />
-        <TabButton label={L.tabPreview} active={wb.tab === "preview"} disabled={pageDisabled} onClick={() => setTab("preview")} />
+        <TabButton label={L.tabPreview} active={wb.tab === "preview"} disabled={pageDisabled} onClick={() => goTab("preview")} />
       </div>
 
       <div className="space-y-4">

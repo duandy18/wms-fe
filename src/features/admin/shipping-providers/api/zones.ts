@@ -1,6 +1,6 @@
 // src/features/admin/shipping-providers/api/zones.ts
 import { apiPost, apiPatch, apiPut, apiDelete } from "../../../../lib/api";
-import type { PricingSchemeZone, PricingSchemeZoneMember } from "../api.types";
+import type { PricingSchemeZone, PricingSchemeZoneMember } from "../api/types";
 
 export async function createZone(
   schemeId: number,

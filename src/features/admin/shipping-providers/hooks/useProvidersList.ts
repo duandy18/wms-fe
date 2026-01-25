@@ -27,6 +27,10 @@ export function useProvidersList() {
   // Create provider
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+
+  // ✅ Phase 6：新建必须选择所属仓库（与后端 422 契约对齐）
+  const [warehouseId, setWarehouseId] = useState<number | null>(null);
+
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -85,7 +89,12 @@ export function useProvidersList() {
 
       const n = name.trim();
       if (!n) {
-        setCreateError("公司名称必填");
+        setCreateError("网点名称必填");
+        return false;
+      }
+
+      if (!warehouseId) {
+        setCreateError("所属仓库必选");
         return false;
       }
 
@@ -94,21 +103,23 @@ export function useProvidersList() {
         await createShippingProvider({
           name: n,
           code: code.trim() || undefined,
+          warehouse_id: warehouseId,
           active: true, // ✅ 新建默认启用
           priority: 100,
         });
         setName("");
         setCode("");
+        setWarehouseId(null);
         await loadProviders();
         return true;
       } catch (err) {
-        setCreateError(getErrorMessage(err, "创建物流/快递公司失败"));
+        setCreateError(getErrorMessage(err, "创建快递网点失败"));
         return false;
       } finally {
         setCreating(false);
       }
     },
-    [name, code, loadProviders],
+    [name, code, warehouseId, loadProviders],
   );
 
   const toggleProviderActive = useCallback(
@@ -151,6 +162,11 @@ export function useProvidersList() {
     setName,
     code,
     setCode,
+
+    // ✅ Phase 6：新建必选仓库
+    warehouseId,
+    setWarehouseId,
+
     creating,
     createError,
 

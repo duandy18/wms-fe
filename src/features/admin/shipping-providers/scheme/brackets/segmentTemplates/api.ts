@@ -1,6 +1,6 @@
 // src/features/admin/shipping-providers/scheme/brackets/segmentTemplates/api.ts
 //
-// Segments / Template Workbench 的 API（集中在一个目录，避免散落在 schemes/api.types）
+// Segments / Template Workbench 的 API（集中在一个目录，避免散落在 schemes/api/types）
 //
 // 注意：endpoint 命名以当前前端代码与既有 PUT items 路径为锚点；
 // 若后端路径不同，只需要在这里集中改动即可。
