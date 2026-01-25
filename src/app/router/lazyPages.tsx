@@ -49,7 +49,6 @@ export const OpsDevPlatformPage = lazy(() => import("../../features/ops/dev/OpsD
 export const StoresListPage = lazy(() => import("../../features/admin/stores/StoresListPage"));
 export const StoreDetailPage = lazy(() => import("../../features/admin/stores/StoreDetailPage"));
 export const ItemsPage = lazy(() => import("../../features/admin/items/ItemsPage"));
-export const UsersAdminPage = lazy(() => import("../../features/admin/users/UsersAdminPage")); // 旧页保留（兼容）
 
 // ✅ 权限与账号：3 个子页面（/iam/*）
 export const UsersManagePage = lazy(() => import("../../features/admin/users/iam/UsersManagePage"));

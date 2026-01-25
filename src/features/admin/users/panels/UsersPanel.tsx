@@ -14,7 +14,7 @@ import type { UserDTO, RoleDTO } from "../types";
 
 type Props = {
   presenter: UsersPresenter;
-  roles: RoleDTO[]; // 来自 UsersAdminPage，rolesPresenter.roles
+  roles: RoleDTO[]; // 来自来自调用方（角色列表）
 };
 
 export function UsersPanel({ presenter, roles }: Props) {
