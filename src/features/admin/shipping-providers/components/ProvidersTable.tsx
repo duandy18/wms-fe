@@ -15,31 +15,8 @@ function pickPrimaryContact(provider: ShippingProvider): ShippingProviderContact
   if (list.length === 0) return null;
   return list.find((c) => c.is_primary) ?? list[0] ?? null;
 }
-
 function getContactsCount(provider: ShippingProvider): number {
   return (provider.contacts ?? []).length;
-}
-
-function formatContactSummary(primary: ShippingProviderContact | null): string {
-  if (!primary) return "未设置";
-  const name = renderText(primary.name);
-  const phone = renderText(primary.phone ?? null);
-  return phone === "—" ? name : `${name} / ${phone}`;
-}
-
-type ProviderWarehouseUsage = {
-  qualifiedWarehouseLabels: string[];
-  activeWarehouseLabels: string[];
-};
-
-function summarizeLabels(labels: string[]): { text: string; title: string } {
-  const xs = labels ?? [];
-  if (xs.length === 0) return { text: "—", title: "" };
-  const shown = xs.slice(0, 2);
-  const rest = xs.length - shown.length;
-  const text = rest > 0 ? `${shown.join("、")} +${rest}` : shown.join("、");
-  const title = xs.join("、");
-  return { text, title };
 }
 
 type Props = {
@@ -56,18 +33,15 @@ type Props = {
   onSearchChange: (v: string) => void;
 
   onRefresh: () => void;
-
-  selectedProviderId: number | null;
-  onSelectProviderForSchemes: (id: number) => void;
+  onCreateProvider: () => void;
 
   onEditProvider: (p: ShippingProvider) => void;
   onToggleProviderActive: (p: ShippingProvider) => void;
 
-  // ✅ 只读事实：被哪些仓使用（资格/正在服务）
-  usageByProviderId: Record<number, ProviderWarehouseUsage>;
-  usageLoading: boolean;
-  usageError: string | null;
-  onRefreshUsage: () => void;
+  // ✅ Phase 6：仓库字典翻译（id -> label）
+  warehouseLabelById: Record<number, string>;
+  warehousesLoading: boolean;
+  warehousesError: string | null;
 };
 
 export const ProvidersTable: React.FC<Props> = ({
@@ -78,65 +52,56 @@ export const ProvidersTable: React.FC<Props> = ({
   onlyActive,
   onOnlyActiveChange,
   onRefresh,
-  selectedProviderId,
-  onSelectProviderForSchemes,
+  onCreateProvider,
   onEditProvider,
   onToggleProviderActive,
-  usageByProviderId,
-  usageLoading,
-  usageError,
-  onRefreshUsage,
+  warehouseLabelById,
+  warehousesLoading,
+  warehousesError,
 }) => {
   return (
     <section className={UI.card}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h2 className={`${UI.h2} font-semibold text-slate-900`}>物流/快递公司列表</h2>
+        <h2 className={`${UI.h2} font-semibold text-slate-900`}>仓库可用快递网点列表</h2>
 
         <div className="flex items-center gap-3">
           <label className="inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={onlyActive}
-              onChange={(e) => onOnlyActiveChange(e.target.checked)}
-            />
+            <input type="checkbox" checked={onlyActive} onChange={(e) => onOnlyActiveChange(e.target.checked)} />
             <span className={UI.small}>仅显示启用</span>
           </label>
 
-          <button type="button" disabled={loading} onClick={onRefresh} className={UI.btnSecondary}>
-            刷新
-          </button>
-
           <button
             type="button"
-            disabled={usageLoading}
-            onClick={onRefreshUsage}
             className={UI.btnSecondary}
-            title="刷新“被哪些仓使用”的只读事实"
+            disabled={!canWrite || loading}
+            onClick={onCreateProvider}
+            title={!canWrite ? "只读模式：无写权限" : ""}
           >
-            刷新使用情况
+            新建
+          </button>
+
+          <button type="button" disabled={loading} onClick={onRefresh} className={UI.btnSecondary}>
+            刷新
           </button>
         </div>
       </div>
 
       {error && <div className={UI.error}>{error}</div>}
-      {usageError && <div className={UI.error}>{usageError}</div>}
+      {warehousesError && <div className={UI.error}>{warehousesError}</div>}
 
       <div className={UI.tableWrap}>
         <table className={UI.table}>
           <thead>
             <tr className={UI.theadRow}>
               <th className={UI.th}>序号</th>
-              <th className={UI.th}>名称</th>
-              <th className={UI.th}>编码</th>
-              <th className={UI.th}>联系人摘要</th>
+              <th className={UI.th}>网点名称</th>
+              <th className={UI.th}>网点编号</th>
+              <th className={UI.th}>所属仓库</th>
+              <th className={UI.th}>联系人</th>
+              <th className={UI.th}>电话</th>
               <th className={UI.th}>联系人数量</th>
               <th className={UI.th}>优先级</th>
               <th className={UI.th}>状态</th>
-
-              {/* ✅ 只读事实展示：不在快递公司页做绑定/履约配置 */}
-              <th className={UI.th}>被哪些仓使用（事实）</th>
-
-              <th className={UI.th}>收费标准</th>
               <th className={UI.th}>操作</th>
             </tr>
           </thead>
@@ -144,23 +109,28 @@ export const ProvidersTable: React.FC<Props> = ({
           <tbody>
             {providers.length === 0 ? (
               <tr>
-                <td colSpan={10} className={UI.empty}>暂无记录</td>
+                <td colSpan={10} className={UI.empty}>
+                  暂无记录
+                </td>
               </tr>
             ) : (
               providers.map((p) => {
                 const primary = pickPrimaryContact(p);
-                const selected = selectedProviderId === p.id;
 
-                const usage = usageByProviderId[p.id] ?? { qualifiedWarehouseLabels: [], activeWarehouseLabels: [] };
-                const q = summarizeLabels(usage.qualifiedWarehouseLabels);
-                const a = summarizeLabels(usage.activeWarehouseLabels);
+                const whLabel = warehouseLabelById[p.warehouse_id] ?? "—";
 
                 return (
                   <tr key={p.id} className={UI.tr}>
                     <td className={UI.tdMono}>{p.id}</td>
                     <td className={UI.td}>{renderText(p.name)}</td>
                     <td className={UI.tdMono}>{renderText(p.code ?? null)}</td>
-                    <td className={UI.td}>{formatContactSummary(primary)}</td>
+
+                    <td className={UI.td} title={`warehouse_id=${p.warehouse_id}`}>
+                      {warehousesLoading ? <span className="text-sm text-slate-500">加载中…</span> : whLabel}
+                    </td>
+
+                    <td className={UI.td}>{primary ? renderText(primary.name) : "未设置"}</td>
+                    <td className={UI.tdMono}>{primary ? renderText(primary.phone ?? null) : "—"}</td>
                     <td className={UI.tdMono}>{getContactsCount(p)}</td>
                     <td className={UI.tdMono}>{renderNumber(p.priority)}</td>
 
@@ -179,30 +149,6 @@ export const ProvidersTable: React.FC<Props> = ({
                     </td>
 
                     <td className={UI.td}>
-                      {usageLoading ? (
-                        <div className="text-sm text-slate-500">加载中…</div>
-                      ) : (
-                        <div className="space-y-1">
-                          <div className="text-sm text-slate-700" title={q.title}>
-                            资格：{q.text}
-                          </div>
-                          <div className="text-sm text-slate-700" title={a.title}>
-                            服务：{a.text}
-                          </div>
-                        </div>
-                      )}
-                    </td>
-
-                    <td className={UI.td}>
-                      <button
-                        className={`${UI.badgeBtn} ${selected ? UI.badgeBtnActive : UI.badgeBtnIdle}`}
-                        onClick={() => onSelectProviderForSchemes(p.id)}
-                      >
-                        查看收费标准
-                      </button>
-                    </td>
-
-                    <td className={UI.td}>
                       <button
                         type="button"
                         className={UI.btnSecondary}
@@ -210,7 +156,7 @@ export const ProvidersTable: React.FC<Props> = ({
                         onClick={() => onEditProvider(p)}
                         title={!canWrite ? "只读模式：无写权限" : ""}
                       >
-                        管理联系人
+                        编辑网点
                       </button>
                     </td>
                   </tr>
@@ -221,9 +167,7 @@ export const ProvidersTable: React.FC<Props> = ({
         </table>
       </div>
 
-      <div className="mt-3 text-sm text-slate-500">
-        说明：本页只读展示“快递公司被哪些仓授予资格/正在服务”的事实；履约资格的写入与启停必须在【仓库详情 → 可用快递公司】中操作。
-      </div>
+      <div className="mt-3 text-sm text-slate-500">说明：每一行表示一个服务某仓库区域、参与运费比价的快递网点，仅展示主联系人信息。</div>
     </section>
   );
 };

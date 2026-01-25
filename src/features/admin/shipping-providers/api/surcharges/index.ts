@@ -1,6 +1,6 @@
 // src/features/admin/shipping-providers/api/surcharges/index.ts
 import { apiPost, apiPatch, apiDelete } from "../../../../../lib/api";
-import type { PricingSchemeSurcharge } from "../../api.types";
+import type { PricingSchemeSurcharge } from "../../api/types";
 
 export async function createSurcharge(
   schemeId: number,

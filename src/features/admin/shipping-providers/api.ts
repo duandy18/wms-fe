@@ -4,7 +4,7 @@
 // - 外部仍然 import "../api" / "../../api" 不变
 // - 内部实现全部走子目录（领域目录）
 
-export * from "./api.types";
+export * from "./api/types";
 export * from "./api/zones";
 export * from "./api/brackets";
 

@@ -5,7 +5,7 @@
 
 import React, { useMemo, useState } from "react";
 import { fetchPricingSchemeDetail } from "../../../admin/shipping-providers/api";
-import type { PricingSchemeDetail, PricingSchemeZoneBracket, PricingSchemeZone } from "../../../admin/shipping-providers/api.types";
+import type { PricingSchemeDetail, PricingSchemeZoneBracket, PricingSchemeZone } from "../../../admin/shipping-providers/api";
 import { safeJson } from "../labUtils";
 
 type Range = { id: number; min: number; max: number | null; mode: string };

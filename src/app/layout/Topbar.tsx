@@ -82,7 +82,12 @@ export function Topbar() {
       // 主数据
       { prefix: "/admin/items", value: { section: "主数据", page: "商品主数据" } },
       { prefix: "/admin/suppliers", value: { section: "主数据", page: "供应商主数据" } },
-      { prefix: "/admin/shipping-providers", value: { section: "主数据", page: "物流 / 快递公司" } },
+
+      // ✅ 快递网点（主数据归位）
+      { prefix: "/admin/shipping-providers", value: { section: "主数据", page: "快递网点" } },
+      // ✅ 别名入口（兼容）：保持同一面包屑语义
+      { prefix: "/logistics/providers", value: { section: "主数据", page: "快递网点" } },
+
       { prefix: "/warehouses", value: { section: "主数据", page: "仓库管理" } },
       { prefix: "/stores", value: { section: "主数据", page: "店铺管理" } },
 
@@ -156,8 +161,20 @@ export function Topbar() {
           <div className="bg-white rounded-xl p-6 w-[420px] space-y-4">
             <h3 className="text-lg font-semibold">修改密码</h3>
             {pwdError && <div className="text-xs text-red-600">{pwdError}</div>}
-            <input className="border px-3 py-2 w-full" type="password" placeholder="旧密码" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} />
-            <input className="border px-3 py-2 w-full" type="password" placeholder="新密码" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} />
+            <input
+              className="border px-3 py-2 w-full"
+              type="password"
+              placeholder="旧密码"
+              value={oldPwd}
+              onChange={(e) => setOldPwd(e.target.value)}
+            />
+            <input
+              className="border px-3 py-2 w-full"
+              type="password"
+              placeholder="新密码"
+              value={newPwd}
+              onChange={(e) => setNewPwd(e.target.value)}
+            />
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowPwdModal(false)}>取消</button>
               <button onClick={submitPasswordChange}>{saving ? "保存中…" : "保存"}</button>

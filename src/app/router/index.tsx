@@ -2,12 +2,26 @@
 // 应用路由总表：挂载所有页面，包括财务分析 / 诊断 / DevConsole 等
 
 import React, { Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 
 import { AppLayout } from "../layout/AppLayout";
 import { RequireAuth, RequirePermission, ForbiddenPage, RouteLoading } from "./guards";
 import * as P from "./lazyPages";
 import { ReceiveSupplementPage } from "../../features/operations/inbound/ReceiveSupplementPage";
+
+/* ✅ 兼容入口：统一收敛到“编辑网点”唯一入口 */
+function RedirectToProviderEdit() {
+  const { providerId } = useParams();
+  if (!providerId) return <Navigate to="/admin/shipping-providers" replace />;
+  return <Navigate to={`/admin/shipping-providers/${providerId}/edit`} replace />;
+}
+
+function RedirectToProviderEditFromSchemes() {
+  const { providerId } = useParams();
+  if (!providerId) return <Navigate to="/admin/shipping-providers" replace />;
+  // 只保留一个入口：编辑网点。这里不再保留 schemes 子页心智。
+  return <Navigate to={`/admin/shipping-providers/${providerId}/edit`} replace />;
+}
 
 /* 路由入口 */
 const AppRouter: React.FC = () => {
@@ -451,11 +465,70 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+
+          {/* ✅ 物流与承运商：语义化入口（别名） */}
+          <Route
+            path="logistics/providers"
+            element={
+              <RequirePermission permission="config.store.write">
+                <Navigate to="/admin/shipping-providers" replace />
+              </RequirePermission>
+            }
+          />
+
+          {/* ✅ 快递公司列表 */}
           <Route
             path="admin/shipping-providers"
             element={
               <RequirePermission permission="config.store.write">
                 <P.ShippingProvidersListPage />
+              </RequirePermission>
+            }
+          />
+
+          {/* ✅ 兼容入口：曾经的“详情页/方案页”，统一收敛到编辑页（唯一入口） */}
+          <Route
+            path="admin/shipping-providers/:providerId"
+            element={
+              <RequirePermission permission="config.store.write">
+                <RedirectToProviderEdit />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="admin/shipping-providers/:providerId/schemes"
+            element={
+              <RequirePermission permission="config.store.write">
+                <RedirectToProviderEditFromSchemes />
+              </RequirePermission>
+            }
+          />
+
+          /* ✅ 快递网点编辑页（两页模型） */
+
+          <Route
+            path="admin/shipping-providers/new"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.ShippingProviderEditPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="admin/shipping-providers/:providerId/edit"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.ShippingProviderEditPage />
+              </RequirePermission>
+            }
+          />
+          {/* ✅ 运价方案工作台：Tab → 子页面 */}
+          <Route
+            path="admin/shipping-providers/schemes/:schemeId/workbench/:tab"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.SchemeWorkbenchPage />
               </RequirePermission>
             }
           />

@@ -66,6 +66,16 @@ export const SuppliersListPage = lazy(() => import("../../features/admin/supplie
 // 物流 / 快递公司主数据
 export const ShippingProvidersListPage = lazy(() => import("../../features/admin/shipping-providers/ShippingProvidersListPage"));
 
+// ✅ 快递网点编辑页（两页模型）
+export const ShippingProviderEditPage = lazy(
+  () => import("../../features/admin/shipping-providers/pages/ShippingProviderEditPage"),
+);
+
+// ✅ 快递公司详情页（Provider 维度：Tab → 子页面）
+export const ShippingProviderDetailPage = lazy(
+  () => import("../../features/admin/shipping-providers/pages/ShippingProviderDetailPage"),
+);
+
 // ✅ 运价方案工作台（独立页，非弹窗）
 export const SchemeWorkbenchPage = lazy(() => import("../../features/admin/shipping-providers/scheme/SchemeWorkbenchPage"));
 
