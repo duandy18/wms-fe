@@ -5,7 +5,7 @@
 // - Admin 只展示：结果摘要 + 对账摘要
 // - reasons/breakdown/raw 等解释能力：迁入 DevConsole → Shipping Pricing Lab
 //
-// ✅ Phase 4.x 合同：warehouse_id 为强前置（起运仓上下文）
+// ✅ 合同：起运仓为必填前置
 // - 前端不得绕过仓库边界发起报价
 // - 不做 fallback，不做默认全仓可用
 
@@ -40,7 +40,7 @@ export const QuotePreviewPanel: React.FC<{
   disabled?: boolean;
   onError: (msg: string) => void;
 }> = ({ schemeId, disabled, onError }) => {
-  // ✅ 起运仓（强前置上下文）
+  // ✅ 起运仓（必填前置）
   const [warehouses, setWarehouses] = useState<WarehouseListItem[]>([]);
   const [whLoading, setWhLoading] = useState(false);
   const [whError, setWhError] = useState<string | null>(null);
@@ -143,9 +143,9 @@ export const QuotePreviewPanel: React.FC<{
       return;
     }
 
-    // ✅ 合同：warehouse_id 强前置
+    // ✅ 必填前置：起运仓
     if (!Number.isFinite(parsedWarehouseId) || parsedWarehouseId <= 0) {
-      onError("请先选择起运仓（warehouse_id）");
+      onError("请先选择起运仓");
       return;
     }
 
@@ -167,7 +167,7 @@ export const QuotePreviewPanel: React.FC<{
       const body: Record<string, unknown> = {
         scheme_id: schemeId,
 
-        // ✅ 强前置：起运仓上下文
+        // ✅ 起运仓上下文（必填）
         warehouse_id: parsedWarehouseId,
 
         dest: {
@@ -202,18 +202,9 @@ export const QuotePreviewPanel: React.FC<{
 
   return (
     <div className="space-y-4">
-      {/* ✅ 合同告知：这里的起运仓仅作为“预览上下文”，不等同于 scheme 已绑定起运仓（后端接口尚未暴露） */}
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        <div className="font-semibold">合同提示：起运仓为强前置</div>
-        <div className="mt-1 text-amber-800">
-          本预览必须选择起运仓（warehouse_id）后才能算价。这里选择的是“预览上下文”，不会写入方案绑定事实。
-        </div>
-      </div>
-
       <QuotePreviewForm
         disabled={disabled}
         loading={loading}
-        // ✅ 起运仓（强前置）
         warehouseId={warehouseId}
         warehouseOptions={warehouseOptions}
         warehousesLoading={whLoading}

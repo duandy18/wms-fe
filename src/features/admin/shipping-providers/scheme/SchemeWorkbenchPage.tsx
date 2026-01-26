@@ -1,7 +1,7 @@
 // src/features/admin/shipping-providers/scheme/SchemeWorkbenchPage.tsx
 
 import React, { useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { UI } from "./ui";
 import { L } from "./labels";
 import { useSchemeWorkbench } from "./useSchemeWorkbench";
@@ -54,8 +54,13 @@ function isSchemeTabKey(v: unknown): v is SchemeTabKey {
   return typeof v === "string" && (TAB_KEYS as string[]).includes(v);
 }
 
+type WorkbenchLocationState = {
+  from?: string;
+};
+
 export const SchemeWorkbenchPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams<{ schemeId: string; tab?: string }>();
   const schemeId = params.schemeId ? Number(params.schemeId) : null;
 
@@ -89,6 +94,22 @@ export const SchemeWorkbenchPage: React.FC = () => {
     navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/${k}`);
   };
 
+  const onBack = () => {
+    const st = (location.state ?? {}) as WorkbenchLocationState;
+    if (typeof st.from === "string" && st.from.trim()) {
+      navigate(st.from, { replace: true });
+      return;
+    }
+
+    const providerId = wb.detail?.shipping_provider_id ?? null;
+    if (typeof providerId === "number" && providerId > 0) {
+      navigate(`/admin/shipping-providers/${providerId}/edit`, { replace: true });
+      return;
+    }
+
+    navigate("/admin/shipping-providers", { replace: true });
+  };
+
   return (
     <div className={UI.page}>
       <WorkbenchHeaderCard
@@ -96,7 +117,8 @@ export const SchemeWorkbenchPage: React.FC = () => {
         loading={wb.loading}
         mutating={wb.mutating}
         summary={wb.summary ? { id: wb.summary.id, name: wb.summary.name } : null}
-        onBack={() => navigate(-1)}
+        providerName={wb.providerName}
+        onBack={onBack}
       />
 
       {wb.refreshing ? <div className={UI.workbenchSyncBar}>正在同步最新数据…</div> : null}

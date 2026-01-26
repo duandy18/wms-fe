@@ -155,6 +155,13 @@ export function useSchemeWorkbench(params: { open: boolean; schemeId: number | n
     };
   }, [detail]);
 
+  // ✅ 刚性契约：由后端直接提供（不推导）
+  const providerName = useMemo(() => {
+    if (!detail) return null;
+    const v = (detail.shipping_provider_name ?? "").trim();
+    return v ? v : null;
+  }, [detail]);
+
   return {
     tab,
     setTab,
@@ -163,6 +170,7 @@ export function useSchemeWorkbench(params: { open: boolean; schemeId: number | n
 
     detail,
     summary,
+    providerName,
 
     loading,
     refreshing,
