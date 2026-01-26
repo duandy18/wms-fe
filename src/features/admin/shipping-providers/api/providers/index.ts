@@ -25,6 +25,9 @@ export async function createShippingProvider(payload: {
   // ✅ Phase 6+：创建必须归属仓库（后端缺失直接 422）
   warehouse_id: number;
 
+  // ✅ 网点地址（可选，与后端 address 字段对齐）
+  address?: string;
+
   active?: boolean;
   priority?: number;
 }): Promise<ShippingProvider> {
@@ -38,6 +41,7 @@ export async function createShippingProvider(payload: {
 export type UpdateShippingProviderPayload = Partial<{
   name: string;
   code: string | null;
+  address: string | null;
   active: boolean;
   priority: number;
   warehouse_id: number;

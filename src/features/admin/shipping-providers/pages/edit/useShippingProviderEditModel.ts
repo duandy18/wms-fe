@@ -30,6 +30,12 @@ export function useShippingProviderEditModel(providerId: number | null) {
   const [loadingSchemes, setLoadingSchemes] = useState(false);
   const [schemesError, setSchemesError] = useState<string | null>(null);
 
+  // ✅ Phase 6+：收费标准列表读链路开关（默认只看“当前可用”）
+  // - include_inactive=true：把停用历史也拉回来
+  // - include_archived=true：把归档也拉回来
+  const [includeInactiveSchemes, setIncludeInactiveSchemes] = useState(false);
+  const [includeArchivedSchemes, setIncludeArchivedSchemes] = useState(false);
+
   const [savingContact, setSavingContact] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
 
@@ -67,7 +73,10 @@ export function useShippingProviderEditModel(providerId: number | null) {
     setLoadingSchemes(true);
     setSchemesError(null);
     try {
-      const list = await fetchPricingSchemes(providerId);
+      const list = await fetchPricingSchemes(providerId, {
+        include_inactive: includeInactiveSchemes,
+        include_archived: includeArchivedSchemes,
+      });
       setSchemes(list ?? []);
     } catch (e: unknown) {
       setSchemes([]);
@@ -75,12 +84,16 @@ export function useShippingProviderEditModel(providerId: number | null) {
     } finally {
       setLoadingSchemes(false);
     }
-  }, [providerId]);
+  }, [providerId, includeInactiveSchemes, includeArchivedSchemes]);
 
   useEffect(() => {
     void refreshProvider();
+  }, [refreshProvider]);
+
+  // ✅ 关键：当 providerId 或“读链路开关”变化时，自动刷新列表
+  useEffect(() => {
     void refreshSchemes();
-  }, [refreshProvider, refreshSchemes]);
+  }, [refreshSchemes]);
 
   const contacts = useMemo<ShippingProviderContact[]>(() => provider?.contacts ?? [], [provider]);
 
@@ -171,6 +184,12 @@ export function useShippingProviderEditModel(providerId: number | null) {
     schemes,
     loadingSchemes,
     schemesError,
+
+    // ✅ 暴露读链路开关（给 UI 两个 checkbox）
+    includeInactiveSchemes,
+    setIncludeInactiveSchemes,
+    includeArchivedSchemes,
+    setIncludeArchivedSchemes,
 
     contacts,
 

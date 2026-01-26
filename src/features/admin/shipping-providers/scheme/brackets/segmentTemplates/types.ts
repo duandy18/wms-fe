@@ -1,7 +1,7 @@
 // src/features/admin/shipping-providers/scheme/brackets/segmentTemplates/types.ts
 //
 // Segments / Template Workbench 的局部类型（只服务 brackets/workbench）
-// - 不进入 shipping-providers 全局 api.types.ts（避免污染主数据类型层）
+// - 不进入 shipping-providers 全局 api/types.ts（避免污染主数据类型层）
 // - 字段只保留 UI/工作台实际使用到的最小集合，其余允许透传
 
 export type SchemeWeightSegment = {

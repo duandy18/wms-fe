@@ -1,11 +1,13 @@
 // src/features/admin/shipping-providers/pages/edit/SchemesSectionCard.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { UI } from "../../ui";
 import type { PricingScheme } from "../../api/types";
-import { createPricingScheme, patchPricingScheme } from "../../api/schemes";
+import { SchemeCreateBar } from "./schemes/SchemeCreateBar";
+import { SchemesTable } from "./schemes/SchemesTable";
+import { useSchemesSectionModel } from "./schemes/useSchemesSectionModel";
 
-function badge(active: boolean) {
-  return active ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700";
+function isArchived(s: PricingScheme): boolean {
+  return s.archived_at != null;
 }
 
 export const SchemesSectionCard: React.FC<{
@@ -17,59 +19,48 @@ export const SchemesSectionCard: React.FC<{
   loading: boolean;
   error: string | null;
 
+  // ✅ Phase 6+：读链路开关（由上层 model 管理）
+  includeInactive: boolean;
+  includeArchived: boolean;
+  onChangeIncludeInactive: (v: boolean) => void;
+  onChangeIncludeArchived: (v: boolean) => void;
+
   onRefresh: () => void | Promise<void>;
   onOpenWorkbench: (schemeId: number) => void;
-}> = ({ canWrite, busy, providerId, schemes, loading, error, onRefresh, onOpenWorkbench }) => {
-  const disabled = busy || !canWrite;
-
-  const [newName, setNewName] = useState("");
-  const [newCurrency, setNewCurrency] = useState("CNY");
-  const [creating, setCreating] = useState(false);
-  const [rowBusy, setRowBusy] = useState<number | null>(null);
-  const [localErr, setLocalErr] = useState<string | null>(null);
+}> = (props) => {
+  const m = useSchemesSectionModel(props);
 
   const summary = useMemo(() => {
-    const total = schemes.length;
-    const activeN = schemes.filter((s) => s.active).length;
-    return { total, activeN };
-  }, [schemes]);
+    const total = props.schemes.length;
+    const activeN = props.schemes.filter((x) => Boolean(x.active) && !isArchived(x)).length;
+    const inactiveN = props.schemes.filter((x) => !x.active && !isArchived(x)).length;
+    const archivedN = props.schemes.filter((x) => isArchived(x)).length;
+    return { total, activeN, inactiveN, archivedN };
+  }, [props.schemes]);
 
-  async function onCreate() {
-    if (!providerId) return;
-    if (disabled) return;
+  async function setIncludeArchivedAndRefresh(next: boolean) {
+    props.onChangeIncludeArchived(next);
+    await props.onRefresh();
+  }
 
-    setLocalErr(null);
-    const name = newName.trim();
-    if (!name) {
-      setLocalErr("收费标准名称不能为空");
-      return;
-    }
-    setCreating(true);
-    try {
-      await createPricingScheme(providerId, { name, currency: newCurrency || "CNY" });
-      setNewName("");
-      await onRefresh();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "创建失败";
-      setLocalErr(msg);
-    } finally {
-      setCreating(false);
+  async function setIncludeInactiveAndRefresh(next: boolean) {
+    props.onChangeIncludeInactive(next);
+    await props.onRefresh();
+  }
+
+  async function onArchiveAndKeepVisible(s: PricingScheme) {
+    // 归档后默认会隐藏；这里强制打开“显示归档”，避免“归档了就找不回”的 UX 坑
+    await m.onArchiveScheme(s);
+    if (!props.includeArchived) {
+      await setIncludeArchivedAndRefresh(true);
+    } else {
+      await props.onRefresh();
     }
   }
 
-  async function setActive(schemeId: number, active: boolean) {
-    if (disabled) return;
-    setLocalErr(null);
-    setRowBusy(schemeId);
-    try {
-      await patchPricingScheme(schemeId, { active });
-      await onRefresh();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "操作失败";
-      setLocalErr(msg);
-    } finally {
-      setRowBusy(null);
-    }
+  async function onUnarchiveAndRefresh(s: PricingScheme) {
+    await m.onUnarchiveScheme(s);
+    await props.onRefresh();
   }
 
   return (
@@ -77,118 +68,76 @@ export const SchemesSectionCard: React.FC<{
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className={`${UI.h2} font-semibold text-slate-900`}>收费标准</div>
-          <div className="text-xs text-red-500">[SCHEMES-CARD-NEW]</div>
           <div className="mt-1 text-sm text-slate-600">
-            当前 {summary.total} 条（启用 {summary.activeN} 条）。深度编辑请进入工作台。
+            当前 {summary.total} 条（启用 {summary.activeN} 条，停用 {summary.inactiveN} 条，归档 {summary.archivedN} 条）。深度编辑请进入工作台。
           </div>
         </div>
 
-        <button type="button" className={UI.btnSecondary} disabled={loading} onClick={() => void onRefresh()}>
-          刷新
-        </button>
+        <div className="flex items-center gap-3">
+          <label className="flex select-none items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={props.includeInactive}
+              disabled={props.loading}
+              onChange={(e) => void setIncludeInactiveAndRefresh(e.target.checked)}
+            />
+            显示停用
+          </label>
+
+          <label className="flex select-none items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={props.includeArchived}
+              disabled={props.loading}
+              onChange={(e) => void setIncludeArchivedAndRefresh(e.target.checked)}
+            />
+            显示归档
+          </label>
+
+          <button type="button" className={UI.btnSecondary} disabled={props.loading} onClick={() => void props.onRefresh()}>
+            刷新
+          </button>
+        </div>
       </div>
 
-      {(error || localErr) && <div className={`mt-3 ${UI.error}`}>{error ?? localErr}</div>}
+      {/* 页面级错误（加载/接口）保留；动作级错误由就近组件展示 */}
+      {props.error && <div className={`mt-3 ${UI.error}`}>{props.error}</div>}
 
-      {!providerId ? (
+      {!props.providerId ? (
         <div className="mt-3 text-sm text-slate-500">请先保存网点基础信息，再维护收费标准。</div>
       ) : (
         <>
-          {/* 创建区 */}
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-6">
-            <div className="md:col-span-3">
-              <label className={UI.label}>新建收费标准名称 *</label>
-              <input
-                className={UI.input}
-                value={newName}
-                disabled={disabled || creating}
-                placeholder="例如：河北一仓-标准件"
-                onChange={(e) => setNewName(e.target.value)}
-              />
-            </div>
+          <SchemeCreateBar
+            disabled={m.disabled}
+            batchBusy={m.batchBusy}
+            creating={m.creating}
+            newName={m.newName}
+            newCurrency={m.newCurrency}
+            localErr={m.localErr}
+            localOk={m.localOk}
+            onChangeName={m.setNewName}
+            onChangeCurrency={m.setNewCurrency}
+            onCreate={m.onCreate}
+          />
 
-            <div className="md:col-span-1">
-              <label className={UI.label}>币种</label>
-              <input
-                className={UI.inputMono}
-                value={newCurrency}
-                disabled={disabled || creating}
-                onChange={(e) => setNewCurrency(e.target.value)}
-              />
-            </div>
+          {!props.includeArchived && summary.archivedN === 0 ? (
+            <div className="mt-3 text-sm text-slate-500">提示：已归档的方案默认隐藏；如需取消归档，请勾选“显示归档”。</div>
+          ) : null}
 
-            <div className="md:col-span-2 flex items-end">
-              <button type="button" className={UI.btnPrimary} disabled={disabled || creating} onClick={() => void onCreate()}>
-                {creating ? "创建中…" : "创建收费标准"}
-              </button>
-            </div>
-          </div>
-
-          {/* 列表区 */}
-          <div className="mt-4 overflow-auto rounded-xl border border-slate-200 bg-white">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50">
-                <tr className="border-b">
-                  <th className="px-3 py-2 text-left">ID</th>
-                  <th className="px-3 py-2 text-left">名称</th>
-                  <th className="px-3 py-2 text-left">币种</th>
-                  <th className="px-3 py-2 text-left">优先级</th>
-                  <th className="px-3 py-2 text-left">状态</th>
-                  <th className="px-3 py-2 text-right">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schemes.map((s) => (
-                  <tr key={s.id} className="border-b">
-                    <td className="px-3 py-2 font-mono">{s.id}</td>
-                    <td className="px-3 py-2">{s.name}</td>
-                    <td className="px-3 py-2 font-mono">{s.currency}</td>
-                    <td className="px-3 py-2 font-mono">{typeof s.priority === "number" ? s.priority : "—"}</td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badge(Boolean(s.active))}`}>
-                        {s.active ? "启用" : "停用"}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button type="button" className={UI.btnSecondary} onClick={() => onOpenWorkbench(s.id)}>
-                          打开工作台
-                        </button>
-
-                        {s.active ? (
-                          <button
-                            type="button"
-                            className={UI.btnSecondary}
-                            disabled={disabled || rowBusy === s.id}
-                            onClick={() => void setActive(s.id, false)}
-                          >
-                            停用
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className={UI.btnSecondary}
-                            disabled={disabled || rowBusy === s.id}
-                            onClick={() => void setActive(s.id, true)}
-                          >
-                            设为启用
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {schemes.length === 0 ? (
-                  <tr>
-                    <td className="px-3 py-6 text-center text-sm text-slate-500" colSpan={6}>
-                      暂无收费标准
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
+          <SchemesTable
+            // ✅ 去掉筛选条：表格直接展示“本次从后端拉回来的列表”
+            list={props.schemes}
+            disabled={m.disabled}
+            batchBusy={m.batchBusy}
+            rowBusy={m.rowBusy}
+            archivingId={m.archivingId}
+            onOpenWorkbench={props.onOpenWorkbench}
+            onSetActive={m.setActive}
+            onArchiveScheme={onArchiveAndKeepVisible}
+            onUnarchiveScheme={onUnarchiveAndRefresh}
+          />
         </>
       )}
     </section>
