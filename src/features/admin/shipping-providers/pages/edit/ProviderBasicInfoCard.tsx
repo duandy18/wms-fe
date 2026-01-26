@@ -24,6 +24,10 @@ export const ProviderBasicInfoCard: React.FC<{
 
   savingProvider: boolean;
   onSaveProvider: () => void | Promise<void>;
+
+  // ✅ 就近反馈：保存成功/失败直接显示在卡片里
+  error?: string | null;
+  ok?: string | null;
 }> = ({
   canWrite,
   busy,
@@ -35,10 +39,18 @@ export const ProviderBasicInfoCard: React.FC<{
   onChange,
   savingProvider,
   onSaveProvider,
+  error,
+  ok,
 }) => {
   return (
     <section className={UI.card}>
       <div className={`${UI.h2} font-semibold text-slate-900`}>基础信息</div>
+
+      {/* ✅ 保存反馈就近显示，避免用户滚动后“看不到错误/成功” */}
+      {error ? <div className={`mt-3 ${UI.error}`}>{error}</div> : null}
+      {ok ? (
+        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{ok}</div>
+      ) : null}
 
       <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-4">
         <div className="md:col-span-2">

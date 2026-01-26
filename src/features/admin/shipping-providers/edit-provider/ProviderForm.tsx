@@ -12,6 +12,7 @@ import { UI } from "../ui";
 export type EditProviderFormState = {
   editName: string;
   editCode: string;
+  editAddress: string; // ✅ 网点地址（与后端 address 字段 1:1 对齐）
   editActive: boolean;
   editPriority: string;
 
@@ -64,15 +65,23 @@ export const ProviderForm: React.FC<{
         />
       </div>
 
+      {/* ✅ 新增：网点地址（全宽） */}
+      <div className="md:col-span-4">
+        <label className={UI.label}>网点地址</label>
+        <textarea
+          className={UI.input}
+          value={state.editAddress}
+          disabled={busy}
+          placeholder="例如：河北省石家庄市长安区xxx路xxx号（用于揽收/交接）"
+          rows={2}
+          onChange={(e) => onChange({ editAddress: e.target.value })}
+        />
+      </div>
+
       <div className="flex items-end gap-3 md:col-span-4">
         <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            checked={state.editActive}
-            disabled={busy}
-            onChange={(e) => onChange({ editActive: e.target.checked })}
-          />
-          启用该网点
+          <input type="checkbox" checked={state.editActive} disabled={busy} onChange={(e) => onChange({ editActive: e.target.checked })} />
+          网点启用（参与比价/推荐）
         </label>
 
         <button
@@ -80,6 +89,7 @@ export const ProviderForm: React.FC<{
           className={UI.btnPrimaryGreen}
           disabled={busy || savingProvider}
           onClick={() => void onSaveProvider()}
+          title={busy ? "当前不可保存：请检查权限/等待加载完成" : ""}
         >
           {savingProvider ? "保存中…" : "保存网点信息"}
         </button>

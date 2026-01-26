@@ -10,7 +10,7 @@
 // - 列表页不再提供“网点价表”入口
 // - 编辑页承载“基础信息 / 联系人 / 收费标准（工作台入口）”
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import PageTitle from "../../../../components/ui/PageTitle";
@@ -76,6 +76,8 @@ const ShippingProviderEditPage: React.FC = () => {
   // ===== 基础信息表单状态（沿用 ProviderForm 组件）=====
   const [savingProvider, setSavingProvider] = useState(false);
   const [providerError, setProviderError] = useState<string | null>(null);
+  const [providerOk, setProviderOk] = useState<string | null>(null);
+  const okTimerRef = useRef<number | null>(null);
 
   // warehouse_id 选择（string 便于 select 绑定）
   const [warehouseIdStr, setWarehouseIdStr] = useState<string>("");
@@ -83,6 +85,7 @@ const ShippingProviderEditPage: React.FC = () => {
   const [state, setState] = useState<EditProviderFormState>({
     editName: "",
     editCode: "",
+    editAddress: "",
     editActive: true,
     editPriority: "0",
     cName: "",
@@ -93,15 +96,36 @@ const ShippingProviderEditPage: React.FC = () => {
     cPrimary: true,
   });
 
-  const patchState = useCallback((patch: Partial<EditProviderFormState>) => {
-    setState((s) => ({ ...s, ...patch }));
+  const clearOkTimer = useCallback(() => {
+    if (okTimerRef.current != null) {
+      window.clearTimeout(okTimerRef.current);
+      okTimerRef.current = null;
+    }
   }, []);
+
+  useEffect(() => {
+    return () => {
+      clearOkTimer();
+    };
+  }, [clearOkTimer]);
+
+  const patchState = useCallback(
+    (patch: Partial<EditProviderFormState>) => {
+      // 用户一改输入，就清掉“已保存”的提示，避免误导
+      if (providerOk) {
+        clearOkTimer();
+        setProviderOk(null);
+      }
+      setState((s) => ({ ...s, ...patch }));
+    },
+    [providerOk, clearOkTimer],
+  );
 
   // provider 变化时同步表单（编辑模式）
   useEffect(() => {
     if (!safePid) {
       setWarehouseIdStr("");
-      setState((s) => ({ ...s, editName: "", editCode: "", editPriority: "0", editActive: true }));
+      setState((s) => ({ ...s, editName: "", editCode: "", editAddress: "", editPriority: "0", editActive: true }));
       return;
     }
     const p = m.provider;
@@ -112,6 +136,7 @@ const ShippingProviderEditPage: React.FC = () => {
       ...s,
       editName: p.name ?? "",
       editCode: p.code ?? "",
+      editAddress: p.address ?? "",
       editPriority: String(p.priority ?? 0),
       editActive: Boolean(p.active),
     }));
@@ -123,6 +148,8 @@ const ShippingProviderEditPage: React.FC = () => {
     if (!canWrite) return;
 
     setProviderError(null);
+    clearOkTimer();
+    setProviderOk(null);
 
     const name = state.editName.trim();
     if (!name) {
@@ -137,10 +164,13 @@ const ShippingProviderEditPage: React.FC = () => {
     }
 
     const priorityNum = Number(state.editPriority || "0");
+    const addrTrim = state.editAddress.trim();
+
     const payload = {
       warehouse_id: whId,
       name,
       code: state.editCode.trim() ? state.editCode.trim() : undefined,
+      address: addrTrim ? addrTrim : undefined,
       active: Boolean(state.editActive),
       priority: Number.isFinite(priorityNum) ? priorityNum : 0,
     };
@@ -164,6 +194,8 @@ const ShippingProviderEditPage: React.FC = () => {
         warehouse_id: payload.warehouse_id,
         name: payload.name,
         code: payload.code ?? null,
+        // ✅ 允许清空：表单为空字符串时传 null
+        address: addrTrim ? addrTrim : null,
         active: payload.active,
         priority: payload.priority,
       });
@@ -171,6 +203,13 @@ const ShippingProviderEditPage: React.FC = () => {
       // 保存后刷新：provider + schemes
       await m.refreshProvider();
       await m.refreshSchemes();
+
+      // ✅ 明确成功反馈（2 秒后自动消失）
+      setProviderOk("已保存网点信息");
+      okTimerRef.current = window.setTimeout(() => {
+        setProviderOk(null);
+        okTimerRef.current = null;
+      }, 2000);
     } catch (e: unknown) {
       setProviderError(toErrMsg(e, "保存失败"));
     } finally {
@@ -178,10 +217,12 @@ const ShippingProviderEditPage: React.FC = () => {
     }
   }, [
     canWrite,
+    clearOkTimer,
     isCreate,
     m,
     safePid,
     state.editActive,
+    state.editAddress,
     state.editCode,
     state.editName,
     state.editPriority,
@@ -212,6 +253,7 @@ const ShippingProviderEditPage: React.FC = () => {
         </div>
       )}
 
+      {/* 页面级错误保留（用于汇总展示），但卡片内也会显示基础信息的保存结果 */}
       {showErrors && (
         <div className="mt-4 space-y-2">
           {providerError && <div className={UI.error}>{providerError}</div>}
@@ -229,11 +271,20 @@ const ShippingProviderEditPage: React.FC = () => {
           warehouses={warehouses}
           warehousesLoading={warehousesLoading}
           warehouseIdStr={warehouseIdStr}
-          onWarehouseIdStrChange={setWarehouseIdStr}
+          onWarehouseIdStrChange={(v) => {
+            // 选择仓库也属于“修改”，清掉成功提示
+            if (providerOk) {
+              clearOkTimer();
+              setProviderOk(null);
+            }
+            setWarehouseIdStr(v);
+          }}
           state={state}
           onChange={patchState}
           savingProvider={savingProvider}
           onSaveProvider={onSaveProvider}
+          error={providerError}
+          ok={providerOk}
         />
 
         <ContactsSectionCard
@@ -249,6 +300,7 @@ const ShippingProviderEditPage: React.FC = () => {
           onToggleContactActive={m.toggleContactActive}
           onRemoveContact={m.removeContact}
         />
+
         <SchemesSectionCard
           canWrite={canWrite}
           busy={busy}
@@ -256,6 +308,10 @@ const ShippingProviderEditPage: React.FC = () => {
           schemes={m.schemes}
           loading={m.loadingSchemes}
           error={m.schemesError}
+          includeInactive={m.includeInactiveSchemes}
+          includeArchived={m.includeArchivedSchemes}
+          onChangeIncludeInactive={m.setIncludeInactiveSchemes}
+          onChangeIncludeArchived={m.setIncludeArchivedSchemes}
           onRefresh={m.refreshSchemes}
           onOpenWorkbench={(schemeId) => nav(`/admin/shipping-providers/schemes/${schemeId}/workbench/zones`)}
         />
