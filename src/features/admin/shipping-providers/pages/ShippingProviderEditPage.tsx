@@ -11,7 +11,7 @@
 // - 编辑页承载“基础信息 / 联系人 / 收费标准（工作台入口）”
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import PageTitle from "../../../../components/ui/PageTitle";
 import { UI } from "../ui";
@@ -37,6 +37,7 @@ function toErrMsg(e: unknown, fallback: string): string {
 
 const ShippingProviderEditPage: React.FC = () => {
   const nav = useNavigate();
+  const location = useLocation();
   const { providerId } = useParams<{ providerId?: string }>();
 
   const pidNum = providerId ? Number(providerId) : NaN;
@@ -237,6 +238,9 @@ const ShippingProviderEditPage: React.FC = () => {
   // 编辑页需要一个 provider 实体用于渲染/判断（来自 model）
   const provider: ShippingProvider | null = m.provider;
 
+  // ✅ 供 Workbench 返回使用：明确记录 “从哪里打开的”
+  const from = `${location.pathname}${location.search}${location.hash}`;
+
   return (
     <div className={UI.page}>
       <div className="flex items-center justify-between gap-3">
@@ -313,7 +317,11 @@ const ShippingProviderEditPage: React.FC = () => {
           onChangeIncludeInactive={m.setIncludeInactiveSchemes}
           onChangeIncludeArchived={m.setIncludeArchivedSchemes}
           onRefresh={m.refreshSchemes}
-          onOpenWorkbench={(schemeId) => nav(`/admin/shipping-providers/schemes/${schemeId}/workbench/zones`)}
+          onOpenWorkbench={(schemeId) =>
+            nav(`/admin/shipping-providers/schemes/${schemeId}/workbench/zones`, {
+              state: { from },
+            })
+          }
         />
       </div>
     </div>

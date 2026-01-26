@@ -50,7 +50,6 @@ export const QuotePreviewForm: React.FC<{
   disabled?: boolean;
   loading: boolean;
 
-  // ✅ Phase 4.x 合同：起运仓强前置（warehouse_id）
   warehouseId: string;
   warehouseOptions: Array<{ id: number; label: string }>;
   warehousesLoading: boolean;
@@ -128,9 +127,8 @@ export const QuotePreviewForm: React.FC<{
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
-      {/* ✅ 起运仓（强前置） */}
+      {/* 起运仓 */}
       <div>
-        <div className="text-sm font-semibold text-slate-800">起运仓（强前置）</div>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="flex flex-col md:col-span-2">
             <label className="text-sm text-slate-600">起运仓 *</label>
@@ -162,10 +160,6 @@ export const QuotePreviewForm: React.FC<{
             </button>
           </div>
         </div>
-
-        {!warehouseId ? (
-          <div className="mt-2 text-sm text-amber-700">未选择起运仓时，禁止算价（warehouse_id 为强前置）。</div>
-        ) : null}
       </div>
 
       {/* 目的地 */}
@@ -311,7 +305,7 @@ export const QuotePreviewForm: React.FC<{
             type="button"
             disabled={disabled || loading || !canCalc}
             onClick={onCalc}
-            title={!canCalc ? "请先选择起运仓（warehouse_id）" : ""}
+            title={!canCalc ? "请先选择起运仓" : ""}
           >
             {loading ? "算价中…" : "开始算价"}
           </button>

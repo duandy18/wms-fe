@@ -104,6 +104,9 @@ export interface PricingSchemeSurcharge {
 }
 
 export interface PricingSchemeDetail extends PricingScheme {
+  // ✅ 刚性契约：后端必须返回，用于 Workbench Header 展示网点名
+  shipping_provider_name: string;
+
   zones: PricingSchemeZone[];
   surcharges: PricingSchemeSurcharge[];
 }
