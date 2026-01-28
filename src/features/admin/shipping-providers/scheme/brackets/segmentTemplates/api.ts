@@ -58,6 +58,16 @@ export async function activateSegmentTemplate(templateId: number): Promise<Segme
   return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}:activate`, { method: "POST" });
 }
 
+export async function archiveSegmentTemplate(templateId: number): Promise<SegmentTemplateOut> {
+  // ✅ 后端真实路由：/segment-templates/{id}:archive
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}:archive`, { method: "POST" });
+}
+
+export async function unarchiveSegmentTemplate(templateId: number): Promise<SegmentTemplateOut> {
+  // ✅ 后端真实路由：/segment-templates/{id}:unarchive
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}:unarchive`, { method: "POST" });
+}
+
 export async function patchSegmentTemplateItemActive(itemId: number, active: boolean): Promise<SegmentTemplateOut> {
   return await fetchJson<SegmentTemplateOut>(`/segment-template-items/${itemId}`, {
     method: "PATCH",

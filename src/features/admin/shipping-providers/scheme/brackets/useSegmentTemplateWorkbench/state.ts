@@ -2,7 +2,15 @@
 //
 // 模板工作台的状态机（orchestration-only）
 // - 拆分：state.ts（容器） + effects.ts（useEffect） + actions.ts（动作）
-// - ✅ UI 两步走：保存方案 + 启用（启用内部自动 publish -> activate）
+//
+// ✅ 刚性契约（与后端一致）
+// - draft：允许编辑 items（PUT /items）
+// - 保存：PUT /items + :publish（保存后变为 published）
+// - 启用：仅 published 允许 :activate（草稿不能直接生效）
+//
+// ✅ 注意：已支持“多条模板同时生效”
+// - active=true 不再互斥
+// - UI 展示为“已生效模板（可多条）”
 
 import { useMemo, useState } from "react";
 import type { SegmentTemplateOut, SchemeWeightSegment } from "../segmentTemplates";
@@ -24,7 +32,12 @@ export function useSegmentTemplateWorkbench(args: {
   const [err, setErr] = useState<string | null>(null);
 
   const [templates, setTemplates] = useState<SegmentTemplateOut[]>([]);
-  const activeTemplate = useMemo(() => templates.find((t) => isTemplateActive(t)) ?? null, [templates]);
+
+  // ✅ 多条生效：activeTemplates 为真相
+  const activeTemplates = useMemo(() => templates.filter((t) => isTemplateActive(t)), [templates]);
+
+  // ✅ 兼容保留：旧代码仍可能使用 activeTemplate（取第一条）
+  const activeTemplate = useMemo(() => activeTemplates[0] ?? null, [activeTemplates]);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<SegmentTemplateOut | null>(null);
@@ -65,6 +78,8 @@ export function useSegmentTemplateWorkbench(args: {
 
       selectedTemplate,
       draftSegments,
+
+      // ✅ 仍传 activeTemplate 以保持 action ctx 兼容（但不再用于“唯一生效”叙事）
       activeTemplate,
 
       setBusy,
@@ -82,7 +97,13 @@ export function useSegmentTemplateWorkbench(args: {
     busy,
     err,
     templates,
+
+    // ✅ 新增：多条生效列表
+    activeTemplates,
+
+    // ✅ 兼容：旧的单条 active（取第一条）
     activeTemplate,
+
     selectedTemplateId,
     setSelectedTemplateId,
     selectedTemplate,

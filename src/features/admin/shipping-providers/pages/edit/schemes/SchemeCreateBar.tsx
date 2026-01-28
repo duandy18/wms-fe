@@ -16,8 +16,20 @@ export const SchemeCreateBar: React.FC<{
 
   onChangeName: (v: string) => void;
   onChangeCurrency: (v: string) => void;
+
   onCreate: () => void | Promise<void>;
-}> = ({ disabled, batchBusy, creating, newName, newCurrency, localErr, localOk, onChangeName, onChangeCurrency, onCreate }) => {
+}> = ({
+  disabled,
+  batchBusy,
+  creating,
+  newName,
+  newCurrency,
+  localErr,
+  localOk,
+  onChangeName,
+  onChangeCurrency,
+  onCreate,
+}) => {
   return (
     <div className="mt-4">
       {localErr ? <div className={`mb-3 ${UI.error}`}>{localErr}</div> : null}
@@ -25,7 +37,7 @@ export const SchemeCreateBar: React.FC<{
         <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{localOk}</div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-8">
         <div className="md:col-span-3">
           <label className={UI.label}>新建收费标准名称 *</label>
           <input

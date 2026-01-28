@@ -117,7 +117,9 @@ export const ProvidersTable: React.FC<Props> = ({
               providers.map((p) => {
                 const primary = pickPrimaryContact(p);
 
-                const whLabel = warehouseLabelById[p.warehouse_id] ?? "—";
+                // ✅ 关键修复：warehouse_id 兜底后再索引
+                const whId = p.warehouse_id ?? null;
+                const whLabel = whId != null ? warehouseLabelById[whId] ?? "—" : "—";
 
                 return (
                   <tr key={p.id} className={UI.tr}>
@@ -125,7 +127,7 @@ export const ProvidersTable: React.FC<Props> = ({
                     <td className={UI.td}>{renderText(p.name)}</td>
                     <td className={UI.tdMono}>{renderText(p.code ?? null)}</td>
 
-                    <td className={UI.td} title={`warehouse_id=${p.warehouse_id}`}>
+                    <td className={UI.td} title={whId != null ? `warehouse_id=${whId}` : undefined}>
                       {warehousesLoading ? <span className="text-sm text-slate-500">加载中…</span> : whLabel}
                     </td>
 

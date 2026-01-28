@@ -1,23 +1,20 @@
 // src/features/admin/shipping-providers/scheme/SchemeWorkbenchPage.tsx
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { UI } from "./ui";
 import { L } from "./labels";
 import { useSchemeWorkbench } from "./useSchemeWorkbench";
 import { type SchemeTabKey } from "./types";
 
-// ===== 子模块 =====
 import { ZonesPanel } from "./zones/ZonesPanel";
 import { BracketsPanel } from "./brackets/BracketsPanel";
 import SegmentsPanel from "./brackets/SegmentsPanel";
 import { SurchargesPanel } from "./surcharges/SurchargesPanel";
 import { QuotePreviewPanel } from "./preview/QuotePreviewPanel";
 
-// ===== components（拆分）=====
 import { WorkbenchHeaderCard } from "./components/WorkbenchHeaderCard";
 
-// ===== API =====
 import {
   patchZone,
   type PricingSchemeZone,
@@ -28,6 +25,8 @@ import {
   createZoneAtomic,
   replaceZoneProvinceMembers,
 } from "../api";
+
+import { fetchSegmentTemplates } from "./brackets/segmentTemplates";
 
 function TabButton(props: { label: string; active: boolean; disabled?: boolean; onClick: () => void }) {
   const { label, active, disabled, onClick } = props;
@@ -48,7 +47,8 @@ function buildZoneNameFromProvinces(provinces: string[]): string {
   return cleaned.join("、");
 }
 
-const TAB_KEYS: SchemeTabKey[] = ["zones", "segments", "brackets", "surcharges", "preview"];
+// ✅ 强制流程顺序
+const TAB_KEYS: SchemeTabKey[] = ["segments", "zones", "brackets", "surcharges", "preview"];
 
 function isSchemeTabKey(v: unknown): v is SchemeTabKey {
   return typeof v === "string" && (TAB_KEYS as string[]).includes(v);
@@ -64,7 +64,6 @@ export const SchemeWorkbenchPage: React.FC = () => {
   const params = useParams<{ schemeId: string; tab?: string }>();
   const schemeId = params.schemeId ? Number(params.schemeId) : null;
 
-  // ✅ Tab → 子页面：从 URL 读取 tab（不读 query，不改原业务逻辑）
   const routeTab: SchemeTabKey | null = useMemo(() => {
     if (!params.tab) return null;
     return isSchemeTabKey(params.tab) ? params.tab : null;
@@ -74,21 +73,64 @@ export const SchemeWorkbenchPage: React.FC = () => {
 
   const pageDisabled = wb.loading || wb.refreshing || wb.mutating;
 
-  // ✅ /workbench 直接落到 /workbench/zones（保持深链干净）
+  // ===== Gate：是否存在至少一个重量段模板 =====
+  const [checkingTemplates, setCheckingTemplates] = useState(true);
+  const [hasAnyTemplate, setHasAnyTemplate] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      if (!schemeId || schemeId <= 0) return;
+
+      let nextHasAnyTemplate = true;
+
+      try {
+        setCheckingTemplates(true);
+        const list = await fetchSegmentTemplates(schemeId);
+        nextHasAnyTemplate = (list ?? []).length > 0;
+      } catch {
+        // 保守放行：避免因短暂接口异常锁死流程
+        nextHasAnyTemplate = true;
+      }
+
+      if (!cancelled) {
+        setHasAnyTemplate(nextHasAnyTemplate);
+        setCheckingTemplates(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [schemeId]);
+
+  // 默认进入 segments
   useEffect(() => {
     if (!schemeId || schemeId <= 0) return;
-    if (params.tab) return; // 已有 tab，不做跳转
-    navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/zones`, { replace: true });
+    if (params.tab) return;
+    navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/segments`, { replace: true });
   }, [navigate, params.tab, schemeId]);
 
-  // ✅ URL 驱动 tab：routeTab 变化时同步到 wb.tab
+  // URL 直达拦截
+  useEffect(() => {
+    if (!schemeId || schemeId <= 0) return;
+    if (checkingTemplates) return;
+    if (hasAnyTemplate) return;
+
+    const t = routeTab ?? wb.tab;
+    if (t !== "segments") {
+      navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/segments`, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schemeId, checkingTemplates, hasAnyTemplate, routeTab]);
+
   useEffect(() => {
     if (!routeTab) return;
     if (wb.tab === routeTab) return;
     wb.setTab(routeTab);
   }, [routeTab, wb]);
 
-  // ✅ Tab 点击：改为导航（一对一子页面），同时保持原 UI/交互
   const goTab = (k: SchemeTabKey) => {
     if (!schemeId || schemeId <= 0) return;
     navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/${k}`);
@@ -110,6 +152,13 @@ export const SchemeWorkbenchPage: React.FC = () => {
     navigate("/admin/shipping-providers", { replace: true });
   };
 
+  const flowLocked = !checkingTemplates && !hasAnyTemplate;
+
+  const goCreateTemplate = () => {
+    if (!schemeId || schemeId <= 0) return;
+    navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/segments#create`);
+  };
+
   return (
     <div className={UI.page}>
       <WorkbenchHeaderCard
@@ -122,31 +171,30 @@ export const SchemeWorkbenchPage: React.FC = () => {
       />
 
       {wb.refreshing ? <div className={UI.workbenchSyncBar}>正在同步最新数据…</div> : null}
-
       {wb.error ? <div className={UI.error}>{wb.error}</div> : null}
 
       <div className={UI.tabsWrap}>
-        <TabButton label={L.tabZones} active={wb.tab === "zones"} disabled={pageDisabled} onClick={() => goTab("zones")} />
-        <TabButton
-          label={L.tabSegments}
-          active={wb.tab === "segments"}
-          disabled={pageDisabled}
-          onClick={() => goTab("segments")}
-        />
-        <TabButton
-          label={L.tabBrackets}
-          active={wb.tab === "brackets"}
-          disabled={pageDisabled}
-          onClick={() => goTab("brackets")}
-        />
-        <TabButton
-          label={L.tabSurcharges}
-          active={wb.tab === "surcharges"}
-          disabled={pageDisabled}
-          onClick={() => goTab("surcharges")}
-        />
-        <TabButton label={L.tabPreview} active={wb.tab === "preview"} disabled={pageDisabled} onClick={() => goTab("preview")} />
+        <TabButton label={L.tabSegments} active={wb.tab === "segments"} disabled={pageDisabled} onClick={() => goTab("segments")} />
+        <TabButton label={L.tabZones} active={wb.tab === "zones"} disabled={pageDisabled || checkingTemplates || flowLocked} onClick={() => goTab("zones")} />
+        <TabButton label={L.tabBrackets} active={wb.tab === "brackets"} disabled={pageDisabled || checkingTemplates || flowLocked} onClick={() => goTab("brackets")} />
+        <TabButton label={L.tabSurcharges} active={wb.tab === "surcharges"} disabled={pageDisabled || checkingTemplates || flowLocked} onClick={() => goTab("surcharges")} />
+        <TabButton label={L.tabPreview} active={wb.tab === "preview"} disabled={pageDisabled || checkingTemplates || flowLocked} onClick={() => goTab("preview")} />
       </div>
+
+      {flowLocked ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="font-semibold">请先创建重量段模板</div>
+          <div className="mt-1 text-amber-900/80">
+            当前方案尚未创建任何重量段模板。为避免区域与录价发生误配，系统已暂时锁定后续步骤。
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <button type="button" className={UI.btnPrimaryGreen} onClick={goCreateTemplate}>
+              去创建重量段模板
+            </button>
+            <div className="text-xs text-amber-900/70">完成后将自动解锁后续流程</div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="space-y-4">
         {wb.loading && !wb.detail ? (
@@ -155,19 +203,22 @@ export const SchemeWorkbenchPage: React.FC = () => {
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">{L.empty}</div>
         ) : (
           <>
+            {wb.tab === "segments" ? <SegmentsPanel detail={wb.detail} disabled={pageDisabled} onError={(msg) => wb.setError(msg)} /> : null}
+
             {wb.tab === "zones" ? (
               <ZonesPanel
                 detail={wb.detail}
-                disabled={pageDisabled}
+                disabled={pageDisabled || flowLocked}
                 selectedZoneId={wb.selectedZoneId}
                 onError={(msg) => wb.setError(msg)}
                 onSelectZone={(zoneId) => wb.setSelectedZoneId(zoneId)}
-                onCommitCreate={async (name, provinces) => {
+                onCommitCreate={async (name, provinces, segmentTemplateId) => {
                   await wb.mutate(async () => {
                     const z = await createZoneAtomic(wb.detail!.id, {
                       name,
                       provinces,
                       active: true,
+                      segment_template_id: segmentTemplateId,
                     });
                     wb.setSelectedZoneId(z.id);
                   });
@@ -179,35 +230,27 @@ export const SchemeWorkbenchPage: React.FC = () => {
                 }}
                 onReplaceProvinceMembers={async (zoneId, provinces) => {
                   await wb.mutate(async () => {
-                    // 1) 替换 province members（你刚验证 OK 的后端原子接口）
                     await replaceZoneProvinceMembers(zoneId, { provinces });
-
-                    // 2) 同步更新 zone.name，让列表“区域”立刻反映省份变化
                     const nextName = buildZoneNameFromProvinces(provinces);
-                    if (nextName) {
-                      await patchZone(zoneId, { name: nextName });
-                    }
+                    if (nextName) await patchZone(zoneId, { name: nextName });
+                  });
+                }}
+                onPatchZone={async (zoneId, payload) => {
+                  await wb.mutate(async () => {
+                    await patchZone(zoneId, payload);
                   });
                 }}
               />
             ) : null}
 
-            {wb.tab === "segments" ? (
-              <SegmentsPanel detail={wb.detail} disabled={pageDisabled} onError={(msg) => wb.setError(msg)} />
-            ) : null}
-
             {wb.tab === "brackets" ? (
-              <BracketsPanel
-                detail={wb.detail}
-                selectedZoneId={wb.selectedZoneId}
-                onSelectZone={(zoneId) => wb.setSelectedZoneId(zoneId || null)}
-              />
+              <BracketsPanel detail={wb.detail} selectedZoneId={wb.selectedZoneId} onSelectZone={(zoneId) => wb.setSelectedZoneId(zoneId || null)} />
             ) : null}
 
             {wb.tab === "surcharges" ? (
               <SurchargesPanel
                 detail={wb.detail}
-                disabled={pageDisabled}
+                disabled={pageDisabled || flowLocked}
                 onError={(msg) => wb.setError(msg)}
                 onCreate={async (payload) => {
                   await wb.mutate(async () => {
@@ -237,9 +280,7 @@ export const SchemeWorkbenchPage: React.FC = () => {
               />
             ) : null}
 
-            {wb.tab === "preview" ? (
-              <QuotePreviewPanel schemeId={wb.detail.id} disabled={pageDisabled} onError={(msg) => wb.setError(msg)} />
-            ) : null}
+            {wb.tab === "preview" ? <QuotePreviewPanel schemeId={wb.detail.id} disabled={pageDisabled || flowLocked} onError={(msg) => wb.setError(msg)} /> : null}
           </>
         )}
       </div>

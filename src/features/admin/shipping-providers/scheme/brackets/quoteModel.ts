@@ -59,6 +59,22 @@ function getUnknownField(obj: unknown, key: string): unknown {
   return rec[key];
 }
 
+function readFirstField(obj: unknown, keys: string[]): unknown {
+  if (!obj || typeof obj !== "object") return undefined;
+  const rec = obj as Record<string, unknown>;
+  for (const k of keys) {
+    if (k in rec) return rec[k];
+  }
+  return undefined;
+}
+
+function readNumberField(obj: unknown, keys: string[]): number | null {
+  const v = readFirstField(obj, keys);
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function segLabel(s: WeightSegment): string {
   const min = s.min.trim();
   const max = s.max.trim();
@@ -80,10 +96,26 @@ export function keyFromSegment(s: WeightSegment): string | null {
 }
 
 export function keyFromBracket(b: PricingSchemeZoneBracket): string {
-  // 这些字段在后端契约里是稳定的；即使 TS 类型没写全，也不要用 any
-  const min = Number(getUnknownField(b, "min_kg"));
-  const maxRaw = getUnknownField(b, "max_kg");
-  const max = maxRaw == null ? null : Number(maxRaw);
+  // ✅ 强健：兼容后端字段名差异；无法解析时返回 “__INVALID__<id>”
+  const idRaw = readFirstField(b, ["id"]);
+  const id = Number(idRaw);
+  const idTag = Number.isFinite(id) ? String(id) : "x";
+
+  const min = readNumberField(b, ["min_kg", "minKg", "min", "min_weight_kg", "minWeightKg"]);
+  if (min == null) return `__INVALID__${idTag}__MIN`;
+
+  const maxRaw = readFirstField(b, ["max_kg", "maxKg", "max", "max_weight_kg", "maxWeightKg"]);
+  let max: number | null = null;
+  if (maxRaw == null || maxRaw === "") {
+    max = null;
+  } else {
+    const n = Number(maxRaw);
+    if (!Number.isFinite(n)) return `__INVALID__${idTag}__MAX`;
+    max = n;
+  }
+
+  if (max != null && max <= min) return `__INVALID__${idTag}__RANGE`;
+
   return segKey(min, max);
 }
 

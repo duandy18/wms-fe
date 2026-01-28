@@ -6,9 +6,11 @@ export { isTemplateActive, normalizeTemplateList, normalizeTemplateOut } from ".
 export {
   activateSegmentTemplate,
   apiPutTemplateItems,
+  archiveSegmentTemplate,
   createSegmentTemplate,
   fetchSegmentTemplateDetail,
   fetchSegmentTemplates,
   patchSegmentTemplateItemActive,
   publishSegmentTemplate,
+  unarchiveSegmentTemplate,
 } from "./api";

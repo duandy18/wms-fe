@@ -1,7 +1,7 @@
 // src/features/admin/shipping-providers/scheme/brackets/useSegmentTemplateWorkbench/actions/saveDraftItems.ts
 
 import type { SegmentTemplateOut } from "../../segmentTemplates";
-import { apiPutTemplateItems } from "../../segmentTemplates";
+import { apiPutTemplateItems, fetchSegmentTemplateDetail, publishSegmentTemplate } from "../../segmentTemplates";
 import { templateItemsToWeightSegments, weightSegmentsToPutItemsDraftPrefix } from "../../SegmentsPanel/utils";
 import { runGuarded } from "../helpers";
 import type { WorkbenchActionCtx } from "./types";
@@ -14,6 +14,7 @@ export function makeSaveDraftItems(ctx: WorkbenchActionCtx) {
     draftSegments,
     setBusy,
     setErr,
+    setSelectedTemplateId,
     setSelectedTemplate,
     setDraftSegments,
     refreshTemplates,
@@ -21,11 +22,12 @@ export function makeSaveDraftItems(ctx: WorkbenchActionCtx) {
 
   return async function saveDraftItems() {
     if (disabled) return;
-    if (!selectedTemplate || String(selectedTemplate.status) !== "draft") return;
+    if (!selectedTemplate) return;
 
-    const ok = window.confirm("确认保存方案？\n\n提示：保存不会影响线上；只有“启用为当前生效”才会替换当前生效方案。");
-    if (!ok) return;
+    const st = String(selectedTemplate.status);
+    if (st !== "draft") return;
 
+    // ✅ 保存草稿：不弹窗确认（不影响线上事实）
     const items = weightSegmentsToPutItemsDraftPrefix(draftSegments);
     if (items.length === 0) {
       const msg = "请至少先填写第 1 行的 max，然后再保存。";
@@ -34,26 +36,48 @@ export function makeSaveDraftItems(ctx: WorkbenchActionCtx) {
       return;
     }
 
-    const tpl = (await runGuarded({
+    // 1) PUT items：写入草稿内容
+    const putOut = (await runGuarded({
       setBusy,
       setErr,
       onError,
-      fallbackMsg: "保存方案失败",
+      fallbackMsg: "保存失败：写入重量段失败",
       fn: async () => await apiPutTemplateItems(selectedTemplate.id, items),
     })) as SegmentTemplateOut | null;
-    if (!tpl) return;
+    if (!putOut) return;
 
-    await runGuarded({
+    // 2) publish：把草稿冻结为“已保存版本”
+    const published = (await runGuarded({
+      setBusy,
+      setErr,
+      onError,
+      fallbackMsg: "保存失败：发布版本失败",
+      fn: async () => await publishSegmentTemplate(putOut.id),
+    })) as SegmentTemplateOut | null;
+    if (!published) return;
+
+    // 3) 刷新列表，保持选中
+    const list = (await runGuarded({
       setBusy,
       setErr,
       onError,
       fallbackMsg: "刷新方案列表失败",
-      fn: async () => {
-        await refreshTemplates(tpl.id);
-      },
-    });
+      fn: async () => await refreshTemplates(published.id),
+    })) as SegmentTemplateOut[] | null;
 
-    setSelectedTemplate(tpl);
-    setDraftSegments(templateItemsToWeightSegments(tpl.items));
+    // 4) 拉详情（确保 items/status 一致）
+    const detail = (await runGuarded({
+      setBusy,
+      setErr,
+      onError,
+      fallbackMsg: "加载方案详情失败",
+      fn: async () => await fetchSegmentTemplateDetail(published.id),
+    })) as SegmentTemplateOut | null;
+
+    const finalTpl = detail ?? (list ?? []).find((x) => x.id === published.id) ?? published;
+
+    setSelectedTemplateId(finalTpl.id);
+    setSelectedTemplate(finalTpl);
+    setDraftSegments(templateItemsToWeightSegments(finalTpl.items));
   };
 }

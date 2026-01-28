@@ -12,10 +12,14 @@ export const ZoneRow: React.FC<{
   onSelect: (zoneId: number) => void;
   onToggleActive: (zone: PricingSchemeZone) => Promise<void>;
   onEdit: (zoneId: number) => void;
-}> = ({ index, zone, selected, disabled, onSelect, onToggleActive, onEdit }) => {
+
+  // ✅ 新增：重量段方案信息（由 ZoneList 组装并传入）
+  templateName: string;
+  templateSummary: string;
+}> = ({ index, zone, selected, disabled, onSelect, onToggleActive, onEdit, templateName, templateSummary }) => {
   return (
     <div className={`${UI.zoneRowWrap} ${selected ? UI.zoneRowSelected : UI.zoneRowNormal}`}>
-      <div className="grid grid-cols-12 items-center gap-2">
+      <div className="grid grid-cols-16 items-center gap-2">
         {/* 序号 */}
         <div className="col-span-1 text-center">
           <span className={UI.zoneIndexBadge}>{index}</span>
@@ -27,7 +31,7 @@ export const ZoneRow: React.FC<{
         </div>
 
         {/* 区域名称 */}
-        <div className="col-span-5">
+        <div className="col-span-4">
           <button
             type="button"
             disabled={disabled}
@@ -46,6 +50,20 @@ export const ZoneRow: React.FC<{
           ) : (
             <span className={`${UI.zoneStatusPill} ${UI.zoneStatusInactive}`}>暂停使用</span>
           )}
+        </div>
+
+        {/* 重量段方案名称 */}
+        <div className="col-span-2">
+          <div className="text-sm font-semibold text-slate-900 truncate" title={templateName}>
+            {templateName}
+          </div>
+        </div>
+
+        {/* 段结构内容 */}
+        <div className="col-span-3">
+          <div className="text-xs font-mono text-slate-700 truncate" title={templateSummary}>
+            {templateSummary}
+          </div>
         </div>
 
         {/* 操作 */}

@@ -39,6 +39,9 @@ export const ContactCard: React.FC<Props> = ({
   onToggleActive,
   onRemove,
 }) => {
+  const active = Boolean(contact.active);
+  const role = contact.role ?? "";
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       {/* 头部：姓名 + 状态 */}
@@ -46,9 +49,7 @@ export const ContactCard: React.FC<Props> = ({
         <div>
           <div className="text-lg font-semibold text-slate-900">
             {contact.name}
-            <span className="ml-2 text-sm text-slate-500">
-              （{roleLabel(contact.role)}）
-            </span>
+            <span className="ml-2 text-sm text-slate-500">（{roleLabel(role)}）</span>
           </div>
         </div>
 
@@ -60,12 +61,10 @@ export const ContactCard: React.FC<Props> = ({
           )}
           <span
             className={`rounded-full px-3 py-1 text-sm font-semibold ${
-              contact.active
-                ? "bg-emerald-100 text-emerald-800"
-                : "bg-slate-200 text-slate-700"
+              active ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
             }`}
           >
-            {contact.active ? "启用" : "停用"}
+            {active ? "启用" : "停用"}
           </span>
         </div>
       </div>
@@ -96,7 +95,7 @@ export const ContactCard: React.FC<Props> = ({
           disabled={disabled}
           onClick={() => void onToggleActive(contact)}
         >
-          {contact.active ? "停用" : "启用"}
+          {active ? "停用" : "启用"}
         </button>
 
         <button
