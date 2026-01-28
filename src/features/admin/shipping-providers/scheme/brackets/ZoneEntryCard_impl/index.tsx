@@ -16,6 +16,10 @@ function statusClass(tone: "ok" | "empty" | "warn"): string {
   return "text-red-600";
 }
 
+function isInvalidBracketKey(k: string): boolean {
+  return k.startsWith("__INVALID__");
+}
+
 export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
   busy,
   selectedZoneId,
@@ -28,10 +32,22 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
   const [editing, setEditing] = useState(false);
   const locked = !editing;
 
-  const bracketByKey = useMemo(() => {
+  const noRows = !!selectedZoneId && (tableRows?.length ?? 0) === 0;
+
+  const { bracketByKey, invalidBackendKeyCount } = useMemo(() => {
     const m: Record<string, PricingSchemeZoneBracket> = {};
-    for (const b of currentBrackets ?? []) m[keyFromBracket(b)] = b;
-    return m;
+    let invalid = 0;
+
+    for (const b of currentBrackets ?? []) {
+      const k = keyFromBracket(b);
+      if (isInvalidBracketKey(k)) {
+        invalid += 1;
+        continue;
+      }
+      m[k] = b;
+    }
+
+    return { bracketByKey: m, invalidBackendKeyCount: invalid };
   }, [currentBrackets]);
 
   const stats = useMemo(() => {
@@ -46,18 +62,36 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
 
   async function handleSave() {
     if (!selectedZoneId) return;
+    if (noRows) return;
     await onSave();
     setEditing(false);
   }
+
+  const editDisabled = !selectedZoneId || busy || noRows;
+  const saveDisabled = !editing || !selectedZoneId || busy || noRows;
 
   return (
     <div className={UI.cardTight}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className={UI.sectionTitle}>当前区域价格录入（批量）</div>
-          <div className="mt-1 text-xs text-slate-500">
-            {stats.ok} 行可录价{stats.invalid ? `，${stats.invalid} 行区间非法` : ""}
-          </div>
+
+          {!selectedZoneId ? (
+            <div className="mt-1 text-xs text-slate-500">请先选择区域</div>
+          ) : noRows ? (
+            <div className="mt-1 text-xs text-red-600">
+              当前 Zone 没有可用重量区间（未绑定重量段方案 / 模板无有效段）。为避免写入污染，已阻断录价。
+            </div>
+          ) : (
+            <div className="mt-1 text-xs text-slate-500">
+              {stats.ok} 行可录价{stats.invalid ? `，${stats.invalid} 行区间非法` : ""}
+              {invalidBackendKeyCount ? (
+                <span className="ml-2 text-red-600">
+                  · 后端返回 {invalidBackendKeyCount} 条报价区间无法解析（字段不符合合同）
+                </span>
+              ) : null}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -68,7 +102,7 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
                 ? "border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100"
                 : "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
             }`}
-            disabled={!selectedZoneId || busy}
+            disabled={editDisabled}
             onClick={() => setEditing((v) => !v)}
           >
             {editing ? "退出编辑" : "编辑"}
@@ -77,11 +111,11 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
           <button
             type="button"
             className={`rounded-xl border px-3 py-2 text-sm font-semibold ${
-              editing && selectedZoneId && !busy
+              editing && selectedZoneId && !busy && !noRows
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                 : "border-slate-200 bg-slate-100 text-slate-400"
             }`}
-            disabled={!editing || !selectedZoneId || busy}
+            disabled={saveDisabled}
             onClick={() => void handleSave()}
           >
             保存
@@ -91,6 +125,10 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
 
       {!selectedZoneId ? (
         <div className={`mt-3 ${UI.helpText}`}>请先选择区域</div>
+      ) : noRows ? (
+        <div className={`mt-3 ${UI.helpText}`}>
+          请先到【区域分类】为该 Zone 显式绑定一个“启用中的重量段方案”，并确保模板中至少有 1 条有效段。
+        </div>
       ) : (
         <div className="mt-3 overflow-x-auto">
           <table className="min-w-full border-collapse">

@@ -42,6 +42,15 @@ type BracketPatchBody = {
   base_kg?: number;
 };
 
+function hasOwnField(obj: unknown, key: string): boolean {
+  if (!obj || typeof obj !== "object") return false;
+  return Object.prototype.hasOwnProperty.call(obj as Record<string, unknown>, key);
+}
+
+function isInvalidBracketKey(k: string): boolean {
+  return k.startsWith("__INVALID__");
+}
+
 export async function saveCurrentZonePrices(args: {
   selectedZone: PricingSchemeZone | null;
   selectedZoneId: number | null;
@@ -53,6 +62,9 @@ export async function saveCurrentZonePrices(args: {
   setBusy: (v: boolean) => void;
   setBracketsByZoneId: React.Dispatch<React.SetStateAction<Record<number, PricingSchemeZoneBracket[]>>>;
   setDraftsByZoneId: React.Dispatch<React.SetStateAction<Record<number, Record<string, RowDraft>>>>;
+
+  // ✅ UI 层注入：保存成功提示（避免 actions 里直接 alert 打断操作）
+  onSuccess?: (msg: string) => void;
 }) {
   const {
     selectedZone,
@@ -65,6 +77,7 @@ export async function saveCurrentZonePrices(args: {
     setBusy,
     setBracketsByZoneId,
     setDraftsByZoneId,
+    onSuccess,
   } = args;
 
   if (!selectedZone || !selectedZoneId) {
@@ -95,7 +108,7 @@ export async function saveCurrentZonePrices(args: {
   }
 
   if (ops.length === 0) {
-    alert("没有可保存的列（请先完善重量分段模板）");
+    alert("没有可保存的行（请先完善重量段方案的段结构）");
     return;
   }
 
@@ -132,11 +145,15 @@ export async function saveCurrentZonePrices(args: {
     setDraftsByZoneId((prev) => {
       const cur = prev[selectedZoneId] ?? {};
       const next = { ...cur };
-      for (const b of updated) next[keyFromBracket(b)] = draftFromBracket(b);
+      for (const b of updated) {
+        const k = keyFromBracket(b);
+        if (isInvalidBracketKey(k)) continue;
+        next[k] = draftFromBracket(b);
+      }
       return { ...prev, [selectedZoneId]: next };
     });
 
-    alert(`保存成功：写入 ${updated.length} 条报价（自动补齐缺失区间）。`);
+    onSuccess?.(`保存成功：写入 ${updated.length} 条报价。`);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "保存失败";
     alert(msg);
@@ -176,7 +193,11 @@ export async function upsertCellPrice(args: {
   try {
     const rowBrackets = bracketsByZoneId[zoneId] ?? [];
     const rowByKey: Record<string, PricingSchemeZoneBracket> = {};
-    for (const b of rowBrackets) rowByKey[keyFromBracket(b)] = b;
+    for (const b of rowBrackets) {
+      const k = keyFromBracket(b);
+      if (isInvalidBracketKey(k)) continue;
+      rowByKey[k] = b;
+    }
 
     const exist = rowByKey[key] ?? null;
     const p = buildPayloadFromDraft(draft);
@@ -204,7 +225,9 @@ export async function upsertCellPrice(args: {
 
     setDraftsByZoneId((prev) => {
       const cur = prev[zoneId] ?? {};
-      const next = { ...cur, [keyFromBracket(updated)]: draftFromBracket(updated) };
+      const k = keyFromBracket(updated);
+      if (isInvalidBracketKey(k)) return prev;
+      const next = { ...cur, [k]: draftFromBracket(updated) };
       return { ...prev, [zoneId]: next };
     });
   } finally {
@@ -220,18 +243,34 @@ export function afterRefreshBrackets(args: {
   const { freshZones, setBracketsByZoneId, setDraftsByZoneId } = args;
 
   // 只更新 brackets/drafts 的本地缓存（不改父级 detail）
+  // ✅ 关键修复：仅当后端明确返回 brackets 字段时，才刷新缓存；避免“字段缺失 => 误认为空 => 覆盖本地”
   const bMap: Record<number, PricingSchemeZoneBracket[]> = {};
   const dMap: Record<number, Record<string, RowDraft>> = {};
 
   for (const z of freshZones) {
+    if (!hasOwnField(z, "brackets")) continue;
+
     const bs = z.brackets ?? [];
     bMap[z.id] = bs;
 
     const ds: Record<string, RowDraft> = {};
-    for (const b of bs) ds[keyFromBracket(b)] = draftFromBracket(b);
+    for (const b of bs) {
+      const k = keyFromBracket(b);
+      if (isInvalidBracketKey(k)) continue;
+      ds[k] = draftFromBracket(b);
+    }
     dMap[z.id] = ds;
   }
 
   setBracketsByZoneId((prev) => ({ ...prev, ...bMap }));
-  setDraftsByZoneId((prev) => ({ ...prev, ...dMap }));
+  setDraftsByZoneId((prev) => {
+    const next = { ...prev };
+    for (const zid of Object.keys(dMap)) {
+      const zoneId = Number(zid);
+      const existing = prev[zoneId] ?? {};
+      // ✅ 保留用户草稿（existing 优先）
+      next[zoneId] = { ...(dMap[zoneId] ?? {}), ...existing };
+    }
+    return next;
+  });
 }

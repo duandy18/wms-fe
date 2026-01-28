@@ -21,15 +21,21 @@ export function makeCreateDraftTemplate(ctx: WorkbenchActionCtx) {
     refreshTemplates,
   } = ctx;
 
-  return async function createDraftTemplate() {
+  return async function createDraftTemplate(nameInput?: string) {
     if (disabled) return;
 
     const dp = datePrefix();
-    const raw = window.prompt("请输入方案名称（建议包含日期）", `${dp} 方案`);
-    if (raw === null) return;
+    const raw = String(nameInput ?? "").trim();
 
-    const name0 = String(raw).trim();
-    const name = name0 ? (/\d{4}-\d{2}-\d{2}/.test(name0) ? name0 : `${dp} ${name0}`) : `${dp} 方案`;
+    // ✅ 命名规则：保持“日期前缀收敛”
+    // - 用户不填：用默认
+    // - 用户填但没带日期：自动补日期前缀
+    const name0 = raw;
+    const name = name0
+      ? /\d{4}-\d{2}-\d{2}/.test(name0)
+        ? name0
+        : `${dp} ${name0}`
+      : `${dp} 方案`;
 
     // 1) 新建空模板（draft 壳子）
     const tpl = (await runGuarded({

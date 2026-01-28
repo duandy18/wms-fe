@@ -135,6 +135,7 @@ export const SchemesSectionCard: React.FC<{
             archivingId={m.archivingId}
             onOpenWorkbench={props.onOpenWorkbench}
             onSetActive={m.setActive}
+            onRenameScheme={m.onRenameScheme}
             onArchiveScheme={onArchiveAndKeepVisible}
             onUnarchiveScheme={onUnarchiveAndRefresh}
           />

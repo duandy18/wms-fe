@@ -12,4 +12,3 @@ export * from "./api/providers";
 export * from "./api/contacts";
 export * from "./api/schemes";
 export * from "./api/surcharges";
-export * from "./api/copy";

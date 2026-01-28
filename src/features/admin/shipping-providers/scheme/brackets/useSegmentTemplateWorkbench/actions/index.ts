@@ -6,6 +6,8 @@ import { makeCloneSelectedToDraft } from "./cloneSelectedToDraft";
 import { makeSaveDraftItems } from "./saveDraftItems";
 import { makeActivateTemplate } from "./activateTemplate";
 import { makeToggleActiveItem } from "./toggleActiveItem";
+import { makeArchiveTemplate } from "./archiveTemplate";
+import { makeUnarchiveTemplate } from "./unarchiveTemplate";
 
 export function createWorkbenchActions(ctx: WorkbenchActionCtx): WorkbenchActions {
   return {
@@ -14,5 +16,7 @@ export function createWorkbenchActions(ctx: WorkbenchActionCtx): WorkbenchAction
     saveDraftItems: makeSaveDraftItems(ctx),
     activateTemplate: makeActivateTemplate(ctx),
     toggleActiveItem: makeToggleActiveItem(ctx),
+    archiveTemplate: makeArchiveTemplate(ctx),
+    unarchiveTemplate: makeUnarchiveTemplate(ctx),
   };
 }

@@ -32,6 +32,7 @@ export const WorkbenchHeaderCard: React.FC<{
   mutating?: boolean;
   summary: { id: number; name: string } | null;
   providerName?: string | null;
+
   onBack: () => void;
 }> = ({ loading, mutating, summary, providerName, onBack }) => {
   const schemeName = summary?.name ?? null;

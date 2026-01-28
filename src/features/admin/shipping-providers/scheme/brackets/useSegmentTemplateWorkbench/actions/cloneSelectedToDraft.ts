@@ -7,6 +7,13 @@ import { runGuarded } from "../helpers";
 import type { WorkbenchActionCtx } from "./types";
 import { datePrefix, safeName, sortItems } from "./shared";
 
+function timeSuffixHHmm(): string {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}${mm}`;
+}
+
 export function makeCloneSelectedToDraft(ctx: WorkbenchActionCtx) {
   const {
     schemeId,
@@ -27,23 +34,16 @@ export function makeCloneSelectedToDraft(ctx: WorkbenchActionCtx) {
 
     const st = String(selectedTemplate.status ?? "");
     if (st === "draft") {
-      window.alert("当前已是草稿方案，可直接编辑。");
+      // ✅ 不弹窗：用页内错误通道表达“无需复制”
+      const msg = "当前已是草稿方案，无需复制，可直接编辑。";
+      setErr(msg);
+      onError?.(msg);
       return;
     }
 
     const baseName = safeName(selectedTemplate.name) || "方案";
     const dp = datePrefix();
-    const suggested = `${dp} ${baseName}（草稿）`;
-
-    const raw = window.prompt("将当前方案复制为草稿，请输入新草稿名称：", suggested);
-    if (raw === null) return;
-
-    const name = safeName(raw) || suggested;
-
-    const ok = window.confirm(
-      "确认复制为草稿？\n\n复制后你将在草稿中编辑，编辑完成请先“保存方案”，再“启用为当前生效”。",
-    );
-    if (!ok) return;
+    const name = `${dp} ${baseName}（草稿） ${timeSuffixHHmm()}`;
 
     // 1) 新建空模板（draft）
     const draftTpl = (await runGuarded({

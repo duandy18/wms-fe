@@ -1,6 +1,11 @@
 // src/features/admin/shipping-providers/api/schemes/index.ts
 import { apiGet, apiPost, apiPatch, apiDelete } from "../../../../../lib/api";
-import type { PricingScheme, PricingSchemeDetail, SchemeListResponse, SchemeDetailResponse } from "../../api/types";
+import type {
+  PricingScheme,
+  PricingSchemeDetail,
+  SchemeListResponse,
+  SchemeDetailResponse,
+} from "../../api/types";
 
 export async function fetchPricingSchemes(
   providerId: number,
@@ -53,6 +58,7 @@ export async function patchPricingScheme(
     effective_from: string | null;
     effective_to: string | null;
     billable_weight_rule: Record<string, unknown> | null;
+    default_pricing_mode: string;
   }>,
 ): Promise<PricingSchemeDetail> {
   const res = await apiPatch<SchemeDetailResponse>(`/pricing-schemes/${schemeId}`, payload);

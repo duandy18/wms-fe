@@ -23,9 +23,15 @@ export type WorkbenchActionCtx = {
 };
 
 export type WorkbenchActions = {
-  createDraftTemplate: () => Promise<void>;
+  createDraftTemplate: (name?: string) => Promise<void>;
   cloneSelectedToDraft: () => Promise<void>;
   saveDraftItems: () => Promise<void>;
   activateTemplate: () => Promise<void>;
   toggleActiveItem: (item: SegmentTemplateItemOut) => Promise<void>;
+
+  // ✅ 归档（只允许 published 且非 active；后端也会再挡一层）
+  archiveTemplate: (templateId: number) => Promise<void>;
+
+  // ✅ 取消归档（只允许 archived；取消后回到 published）
+  unarchiveTemplate: (templateId: number) => Promise<void>;
 };

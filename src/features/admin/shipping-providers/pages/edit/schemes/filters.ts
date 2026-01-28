@@ -26,7 +26,7 @@ export function filterAndSortSchemes(args: {
 
     const idHit = String(s.id).includes(kw);
     const nameHit = s.name.toLowerCase().includes(kw);
-    const curHit = s.currency.toLowerCase().includes(kw);
+    const curHit = (s.currency ?? "").toLowerCase().includes(kw);
     return idHit || nameHit || curHit;
   });
 

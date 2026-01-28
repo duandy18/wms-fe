@@ -12,6 +12,7 @@ import {
   batchDeactivate,
   createScheme,
   patchActive,
+  renameScheme,
   unarchiveScheme,
 } from "./actions";
 
@@ -106,10 +107,31 @@ export function useSchemesSectionModel(args: {
       return;
     }
 
+    const target = args.schemes.find((x) => x.id === schemeId) ?? null;
+
+    // ✅ 单选生效：设为生效时，提示会自动取消其它已生效项（后端已保证原子独占）
+    if (active) {
+      const currentActive = args.schemes.find((s) => s.active && !isArchived(s) && s.id !== schemeId) ?? null;
+
+      if (currentActive) {
+        const ok = window.confirm(
+          `设为生效：${target?.name ?? `scheme#${schemeId}`}（ID: ${schemeId}）？\n\n` +
+            `提示：同一网点任意时刻只能有一个生效方案。\n` +
+            `继续将自动取消生效：${currentActive.name}（ID: ${currentActive.id}）。`,
+        );
+        if (!ok) return;
+      } else {
+        const ok = window.confirm(`设为生效：${target?.name ?? `scheme#${schemeId}`}（ID: ${schemeId}）？`);
+        if (!ok) return;
+      }
+    }
+
     setRowBusy(schemeId);
     try {
       await patchActive(schemeId, active);
       await args.onRefresh();
+      if (active) flashOk(`已设为生效：${target?.name ?? `scheme#${schemeId}`}`);
+      else flashOk(`已取消生效：${target?.name ?? `scheme#${schemeId}`}`);
     } catch (e: unknown) {
       setLocalErr(e instanceof Error ? e.message : "操作失败");
     } finally {
@@ -117,7 +139,40 @@ export function useSchemesSectionModel(args: {
     }
   }
 
-  // ✅ 原则：只有停用（停运）的才能归档
+  async function onRenameScheme(s: PricingScheme) {
+    if (disabled || batchBusy) return;
+
+    setLocalErr(null);
+    setLocalOk(null);
+
+    const cur = (s.name ?? "").trim();
+    const input = window.prompt(`修改收费标准名称（ID: ${s.id}）\n\n当前：${cur || "—"}\n请输入新名称：`, cur);
+    if (input == null) return;
+
+    const next = input.trim();
+    if (!next) {
+      setLocalErr("名称不能为空");
+      return;
+    }
+
+    if (next === cur) {
+      flashOk("名称未变化");
+      return;
+    }
+
+    setRowBusy(s.id);
+    try {
+      await renameScheme(s.id, next);
+      await args.onRefresh();
+      flashOk("已更新名称");
+    } catch (e: unknown) {
+      setLocalErr(e instanceof Error ? e.message : "改名失败");
+    } finally {
+      setRowBusy(null);
+    }
+  }
+
+  // ✅ 原则：只有取消生效（停运）的才能归档
   async function onArchiveScheme(s: PricingScheme) {
     if (disabled || batchBusy) return;
 
@@ -130,7 +185,7 @@ export function useSchemesSectionModel(args: {
     }
 
     if (s.active) {
-      setLocalErr("启用中的收费标准不允许归档：请先停用。");
+      setLocalErr("生效中的收费标准不允许归档：请先取消生效。");
       return;
     }
 
@@ -160,7 +215,7 @@ export function useSchemesSectionModel(args: {
       return;
     }
 
-    const ok = window.confirm(`取消归档「${s.name}」（ID: ${s.id}）？\n取消归档不会自动启用。`);
+    const ok = window.confirm(`取消归档「${s.name}」（ID: ${s.id}）？\n取消归档不会自动设为生效。`);
     if (!ok) return;
 
     setArchivingId(s.id);
@@ -183,26 +238,26 @@ export function useSchemesSectionModel(args: {
 
     const targets = filteredActive.map((s) => s.id);
     if (targets.length === 0) {
-      setLocalErr("当前筛选结果没有可停用的启用项。");
+      setLocalErr("当前筛选结果没有可取消生效的项。");
       return;
     }
 
-    const ok = window.confirm(`将当前筛选结果中的 ${targets.length} 条收费标准全部停用？`);
+    const ok = window.confirm(`将当前筛选结果中的 ${targets.length} 条收费标准全部取消生效？`);
     if (!ok) return;
 
     setBatchBusy(true);
     try {
       await batchDeactivate(targets);
       await args.onRefresh();
-      flashOk(`已批量停用 ${targets.length} 条`);
+      flashOk(`已批量取消生效 ${targets.length} 条`);
     } catch (e: unknown) {
-      setLocalErr(e instanceof Error ? e.message : "批量停用失败");
+      setLocalErr(e instanceof Error ? e.message : "批量取消生效失败");
     } finally {
       setBatchBusy(false);
     }
   }
 
-  // ✅ 批量归档：只归档“停用且未归档”的项（坚持原则）
+  // ✅ 批量归档：只归档“未生效且未归档”的项（坚持原则）
   async function batchArchiveInactiveCurrent() {
     if (disabled) return;
 
@@ -211,11 +266,11 @@ export function useSchemesSectionModel(args: {
 
     const targets = filteredInactive.map((s) => s.id);
     if (targets.length === 0) {
-      setLocalErr("当前筛选结果没有可归档的停用项。");
+      setLocalErr("当前筛选结果没有可归档的未生效项。");
       return;
     }
 
-    const ok = window.confirm(`归档当前筛选结果中的 ${targets.length} 条停用收费标准？`);
+    const ok = window.confirm(`归档当前筛选结果中的 ${targets.length} 条未生效收费标准？`);
     if (!ok) return;
 
     setBatchBusy(true);
@@ -263,6 +318,7 @@ export function useSchemesSectionModel(args: {
 
     onCreate,
     setActive,
+    onRenameScheme,
     onArchiveScheme,
     onUnarchiveScheme,
 
