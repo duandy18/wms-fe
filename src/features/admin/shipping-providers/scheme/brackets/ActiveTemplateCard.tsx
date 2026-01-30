@@ -1,6 +1,6 @@
 // src/features/admin/shipping-providers/scheme/brackets/ActiveTemplateCard.tsx
 //
-// 已生效模板（纯只读锚点，可多条）
+// 模板概览（纯只读锚点，可多条）
 // - 不呈现段级启停入口
 // - 只做展示：更紧凑的表格密度、更清晰的层级
 
@@ -49,11 +49,11 @@ export const ActiveTemplateCard: React.FC<{
   return (
     <div className={UI.cardSoft}>
       <div className={`${UI.sectionTitle} text-[15px] font-semibold`}>
-        已生效模板 <span className="text-slate-500 font-normal">（{list.length} 条）</span>
+        模板概览 <span className="text-slate-500 font-normal">（{list.length} 条）</span>
       </div>
 
       {list.length === 0 ? (
-        <div className="mt-3 text-sm text-slate-600">当前没有已生效模板。</div>
+        <div className="mt-3 text-sm text-slate-600">当前没有模板概览。</div>
       ) : (
         <div className="mt-3 space-y-3">
           {list.map((t) => {

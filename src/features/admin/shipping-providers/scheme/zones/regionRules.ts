@@ -1,7 +1,7 @@
 // src/features/admin/shipping-providers/scheme/zones/regionRules.ts
 //
 // Zone 省份占用规则（纯函数）
-// - 计算哪些省份已被“启用/active Zone”占用
+// - 计算哪些省份已被“任意仍占用 province members 的 Zone”占用（严格对齐后端 409 overlap 合同）
 // - 支持编辑时放行当前 zone（避免自锁）
 // - 兼容 members 结构：[{ level: "province", value: "广东省" }, ...]
 // - 尽量兼容后端字段差异：members/provinces/regions 等
@@ -21,19 +21,6 @@ function getZoneId(z: unknown): number | null {
   if (!isRecord(z)) return null;
   const id = z.id;
   return typeof id === "number" && Number.isFinite(id) ? id : null;
-}
-
-function isZoneActive(z: unknown): boolean {
-  // 兼容字段名：active / enabled（没有字段时按 true 处理，避免误伤）
-  if (!isRecord(z)) return true;
-
-  const active = z.active;
-  if (typeof active === "boolean") return active;
-
-  const enabled = z.enabled;
-  if (typeof enabled === "boolean") return enabled;
-
-  return true;
 }
 
 function asStringArray(v: unknown): string[] | null {
@@ -113,6 +100,11 @@ function zoneDisplayName(zone: unknown): string {
  * 构建“省份占用图”
  * @param zones PricingSchemeDetail.zones
  * @param opts.editingZoneId 编辑当前 zone 时，放行其自身省份（避免自锁）
+ *
+ * ✅ 严格对齐后端合同：
+ * - 只要某个 Zone 仍然拥有 province members，就视为占用
+ * - active/enabled 不参与占用判定（后端 overlap 也是如此）
+ * - 释放占用的唯一方式：归档-释放省份（清空 province members）
  */
 export function buildProvinceOccupancy(
   zones: unknown[] | undefined | null,
@@ -123,14 +115,13 @@ export function buildProvinceOccupancy(
 
   const list = Array.isArray(zones) ? zones : [];
   for (const zone of list) {
-    if (!isZoneActive(zone)) continue;
-
     // 放行当前正在编辑的 zone（避免自锁）
     const zid = getZoneId(zone);
     if (editingZoneId != null && zid != null && zid === editingZoneId) {
       continue;
     }
 
+    // ✅ 关键变化：不再看 active/enabled，只看“是否仍占用 province members”
     const provinces = extractZoneProvinces(zone);
     if (!provinces.length) continue;
 
@@ -140,7 +131,8 @@ export function buildProvinceOccupancy(
       if (!prov) continue;
 
       if (!reasonByProvince[prov]) {
-        reasonByProvince[prov] = `已在：${zName}`;
+        // 如果能拿到 zone id，就一起带上（更利于排障）
+        reasonByProvince[prov] = zid != null ? `已在：${zName}（zone_id=${zid}）` : `已在：${zName}`;
       }
     }
   }

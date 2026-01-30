@@ -10,7 +10,7 @@
 //
 // ✅ 注意：已支持“多条模板同时生效”
 // - active=true 不再互斥
-// - UI 展示为“已生效模板（可多条）”
+// - UI 展示为“模板（可多条）”
 
 import { useMemo, useState } from "react";
 import type { SegmentTemplateOut, SchemeWeightSegment } from "../segmentTemplates";
@@ -109,6 +109,10 @@ export function useSegmentTemplateWorkbench(args: {
     selectedTemplate,
     draftSegments,
     setDraftSegments,
+
+    // ✅ 暴露：给上层做“切换可绑定后刷新列表”
+    refreshTemplates,
+
     actions,
   };
 }

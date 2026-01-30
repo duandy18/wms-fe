@@ -1,7 +1,7 @@
 // src/features/admin/shipping-providers/scheme/brackets/SegmentsPanel.tsx
 //
 // 重量分段模板工作台（路线：draft → publish → activate）
-// - 左：方案列表（草稿/已保存/已生效/已归档）
+// - 左：方案列表（草稿/已保存/已归档）
 // - 右：编辑区（重量段结构 + 保存/启用）
 //
 // ✅ 收敛：重量段方案为整体启用/整体不启用
@@ -12,7 +12,7 @@ import { useLocation } from "react-router-dom";
 import type { PricingSchemeDetail } from "../../api";
 
 import type { SchemeWeightSegment } from "./segmentTemplates";
-import ActiveTemplateCard from "./ActiveTemplateCard";
+import { activateSegmentTemplate, deactivateSegmentTemplate, renameSegmentTemplate } from "./segmentTemplates";
 import TemplateWorkbenchCard from "./TemplateWorkbenchCard";
 import SegmentTemplateListPanel from "./SegmentTemplateListPanel";
 import { useSegmentTemplateWorkbench } from "./useSegmentTemplateWorkbench";
@@ -21,7 +21,8 @@ export const SegmentsPanel: React.FC<{
   detail: PricingSchemeDetail;
   disabled?: boolean;
   onError?: (msg: string) => void;
-}> = ({ detail, disabled, onError }) => {
+  onOk?: (msg: string) => void;
+}> = ({ detail, disabled, onError, onOk }) => {
   const schemeId = detail.id;
 
   const location = useLocation();
@@ -54,14 +55,53 @@ export const SegmentsPanel: React.FC<{
     };
   }, [location.hash]);
 
+  async function handleSetBindable(templateId: number, bindable: boolean) {
+    if (disabled || w.busy) return;
+
+    try {
+      if (bindable) {
+        await activateSegmentTemplate(templateId);
+        onOk?.("已加入可绑定区域");
+      } else {
+        await deactivateSegmentTemplate(templateId);
+        onOk?.("已从可绑定区域移除");
+      }
+      await w.refreshTemplates(w.selectedTemplateId);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : bindable ? "加入可绑定区域失败" : "移除可绑定区域失败";
+      onError?.(msg);
+    }
+  }
+
+  async function handleRenameTemplate(templateId: number, name: string) {
+    if (disabled || w.busy) return;
+
+    try {
+      await renameSegmentTemplate(templateId, { name });
+      onOk?.("已更新方案名称");
+      await w.refreshTemplates(w.selectedTemplateId);
+
+      // ✅ 如果改名的是当前选中模板：强制触发 detail reload（避免右侧仍显示旧名）
+      if (w.selectedTemplateId === templateId) {
+        w.setSelectedTemplateId(null);
+        window.requestAnimationFrame(() => {
+          w.setSelectedTemplateId(templateId);
+        });
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "改名失败";
+      onError?.(msg);
+    }
+  }
+
   return (
     <div className="space-y-3">
       {w.err ? <div className="text-red-600 text-sm">{w.err}</div> : null}
 
-      {/* ✅ 多条生效展示 */}
-      <ActiveTemplateCard templates={w.activeTemplates} disabled={!!disabled || w.busy} />
-
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[420px_1fr]">
+      {/* ✅ 纵向主线页收敛：取消“模板概览”大卡片展示（避免重复与占位）。
+          - 状态在左侧列表可见
+          - 细节在右侧编辑区可见 */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div ref={createAnchorRef} tabIndex={-1}>
           <SegmentTemplateListPanel
             disabled={!!disabled || w.busy}
@@ -69,6 +109,8 @@ export const SegmentsPanel: React.FC<{
             selectedTemplateId={w.selectedTemplateId}
             onSelectTemplateId={w.setSelectedTemplateId}
             onCreateDraftNamed={(name) => void w.actions.createDraftTemplate(name)}
+            onSetBindable={(id, b) => void handleSetBindable(id, b)}
+            onRenameTemplate={(id, name) => void handleRenameTemplate(id, name)}
             onArchiveTemplate={(id) => void w.actions.archiveTemplate(id)}
             onUnarchiveTemplate={(id) => void w.actions.unarchiveTemplate(id)}
           />
@@ -81,7 +123,7 @@ export const SegmentsPanel: React.FC<{
           draftSegments={w.draftSegments}
           setDraftSegments={w.setDraftSegments}
           onSaveDraft={w.actions.saveDraftItems}
-          onActivateTemplate={w.actions.activateTemplate}
+          onOk={onOk}
         />
       </div>
     </div>

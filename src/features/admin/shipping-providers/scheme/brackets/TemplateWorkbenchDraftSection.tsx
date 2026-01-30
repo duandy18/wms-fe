@@ -17,7 +17,7 @@ export const TemplateWorkbenchDraftSection: React.FC<{
   return (
     <div className="mt-4">
       <div className={UI.panelHint}>
-        方案编辑区：修改/新增/删除 →（在上方点击）保存方案 → 启用为当前生效。
+        方案编辑区：修改/新增/删除 →（在上方点击）保存方案 → 设为生效版本。
       </div>
 
       <div className={`mt-2 ${disabled ? "opacity-70 pointer-events-none" : ""}`}>

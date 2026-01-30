@@ -147,6 +147,21 @@ export const menuSections: RouteSection[] = [
       { path: "/ops/health", label: "系统状态", requiredPermissions: ["dev.tools.access"] },
       { path: "/ops/tasks", label: "后台任务", requiredPermissions: ["dev.tools.access"] },
 
+      // ✅ 运价运维中心（治理 / 修复 / 清理）
+      { path: "/ops/pricing-ops", label: "运价运维中心", requiredPermissions: ["config.store.write"] },
+      {
+        path: "/ops/pricing-ops/schemes/:schemeId",
+        label: "运价运维中心-方案详情",
+        requiredPermissions: ["config.store.write"],
+        showInSidebar: false,
+      },
+      {
+        path: "/ops/pricing-ops/cleanup",
+        label: "运价运维中心-方案壳清理",
+        requiredPermissions: ["config.store.write"],
+        showInSidebar: false,
+      },
+
       { path: "/trace", label: "Trace Studio", requiredPermissions: ["diagnostics.trace"] },
       { path: "/tools/ledger", label: "Ledger Studio", requiredPermissions: ["diagnostics.ledger"] },
       { path: "/tools/stocks", label: "Inventory Studio", requiredPermissions: ["diagnostics.inventory"] },

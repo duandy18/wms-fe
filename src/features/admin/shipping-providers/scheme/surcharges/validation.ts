@@ -18,7 +18,16 @@ export function parseJsonObject(input: string): JsonParseResult {
   }
 }
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
 export function validateAmountJson(obj: Record<string, unknown>): string | null {
+  // ✅ rounding 已废弃（后端也会 422），前端提前提示避免打脸
+  if (isRecord(obj) && "rounding" in obj && obj["rounding"] != null) {
+    return "amount_json.rounding 已废弃且不再生效，请改用 scheme.billable_weight_rule.rounding";
+  }
+
   const kind = String(obj["kind"] ?? "flat").toLowerCase();
   if (!["flat", "per_kg", "table"].includes(kind)) return "amount_json.kind 必须是 flat / per_kg / table";
 

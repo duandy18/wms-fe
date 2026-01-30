@@ -7,7 +7,6 @@ import { UI } from "../ui";
 import { buildProvinceOccupancy } from "./regionRules";
 import { buildNameFromProvinces, extractProvinceMembers, getErrorMessage } from "./zonesHelpers";
 import type { SegmentTemplateLite } from "./segmentTemplatesApi";
-import SegmentTemplateRadioPicker from "./SegmentTemplateRadioPicker";
 import { ZoneList } from "./ZoneList";
 
 type Props = {
@@ -15,12 +14,16 @@ type Props = {
   disabled: boolean;
   selectedZoneId: number | null;
 
+  // ⚠️ 仍保留这些 props（避免牵连上层签名），但本页不再使用
   templates: SegmentTemplateLite[];
   templatesLoading: boolean;
   templatesErr: string | null;
 
   onError: (msg: string) => void;
   onSelectZone: (zoneId: number) => void;
+
+  // ✅ 收敛：本页不再“启用/停用”，只把 active 当作“归档开关”使用
+  // - onToggle 仍保留签名（避免牵连上层）
   onToggle: (z: PricingSchemeZone) => Promise<void>;
 
   onCommitCreate: (name: string, provinces: string[], segmentTemplateId: number | null) => Promise<void>;
@@ -32,15 +35,11 @@ export const ZoneEditorCard: React.FC<Props> = ({
   zones,
   disabled,
   selectedZoneId,
-  templates,
-  templatesLoading,
-  templatesErr,
   onError,
   onSelectZone,
   onToggle,
   onCommitCreate,
   onReplaceProvinceMembers,
-  onPatchZone,
 }) => {
   // ===== 编辑态 =====
   const [editingZoneId, setEditingZoneId] = useState<number | null>(null);
@@ -57,12 +56,6 @@ export const ZoneEditorCard: React.FC<Props> = ({
   const [name, setName] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
 
-  // ✅ 必选：绑定模板（必须为启用模板 id）
-  const [segmentTemplateId, setSegmentTemplateId] = useState<number | null>(null);
-
-  // ✅ “零暗示”：必须用户点过一次才算选择完成
-  const [templatePicked, setTemplatePicked] = useState(false);
-
   useEffect(() => {
     if (!isEditing) return;
 
@@ -72,21 +65,8 @@ export const ZoneEditorCard: React.FC<Props> = ({
     const n = (editingZone?.name ?? "").trim();
     setName(n);
     setNameTouched(true);
-
-    // ✅ 回显模板绑定：若历史数据为 null，则要求用户重新选择
-    const curTpl = editingZone?.segment_template_id ?? null;
-    const okTpl = typeof curTpl === "number" && Number.isFinite(curTpl) ? curTpl : null;
-
-    setSegmentTemplateId(okTpl);
-    setTemplatePicked(okTpl != null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingZoneId]);
-
-  useEffect(() => {
-    if (isEditing) return;
-    setSegmentTemplateId(null);
-    setTemplatePicked(false);
-  }, [isEditing]);
 
   const suggestedName = useMemo(() => buildNameFromProvinces(provinces), [provinces]);
 
@@ -112,8 +92,6 @@ export const ZoneEditorCard: React.FC<Props> = ({
     setProvinces([]);
     setName("");
     setNameTouched(false);
-    setSegmentTemplateId(null);
-    setTemplatePicked(false);
   };
 
   const enterEdit = (zoneId: number) => {
@@ -139,19 +117,10 @@ export const ZoneEditorCard: React.FC<Props> = ({
       return;
     }
 
-    if (!templatePicked || segmentTemplateId == null) {
-      onError("必须选择重量段方案（从启用中的方案中选择一条）");
-      return;
-    }
-
-    const tplName = templates.find((t) => t.id === segmentTemplateId)?.name ?? `模板#${segmentTemplateId}`;
-
-    const confirmText = `确认新增区域？\n\n名称：${n}\n省份：${ps.join("、")}\n重量段方案：${tplName}\n`;
-    const ok = window.confirm(confirmText);
-    if (!ok) return;
-
     try {
-      await onCommitCreate(n, ps, segmentTemplateId);
+      // ✅ zones 段不再绑定模板：segmentTemplateId 统一为 null（后端/DB 需允许）
+      // ✅ 去掉 confirm 弹窗：成功反馈走页面顶部 SuccessBar（绿条）
+      await onCommitCreate(n, ps, null);
       resetForm();
     } catch (e: unknown) {
       onError(getErrorMessage(e, "保存失败"));
@@ -167,25 +136,9 @@ export const ZoneEditorCard: React.FC<Props> = ({
       return;
     }
 
-    if (!templatePicked || segmentTemplateId == null) {
-      onError("必须选择重量段方案（从启用中的方案中选择一条）");
-      return;
-    }
-
-    const tplName = templates.find((t) => t.id === segmentTemplateId)?.name ?? `模板#${segmentTemplateId}`;
-
-    const confirmText =
-      `确认保存修改？\n\n` +
-      `区域：${(editingZone?.name ?? `zone#${editingZoneId}`).trim()}\n` +
-      `省份：${ps.join("、")}\n` +
-      `重量段方案：${tplName}\n`;
-
-    const ok = window.confirm(confirmText);
-    if (!ok) return;
-
     try {
+      // ✅ 去掉 confirm 弹窗：成功反馈走页面顶部 SuccessBar（绿条）
       await onReplaceProvinceMembers(editingZoneId, ps);
-      await onPatchZone(editingZoneId, { segment_template_id: segmentTemplateId });
       exitEdit();
     } catch (e: unknown) {
       onError(getErrorMessage(e, "保存失败"));
@@ -207,8 +160,6 @@ export const ZoneEditorCard: React.FC<Props> = ({
           ) : null}
         </div>
 
-        {templatesErr ? <div className={`mt-3 ${UI.error}`}>{templatesErr}</div> : null}
-
         <div className="mt-4">
           <RegionSelector
             value={provinces}
@@ -217,19 +168,6 @@ export const ZoneEditorCard: React.FC<Props> = ({
             title={isEditing ? "省份（可增删）" : "选择省份（必选）"}
             hint=""
             blockedReasonByProvince={occupancy.reasonByProvince}
-          />
-        </div>
-
-        <div className="mt-4">
-          <SegmentTemplateRadioPicker
-            disabled={pageDisabled || templatesLoading}
-            templates={templates}
-            value={segmentTemplateId}
-            picked={templatePicked}
-            onChange={(next) => {
-              setSegmentTemplateId(next.id);
-              setTemplatePicked(next.picked);
-            }}
           />
         </div>
 
@@ -267,7 +205,7 @@ export const ZoneEditorCard: React.FC<Props> = ({
         </div>
 
         <div className="mt-3 text-xs text-slate-600">
-          说明：该页只展示“启用中”的重量段方案。本区域必须显式绑定一个方案，用于后续录价矩阵行结构。
+          说明：本页只维护区域（省份归属、编辑）。区域绑定重量段与录价在【二维价格表工作台】中完成。
         </div>
       </div>
 

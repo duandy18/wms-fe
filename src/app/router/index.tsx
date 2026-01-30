@@ -282,6 +282,32 @@ const AppRouter: React.FC = () => {
             }
           />
 
+          {/* ✅ 运价运维中心（治理 / 修复 / 清理） */}
+          <Route
+            path="ops/pricing-ops"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.PricingOpsCenterPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="ops/pricing-ops/schemes/:schemeId"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.PricingOpsSchemeDetailPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="ops/pricing-ops/cleanup"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.PricingOpsCleanupPage />
+              </RequirePermission>
+            }
+          />
+
           {/* ✅ 运维中心 / 后端调试台：Tab → 页面化 */}
           <Route
             path="ops/dev/orders"
@@ -524,6 +550,15 @@ const AppRouter: React.FC = () => {
             }
           />
           {/* ✅ 运价方案工作台：Tab → 子页面 */}
+          {/* ✅ 运价方案工作台：纵向主线页（包含所有 Tab 内容，从上到下） */}
+          <Route
+            path="admin/shipping-providers/schemes/:schemeId/workbench-flow"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.SchemeWorkbenchFlowPage />
+              </RequirePermission>
+            }
+          />
           <Route
             path="admin/shipping-providers/schemes/:schemeId/workbench/:tab"
             element={

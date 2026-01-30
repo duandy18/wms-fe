@@ -47,23 +47,23 @@ export const TemplateWorkbenchStep3SaveActivate: React.FC<{
           <div className="text-xs text-slate-500">保存只影响草稿，不影响线上。</div>
         </div>
 
-        {/* 右：启用为当前生效 */}
+        {/* 右：设为生效版本 */}
         <div className="flex flex-col gap-1 items-end">
           <button
             type="button"
             className={UI.btnNeutralSm}
             disabled={disabled || dirty || !isDraft}
             onClick={onActivate}
-            title={dirty ? "请先保存草稿，再启用" : "启用为当前生效（整体替换线上方案）"}
+            title={dirty ? "请先保存草稿，再启用" : "设为生效版本（整体替换线上方案）"}
           >
-            启用为当前生效
+            设为生效版本
           </button>
           <div className="text-xs text-slate-500">启用会立即替换线上生效方案。</div>
         </div>
       </div>
 
       <div className="mt-2 text-xs text-slate-500">
-        {dirty ? "当前有未保存修改：请先点击“保存草稿”。" : "已保存：可直接点击“启用为当前生效”。"}
+        {dirty ? "当前有未保存修改：请先点击“保存草稿”。" : "已保存：可直接点击“设为生效版本”。"}
       </div>
     </div>
   );

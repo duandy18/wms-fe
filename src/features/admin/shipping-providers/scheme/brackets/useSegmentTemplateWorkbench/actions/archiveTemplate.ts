@@ -7,7 +7,7 @@ import { runGuarded } from "../helpers";
 import type { WorkbenchActionCtx } from "./types";
 
 function pickNextSelectedId(list: SegmentTemplateOut[]): number | null {
-  // 优先：当前生效
+  // 优先：生效版本
   const act = list.find((x) => x.is_active);
   if (act) return act.id;
 
