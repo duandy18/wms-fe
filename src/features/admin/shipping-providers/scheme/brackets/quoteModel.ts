@@ -119,12 +119,16 @@ export function keyFromBracket(b: PricingSchemeZoneBracket): string {
   return segKey(min, max);
 }
 
+/**
+ * ✅ 零默认、零暗示：
+ * - 默认草稿为 manual（需补录）
+ * - 用户必须显式选择计价方式并填写所需字段，才能保存写入
+ */
 export function defaultDraft(): RowDraft {
-  // 默认推荐 linear_total；空值是否允许由 UI 控制
   return {
-    mode: "linear_total",
+    mode: "manual",
     flatAmount: "",
-    baseKg: "1",
+    baseKg: "",
     baseAmount: "",
     ratePerKg: "",
   };
@@ -139,7 +143,7 @@ export function draftFromBracket(b: PricingSchemeZoneBracket): RowDraft {
     return {
       mode: "flat",
       flatAmount: amt,
-      baseKg: "1",
+      baseKg: "",
       baseAmount: "",
       ratePerKg: "",
     };
@@ -151,7 +155,7 @@ export function draftFromBracket(b: PricingSchemeZoneBracket): RowDraft {
     return {
       mode: "linear_total",
       flatAmount: "",
-      baseKg: "1",
+      baseKg: "",
       baseAmount: base,
       ratePerKg: rate,
     };
@@ -164,19 +168,52 @@ export function draftFromBracket(b: PricingSchemeZoneBracket): RowDraft {
     return {
       mode: "step_over",
       flatAmount: "",
-      baseKg: baseKg || "1",
+      baseKg: baseKg || "",
       baseAmount: base,
       ratePerKg: rate,
     };
   }
 
-  return {
-    mode: "manual",
-    flatAmount: "",
-    baseKg: "1",
-    baseAmount: "",
-    ratePerKg: "",
+  return defaultDraft();
+}
+
+/**
+ * ✅ 草稿校验（保存前必须通过）
+ * - 不允许把空值“自动写成 0”
+ * - 0 只有在用户显式输入 "0" 时才是合法事实
+ */
+export function validateDraft(d: RowDraft): string | null {
+  const mode = d.mode;
+
+  if (mode === "manual") return "请选择计价方式并填写必填字段";
+
+  const requireNum = (label: string, raw: string, opts?: { gt0?: boolean }) => {
+    const s = (raw ?? "").trim();
+    if (!s) return `${label}未填写`;
+    const n = parseNum(s);
+    if (n == null) return `${label}不是合法数字`;
+    if (n < 0) return `${label}不能为负数`;
+    if (opts?.gt0 && !(n > 0)) return `${label}必须大于 0`;
+    return null;
   };
+
+  if (mode === "flat") {
+    return requireNum("固定价", d.flatAmount);
+  }
+
+  if (mode === "linear_total") {
+    return requireNum("票费/首重费", d.baseAmount) ?? requireNum("续重单价", d.ratePerKg);
+  }
+
+  if (mode === "step_over") {
+    return (
+      requireNum("首重重量", d.baseKg, { gt0: true }) ??
+      requireNum("首重费", d.baseAmount) ??
+      requireNum("续重单价", d.ratePerKg)
+    );
+  }
+
+  return "未知计价方式";
 }
 
 export function buildPayloadFromDraft(d: RowDraft): {
@@ -186,54 +223,58 @@ export function buildPayloadFromDraft(d: RowDraft): {
   rate_per_kg?: number;
   base_kg?: number;
 } {
-  // ✅ pricing_mode 是唯一真相：只按 mode 输出允许字段
+  // ✅ 禁止“空值 -> 0”写入：必须先通过 validateDraft
+  const err = validateDraft(d);
+  if (err) {
+    // 这里抛错是为了防止任何调用方绕过 UI 校验写脏数据
+    throw new Error(err);
+  }
+
   if (d.mode === "flat") {
-    const amt = parseNum((d.flatAmount ?? "").trim());
     return {
       pricing_mode: "flat",
-      flat_amount: amt == null ? 0 : amt,
+      flat_amount: Number((d.flatAmount ?? "").trim()),
     };
   }
 
   if (d.mode === "linear_total") {
-    const baseAmt = parseNum((d.baseAmount ?? "").trim());
-    const rate = parseNum((d.ratePerKg ?? "").trim());
     return {
       pricing_mode: "linear_total",
-      base_amount: baseAmt == null ? 0 : baseAmt,
-      rate_per_kg: rate == null ? 0 : rate,
+      base_amount: Number((d.baseAmount ?? "").trim()),
+      rate_per_kg: Number((d.ratePerKg ?? "").trim()),
     };
   }
 
   if (d.mode === "step_over") {
-    const baseKg = parseNum((d.baseKg ?? "").trim());
-    const baseAmt = parseNum((d.baseAmount ?? "").trim());
-    const rate = parseNum((d.ratePerKg ?? "").trim());
     return {
       pricing_mode: "step_over",
-      base_kg: baseKg == null ? 0 : baseKg,
-      base_amount: baseAmt == null ? 0 : baseAmt,
-      rate_per_kg: rate == null ? 0 : rate,
+      base_kg: Number((d.baseKg ?? "").trim()),
+      base_amount: Number((d.baseAmount ?? "").trim()),
+      rate_per_kg: Number((d.ratePerKg ?? "").trim()),
     };
   }
 
+  // 理论上走不到
   return { pricing_mode: "manual_quote" };
 }
 
 export function summarizeDraft(d: RowDraft): string {
+  const err = validateDraft(d);
+  if (err) return "未设/需补录";
+
   if (d.mode === "flat") return `￥${fmtMoney(d.flatAmount)}`;
   if (d.mode === "linear_total") {
-    const base = d.baseAmount.trim() || "0";
-    const rate = d.ratePerKg.trim() || "0";
+    const base = d.baseAmount.trim();
+    const rate = d.ratePerKg.trim();
     return `票费￥${fmtMoney(base)} + ￥${fmtMoney(rate)}/kg`;
   }
   if (d.mode === "step_over") {
-    const baseKg = d.baseKg.trim() || "0";
-    const base = d.baseAmount.trim() || "0";
-    const rate = d.ratePerKg.trim() || "0";
+    const baseKg = d.baseKg.trim();
+    const base = d.baseAmount.trim();
+    const rate = d.ratePerKg.trim();
     return `首重${baseKg}kg￥${fmtMoney(base)} + 续重￥${fmtMoney(rate)}/kg`;
   }
-  return "人工/未设";
+  return "未设/需补录";
 }
 
 export function summarizeBracket(b: PricingSchemeZoneBracket): string {

@@ -58,6 +58,19 @@ export async function activateSegmentTemplate(templateId: number): Promise<Segme
   return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}:activate`, { method: "POST" });
 }
 
+export async function deactivateSegmentTemplate(templateId: number): Promise<SegmentTemplateOut> {
+  // ✅ 语义：从“可绑定区域”移除（is_active=false）
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}:deactivate`, { method: "POST" });
+}
+
+export async function renameSegmentTemplate(templateId: number, payload: { name: string }): Promise<SegmentTemplateOut> {
+  // ✅ 语义：修改模板名称（用于运营识别，不影响算价事实）
+  return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}:rename`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function archiveSegmentTemplate(templateId: number): Promise<SegmentTemplateOut> {
   // ✅ 后端真实路由：/segment-templates/{id}:archive
   return await fetchJson<SegmentTemplateOut>(`/segment-templates/${templateId}:archive`, { method: "POST" });

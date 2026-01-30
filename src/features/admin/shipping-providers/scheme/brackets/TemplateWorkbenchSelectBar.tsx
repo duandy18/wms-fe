@@ -1,7 +1,6 @@
 // src/features/admin/shipping-providers/scheme/brackets/TemplateWorkbenchSelectBar.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { SegmentTemplateOut, SchemeWeightSegment } from "./segmentTemplates";
-import { isTemplateActive } from "./segmentTemplates";
 import { UI } from "../ui";
 
 function displayName(name: string): string {
@@ -12,9 +11,7 @@ function displayName(name: string): string {
 }
 
 function statusLabel(t: SegmentTemplateOut): string {
-  const st = String(t.status ?? "");
-  if (isTemplateActive(t)) return "当前生效";
-  if (st === "draft") return "草稿";
+  const st = String(t.status ?? "");if (st === "draft") return "草稿";
   if (st === "published") return "已保存";
   if (st === "archived") return "已归档";
   return st ? st : "未知";
@@ -158,7 +155,7 @@ export const TemplateWorkbenchSelectBar: React.FC<{
 
                 {templates.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {isTemplateActive(t) ? "★ " : ""}
+                    
                     {displayName(t.name ?? "")}（{statusLabel(t)}）
                   </option>
                 ))}

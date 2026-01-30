@@ -51,6 +51,12 @@ export async function replaceZoneProvinceMembers(
   });
 }
 
+// ✅ 新合同：归档-释放省份（释放排他资源）
+// - 后端：POST /zones/{zone_id}/archive-release-provinces
+export async function archiveReleaseZoneProvinces(zoneId: number): Promise<PricingSchemeZone> {
+  return apiPost<PricingSchemeZone>(`/zones/${zoneId}/archive-release-provinces`, {});
+}
+
 export async function deleteZone(zoneId: number): Promise<{ ok: boolean }> {
   return apiDelete<{ ok: boolean }>(`/zones/${zoneId}`);
 }

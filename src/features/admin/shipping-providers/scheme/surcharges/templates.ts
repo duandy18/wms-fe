@@ -73,8 +73,8 @@ export const SURCHARGE_TEMPLATES: Record<
   fuel_perkg: {
     label: "燃油附加费（按公斤叠加）",
     condition_json: `{}`,
-    amount_json: `{"kind":"per_kg","rate_per_kg":0.5,"rounding":{"mode":"ceil","step_kg":1.0}}`,
-    tip: "适用于：按计费重叠加的燃油费。",
+    amount_json: `{"kind":"per_kg","rate_per_kg":0.5}`,
+    tip: "适用于：按计费重叠加的燃油费。计费重取整规则由方案 billable_weight_rule.rounding 决定（附加费不再单独配置 rounding）。",
   },
 
   weight_table: {

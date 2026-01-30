@@ -30,7 +30,7 @@ export const TemplateWorkbenchStep1ChooseDraft: React.FC<{
         <div>
           <div className="text-sm font-semibold">Step 1：选择草稿方案</div>
           <div className="mt-1 text-xs text-slate-500">
-            当前生效方案只读；要修改请新建草稿方案并在草稿中编辑。
+            生效版本方案只读；要修改请新建草稿方案并在草稿中编辑。
           </div>
         </div>
 

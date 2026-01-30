@@ -4,10 +4,10 @@
 //
 // 语义收敛：
 // - “保存方案” = 保存草稿（不影响线上）
-// - “启用为当前生效” = 替换线上生效方案（整体切换）
+// - “设为生效版本” = 替换线上生效方案（整体切换）
 //
 // ✅ 关键引导：
-// - 非 draft（已发布/已生效）不允许直接编辑 → “复制为草稿”再改
+// - 非 draft（已发布/已发布）不允许直接编辑 → “复制为草稿”再改
 //
 // ⚠️ 明确区分“编辑行为”和“线上事实变更”，避免误操作
 
@@ -35,7 +35,7 @@ export const TemplateWorkbenchMetaBar: React.FC<{
   function handleActivateClick() {
     if (disabled) return;
     if (dirty) {
-      window.alert("当前方案有未保存的修改，请先保存方案，再启用为当前生效。");
+      window.alert("当前方案有未保存的修改，请先保存方案，再设为生效版本。");
       return;
     }
     if (isActive) return;
@@ -55,7 +55,7 @@ export const TemplateWorkbenchMetaBar: React.FC<{
           className={UI.btnNeutralSm}
           disabled={disabled}
           onClick={onCloneToDraft}
-          title="已发布/已生效方案不能直接编辑，复制为草稿后再修改"
+          title="已发布/已发布方案不能直接编辑，复制为草稿后再修改"
         >
           复制为草稿
         </button>
@@ -66,7 +66,7 @@ export const TemplateWorkbenchMetaBar: React.FC<{
         className={UI.btnNeutralSm}
         disabled={disabled || !dirty || !isDraft}
         onClick={onSaveDraft}
-        title={!isDraft ? "已发布/已生效方案不可直接保存，请先复制为草稿" : "保存草稿（不影响线上）"}
+        title={!isDraft ? "已发布/已发布方案不可直接保存，请先复制为草稿" : "保存草稿（不影响线上）"}
       >
         保存方案
       </button>
@@ -76,9 +76,9 @@ export const TemplateWorkbenchMetaBar: React.FC<{
         className={UI.btnNeutralSm}
         disabled={disabled || isActive}
         onClick={handleActivateClick}
-        title={isActive ? "该方案已是当前生效" : "启用后将整体替换当前线上生效的重量段方案"}
+        title={isActive ? "该方案已是生效版本" : "启用后将整体替换当前线上生效的重量段方案"}
       >
-        {isActive ? "已是当前生效" : "启用为当前生效"}
+        {isActive ? "已是生效版本" : "设为生效版本"}
       </button>
     </div>
   );

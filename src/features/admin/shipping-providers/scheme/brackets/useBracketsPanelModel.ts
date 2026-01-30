@@ -34,9 +34,7 @@ function makeBridges(setCache: React.Dispatch<React.SetStateAction<BracketsCache
     }));
   };
 
-  const setDraftsByZoneId: React.Dispatch<React.SetStateAction<Record<number, Record<string, RowDraft>>>> = (
-    action,
-  ) => {
+  const setDraftsByZoneId: React.Dispatch<React.SetStateAction<Record<number, Record<string, RowDraft>>>> = (action) => {
     setCache((prev) => ({
       ...prev,
       draftsByZoneId: applyStateAction(prev.draftsByZoneId, action),
@@ -90,6 +88,9 @@ export function useBracketsPanelModel(args: { detail: PricingSchemeDetail; selec
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const successTimerRef = useRef<number | null>(null);
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const errorTimerRef = useRef<number | null>(null);
+
   function showSuccess(msg: string) {
     setSuccessMsg(msg);
 
@@ -112,11 +113,38 @@ export function useBracketsPanelModel(args: { detail: PricingSchemeDetail; selec
     setSuccessMsg(null);
   }
 
+  function showError(msg: string) {
+    setErrorMsg(msg);
+
+    if (errorTimerRef.current != null) {
+      window.clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = null;
+    }
+
+    // 错误提示给更长的停留时间，便于操作人员阅读
+    errorTimerRef.current = window.setTimeout(() => {
+      setErrorMsg(null);
+      errorTimerRef.current = null;
+    }, 6000);
+  }
+
+  function clearError() {
+    if (errorTimerRef.current != null) {
+      window.clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = null;
+    }
+    setErrorMsg(null);
+  }
+
   useEffect(() => {
     return () => {
       if (successTimerRef.current != null) {
         window.clearTimeout(successTimerRef.current);
         successTimerRef.current = null;
+      }
+      if (errorTimerRef.current != null) {
+        window.clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = null;
       }
     };
   }, []);
@@ -150,12 +178,44 @@ export function useBracketsPanelModel(args: { detail: PricingSchemeDetail; selec
 
   const rowKeySet = useMemo(() => buildRowKeySet(tableRows), [tableRows]);
 
-  const backendKeyStats = useMemo(
-    () => computeBackendKeyStats({ currentBrackets, rowKeySet }),
-    [currentBrackets, rowKeySet],
-  );
+  const backendKeyStats = useMemo(() => computeBackendKeyStats({ currentBrackets, rowKeySet }), [currentBrackets, rowKeySet]);
 
   const currentBracketByKey = useMemo(() => buildBracketByKey(currentBrackets), [currentBrackets]);
+
+  // =========================================================
+  // ✅ Edit Gate：model 层产出阻断原因（UI 只展示，不再 alert）
+  // =========================================================
+  const editGate = useMemo(() => {
+    if (!selectedZoneId || !selectedZone) {
+      return { ok: false as const, code: "NO_ZONE" as const, message: "请先选择区域（Zone）" };
+    }
+
+    if (!zoneTemplateId) {
+      return {
+        ok: false as const,
+        code: "NO_TEMPLATE" as const,
+        message: "当前 Zone 未绑定重量段方案，禁止录价。请先在【区域分类】为该 Zone 选择重量段方案。",
+      };
+    }
+
+    if (tableRows.length === 0) {
+      return {
+        ok: false as const,
+        code: "NO_SEGMENTS" as const,
+        message: "当前重量段方案没有任何有效区间，禁止录价。请先完善重量段方案的段结构。",
+      };
+    }
+
+    if (backendKeyStats.invalidKeyCount > 0) {
+      return {
+        ok: false as const,
+        code: "INVALID_BACKEND_KEYS" as const,
+        message: "后端返回的报价区间字段不符合合同（无法解析 min/max），为避免写入污染，本次操作已阻断。请先检查接口字段。",
+      };
+    }
+
+    return { ok: true as const };
+  }, [selectedZoneId, selectedZone, zoneTemplateId, tableRows.length, backendKeyStats.invalidKeyCount]);
 
   function setDraftForCurrentZone(key: string, patch: Partial<RowDraft>) {
     if (!selectedZoneId) return;
@@ -178,31 +238,20 @@ export function useBracketsPanelModel(args: { detail: PricingSchemeDetail; selec
   }
 
   async function saveCurrentZonePricesWrapper() {
-    if (!selectedZoneId || !selectedZone) {
-      alert("请先选择区域（Zone）");
+    if (!editGate.ok) {
+      showError(editGate.message);
       return;
     }
 
-    if (!zoneTemplateId) {
-      alert("当前 Zone 未绑定重量段方案，禁止录价。请先在【区域分类】为该 Zone 选择重量段方案。");
-      return;
-    }
-
-    if (tableRows.length === 0) {
-      alert("当前重量段方案没有任何有效区间，禁止录价。请先完善重量段方案的段结构。");
-      return;
-    }
-
-    if (backendKeyStats.invalidKeyCount > 0) {
-      alert("后端返回的报价区间字段不符合合同（无法解析 min/max），为避免写入污染，本次操作已阻断。请先检查接口字段。");
-      return;
-    }
+    // editGate.ok => selectedZoneId/selectedZone 一定存在
+    const safeZoneId = selectedZoneId as number;
+    const safeZone = selectedZone as PricingSchemeZone;
 
     const { setBracketsByZoneId, setDraftsByZoneId } = makeBridges(setCache);
 
     await saveCurrentZonePrices({
-      selectedZone,
-      selectedZoneId,
+      selectedZone: safeZone,
+      selectedZoneId: safeZoneId,
       tableRows,
       currentBracketByKey,
       currentDrafts,
@@ -266,9 +315,15 @@ export function useBracketsPanelModel(args: { detail: PricingSchemeDetail; selec
     successMsg,
     clearSuccess,
 
+    errorMsg,
+    clearError,
+
     // 给 UI 做诊断/提示（可选使用）
     zoneTemplateId,
     backendKeyStats,
+
+    // ✅ 唯一裁决源（UI 只展示）
+    editGate,
 
     setDraftForCurrentZone,
     saveCurrentZonePrices: saveCurrentZonePricesWrapper,

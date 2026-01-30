@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import type { PricingSchemeZoneBracket } from "../../../api";
 import { UI } from "../../ui";
 import type { RowDraft, CellMode } from "../quoteModel";
-import { defaultDraft, draftFromBracket, keyFromBracket, segLabel } from "../quoteModel";
+import { defaultDraft, draftFromBracket, keyFromBracket, segLabel, validateDraft } from "../quoteModel";
 
 import type { ZoneEntryCardProps } from "./types";
 import { backendStatusZh, editingStatusZh, modeLabelZh } from "./status";
@@ -60,15 +60,54 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
     return { ok, invalid };
   }, [tableRows]);
 
+  const completion = useMemo(() => {
+    if (!editing) return { incomplete: 0, reasons: [] as string[] };
+
+    let incomplete = 0;
+    const reasons: string[] = [];
+
+    for (const row of tableRows) {
+      const k = row.key;
+      if (!k) {
+        incomplete += 1;
+        continue;
+      }
+
+      const backend = bracketByKey[k];
+      const d: RowDraft = currentDrafts[k] ?? (backend ? draftFromBracket(backend) : defaultDraft());
+
+      const err = validateDraft(d);
+      if (err) {
+        incomplete += 1;
+        if (reasons.length < 3) reasons.push(err);
+      }
+    }
+
+    return { incomplete, reasons };
+  }, [editing, tableRows, bracketByKey, currentDrafts]);
+
   async function handleSave() {
     if (!selectedZoneId) return;
     if (noRows) return;
+
+    // ✅ 保存硬护栏：禁止把空值写入成 0（零默认）
+    if (stats.invalid > 0) return;
+    if (invalidBackendKeyCount > 0) return;
+    if (completion.incomplete > 0) return;
+
     await onSave();
     setEditing(false);
   }
 
   const editDisabled = !selectedZoneId || busy || noRows;
-  const saveDisabled = !editing || !selectedZoneId || busy || noRows;
+  const saveDisabled =
+    !editing ||
+    !selectedZoneId ||
+    busy ||
+    noRows ||
+    stats.invalid > 0 ||
+    invalidBackendKeyCount > 0 ||
+    completion.incomplete > 0;
 
   return (
     <div className={UI.cardTight}>
@@ -86,12 +125,19 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
             <div className="mt-1 text-xs text-slate-500">
               {stats.ok} 行可录价{stats.invalid ? `，${stats.invalid} 行区间非法` : ""}
               {invalidBackendKeyCount ? (
-                <span className="ml-2 text-red-600">
-                  · 后端返回 {invalidBackendKeyCount} 条报价区间无法解析（字段不符合合同）
-                </span>
+                <span className="ml-2 text-red-600">· 后端返回 {invalidBackendKeyCount} 条报价区间无法解析（字段不符合合同）</span>
+              ) : null}
+              {editing && completion.incomplete ? (
+                <span className="ml-2 text-red-600">· 还有 {completion.incomplete} 行未填写完整（保存已禁用）</span>
               ) : null}
             </div>
           )}
+
+          {editing && completion.incomplete && completion.reasons.length ? (
+            <div className="mt-2 text-xs text-red-600">
+              主要原因：{completion.reasons.join("；")}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-2">
@@ -111,9 +157,7 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
           <button
             type="button"
             className={`rounded-xl border px-3 py-2 text-sm font-semibold ${
-              editing && selectedZoneId && !busy && !noRows
-                ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                : "border-slate-200 bg-slate-100 text-slate-400"
+              !saveDisabled ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-slate-200 bg-slate-100 text-slate-400"
             }`}
             disabled={saveDisabled}
             onClick={() => void handleSave()}
@@ -166,6 +210,7 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
                     ? backendStatusZh(backend)
                     : editingStatusZh({ draft: d, backend });
 
+                const vErr = invalid ? "区间非法" : validateDraft(d);
                 const label = invalid ? "" : d.mode === "manual" ? "需补录" : modeLabelZh(d.mode);
 
                 return (
@@ -201,6 +246,7 @@ export const ZoneEntryCard: React.FC<ZoneEntryCardProps> = ({
                       )}
 
                       {!invalid ? <span className="ml-2 text-xs text-slate-500">{label}</span> : null}
+                      {!invalid && !locked && vErr ? <div className="mt-1 text-xs text-red-600">{vErr}</div> : null}
                     </td>
 
                     <td className="px-3 py-3">

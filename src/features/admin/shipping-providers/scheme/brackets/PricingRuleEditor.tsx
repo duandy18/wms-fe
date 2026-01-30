@@ -8,7 +8,7 @@
 // - “重量段方案”页（TemplateWorkbenchDraftSection）会传 mode="always"
 // - 其它位置如需只读展示，保持默认 locked 即可
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 
 export type WeightSegment = {
   min: string;
@@ -33,16 +33,27 @@ export const PricingRuleEditor: React.FC<{
   const rows = useMemo(() => value ?? [], [value]);
   const editable = mode === "always";
 
+  // 行内轻量确认：避免 window.confirm 的“系统级惊吓感”
+  const [pendingDeleteIdx, setPendingDeleteIdx] = useState<number | null>(null);
+
   function updateRow(idx: number, patch: Partial<WeightSegment>) {
     if (!editable) return;
     onChange(rows.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
   }
 
-  function deleteRow(idx: number) {
+  function requestDeleteRow(idx: number) {
     if (!editable) return;
-    const ok = window.confirm("确认删除该重量分段？");
-    if (!ok) return;
+    setPendingDeleteIdx(idx);
+  }
+
+  function cancelDeleteRow() {
+    setPendingDeleteIdx(null);
+  }
+
+  function confirmDeleteRow(idx: number) {
+    if (!editable) return;
     onChange(rows.filter((_, i) => i !== idx));
+    setPendingDeleteIdx(null);
   }
 
   function appendRow() {
@@ -58,43 +69,82 @@ export const PricingRuleEditor: React.FC<{
       </div>
 
       <div className="mt-3 space-y-1.5">
-        {rows.map((s, idx) => (
-          <div key={idx} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-[6px]">
-            <div className="min-w-[110px] text-xs font-mono text-slate-600">{labelOf(s)}</div>
+        {rows.map((s, idx) => {
+          const isPending = pendingDeleteIdx === idx;
 
-            <input
-              className={`w-24 rounded border px-2 py-1 text-sm font-mono ${
-                editable ? "border-slate-300 bg-white" : "border-slate-200 bg-slate-100 text-slate-500"
-              }`}
-              value={s.min}
-              placeholder="起"
-              readOnly={!editable}
-              onChange={(e) => updateRow(idx, { min: e.target.value })}
-            />
+          return (
+            <div key={idx} className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-[6px]">
+              <div className="flex items-center gap-3">
+                <div className="min-w-[110px] text-xs font-mono text-slate-600">{labelOf(s)}</div>
 
-            <span className="text-slate-400 text-sm">～</span>
+                <input
+                  className={`w-24 rounded border px-2 py-1 text-sm font-mono ${
+                    editable ? "border-slate-300 bg-white" : "border-slate-200 bg-slate-100 text-slate-500"
+                  }`}
+                  value={s.min}
+                  placeholder="起"
+                  readOnly={!editable}
+                  onChange={(e) => updateRow(idx, { min: e.target.value })}
+                />
 
-            <input
-              className={`w-24 rounded border px-2 py-1 text-sm font-mono ${
-                editable ? "border-slate-300 bg-white" : "border-slate-200 bg-slate-100 text-slate-500"
-              }`}
-              value={s.max}
-              placeholder="止 / ∞"
-              readOnly={!editable}
-              onChange={(e) => updateRow(idx, { max: e.target.value })}
-            />
+                <span className="text-slate-400 text-sm">～</span>
 
-            <span className="text-xs text-slate-400">kg</span>
+                <input
+                  className={`w-24 rounded border px-2 py-1 text-sm font-mono ${
+                    editable ? "border-slate-300 bg-white" : "border-slate-200 bg-slate-100 text-slate-500"
+                  }`}
+                  value={s.max}
+                  placeholder="止 / ∞"
+                  readOnly={!editable}
+                  onChange={(e) => updateRow(idx, { max: e.target.value })}
+                />
 
-            {editable ? (
-              <button type="button" className="ml-auto text-xs text-red-600 hover:underline" onClick={() => deleteRow(idx)}>
-                删除
-              </button>
-            ) : (
-              <span className="ml-auto text-xs text-slate-400">—</span>
-            )}
-          </div>
-        ))}
+                <span className="text-xs text-slate-400">kg</span>
+
+                {editable ? (
+                  <button
+                    type="button"
+                    className="ml-auto text-xs text-slate-600 hover:underline"
+                    onClick={() => requestDeleteRow(idx)}
+                  >
+                    删除
+                  </button>
+                ) : (
+                  <span className="ml-auto text-xs text-slate-400">—</span>
+                )}
+              </div>
+
+              {editable && isPending ? (
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                  <div className="text-xs text-slate-600">
+                    <span className="font-medium text-slate-800">删除重量分段：</span>
+                    <span className="font-mono">{labelOf(s)}</span>
+                    <span className="text-slate-400"> · </span>
+                    <span className="text-slate-500">仅影响当前重量段方案的结构，不会影响已生效运价。</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                      onClick={cancelDeleteRow}
+                    >
+                      取消
+                    </button>
+
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-200 bg-slate-900 px-3 py-1.5 text-xs text-white hover:bg-slate-800"
+                      onClick={() => confirmDeleteRow(idx)}
+                    >
+                      确认删除
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
 
         {editable ? (
           <button

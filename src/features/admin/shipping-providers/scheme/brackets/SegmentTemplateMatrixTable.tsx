@@ -21,37 +21,67 @@ import type {
  * - 不做任何分组/兜底/推导（groups 已分好）
  *
  * 注意：
- * - QuoteMatrixCard 的展示/编辑复用旧逻辑（单元格编辑仍走 onUpsertCell）
+ * - QuoteMatrixCard 的展示/编辑复用旧逻辑（只读模式用于综合展示）
  * - draftsByZoneId 在 QuoteMatrixCard 内已明确“不再用于展示”，这里传空对象
  */
 
 function segToWeightSegment(s: ZoneBracketsMatrixSegment): WeightSegment {
-  const minRaw = s.min_kg ?? s.min ?? 0;
-  const maxRaw = s.max_kg ?? s.max ?? "";
+  const minRaw = s.min_kg ?? s.min ?? 0
+  const maxRaw = s.max_kg ?? s.max ?? ""
 
-  const min = typeof minRaw === "number" ? String(minRaw) : String(minRaw ?? "0");
-  const max = maxRaw == null ? "" : typeof maxRaw === "number" ? String(maxRaw) : String(maxRaw);
+  const min = typeof minRaw === "number" ? String(minRaw) : String(minRaw ?? "0")
+  const max = maxRaw == null ? "" : typeof maxRaw === "number" ? String(maxRaw) : String(maxRaw)
 
-  // WeightSegment 只要求有 min/max（QuoteMatrixCard 用 .trim/.parseNum）
-  return { min, max } as WeightSegment;
+  return { min, max } as WeightSegment
 }
 
 function toPricingSchemeZoneBracket(b: ZoneBracketsMatrixBracket): PricingSchemeZoneBracket {
   return b as unknown as PricingSchemeZoneBracket;
 }
 
+function readBool(v: unknown): boolean | null {
+  return typeof v === "boolean" ? v : null;
+}
+
+function readArr(v: unknown): unknown[] | null {
+  return Array.isArray(v) ? v : null;
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+function readField<T = unknown>(obj: unknown, key: string): T | undefined {
+  if (!isRecord(obj)) return undefined;
+  return obj[key] as T;
+}
+
+function isZoneRenderable(z: ZoneBracketsMatrixZone): boolean {
+  const rawActive = readField<unknown>(z, "active");
+  const active = readBool(rawActive);
+  if (active === false) return false;
+
+  const archivedAt = readField<unknown>(z, "archived_at") ?? readField<unknown>(z, "archivedAt");
+  if (typeof archivedAt === "string" && archivedAt.trim()) return false;
+
+  return true;
+}
+
 function toPricingSchemeZone(z: ZoneBracketsMatrixZone, templateId: number): PricingSchemeZone {
   const brackets = (z.brackets ?? []).map(toPricingSchemeZoneBracket);
 
-  // PricingSchemeZone 在你项目里通常包含 members/brackets/segment_template_id 等字段。
-  // 我们提供最小可用结构，满足 QuoteMatrixCard 的展示与编辑。
+  const rawActive = readField<unknown>(z, "active");
+  const active = readBool(rawActive);
+  const rawMembers = readField<unknown>(z, "members");
+  const members = readArr(rawMembers);
+
   return {
     id: z.id,
     name: z.name,
-    active: true,
+    active: active == null ? true : active,
     priority: 0,
     segment_template_id: templateId,
-    members: [],
+    members: (members ?? []) as unknown[],
     brackets,
   } as unknown as PricingSchemeZone;
 }
@@ -61,17 +91,25 @@ export const SegmentTemplateMatrixTable: React.FC<{
   busy: boolean;
   selectedZoneId: number | null;
   onUpsertCell: (args: { zoneId: number; min: number; max: number | null; draft: RowDraft }) => Promise<void>;
-}> = ({ group, busy, selectedZoneId, onUpsertCell }) => {
+
+  // ✅ 新增：综合展示时只读
+  readonly?: boolean;
+
+  // ✅ 新增：行操作回调
+  onRequestEditZone?: (zoneId: number) => void;
+}> = ({ group, busy, selectedZoneId, onUpsertCell, readonly, onRequestEditZone }) => {
   const segments = useMemo<WeightSegment[]>(() => (group.segments ?? []).map(segToWeightSegment), [group.segments]);
 
   const zonesForTable = useMemo<PricingSchemeZone[]>(() => {
-    return (group.zones ?? []).map((z) => toPricingSchemeZone(z as ZoneBracketsMatrixZone, group.segment_template_id));
+    const zs = (group.zones ?? []) as ZoneBracketsMatrixZone[];
+    return zs.filter((z) => isZoneRenderable(z)).map((z) => toPricingSchemeZone(z, group.segment_template_id));
   }, [group.zones, group.segment_template_id]);
 
   const bracketsByZoneId = useMemo<Record<number, PricingSchemeZoneBracket[]>>(() => {
     const m: Record<number, PricingSchemeZoneBracket[]> = {};
-    for (const z of group.zones ?? []) {
-      const zone = z as ZoneBracketsMatrixZone;
+    const zs = (group.zones ?? []) as ZoneBracketsMatrixZone[];
+    for (const zone of zs) {
+      if (!isZoneRenderable(zone)) continue;
       m[zone.id] = (zone.brackets ?? []).map(toPricingSchemeZoneBracket);
     }
     return m;
@@ -99,6 +137,8 @@ export const SegmentTemplateMatrixTable: React.FC<{
         bracketsByZoneId={bracketsByZoneId}
         draftsByZoneId={draftsByZoneId}
         onUpsertCell={onUpsertCell}
+        readonly={readonly}
+        onRequestEditZone={onRequestEditZone}
       />
     </div>
   );

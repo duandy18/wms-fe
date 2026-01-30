@@ -45,6 +45,11 @@ export const OpsDevInboundPage = lazy(() => import("../../features/ops/dev/OpsDe
 export const OpsDevCountPage = lazy(() => import("../../features/ops/dev/OpsDevCountPage"));
 export const OpsDevPlatformPage = lazy(() => import("../../features/ops/dev/OpsDevPlatformPage"));
 
+// ✅ 运价运维中心（治理 / 修复 / 清理）
+export const PricingOpsCenterPage = lazy(() => import("../../features/ops/pricing-ops/PricingOpsCenterPage"));
+export const PricingOpsSchemeDetailPage = lazy(() => import("../../features/ops/pricing-ops/PricingOpsSchemeDetailPage"));
+export const PricingOpsCleanupPage = lazy(() => import("../../features/ops/pricing-ops/PricingOpsCleanupPage"));
+
 // 主数据
 export const StoresListPage = lazy(() => import("../../features/admin/stores/StoresListPage"));
 export const StoreDetailPage = lazy(() => import("../../features/admin/stores/StoreDetailPage"));
@@ -78,6 +83,11 @@ export const ShippingProviderDetailPage = lazy(
 
 // ✅ 运价方案工作台（独立页，非弹窗）
 export const SchemeWorkbenchPage = lazy(() => import("../../features/admin/shipping-providers/scheme/SchemeWorkbenchPage"));
+
+// ✅ 运价方案工作台（纵向主线页：包含所有 Tab 内容，从上到下）
+export const SchemeWorkbenchFlowPage = lazy(
+  () => import("../../features/admin/shipping-providers/scheme/SchemeWorkbenchFlowPage"),
+);
 
 // 采购系统
 export const PurchaseOrdersPage = lazy(() => import("../../features/purchase-orders/PurchaseOrdersPage"));

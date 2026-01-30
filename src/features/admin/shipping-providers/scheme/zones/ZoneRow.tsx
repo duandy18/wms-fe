@@ -5,33 +5,25 @@ import type { PricingSchemeZone } from "../../api";
 import { UI } from "../ui";
 
 export const ZoneRow: React.FC<{
-  index: number;
   zone: PricingSchemeZone;
   selected?: boolean;
   disabled?: boolean;
   onSelect: (zoneId: number) => void;
-  onToggleActive: (zone: PricingSchemeZone) => Promise<void>;
-  onEdit: (zoneId: number) => void;
 
-  // ✅ 新增：重量段方案信息（由 ZoneList 组装并传入）
-  templateName: string;
-  templateSummary: string;
-}> = ({ index, zone, selected, disabled, onSelect, onToggleActive, onEdit, templateName, templateSummary }) => {
+  // ✅ 收敛：本页不再暴露“启用/停用”，只暴露“归档”
+  // - 仍沿用上层传入的 onToggleActive（避免牵连签名）
+  // - 仅当 zone.active=true 时触发（归档），zone.active=false 时不提供恢复入口
+  onToggleActive: (zone: PricingSchemeZone) => Promise<void>;
+
+  onEdit: (zoneId: number) => void;
+}> = ({ zone, selected, disabled, onSelect, onToggleActive, onEdit }) => {
+  const isArchived = !zone.active;
+
   return (
     <div className={`${UI.zoneRowWrap} ${selected ? UI.zoneRowSelected : UI.zoneRowNormal}`}>
-      <div className="grid grid-cols-16 items-center gap-2">
-        {/* 序号 */}
-        <div className="col-span-1 text-center">
-          <span className={UI.zoneIndexBadge}>{index}</span>
-        </div>
-
-        {/* ID */}
-        <div className="col-span-2">
-          <div className={UI.zoneIdMono}>{zone.id}</div>
-        </div>
-
-        {/* 区域名称 */}
-        <div className="col-span-4">
+      <div className="grid grid-cols-12 items-center gap-2">
+        {/* 区域 */}
+        <div className="col-span-7">
           <button
             type="button"
             disabled={disabled}
@@ -43,57 +35,34 @@ export const ZoneRow: React.FC<{
           </button>
         </div>
 
-        {/* 状态 */}
-        <div className="col-span-2">
-          {zone.active ? (
-            <span className={`${UI.zoneStatusPill} ${UI.zoneStatusActive}`}>正在使用中</span>
-          ) : (
-            <span className={`${UI.zoneStatusPill} ${UI.zoneStatusInactive}`}>暂停使用</span>
-          )}
-        </div>
-
-        {/* 重量段方案名称 */}
-        <div className="col-span-2">
-          <div className="text-sm font-semibold text-slate-900 truncate" title={templateName}>
-            {templateName}
-          </div>
-        </div>
-
-        {/* 段结构内容 */}
+        {/* 状态（收敛为：已保存 / 已归档） */}
         <div className="col-span-3">
-          <div className="text-xs font-mono text-slate-700 truncate" title={templateSummary}>
-            {templateSummary}
-          </div>
+          {isArchived ? (
+            <span className={`${UI.zoneStatusPill} ${UI.zoneStatusInactive}`}>已归档</span>
+          ) : (
+            <span className={`${UI.zoneStatusPill} ${UI.zoneStatusActive}`}>已保存</span>
+          )}
         </div>
 
         {/* 操作 */}
         <div className="col-span-2 flex justify-end gap-2">
-          <button
-            type="button"
-            disabled={disabled}
-            className={UI.btnNeutralSm}
-            onClick={() => onEdit(zone.id)}
-          >
+          <button type="button" disabled={disabled || isArchived} className={UI.btnNeutralSm} onClick={() => onEdit(zone.id)}>
             编辑
           </button>
 
           <button
             type="button"
-            disabled={disabled}
-            className={`${UI.zoneToggleBtnBase} ${zone.active ? UI.zoneToggleBtnActive : UI.zoneToggleBtnInactive}`}
+            disabled={disabled || isArchived}
+            className={`${UI.zoneToggleBtnBase} ${UI.zoneToggleBtnInactive}`}
             onClick={() => void onToggleActive(zone)}
+            title={isArchived ? "已归档" : "归档该区域（归档后不可编辑；绑定与录价在下一环节）"}
           >
-            {zone.active ? "暂停使用" : "恢复使用"}
+            归档
           </button>
         </div>
-      </div>
-
-      {/* 辅助信息 */}
-      <div className={UI.zoneMetaLine}>
-        Members <span className="font-mono">{zone.members?.length ?? 0}</span>
-        {" · "}
-        Brackets <span className="font-mono">{zone.brackets?.length ?? 0}</span>
       </div>
     </div>
   );
 };
+
+export default ZoneRow;

@@ -5,6 +5,8 @@ export { isTemplateActive, normalizeTemplateList, normalizeTemplateOut } from ".
 
 export {
   activateSegmentTemplate,
+  deactivateSegmentTemplate,
+  renameSegmentTemplate,
   apiPutTemplateItems,
   archiveSegmentTemplate,
   createSegmentTemplate,
