@@ -1,7 +1,7 @@
 // src/features/admin/shipping-providers/scheme/SchemeWorkbenchFlowPage.tsx
 //
 // ✅ 运价方案“纵向主线页”（不取消 tabs）
-// - 目标：把 Segments / Zones / 绑定+录价 Table / Surcharges / Explain 纵向串起来
+// - 目标：把 Segments / Zones / 绑定+录价 Table / 目的地附加费 / 规则附加费 / Explain 纵向串起来
 // - 原 tabs 入口保留：/workbench/:tab
 // - 本页作为新主入口：/workbench-flow
 //
@@ -10,8 +10,9 @@
 // 2) 区域（Zones）
 // 3) 区域绑定重量段（绑定在 Table 的 ZoneCard 内完成）
 // 4) 二维价格表格（Table）
-// 5) 附加费（Surcharges）
-// 6) 算价解释（使用 QuotePreviewPanel 作为解释入口）
+// 5) 目的地附加费（DestAdjustments）
+// 6) 附加费（规则 Surcharges）
+// 7) 算价解释（末端只读：预览 + 算价解释）
 
 import React, { useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -44,6 +45,11 @@ import PricingSection from "./flow/sections/PricingSection";
 import SurchargesSection from "./flow/sections/SurchargesSection";
 import ExplainSection from "./flow/sections/ExplainSection";
 
+// ✅ 新：目的地附加费（结构化事实）
+import FlowSectionCard from "./flow/FlowSectionCard";
+import DestAdjustmentsPanel from "./dest-adjustments/DestAdjustmentsPanel";
+import { upsertDestAdjustment, patchDestAdjustment, deleteDestAdjustment } from "../api/destAdjustments";
+
 type WorkbenchLocationState = {
   from?: string;
 };
@@ -54,6 +60,9 @@ function buildZoneNameFromProvinces(provinces: string[]): string {
     .filter(Boolean);
   return cleaned.join("、");
 }
+
+// ✅ 明确事件：事实变更后通知“末端只读区”刷新（不做隐式兜底）
+const PRICING_MATRIX_UPDATED_EVENT = "wms:pricing-matrix-updated";
 
 export const SchemeWorkbenchFlowPage: React.FC = () => {
   const navigate = useNavigate();
@@ -69,6 +78,14 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
   const gate = useTemplateGate({ schemeId });
 
   const { okMsg, flashOk, clearOk } = useFlashOkBar({ autoHideMs: 2500 });
+
+  const emitMatrixUpdated = () => {
+    try {
+      window.dispatchEvent(new Event(PRICING_MATRIX_UPDATED_EVENT));
+    } catch {
+      // no-op：不让 UI 因为浏览器差异炸掉
+    }
+  };
 
   const onBack = () => {
     const st = (location.state ?? {}) as WorkbenchLocationState;
@@ -86,7 +103,7 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
     navigate("/admin/shipping-providers", { replace: true });
   };
 
-  // ✅ 附加费：不依赖模板 gate，只依赖“页面忙”和“是否归档”
+  // ✅ 附加费（规则）：不依赖模板 gate，只依赖“页面忙”和“是否归档”
   const surchargesDisabled = pageDisabled || wb.detail?.archived_at != null;
 
   const goCreateTemplate = () => {
@@ -146,6 +163,7 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
                   wb.setSelectedZoneId(z.id);
                 });
                 flashOk("已创建区域分类");
+                emitMatrixUpdated();
               }}
               onToggle={async (z: PricingSchemeZone) => {
                 // ✅ 归档-释放省份（释放排他资源）：不再 toggle active
@@ -153,6 +171,7 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
                   await archiveReleaseZoneProvinces(z.id);
                 });
                 flashOk("已归档-释放省份");
+                emitMatrixUpdated();
               }}
               onReplaceProvinceMembers={async (zoneId, provinces) => {
                 await wb.mutate(async () => {
@@ -161,12 +180,14 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
                   if (nextName) await patchZone(zoneId, { name: nextName });
                 });
                 flashOk("已保存区域省份");
+                emitMatrixUpdated();
               }}
               onPatchZone={async (zoneId, payload) => {
                 await wb.mutate(async () => {
                   await patchZone(zoneId, payload);
                 });
                 flashOk("已保存区域设置");
+                emitMatrixUpdated();
               }}
             />
 
@@ -183,18 +204,21 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
                   await archiveReleaseZoneProvinces(z.id);
                 });
                 flashOk("已归档-释放省份");
+                emitMatrixUpdated();
               }}
               onPatchZoneTemplate={async (zoneId: number, templateId: number) => {
                 await wb.mutate(async () => {
                   await patchZone(zoneId, { segment_template_id: templateId });
                 });
                 flashOk("已绑定重量段模板");
+                emitMatrixUpdated();
               }}
               onUnbindZoneTemplate={async (zoneId: number) => {
                 await wb.mutate(async () => {
                   await patchZone(zoneId, { segment_template_id: null });
                 });
                 flashOk("已解除绑定");
+                emitMatrixUpdated();
               }}
               onGoZonesTab={() => {
                 if (!schemeId) return;
@@ -205,6 +229,37 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
                 navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/segments`);
               }}
             />
+
+            {/* ✅ 新：目的地附加费（结构化事实） */}
+            <FlowSectionCard title="5）目的地附加费" desc="结构化事实：province/city 互斥，city 优先。">
+              <DestAdjustmentsPanel
+                schemeId={wb.detail.id}
+                list={wb.detail.dest_adjustments ?? []}
+                disabled={pageDisabled || wb.detail?.archived_at != null}
+                onError={(msg) => wb.setError(msg)}
+                onUpsert={async (payload) => {
+                  await wb.mutate(async () => {
+                    await upsertDestAdjustment(wb.detail!.id, payload);
+                  });
+                  flashOk("已写入目的地附加费");
+                  emitMatrixUpdated();
+                }}
+                onPatch={async (id, payload) => {
+                  await wb.mutate(async () => {
+                    await patchDestAdjustment(id, payload);
+                  });
+                  flashOk("已更新目的地附加费");
+                  emitMatrixUpdated();
+                }}
+                onDelete={async (id) => {
+                  await wb.mutate(async () => {
+                    await deleteDestAdjustment(id);
+                  });
+                  flashOk("已删除目的地附加费");
+                  emitMatrixUpdated();
+                }}
+              />
+            </FlowSectionCard>
 
             <SurchargesSection
               detail={wb.detail}
@@ -220,43 +275,37 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
                   });
                 });
                 flashOk("已创建附加费规则");
+                emitMatrixUpdated();
               }}
               onPatch={async (surchargeId, payload) => {
                 await wb.mutate(async () => {
-                  const body: Partial<{
-                    name: string;
-                    priority: number;
-                    active: boolean;
-                    condition_json: Record<string, unknown>;
-                    amount_json: Record<string, unknown>;
-                  }> = {};
-
-                  if (typeof payload.name === "string") body.name = payload.name;
-                  if (typeof payload.active === "boolean") body.active = payload.active;
-                  if (payload.condition_json && typeof payload.condition_json === "object")
-                    body.condition_json = payload.condition_json as Record<string, unknown>;
-                  if (payload.amount_json && typeof payload.amount_json === "object")
-                    body.amount_json = payload.amount_json as Record<string, unknown>;
-
-                  await patchSurcharge(surchargeId, body);
+                  await patchSurcharge(surchargeId, payload);
                 });
                 flashOk("已保存附加费规则");
+                emitMatrixUpdated();
               }}
               onToggle={async (s: PricingSchemeSurcharge) => {
                 await wb.mutate(async () => {
                   await patchSurcharge(s.id, { active: !s.active });
                 });
                 flashOk("已更新附加费状态");
+                emitMatrixUpdated();
               }}
               onDelete={async (s: PricingSchemeSurcharge) => {
                 await wb.mutate(async () => {
                   await deleteSurcharge(s.id);
                 });
                 flashOk("已删除附加费规则");
+                emitMatrixUpdated();
               }}
             />
 
-            <ExplainSection schemeId={wb.detail.id} disabled={pageDisabled || gate.flowLocked} onError={(msg) => wb.setError(msg)} />
+            <ExplainSection
+              schemeId={wb.detail.id}
+              selectedZoneId={wb.selectedZoneId}
+              disabled={pageDisabled || gate.flowLocked}
+              onError={(msg) => wb.setError(msg)}
+            />
           </>
         )}
       </div>

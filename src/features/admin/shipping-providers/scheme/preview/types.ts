@@ -40,6 +40,16 @@ export type QuoteSurchargeOut = {
   condition?: Record<string, unknown>;
 };
 
+export type QuoteDestAdjustmentOut = {
+  id: number;
+  scheme_id: number;
+  scope: "province" | "city" | string;
+  province: string;
+  city: string | null;
+  amount: number;
+  priority?: number;
+};
+
 export type BreakdownBase =
   | {
       amount: number;
@@ -54,8 +64,15 @@ export type BreakdownBase =
 
 export type BreakdownSummary = {
   base_amount?: number;
-  surcharge_amount?: number;
+
+  // ✅ 新契约（后端已升级）
+  dest_adjustment_amount?: number;
+  legacy_surcharge_amount?: number;
+  extra_amount?: number;
   total_amount?: number | null;
+
+  // ✅ 兼容旧字段（避免历史环境炸）
+  surcharge_amount?: number;
 };
 
 export type CalcOut = {
@@ -71,6 +88,7 @@ export type CalcOut = {
 
   breakdown: {
     base?: BreakdownBase;
+    dest_adjustments?: QuoteDestAdjustmentOut[];
     surcharges?: QuoteSurchargeOut[];
     summary?: BreakdownSummary;
   };

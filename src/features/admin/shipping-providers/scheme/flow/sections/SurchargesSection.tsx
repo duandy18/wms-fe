@@ -11,14 +11,18 @@ type Props = {
   onError: (msg: string) => void;
 
   onCreate: (payload: { name: string; condition_json: Record<string, unknown>; amount_json: Record<string, unknown> }) => Promise<void>;
-  onPatch: (surchargeId: number, payload: Partial<{ name: string; condition_json: Record<string, unknown>; amount_json: Record<string, unknown>; active: boolean }>) => Promise<void>;
+  onPatch: (
+    surchargeId: number,
+    payload: Partial<{ name: string; condition_json: Record<string, unknown>; amount_json: Record<string, unknown>; active: boolean }>,
+  ) => Promise<void>;
+
   onToggle: (s: PricingSchemeSurcharge) => Promise<void>;
   onDelete: (s: PricingSchemeSurcharge) => Promise<void>;
 };
 
 export const SurchargesSection: React.FC<Props> = (p) => {
   return (
-    <FlowSectionCard title="5）附加费" desc="附加费属于总价链路必选组成部分。">
+    <FlowSectionCard title="6）附加费" desc="规则附加费：用于 flag / 规则型修正项。目的地附加费已迁移到上一节（结构化事实）。">
       <SurchargesPanel
         detail={p.detail}
         disabled={p.disabled}
