@@ -11,12 +11,12 @@ import { usePricingSchemeMatrix } from "../brackets/matrix/usePricingSchemeMatri
 import type { ZoneBracketsMatrixGroup } from "../brackets/matrix/types";
 
 import { useSchemeTemplatesLite } from "./hooks/useSchemeTemplatesLite";
-import { buildZonePricePreview } from "./utils/pricePreview";
 
 import ZoneCard from "./cards/ZoneCard";
 import PricingEditorCard from "./cards/PricingEditorCard";
-import PriceTablePreviewCard from "./cards/PriceTablePreviewCard";
-import QuoteExplainCard from "./cards/QuoteExplainCard";
+
+// ✅ 明确事件：事实变更后通知“末端只读区”刷新
+const PRICING_MATRIX_UPDATED_EVENT = "wms:pricing-matrix-updated";
 
 export const PricingTableWorkbenchPanel: React.FC<{
   detail: PricingSchemeDetail;
@@ -36,6 +36,14 @@ export const PricingTableWorkbenchPanel: React.FC<{
 }> = (p) => {
   const { detail, disabled, selectedZoneId, onSelectZone, onError } = p;
 
+  const emitMatrixUpdated = () => {
+    try {
+      window.dispatchEvent(new Event(PRICING_MATRIX_UPDATED_EVENT));
+    } catch {
+      // no-op
+    }
+  };
+
   const vm = useBracketsPanelModel({ detail, selectedZoneId });
 
   const mx = usePricingSchemeMatrix({ schemeId: detail.id, enabled: true });
@@ -48,6 +56,7 @@ export const PricingTableWorkbenchPanel: React.FC<{
     return async (args: { zoneId: number; min: number; max: number | null; draft: RowDraft }) => {
       await vm.upsertCellPrice(args);
       await mx.reload();
+      emitMatrixUpdated();
     };
   }, [mx, vm]);
 
@@ -55,12 +64,9 @@ export const PricingTableWorkbenchPanel: React.FC<{
     return async () => {
       await vm.saveCurrentZonePrices();
       await mx.reload();
+      emitMatrixUpdated();
     };
   }, [mx, vm]);
-
-  const preview = useMemo(() => {
-    return buildZonePricePreview({ mx: { groups }, selectedZoneId });
-  }, [groups, selectedZoneId]);
 
   // ✅ “回到按区域批量录价”的锚点
   const batchEditorRef = useRef<HTMLDivElement | null>(null);
@@ -122,10 +128,12 @@ export const PricingTableWorkbenchPanel: React.FC<{
         onPatchZoneTemplate={async (zoneId, templateId) => {
           await p.onPatchZoneTemplate(zoneId, templateId);
           await mx.reload();
+          emitMatrixUpdated();
         }}
         onUnbindZoneTemplate={async (zoneId) => {
           await p.onUnbindZoneTemplate(zoneId);
           await mx.reload();
+          emitMatrixUpdated();
         }}
         onGoZonesTab={p.onGoZonesTab}
         onGoSegmentsTab={p.onGoSegmentsTab}
@@ -193,10 +201,7 @@ export const PricingTableWorkbenchPanel: React.FC<{
         onRequestEditZone={onRequestEditZone}
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <PriceTablePreviewCard title={preview.title} selectedZoneId={selectedZoneId} rows={preview.rows} />
-        <QuoteExplainCard schemeId={detail.id} disabled={disabled} onError={onError} />
-      </div>
+      {/* ✅ 注意：结果区（预览 + 算价解释）已下沉到“附加费之后”的 ExplainSection */}
     </div>
   );
 };

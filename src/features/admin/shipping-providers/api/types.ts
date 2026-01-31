@@ -127,6 +127,31 @@ export interface PricingSchemeSurcharge {
   amount_json: Record<string, unknown>;
 }
 
+// ✅ 新：目的地附加费（结构化事实）——已切换为标准 code 世界
+export interface PricingSchemeDestAdjustment {
+  id: number;
+  scheme_id: number;
+  scope: "province" | "city";
+
+  // ✅ 事实口径：GB2260 码（省：xx0000；市：xxxx00）
+  province_code: string;
+  city_code: string | null;
+
+  // ✅ 展示冗余：后端已按字典补全
+  province_name: string | null;
+  city_name: string | null;
+
+  // ✅ 兼容输出：旧字段仍返回一段时间
+  province: string;
+  city: string | null;
+
+  amount: number;
+  active: boolean;
+  priority: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // ======================================================
 // Scheme Detail / List（核心）
 // ======================================================
@@ -148,6 +173,9 @@ export interface PricingSchemeDetail extends PricingScheme {
   segments: PricingSchemeSegment[];
   zones: PricingSchemeZone[];
   surcharges: PricingSchemeSurcharge[];
+
+  // ✅ 新：目的地附加费（结构化事实）
+  dest_adjustments?: PricingSchemeDestAdjustment[];
 }
 
 export type SchemeListResponse = ListResponse<PricingScheme>;

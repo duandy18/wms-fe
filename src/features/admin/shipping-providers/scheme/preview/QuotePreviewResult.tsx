@@ -1,21 +1,39 @@
 // src/features/admin/shipping-providers/scheme/preview/QuotePreviewResult.tsx
 
-import React from "react";
+import React, { useMemo } from "react";
 import { safeMoney, safeText } from "./utils";
-import type { CalcOut, QuoteSurchargeOut } from "./types";
-import {
-  renderBracketRange,
-  resolvePricingModelCn,
-  renderConditionCn,
-  renderDetailCn,
-} from "./quotePreviewResultHelpers";
+import type { CalcOut, QuoteDestAdjustmentOut, QuoteSurchargeOut } from "./types";
+import { renderBracketRange, resolvePricingModelCn, renderConditionCn, renderDetailCn } from "./quotePreviewResultHelpers";
 
 function readSurcharges(result: CalcOut): QuoteSurchargeOut[] {
   const arr = result.breakdown?.surcharges;
   return Array.isArray(arr) ? arr : [];
 }
 
+function readDestAdjustments(result: CalcOut): QuoteDestAdjustmentOut[] {
+  const arr = result.breakdown?.dest_adjustments;
+  return Array.isArray(arr) ? arr : [];
+}
+
 export const QuotePreviewResult: React.FC<{ result: CalcOut | null }> = ({ result }) => {
+  // ✅ hooks 必须无条件执行：先抽取 summary（允许为 null），再 useMemo
+  const summary = result?.breakdown?.summary ?? null;
+
+  const summaryView = useMemo(() => {
+    const base = summary?.base_amount ?? null;
+    const da = summary?.dest_adjustment_amount ?? null;
+
+    // 新字段优先；旧字段兜底
+    const legacy = summary?.legacy_surcharge_amount ?? summary?.surcharge_amount ?? null;
+
+    const extra =
+      summary?.extra_amount ?? (typeof da === "number" && typeof legacy === "number" ? da + legacy : null);
+
+    const total = summary?.total_amount ?? null;
+
+    return { base, da, legacy, extra, total };
+  }, [summary]);
+
   if (!result) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
@@ -26,13 +44,11 @@ export const QuotePreviewResult: React.FC<{ result: CalcOut | null }> = ({ resul
   }
 
   const zoneName = safeText(result.zone?.name ?? result.zone?.id);
-
   const bracketRangeText = renderBracketRange(result.bracket?.min_kg, result.bracket?.max_kg);
-
   const pricingModelCn = resolvePricingModelCn(result.bracket);
 
+  const destAdjustments = readDestAdjustments(result);
   const surcharges = readSurcharges(result);
-  const summary = result.breakdown?.summary ?? null;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5">
@@ -68,8 +84,46 @@ export const QuotePreviewResult: React.FC<{ result: CalcOut | null }> = ({ resul
           </div>
         </div>
 
+        {/* ✅ 新：目的地附加费（结构化事实） */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <div className="text-sm font-semibold text-slate-800">附加费命中明细</div>
+          <div className="text-sm font-semibold text-slate-800">目的地附加费命中明细</div>
+
+          {destAdjustments.length ? (
+            <div className="mt-3 overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-sm font-semibold text-slate-700">
+                    <th className="px-3 py-2 w-[72px]">序号</th>
+                    <th className="px-3 py-2 w-[120px]">ID</th>
+                    <th className="px-3 py-2 w-[100px]">范围</th>
+                    <th className="px-3 py-2">省份</th>
+                    <th className="px-3 py-2">城市</th>
+                    <th className="px-3 py-2 w-[140px]">金额（元）</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {destAdjustments.map((d, idx) => (
+                    <tr key={String(d.id ?? idx)} className="border-b border-slate-100 align-top text-sm">
+                      <td className="px-3 py-2 font-mono text-slate-700">{idx + 1}</td>
+                      <td className="px-3 py-2 font-mono text-slate-900">{safeText(d.id)}</td>
+                      <td className="px-3 py-2">{safeText(d.scope) === "city" ? "市" : "省"}</td>
+                      <td className="px-3 py-2 text-slate-900">{safeText(d.province)}</td>
+                      <td className="px-3 py-2 text-slate-900">{d.city ? safeText(d.city) : "—"}</td>
+                      <td className="px-3 py-2 font-mono text-slate-900">{d.amount == null ? "—" : safeMoney(d.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="mt-2 text-sm font-mono text-slate-600">—</div>
+          )}
+        </div>
+
+        {/* 规则附加费（legacy surcharges） */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="text-sm font-semibold text-slate-800">规则附加费命中明细</div>
 
           {surcharges.length ? (
             <div className="mt-3 overflow-x-auto">
@@ -109,9 +163,11 @@ export const QuotePreviewResult: React.FC<{ result: CalcOut | null }> = ({ resul
 
           {summary ? (
             <div className="mt-2 text-xs text-slate-700 font-mono">
-              基础运费：{summary.base_amount == null ? "—" : safeMoney(summary.base_amount)} {" · "}
-              附加费：{summary.surcharge_amount == null ? "—" : safeMoney(summary.surcharge_amount)} {" · "}
-              合计：{summary.total_amount == null ? "—" : safeMoney(summary.total_amount)}
+              基础运费：{summaryView.base == null ? "—" : safeMoney(summaryView.base)} {" · "}
+              目的地附加费：{summaryView.da == null ? "—" : safeMoney(summaryView.da)} {" · "}
+              规则附加费：{summaryView.legacy == null ? "—" : safeMoney(summaryView.legacy)} {" · "}
+              附加费合计：{summaryView.extra == null ? "—" : safeMoney(summaryView.extra)} {" · "}
+              合计：{summaryView.total == null ? "—" : safeMoney(summaryView.total)}
             </div>
           ) : (
             <div className="mt-2 text-xs text-slate-700 font-mono">—</div>

@@ -65,3 +65,29 @@ export async function patchSurcharge(
 export async function deleteSurcharge(surchargeId: number): Promise<{ ok: boolean }> {
   return apiDelete<{ ok: boolean }>(`/surcharges/${surchargeId}`);
 }
+
+// ✅ 新主入口：新增省/市 + 金额 => 直接写入后端事实（upsert）
+export type SurchargeUpsertPayload = {
+  scope: "province" | "city";
+  province: string;
+  city?: string | null;
+  amount: number;
+  active?: boolean;
+  name?: string | null;
+};
+
+export async function upsertSurcharge(
+  schemeId: number,
+  payload: SurchargeUpsertPayload,
+): Promise<PricingSchemeSurcharge> {
+  const body = {
+    scope: payload.scope,
+    province: (payload.province || "").trim(),
+    city: payload.scope === "city" ? (payload.city || "").trim() : null,
+    amount: payload.amount,
+    active: typeof payload.active === "boolean" ? payload.active : true,
+    name: payload.name ? String(payload.name).trim() : undefined,
+  };
+
+  return apiPost<PricingSchemeSurcharge>(`/pricing-schemes/${schemeId}/surcharges:upsert`, body);
+}
