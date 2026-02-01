@@ -10,6 +10,5 @@ export const L = {
   tabSegments: "重量段方案",
   tabBrackets: "价格录入",
   tabDestAdjustments: "目的地附加费",
-  tabSurcharges: "附加费（规则）",
   tabPreview: "算价预览",
 };

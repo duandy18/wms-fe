@@ -35,11 +35,8 @@ export const WorkbenchTabs: React.FC<{
       <TabButton label={L.tabZones} active={tab === "zones"} disabled={pageDisabled || checkingTemplates || flowLocked} onClick={() => onGoTab("zones")} />
       <TabButton label={L.tabBrackets} active={tab === "brackets"} disabled={pageDisabled || checkingTemplates || flowLocked} onClick={() => onGoTab("brackets")} />
 
-      {/* ✅ 新：目的地附加费（结构化事实） */}
       <TabButton label={L.tabDestAdjustments} active={tab === "dest_adjustments"} disabled={pageDisabled} onClick={() => onGoTab("dest_adjustments")} />
 
-      {/* ✅ 附加费（规则）不依赖模板 gate：允许先配规则再补模板/区域 */}
-      <TabButton label={L.tabSurcharges} active={tab === "surcharges"} disabled={pageDisabled} onClick={() => onGoTab("surcharges")} />
       <TabButton label={L.tabPreview} active={tab === "preview"} disabled={pageDisabled || checkingTemplates || flowLocked} onClick={() => onGoTab("preview")} />
     </div>
   );

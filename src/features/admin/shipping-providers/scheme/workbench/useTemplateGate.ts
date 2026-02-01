@@ -6,7 +6,6 @@ import { fetchSegmentTemplates } from "../brackets/segmentTemplates";
 /**
  * Gate：是否存在至少一个重量段模板
  * - 用于锁住 zones/brackets/preview（避免误配）
- * - 注意：surcharges 不依赖该 gate
  */
 export function useTemplateGate(args: { schemeId: number | null }) {
   const { schemeId } = args;
