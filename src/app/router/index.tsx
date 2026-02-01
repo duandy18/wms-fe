@@ -549,29 +549,12 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          {/* ✅ 运价方案工作台：Tab → 子页面 */}
-          {/* ✅ 运价方案工作台：纵向主线页（包含所有 Tab 内容，从上到下） */}
+          {/* ✅ 运价方案工作台：纵向主线页（包含所有内容，从上到下） */}
           <Route
             path="admin/shipping-providers/schemes/:schemeId/workbench-flow"
             element={
               <RequirePermission permission="config.store.write">
                 <P.SchemeWorkbenchFlowPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="admin/shipping-providers/schemes/:schemeId/workbench/:tab"
-            element={
-              <RequirePermission permission="config.store.write">
-                <P.SchemeWorkbenchPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="admin/shipping-providers/schemes/:schemeId/workbench"
-            element={
-              <RequirePermission permission="config.store.write">
-                <P.SchemeWorkbenchPage />
               </RequirePermission>
             }
           />

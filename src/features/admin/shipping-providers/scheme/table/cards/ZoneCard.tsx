@@ -27,7 +27,7 @@ export const ZoneCard: React.FC<{
   // ✅ 解绑模板（segment_template_id -> null）
   onUnbindZoneTemplate: (zoneId: number) => Promise<void>;
 
-  // 跳转入口
+  // ✅ 同页定位（历史名保留，但语义为“回到本页段落”）
   onGoZonesTab: () => void;
   onGoSegmentsTab: () => void;
 
@@ -133,7 +133,7 @@ export const ZoneCard: React.FC<{
         <div>
           <div className="text-base font-semibold text-slate-900">区域</div>
           <div className="mt-1 text-sm text-slate-600">
-            先选 Zone，并为该 Zone 显式绑定一个“可绑定区域”的重量段模板。区域范围（省份）请在【区域设置】中维护。
+            先选 Zone，并为该 Zone 显式绑定一个“可绑定区域”的重量段模板。区域范围（省份）与重量段方案都在本页维护。
           </div>
         </div>
 
@@ -143,9 +143,9 @@ export const ZoneCard: React.FC<{
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             disabled={disabled}
             onClick={onGoZonesTab}
-            title="进入区域设置（创建/编辑/省份范围等）"
+            title="回到本页【区域】段（创建/编辑/省份范围等）"
           >
-            区域设置
+            回到区域
           </button>
 
           <button
@@ -153,9 +153,9 @@ export const ZoneCard: React.FC<{
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             disabled={disabled}
             onClick={onGoSegmentsTab}
-            title="进入重量段方案（模板创建/发布/可绑定/归档）"
+            title="回到本页【重量段方案】段（创建/发布/加入可绑定/归档）"
           >
-            重量段方案
+            回到重量段方案
           </button>
         </div>
       </div>
@@ -174,7 +174,7 @@ export const ZoneCard: React.FC<{
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
         <div className="text-sm font-semibold text-slate-900">重量段模板绑定（必填）</div>
         <div className="mt-1 text-xs text-slate-600">
-          绑定是 Zone 的事实：Zone 必须且只能绑定一个模板。模板的创建/发布/加入可绑定区域在【重量段方案】中完成。
+          绑定是 Zone 的事实：Zone 必须且只能绑定一个模板。模板的创建/发布/加入可绑定区域在本页【重量段方案】段完成。
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-12">
@@ -196,7 +196,7 @@ export const ZoneCard: React.FC<{
             {templatesLoading ? <div className="mt-1 text-xs text-slate-500">正在加载模板列表…</div> : null}
             {templatesError ? <div className="mt-1 text-xs text-rose-700">模板列表加载失败：{templatesError}</div> : null}
             {selectedZoneId && !templatesLoading && !templatesError && activeTemplates.length === 0 ? (
-              <div className="mt-1 text-xs text-rose-700">当前方案没有“可绑定区域”的模板，请先去【重量段方案】加入至少一条模板。</div>
+              <div className="mt-1 text-xs text-rose-700">当前方案没有“可绑定区域”的模板，请先在本页【重量段方案】段加入至少一条模板。</div>
             ) : null}
 
             {selectedZoneId ? (

@@ -117,9 +117,9 @@ export const menuSections: RouteSection[] = [
         showInSidebar: false,
       },
 
-      // ✅ 兼容深链：运价方案工作台（Tab → 子页面）
+      // ✅ 兼容深链：运价方案工作台（唯一入口：纵向主线页）
       {
-        path: "/admin/shipping-providers/schemes/:schemeId/workbench/*",
+        path: "/admin/shipping-providers/schemes/:schemeId/workbench-flow",
         label: "运价方案工作台",
         requiredPermissions: ["config.store.write"],
         showInSidebar: false,
