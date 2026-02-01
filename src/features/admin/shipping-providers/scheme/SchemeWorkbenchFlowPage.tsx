@@ -1,9 +1,8 @@
 // src/features/admin/shipping-providers/scheme/SchemeWorkbenchFlowPage.tsx
 //
-// ✅ 运价方案“纵向主线页”（不取消 tabs）
+// ✅ 运价方案“纵向主线页”（唯一工作台）
 // - 目标：把 Segments / Zones / 绑定+录价 Table / 目的地附加费 / Explain 纵向串起来
-// - 原 tabs 入口保留：/workbench/:tab
-// - 本页作为新主入口：/workbench-flow
+// - 本页主入口：/workbench-flow
 //
 // 页面顺序（从上到下，按依赖）：
 // 1) 重量段方案（Segments）
@@ -13,7 +12,7 @@
 // 5) 目的地附加费（DestAdjustments）
 // 6) 算价解释（末端只读：预览 + 算价解释）
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { UI } from "./ui";
 import { useSchemeWorkbench } from "./useSchemeWorkbench";
@@ -24,12 +23,7 @@ import FlowLockedNotice from "./workbench/FlowLockedNotice";
 import { useTemplateGate } from "./workbench/useTemplateGate";
 import { useFlashOkBar } from "./workbench/useFlashOkBar";
 
-import {
-  patchZone,
-  type PricingSchemeZone,
-  createZoneAtomic,
-  replaceZoneProvinceMembers,
-} from "../api";
+import { patchZone, type PricingSchemeZone, createZoneAtomic, replaceZoneProvinceMembers } from "../api";
 
 // ✅ 归档-释放省份：新接口（后端会清空 province members + active=false）
 import { archiveReleaseZoneProvinces } from "../api/zones";
@@ -97,10 +91,25 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
     navigate("/admin/shipping-providers", { replace: true });
   };
 
+  // ✅ Segments/Zones 同页锚点：取代 tabs 跳转
+  const segmentsAnchorRef = useRef<HTMLDivElement | null>(null);
+  const zonesAnchorRef = useRef<HTMLDivElement | null>(null);
+
+  const onGoSegmentsSection = useMemo(() => {
+    return () => {
+      segmentsAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }, []);
+
+  const onGoZonesSection = useMemo(() => {
+    return () => {
+      zonesAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }, []);
+
+  // Gate 触发的“去创建模板”也改为同页引导（不再跳旧入口）
   const goCreateTemplate = () => {
-    if (!schemeId || schemeId <= 0) return;
-    // 仍然跳回原 tabs 的 segments#create（复用你现有的 create 流程 hash）
-    navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/segments#create`);
+    onGoSegmentsSection();
   };
 
   // 体验：首次进入若没有选中 zone，让 wb 自己的逻辑去选（useSchemeWorkbench 已做）
@@ -134,55 +143,59 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">暂无数据</div>
         ) : (
           <>
-            <SegmentsSection detail={wb.detail} disabled={pageDisabled} onError={(msg) => wb.setError(msg)} />
+            <div ref={segmentsAnchorRef}>
+              <SegmentsSection detail={wb.detail} disabled={pageDisabled} onError={(msg) => wb.setError(msg)} />
+            </div>
 
-            <ZonesSection
-              detail={wb.detail}
-              disabled={pageDisabled}
-              flowLocked={gate.flowLocked}
-              selectedZoneId={wb.selectedZoneId}
-              onError={(msg) => wb.setError(msg)}
-              onSelectZone={(zoneId) => wb.setSelectedZoneId(zoneId)}
-              onCommitCreate={async (name, provinces, segmentTemplateId) => {
-                await wb.mutate(async () => {
-                  const z = await createZoneAtomic(wb.detail!.id, {
-                    name,
-                    provinces,
-                    active: true,
-                    segment_template_id: segmentTemplateId,
+            <div ref={zonesAnchorRef}>
+              <ZonesSection
+                detail={wb.detail}
+                disabled={pageDisabled}
+                flowLocked={gate.flowLocked}
+                selectedZoneId={wb.selectedZoneId}
+                onError={(msg) => wb.setError(msg)}
+                onSelectZone={(zoneId) => wb.setSelectedZoneId(zoneId)}
+                onCommitCreate={async (name, provinces, segmentTemplateId) => {
+                  await wb.mutate(async () => {
+                    const z = await createZoneAtomic(wb.detail!.id, {
+                      name,
+                      provinces,
+                      active: true,
+                      segment_template_id: segmentTemplateId,
+                    });
+                    wb.setSelectedZoneId(z.id);
                   });
-                  wb.setSelectedZoneId(z.id);
-                });
-                flashOk("已创建区域分类");
-                emitMatrixUpdated();
-              }}
-              onToggle={async (z: PricingSchemeZone) => {
-                // ✅ 归档-释放省份（释放排他资源）：不再 toggle active
-                await wb.mutate(async () => {
-                  await archiveReleaseZoneProvinces(z.id);
-                });
-                flashOk("已归档-释放省份");
-                emitMatrixUpdated();
-              }}
-              onReplaceProvinceMembers={async (zoneId, provinces) => {
-                await wb.mutate(async () => {
-                  await replaceZoneProvinceMembers(zoneId, { provinces });
-                  const nextName = buildZoneNameFromProvinces(provinces);
-                  if (nextName) {
-                    await patchZone(zoneId, { name: nextName });
-                  }
-                });
-                flashOk("已保存区域省份");
-                emitMatrixUpdated();
-              }}
-              onPatchZone={async (zoneId, payload) => {
-                await wb.mutate(async () => {
-                  await patchZone(zoneId, payload);
-                });
-                flashOk("已保存区域设置");
-                emitMatrixUpdated();
-              }}
-            />
+                  flashOk("已创建区域分类");
+                  emitMatrixUpdated();
+                }}
+                onToggle={async (z: PricingSchemeZone) => {
+                  // ✅ 归档-释放省份（释放排他资源）：不再 toggle active
+                  await wb.mutate(async () => {
+                    await archiveReleaseZoneProvinces(z.id);
+                  });
+                  flashOk("已归档-释放省份");
+                  emitMatrixUpdated();
+                }}
+                onReplaceProvinceMembers={async (zoneId, provinces) => {
+                  await wb.mutate(async () => {
+                    await replaceZoneProvinceMembers(zoneId, { provinces });
+                    const nextName = buildZoneNameFromProvinces(provinces);
+                    if (nextName) {
+                      await patchZone(zoneId, { name: nextName });
+                    }
+                  });
+                  flashOk("已保存区域省份");
+                  emitMatrixUpdated();
+                }}
+                onPatchZone={async (zoneId, payload) => {
+                  await wb.mutate(async () => {
+                    await patchZone(zoneId, payload);
+                  });
+                  flashOk("已保存区域设置");
+                  emitMatrixUpdated();
+                }}
+              />
+            </div>
 
             <PricingSection
               detail={wb.detail}
@@ -212,14 +225,9 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
                 flashOk("已解除绑定");
                 emitMatrixUpdated();
               }}
-              onGoZonesTab={() => {
-                if (!schemeId) return;
-                navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/zones`);
-              }}
-              onGoSegmentsTab={() => {
-                if (!schemeId) return;
-                navigate(`/admin/shipping-providers/schemes/${schemeId}/workbench/segments`);
-              }}
+              // ✅ tabs 退役：改为同页滚动
+              onGoZonesTab={onGoZonesSection}
+              onGoSegmentsTab={onGoSegmentsSection}
             />
 
             <FlowSectionCard title="5）目的地附加费">

@@ -318,7 +318,7 @@ const ShippingProviderEditPage: React.FC = () => {
           onChangeIncludeArchived={m.setIncludeArchivedSchemes}
           onRefresh={m.refreshSchemes}
           onOpenWorkbench={(schemeId) =>
-            nav(`/admin/shipping-providers/schemes/${schemeId}/workbench/zones`, {
+            nav(`/admin/shipping-providers/schemes/${schemeId}/workbench-flow`, {
               state: { from },
             })
           }
