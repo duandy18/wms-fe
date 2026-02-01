@@ -17,7 +17,7 @@ export const ZoneCard: React.FC<{
   selectedZoneId: number | null;
   onSelectZone: (zoneId: number) => void;
 
-  // 绑定模板
+  // 绑定模板（已保存版本候选）
   templatesLoading: boolean;
   templatesError: string | null;
   activeTemplates: SegmentTemplateLite[];
@@ -80,7 +80,7 @@ export const ZoneCard: React.FC<{
     const tid = Number(bindingTemplateId);
     if (!Number.isFinite(tid) || tid <= 0) return false;
 
-    // 绑定候选只允许来自“可绑定区域”池（is_active=true）
+    // ✅ 候选池已收敛：activeTemplates 已由 hook 过滤为 “published 且未归档”
     const ok = activeTemplates.some((t) => t.id === tid);
     if (!ok) return false;
 
@@ -133,7 +133,7 @@ export const ZoneCard: React.FC<{
         <div>
           <div className="text-base font-semibold text-slate-900">区域</div>
           <div className="mt-1 text-sm text-slate-600">
-            先选 Zone，并为该 Zone 显式绑定一个“可绑定区域”的重量段模板。区域范围（省份）与重量段方案都在本页维护。
+            先选 Zone，并为该 Zone 显式绑定一个已保存的重量段模板。区域范围（省份）与重量段方案都在本页维护。
           </div>
         </div>
 
@@ -153,7 +153,7 @@ export const ZoneCard: React.FC<{
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             disabled={disabled}
             onClick={onGoSegmentsTab}
-            title="回到本页【重量段方案】段（创建/发布/加入可绑定/归档）"
+            title="回到本页【重量段方案】段（新建/编辑/保存/归档）"
           >
             回到重量段方案
           </button>
@@ -174,7 +174,7 @@ export const ZoneCard: React.FC<{
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
         <div className="text-sm font-semibold text-slate-900">重量段模板绑定（必填）</div>
         <div className="mt-1 text-xs text-slate-600">
-          绑定是 Zone 的事实：Zone 必须且只能绑定一个模板。模板的创建/发布/加入可绑定区域在本页【重量段方案】段完成。
+          绑定是 Zone 的事实：Zone 必须且只能绑定一个模板。候选模板仅包含“已保存且未归档”的模板。
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-12">
@@ -185,7 +185,7 @@ export const ZoneCard: React.FC<{
               value={bindingTemplateId}
               onChange={(e) => setBindingTemplateId(e.target.value)}
             >
-              {!selectedZoneId ? <option value="">请先选择 Zone…</option> : <option value="">请选择可绑定的模板…</option>}
+              {!selectedZoneId ? <option value="">请先选择 Zone…</option> : <option value="">请选择已保存的模板…</option>}
               {activeTemplates.map((t) => (
                 <option key={t.id} value={String(t.id)}>
                   {templateLabel(t)}
@@ -196,7 +196,7 @@ export const ZoneCard: React.FC<{
             {templatesLoading ? <div className="mt-1 text-xs text-slate-500">正在加载模板列表…</div> : null}
             {templatesError ? <div className="mt-1 text-xs text-rose-700">模板列表加载失败：{templatesError}</div> : null}
             {selectedZoneId && !templatesLoading && !templatesError && activeTemplates.length === 0 ? (
-              <div className="mt-1 text-xs text-rose-700">当前方案没有“可绑定区域”的模板，请先在本页【重量段方案】段加入至少一条模板。</div>
+              <div className="mt-1 text-xs text-slate-600">当前方案没有可用模板：请先在【重量段方案】中保存至少一个模板。</div>
             ) : null}
 
             {selectedZoneId ? (

@@ -1,7 +1,6 @@
 // src/features/admin/shipping-providers/scheme/brackets/SegmentTemplateListPanel/helpers.ts
 
 import type { SegmentTemplateOut } from "../segmentTemplates";
-import { isTemplateActive } from "../segmentTemplates";
 
 export type TemplateStatusTone = "ok" | "draft" | "saved" | "archived";
 
@@ -38,32 +37,24 @@ export function badgeCls(tone: TemplateStatusTone): string {
   return "border-slate-200 bg-white text-slate-600";
 }
 
-export function bindableBadge(isBindable: boolean): { text: string; cls: string } {
-  if (isBindable) {
-    return { text: "可绑定区域", cls: "border-emerald-200 bg-emerald-50 text-emerald-700" };
-  }
-  return { text: "不可绑定", cls: "border-slate-200 bg-white text-slate-600" };
-}
-
 export function countArchived(templates: SegmentTemplateOut[]): number {
   return templates.filter((t) => rawStatusOf(t) === "archived").length;
 }
 
-export function countBindable(templates: SegmentTemplateOut[]): number {
-  return templates.filter((t) => isTemplateActive(t)).length;
+export function countInUseTemplates(templates: SegmentTemplateOut[], inUseCountByTemplateId: Map<number, number>): number {
+  const ids = new Set<number>();
+  for (const t of templates) {
+    const n = inUseCountByTemplateId.get(t.id) ?? 0;
+    if (n > 0) ids.add(t.id);
+  }
+  return ids.size;
 }
 
-export function buildVisibleTemplates(args: {
-  templates: SegmentTemplateOut[];
-  showArchived: boolean;
-  showBindableOnly: boolean;
-}): SegmentTemplateOut[] {
-  const { templates, showArchived, showBindableOnly } = args;
+export function buildVisibleTemplates(args: { templates: SegmentTemplateOut[]; showArchived: boolean }): SegmentTemplateOut[] {
+  const { templates, showArchived } = args;
 
   let list = templates;
-
   if (!showArchived) list = list.filter((t) => rawStatusOf(t) !== "archived");
-  if (showBindableOnly) list = list.filter((t) => isTemplateActive(t));
 
   return list;
 }

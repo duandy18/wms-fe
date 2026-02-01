@@ -1,21 +1,33 @@
 // src/features/admin/shipping-providers/scheme/brackets/SegmentsPanel.tsx
 //
-// 重量分段模板工作台（路线：draft → publish → activate）
+// 重量分段模板工作台（简化心智版）
 // - 左：方案列表（草稿/已保存/已归档）
-// - 右：编辑区（重量段结构 + 保存/启用）
+// - 右：编辑区（重量段结构 + 保存）
 //
-// ✅ 收敛：重量段方案为整体启用/整体不启用
-// - 段级启停入口不在主流程暴露（避免交叉与隐性风险）
+// ✅ 本轮裁决：
+// - 未使用：允许改结构（draft / published 都可）
+// - 使用中：不可改结构（前端禁用 + 后端 409 护栏）
+// - 归档：只读
+// - 不再暴露“可绑定/不可绑定”（is_active）按钮/心智
+// - 新建时必须能输入名称（左侧输入框保留）
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import type { PricingSchemeDetail } from "../../api";
 
 import type { SchemeWeightSegment } from "./segmentTemplates";
-import { activateSegmentTemplate, deactivateSegmentTemplate, renameSegmentTemplate } from "./segmentTemplates";
 import TemplateWorkbenchCard from "./TemplateWorkbenchCard";
 import SegmentTemplateListPanel from "./SegmentTemplateListPanel";
 import { useSegmentTemplateWorkbench } from "./useSegmentTemplateWorkbench";
+
+import { apiPutTemplateItems } from "./segmentTemplates/api";
+import { weightSegmentsToPutItemsDraftPrefix } from "./SegmentsPanel/utils";
+import type { WeightSegment } from "./PricingRuleEditor";
+
+function toErrMsg(e: unknown, fallback: string): string {
+  if (e instanceof Error) return e.message || fallback;
+  return fallback;
+}
 
 export const SegmentsPanel: React.FC<{
   detail: PricingSchemeDetail;
@@ -55,33 +67,39 @@ export const SegmentsPanel: React.FC<{
     };
   }, [location.hash]);
 
-  async function handleSetBindable(templateId: number, bindable: boolean) {
-    if (disabled || w.busy) return;
-
-    try {
-      if (bindable) {
-        await activateSegmentTemplate(templateId);
-        onOk?.("已加入可绑定区域");
-      } else {
-        await deactivateSegmentTemplate(templateId);
-        onOk?.("已从可绑定区域移除");
-      }
-      await w.refreshTemplates(w.selectedTemplateId);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : bindable ? "加入可绑定区域失败" : "移除可绑定区域失败";
-      onError?.(msg);
+  // ✅ 事实：模板是否使用中（被任何 Zone 引用）
+  const inUseCountByTemplateId = useMemo(() => {
+    const m = new Map<number, number>();
+    const zones = (detail.zones ?? []) as Array<{ segment_template_id?: number | null }>;
+    for (const z of zones) {
+      const tid = z.segment_template_id ?? null;
+      if (typeof tid !== "number" || !Number.isFinite(tid) || tid <= 0) continue;
+      m.set(tid, (m.get(tid) ?? 0) + 1);
     }
-  }
+    return m;
+  }, [detail.zones]);
 
-  async function handleRenameTemplate(templateId: number, name: string) {
+  const selectedInUseCount = useMemo(() => {
+    const tid = w.selectedTemplateId ?? null;
+    if (typeof tid !== "number" || tid <= 0) return 0;
+    return inUseCountByTemplateId.get(tid) ?? 0;
+  }, [inUseCountByTemplateId, w.selectedTemplateId]);
+
+  async function handleSaveTemplateItems(templateId: number, segs: WeightSegment[]) {
     if (disabled || w.busy) return;
 
+    const items = weightSegmentsToPutItemsDraftPrefix(segs);
+    if (!items || items.length === 0) {
+      onError?.("请先填写至少 1 段有效重量分段（最后一段可留空表示 ∞）。");
+      return;
+    }
+
     try {
-      await renameSegmentTemplate(templateId, { name });
-      onOk?.("已更新方案名称");
+      await apiPutTemplateItems(templateId, items);
+      onOk?.("已保存重量段结构");
       await w.refreshTemplates(w.selectedTemplateId);
 
-      // ✅ 如果改名的是当前选中模板：强制触发 detail reload（避免右侧仍显示旧名）
+      // ✅ 若保存的是当前选中模板：强制触发 detail reload（避免右侧仍显示旧结构）
       if (w.selectedTemplateId === templateId) {
         w.setSelectedTemplateId(null);
         window.requestAnimationFrame(() => {
@@ -89,8 +107,7 @@ export const SegmentsPanel: React.FC<{
         });
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "改名失败";
-      onError?.(msg);
+      onError?.(toErrMsg(e, "保存重量段结构失败"));
     }
   }
 
@@ -109,10 +126,9 @@ export const SegmentsPanel: React.FC<{
             selectedTemplateId={w.selectedTemplateId}
             onSelectTemplateId={w.setSelectedTemplateId}
             onCreateDraftNamed={(name) => void w.actions.createDraftTemplate(name)}
-            onSetBindable={(id, b) => void handleSetBindable(id, b)}
-            onRenameTemplate={(id, name) => void handleRenameTemplate(id, name)}
             onArchiveTemplate={(id) => void w.actions.archiveTemplate(id)}
             onUnarchiveTemplate={(id) => void w.actions.unarchiveTemplate(id)}
+            inUseCountByTemplateId={inUseCountByTemplateId}
           />
         </div>
 
@@ -122,8 +138,11 @@ export const SegmentsPanel: React.FC<{
           selectedTemplate={w.selectedTemplate}
           draftSegments={w.draftSegments}
           setDraftSegments={w.setDraftSegments}
-          onSaveDraft={w.actions.saveDraftItems}
+          onSaveDraftAsVersion={w.actions.saveDraftItems}
+          onSaveTemplateItems={handleSaveTemplateItems}
+          inUseCount={selectedInUseCount}
           onOk={onOk}
+          onError={onError}
         />
       </div>
     </div>

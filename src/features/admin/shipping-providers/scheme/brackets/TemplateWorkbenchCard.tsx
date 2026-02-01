@@ -2,11 +2,12 @@
 //
 // 右侧编辑区：重量段结构 + 保存（不负责方案选择/创建）
 //
-// ✅ 收敛（本次改造重点）
-// - 重量段方案只保留：草稿 / 已保存 / 已归档
-// - 移除“启用/生效”入口与文案：生效语义下沉到“区域绑定模板”步骤
-// - 保存：draft -> publish（保存为版本）
-// - 成功反馈：通过 onOk 回调，由上层 SuccessBar 显示绿条
+// ✅ 本轮裁决：
+// - 未使用：允许改结构（draft / published 都可）
+// - 使用中：不可改结构（前端禁用 + 后端 409 护栏）
+// - 归档：只读
+// - 草稿“保存”仍保持现状：保存为版本（draft → published）
+// - 已保存（published）未使用：允许保存修改（PUT items）
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { SegmentTemplateOut } from "./segmentTemplates";
@@ -26,14 +27,14 @@ function displayName(name: string): string {
     .trim();
 }
 
+function isArchivedTemplate(t: SegmentTemplateOut | null): boolean {
+  return !!t && String(t.status ?? "") === "archived";
+}
 function isDraftTemplate(t: SegmentTemplateOut | null): boolean {
   return !!t && String(t.status ?? "") === "draft";
 }
 function isPublishedTemplate(t: SegmentTemplateOut | null): boolean {
   return !!t && String(t.status ?? "") === "published";
-}
-function isArchivedTemplate(t: SegmentTemplateOut | null): boolean {
-  return !!t && String(t.status ?? "") === "archived";
 }
 
 function StatusBadge(props: { t: SegmentTemplateOut }) {
@@ -75,11 +76,30 @@ export const TemplateWorkbenchCard: React.FC<{
   draftSegments: WeightSegment[];
   setDraftSegments: React.Dispatch<React.SetStateAction<WeightSegment[]>>;
 
-  onSaveDraft: () => Promise<void>;
+  // ✅ 草稿保存为版本（draft → published）
+  onSaveDraftAsVersion: () => Promise<void>;
+
+  // ✅ 保存结构（draft/published 未使用时都可以调用）
+  onSaveTemplateItems: (templateId: number, segs: WeightSegment[]) => Promise<void>;
+
+  // ✅ 使用事实：引用该模板的 Zone 数量
+  inUseCount: number;
 
   // ✅ 上层成功提示（用于顶栏绿条）
   onOk?: (msg: string) => void;
-}> = ({ schemeId, disabled, selectedTemplate, draftSegments, setDraftSegments, onSaveDraft, onOk }) => {
+  onError?: (msg: string) => void;
+}> = ({
+  schemeId,
+  disabled,
+  selectedTemplate,
+  draftSegments,
+  setDraftSegments,
+  onSaveDraftAsVersion,
+  onSaveTemplateItems,
+  inUseCount,
+  onOk,
+  onError,
+}) => {
   const [dirty, setDirty] = useState(false);
   const lastSavedKeyRef = useRef<string>(stableKey(draftSegments));
   const lastTplIdRef = useRef<number | null>(null);
@@ -88,14 +108,30 @@ export const TemplateWorkbenchCard: React.FC<{
   const isPublished = isPublishedTemplate(selectedTemplate);
   const isArchived = isArchivedTemplate(selectedTemplate);
 
-  const editable = isDraft;
+  // ✅ 可编辑规则：未使用 且 未归档
+  const lockedByInUse = selectedTemplate != null && inUseCount > 0;
+  const editable = !!selectedTemplate && !isArchived && !lockedByInUse;
 
   useEffect(() => {
     const tplId = selectedTemplate?.id ?? null;
     if (tplId !== lastTplIdRef.current) {
       lastTplIdRef.current = tplId;
-      lastSavedKeyRef.current = stableKey(draftSegments);
-      setDirty(false);
+
+      // 当切换模板时：
+      // - 若该模板可编辑（未使用/未归档）：把当前结构加载进 draftSegments 作为编辑态
+      // - 若不可编辑：仅用于只读展示
+      if (selectedTemplate && !lockedByInUse && !isArchived) {
+        const next = isDraft ? draftSegments : templateItemsToWeightSegments(selectedTemplate.items ?? []);
+        // 对于 published：用模板当前 items 初始化可编辑结构
+        if (!isDraft) {
+          setDraftSegments(next);
+        }
+        lastSavedKeyRef.current = stableKey(next);
+        setDirty(false);
+      } else {
+        lastSavedKeyRef.current = stableKey(draftSegments);
+        setDirty(false);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTemplate?.id]);
@@ -112,32 +148,42 @@ export const TemplateWorkbenchCard: React.FC<{
   async function handleSave() {
     if (disabled) return;
     if (!selectedTemplate) return;
-
-    // ✅ 只允许草稿保存（草稿 -> 已保存）
-    if (!editable) return;
     if (isArchived) return;
+    if (lockedByInUse) return;
 
-    // 草稿允许直接保存（不强依赖 dirty）
-    await onSaveDraft();
-    lastSavedKeyRef.current = stableKey(draftSegments);
-    setDirty(false);
-    onOk?.("已保存重量段方案");
+    if (isDraft) {
+      // ✅ 维持现有语义：草稿保存为版本（draft → published）
+      await onSaveDraftAsVersion();
+      lastSavedKeyRef.current = stableKey(draftSegments);
+      setDirty(false);
+      onOk?.("已保存为版本");
+      return;
+    }
+
+    // published 未使用：允许保存修改（PUT items）
+    if (isPublished) {
+      await onSaveTemplateItems(selectedTemplate.id, draftSegments);
+      lastSavedKeyRef.current = stableKey(draftSegments);
+      setDirty(false);
+      onOk?.("已保存修改");
+    }
   }
 
   const title = useMemo(() => (selectedTemplate ? displayName(selectedTemplate.name ?? "") : ""), [selectedTemplate]);
 
-  // - 草稿：展示 draftSegments（可编辑）
-  // - 非草稿：展示 selectedTemplate.items 转出来的 segments（只读）
+  // 展示用 segments：
+  // - 可编辑：永远用 draftSegments（编辑态）
+  // - 不可编辑：用模板 items 转换出来的只读视图
   const viewSegments: WeightSegment[] = useMemo(() => {
     if (!selectedTemplate) return [];
-    if (isDraft) return draftSegments;
+    if (editable) return draftSegments;
     return templateItemsToWeightSegments(selectedTemplate.items ?? []);
-  }, [selectedTemplate, isDraft, draftSegments]);
+  }, [selectedTemplate, editable, draftSegments]);
 
   const dirtyBadge =
     editable && selectedTemplate ? (
       dirty ? (
-        <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+        <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
           未保存
         </span>
       ) : (
@@ -152,9 +198,31 @@ export const TemplateWorkbenchCard: React.FC<{
       <div className="mt-1 text-xs text-slate-500">请在左侧选择一个方案进入查看/编辑。</div>
     ) : isArchived ? (
       <div className="mt-1 text-xs text-slate-500">该方案已归档，仅可查看。</div>
+    ) : lockedByInUse ? (
+      <div className="mt-1 text-xs text-emerald-800">
+        该模板已被 <span className="font-mono">{inUseCount}</span> 个区域使用。为避免线上结构漂移，已锁定重量段结构；如需调整，请新建模板并切换区域绑定。
+      </div>
     ) : isPublished ? (
-      <div className="mt-1 text-xs text-slate-500">该方案已保存为版本。若需修改，请复制/新建草稿再编辑。</div>
+      <div className="mt-1 text-xs text-slate-500">该方案为已保存版本（未使用时允许修改；使用后将自动锁定结构）。</div>
     ) : null;
+
+  const saveBtnText = !selectedTemplate
+    ? "保存"
+    : isDraft
+      ? "保存为版本"
+      : isPublished
+        ? "保存修改"
+        : "保存";
+
+  const saveBtnTitle = !selectedTemplate
+    ? "请先选择一个方案"
+    : isArchived
+      ? "已归档方案不可保存"
+      : lockedByInUse
+        ? "使用中模板已锁定结构"
+        : isDraft
+          ? "保存为版本（草稿 → 已保存）"
+          : "保存修改（未使用版本可改）";
 
   return (
     <div className={UI.cardSoft}>
@@ -182,19 +250,11 @@ export const TemplateWorkbenchCard: React.FC<{
             <button
               type="button"
               className={UI.btnNeutralSm}
-              disabled={disabled || !editable || !selectedTemplate || isArchived}
+              disabled={disabled || !selectedTemplate || isArchived || lockedByInUse}
               onClick={() => void handleSave()}
-              title={
-                !selectedTemplate
-                  ? "请先选择一个方案"
-                  : !editable
-                    ? "仅草稿方案可保存（保存会发布为版本）"
-                    : isArchived
-                      ? "已归档方案不可保存"
-                      : "保存为版本（草稿 → 已保存）"
-              }
+              title={saveBtnTitle}
             >
-              保存
+              {saveBtnText}
             </button>
           </div>
         </div>
@@ -212,6 +272,16 @@ export const TemplateWorkbenchCard: React.FC<{
               dirty={dirty}
             />
           </div>
+        ) : null}
+
+        {!lockedByInUse && isPublished && !editable && selectedTemplate ? (
+          <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+            提示：若该模板被区域绑定后，将自动进入“使用中锁定”状态，禁止再修改结构。
+          </div>
+        ) : null}
+
+        {!selectedTemplate && onError ? (
+          <div className="mt-3 text-xs text-slate-500">新建方案请在左侧点击「新建方案」，并输入名称。</div>
         ) : null}
       </div>
     </div>
