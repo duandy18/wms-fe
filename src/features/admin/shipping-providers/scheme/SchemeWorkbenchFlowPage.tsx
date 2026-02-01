@@ -1,7 +1,7 @@
 // src/features/admin/shipping-providers/scheme/SchemeWorkbenchFlowPage.tsx
 //
 // ✅ 运价方案“纵向主线页”（不取消 tabs）
-// - 目标：把 Segments / Zones / 绑定+录价 Table / 目的地附加费 / 规则附加费 / Explain 纵向串起来
+// - 目标：把 Segments / Zones / 绑定+录价 Table / 目的地附加费 / Explain 纵向串起来
 // - 原 tabs 入口保留：/workbench/:tab
 // - 本页作为新主入口：/workbench-flow
 //
@@ -11,8 +11,7 @@
 // 3) 区域绑定重量段（绑定在 Table 的 ZoneCard 内完成）
 // 4) 二维价格表格（Table）
 // 5) 目的地附加费（DestAdjustments）
-// 6) 附加费（规则 Surcharges）
-// 7) 算价解释（末端只读：预览 + 算价解释）
+// 6) 算价解释（末端只读：预览 + 算价解释）
 
 import React, { useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -28,10 +27,6 @@ import { useFlashOkBar } from "./workbench/useFlashOkBar";
 import {
   patchZone,
   type PricingSchemeZone,
-  createSurcharge,
-  patchSurcharge,
-  deleteSurcharge,
-  type PricingSchemeSurcharge,
   createZoneAtomic,
   replaceZoneProvinceMembers,
 } from "../api";
@@ -42,10 +37,9 @@ import { archiveReleaseZoneProvinces } from "../api/zones";
 import SegmentsSection from "./flow/sections/SegmentsSection";
 import ZonesSection from "./flow/sections/ZonesSection";
 import PricingSection from "./flow/sections/PricingSection";
-import SurchargesSection from "./flow/sections/SurchargesSection";
 import ExplainSection from "./flow/sections/ExplainSection";
 
-// ✅ 新：目的地附加费（结构化事实）
+// ✅ 目的地附加费
 import FlowSectionCard from "./flow/FlowSectionCard";
 import DestAdjustmentsPanel from "./dest-adjustments/DestAdjustmentsPanel";
 import { upsertDestAdjustment, patchDestAdjustment, deleteDestAdjustment } from "../api/destAdjustments";
@@ -102,9 +96,6 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
 
     navigate("/admin/shipping-providers", { replace: true });
   };
-
-  // ✅ 附加费（规则）：不依赖模板 gate，只依赖“页面忙”和“是否归档”
-  const surchargesDisabled = pageDisabled || wb.detail?.archived_at != null;
 
   const goCreateTemplate = () => {
     if (!schemeId || schemeId <= 0) return;
@@ -177,7 +168,9 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
                 await wb.mutate(async () => {
                   await replaceZoneProvinceMembers(zoneId, { provinces });
                   const nextName = buildZoneNameFromProvinces(provinces);
-                  if (nextName) await patchZone(zoneId, { name: nextName });
+                  if (nextName) {
+                    await patchZone(zoneId, { name: nextName });
+                  }
                 });
                 flashOk("已保存区域省份");
                 emitMatrixUpdated();
@@ -199,7 +192,6 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
               onSelectZone={(zoneId) => wb.setSelectedZoneId(zoneId)}
               onError={(msg) => wb.setError(msg)}
               onToggleZone={async (z: PricingSchemeZone) => {
-                // ✅ 归档-释放省份（释放排他资源）：不再 toggle active
                 await wb.mutate(async () => {
                   await archiveReleaseZoneProvinces(z.id);
                 });
@@ -230,8 +222,7 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
               }}
             />
 
-            {/* ✅ 新：目的地附加费（结构化事实） */}
-            <FlowSectionCard title="5）目的地附加费" desc="结构化事实：province/city 互斥，city 优先。">
+            <FlowSectionCard title="5）目的地附加费">
               <DestAdjustmentsPanel
                 schemeId={wb.detail.id}
                 list={wb.detail.dest_adjustments ?? []}
@@ -260,45 +251,6 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
                 }}
               />
             </FlowSectionCard>
-
-            <SurchargesSection
-              detail={wb.detail}
-              disabled={surchargesDisabled}
-              onError={(msg) => wb.setError(msg)}
-              onCreate={async (payload) => {
-                await wb.mutate(async () => {
-                  await createSurcharge(wb.detail!.id, {
-                    name: payload.name,
-                    active: true,
-                    condition_json: payload.condition_json,
-                    amount_json: payload.amount_json,
-                  });
-                });
-                flashOk("已创建附加费规则");
-                emitMatrixUpdated();
-              }}
-              onPatch={async (surchargeId, payload) => {
-                await wb.mutate(async () => {
-                  await patchSurcharge(surchargeId, payload);
-                });
-                flashOk("已保存附加费规则");
-                emitMatrixUpdated();
-              }}
-              onToggle={async (s: PricingSchemeSurcharge) => {
-                await wb.mutate(async () => {
-                  await patchSurcharge(s.id, { active: !s.active });
-                });
-                flashOk("已更新附加费状态");
-                emitMatrixUpdated();
-              }}
-              onDelete={async (s: PricingSchemeSurcharge) => {
-                await wb.mutate(async () => {
-                  await deleteSurcharge(s.id);
-                });
-                flashOk("已删除附加费规则");
-                emitMatrixUpdated();
-              }}
-            />
 
             <ExplainSection
               schemeId={wb.detail.id}
