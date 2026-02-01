@@ -57,9 +57,6 @@ export const SchemeWorkbenchPage: React.FC = () => {
     navigate,
   });
 
-  // ✅ 附加费（规则）：不依赖重量段模板 gate，只依赖“页面忙”和“是否归档”
-  const surchargesDisabled = pageDisabled || wb.detail?.archived_at != null;
-
   const actions = useWorkbenchActions({
     wb: {
       detail: wb.detail,
@@ -107,7 +104,7 @@ export const SchemeWorkbenchPage: React.FC = () => {
           className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           disabled={!schemeId || schemeId <= 0}
           onClick={goFlowPage}
-          title="打开纵向主线页（重量段 → 区域 → 绑定 → 价格表 → 附加费 → 解释）"
+          title="打开纵向主线页（重量段 → 区域 → 绑定 → 价格表 → 目的地附加费 → 解释）"
         >
           纵向主线页
         </button>
@@ -131,7 +128,6 @@ export const SchemeWorkbenchPage: React.FC = () => {
               selectedZoneId: wb.selectedZoneId,
               setSelectedZoneId: wb.setSelectedZoneId,
               setError: (msg) => wb.setError(msg),
-              surchargesDisabled,
               actions,
             })}
           </>

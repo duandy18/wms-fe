@@ -1,8 +1,8 @@
 // src/features/admin/shipping-providers/scheme/workbench-page/useWorkbenchActions.ts
 
 import { useMemo } from "react";
-import type { PricingSchemeDetail, PricingSchemeSurcharge, PricingSchemeZone } from "../../api";
-import { createZoneAtomic, createSurcharge, deleteSurcharge, patchSurcharge, patchZone, replaceZoneProvinceMembers } from "../../api";
+import type { PricingSchemeDetail, PricingSchemeZone } from "../../api";
+import { createZoneAtomic, patchZone, replaceZoneProvinceMembers } from "../../api";
 import { archiveReleaseZoneProvinces } from "../../api/zones";
 import { deleteDestAdjustment, patchDestAdjustment, upsertDestAdjustment } from "../../api/destAdjustments";
 import type { DestAdjustmentUpsertPayload } from "../../api/destAdjustments";
@@ -83,45 +83,6 @@ export function useWorkbenchActions(params: {
       onGoSegmentsTab: () => goTab("segments"),
     };
 
-    const surcharges = {
-      onCreate: async (payload: { name: string; condition_json: Record<string, unknown>; amount_json: Record<string, unknown> }) => {
-        const d = requireDetail();
-        await wb.mutate(async () => {
-          await createSurcharge(d.id, {
-            name: payload.name,
-            active: true,
-            condition_json: payload.condition_json,
-            amount_json: payload.amount_json,
-          });
-        });
-        flashOk("已创建附加费规则");
-      },
-
-      onPatch: async (
-        surchargeId: number,
-        payload: Partial<{ name: string; condition_json: Record<string, unknown>; amount_json: Record<string, unknown>; active: boolean }>,
-      ) => {
-        await wb.mutate(async () => {
-          await patchSurcharge(surchargeId, payload);
-        });
-        flashOk("已保存附加费规则");
-      },
-
-      onToggle: async (s: PricingSchemeSurcharge) => {
-        await wb.mutate(async () => {
-          await patchSurcharge(s.id, { active: !s.active });
-        });
-        flashOk("已更新附加费状态");
-      },
-
-      onDelete: async (s: PricingSchemeSurcharge) => {
-        await wb.mutate(async () => {
-          await deleteSurcharge(s.id);
-        });
-        flashOk("已删除附加费规则");
-      },
-    };
-
     const destAdjustments = {
       onUpsert: async (payload: DestAdjustmentUpsertPayload) => {
         const d = requireDetail();
@@ -146,6 +107,6 @@ export function useWorkbenchActions(params: {
       },
     };
 
-    return { zones, surcharges, destAdjustments };
+    return { zones, destAdjustments };
   }, [flashOk, goTab, wb]);
 }

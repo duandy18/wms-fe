@@ -151,7 +151,6 @@ export function useSchemeWorkbench(params: { open: boolean; schemeId: number | n
       effective_from: detail.effective_from ?? null,
       effective_to: detail.effective_to ?? null,
       zonesCount: detail.zones?.length ?? 0,
-      surchargesCount: detail.surcharges?.length ?? 0,
     };
   }, [detail]);
 

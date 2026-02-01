@@ -2,48 +2,12 @@
 
 import React, { useMemo } from "react";
 import { UI } from "../../ui";
-import { KEY_CITIES, PROVINCE_CAPITAL_CITY } from "../surcharges/data/keyCities";
 
-const PROVINCE_OPTIONS: string[] = [
-  "北京市",
-  "天津市",
-  "上海市",
-  "重庆市",
-  "河北省",
-  "山西省",
-  "辽宁省",
-  "吉林省",
-  "黑龙江省",
-  "江苏省",
-  "浙江省",
-  "安徽省",
-  "福建省",
-  "江西省",
-  "山东省",
-  "河南省",
-  "湖北省",
-  "湖南省",
-  "广东省",
-  "海南省",
-  "四川省",
-  "贵州省",
-  "云南省",
-  "陕西省",
-  "甘肃省",
-  "青海省",
-  "内蒙古自治区",
-  "广西壮族自治区",
-  "西藏自治区",
-  "宁夏回族自治区",
-  "新疆维吾尔自治区",
-  "香港特别行政区",
-  "澳门特别行政区",
-  "台湾省",
-];
+export type GeoItem = { code: string; name: string };
 
-function normalizeSpaces(s: string): string {
-  const t = (s ?? "").trim();
-  return t.replace(/\s+/g, "");
+function fmtKg(n: number | null): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return n.toFixed(2);
 }
 
 export const QuotePreviewForm: React.FC<{
@@ -58,12 +22,14 @@ export const QuotePreviewForm: React.FC<{
   onReloadWarehouses: () => void;
   canCalc: boolean;
 
-  province: string;
-  city: string;
-  district: string;
-  onChangeProvince: (v: string) => void;
-  onChangeCity: (v: string) => void;
-  onChangeDistrict: (v: string) => void;
+  // ✅ 目的地：全量行政区划（GB2260）
+  geoLoading: boolean;
+  provinces: GeoItem[];
+  cities: GeoItem[];
+  provinceCode: string;
+  cityCode: string;
+  onChangeProvinceCode: (v: string) => void;
+  onChangeCityCode: (v: string) => void;
 
   realWeightKg: string;
   onChangeRealWeightKg: (v: string) => void;
@@ -80,6 +46,11 @@ export const QuotePreviewForm: React.FC<{
 
   showDimsWarning: boolean;
 
+  // ✅ 体积重/计费重（由上层计算）
+  volumeWeightKg: number | null;
+  chargeableWeightKg: number | null;
+  usingDims: boolean;
+
   onCalc: () => void;
 }> = ({
   disabled,
@@ -93,37 +64,44 @@ export const QuotePreviewForm: React.FC<{
   onReloadWarehouses,
   canCalc,
 
-  province,
-  city,
-  district,
-  onChangeProvince,
-  onChangeCity,
-  onChangeDistrict,
+  geoLoading,
+  provinces,
+  cities,
+  provinceCode,
+  cityCode,
+  onChangeProvinceCode,
+  onChangeCityCode,
+
   realWeightKg,
   onChangeRealWeightKg,
   flags,
   onChangeFlags,
   lengthCm,
-  widthCm,
-  heightCm,
   onChangeLengthCm,
+  widthCm,
   onChangeWidthCm,
+  heightCm,
   onChangeHeightCm,
   showDimsWarning,
+
+  volumeWeightKg,
+  chargeableWeightKg,
+  usingDims,
+
   onCalc,
 }) => {
-  const capitalCity = useMemo(() => PROVINCE_CAPITAL_CITY[province] ?? "", [province]);
+  const calcDisabledReason = useMemo(() => {
+    if (disabled) return "当前为只读/禁用状态";
+    if (loading) return "正在算价中…";
+    if (!canCalc) return "请先选择起运仓";
+    if (geoLoading) return "正在加载省市数据…";
+    if (!provinceCode || !cityCode) return "请先选择省/市";
+    return null;
+  }, [disabled, loading, canCalc, geoLoading, provinceCode, cityCode]);
 
-  const keyCityOptions = useMemo(() => {
-    const set = new Set<string>();
-    if (capitalCity) set.add(capitalCity);
-    for (const c of KEY_CITIES) set.add(c);
-    return Array.from(set);
-  }, [capitalCity]);
-
-  const selectedKeyCity = useMemo(() => {
-    return keyCityOptions.includes(city) ? city : "";
-  }, [city, keyCityOptions]);
+  const calcDisabled = useMemo(() => {
+    return calcDisabledReason != null;
+  }, [calcDisabledReason]);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
@@ -162,78 +140,43 @@ export const QuotePreviewForm: React.FC<{
         </div>
       </div>
 
-      {/* 目的地 */}
+      {/* 目的地（GB2260 下拉） */}
       <div>
         <div className="text-sm font-semibold text-slate-800">目的地</div>
 
-        {/* 省 / 城市 */}
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="flex flex-col">
-            <label className="text-sm text-slate-600">省</label>
+            <label className="text-sm text-slate-600">省 *</label>
             <select
               className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
-              value={province}
-              disabled={disabled}
-              onChange={(e) => onChangeProvince(e.target.value)}
+              value={provinceCode}
+              disabled={disabled || geoLoading}
+              onChange={(e) => onChangeProvinceCode(e.target.value)}
             >
-              {PROVINCE_OPTIONS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+              <option value="">{geoLoading ? "加载中…" : "请选择省份（code）"}</option>
+              {provinces.map((p) => (
+                <option key={p.code} value={p.code}>
+                  {p.name}（{p.code}）
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-sm text-slate-600">重点城市</label>
+          <div className="flex flex-col md:col-span-2">
+            <label className="text-sm text-slate-600">市 *</label>
             <select
               className="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base"
-              value={selectedKeyCity}
-              disabled={disabled}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (!v) return;
-                onChangeCity(v);
-              }}
+              value={cityCode}
+              disabled={disabled || geoLoading || !provinceCode}
+              onChange={(e) => onChangeCityCode(e.target.value)}
             >
-              <option value="">—</option>
-              {keyCityOptions.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">{!provinceCode ? "请先选择省份" : geoLoading ? "加载中…" : "请选择城市（code）"}</option>
+              {cities.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}（{c.code}）
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="flex flex-col">
-            <label className="text-sm text-slate-600">市</label>
-            <input
-              className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
-              value={city}
-              disabled={disabled}
-              onChange={(e) => onChangeCity(e.target.value)}
-              onBlur={() => {
-                const norm = normalizeSpaces(city);
-                if (norm !== city) onChangeCity(norm);
-              }}
-            />
-          </div>
-        </div>
-
-        {/* 区/县 */}
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="flex flex-col">
-            <label className="text-sm text-slate-600">区/县</label>
-            <input
-              className="mt-1 rounded-xl border border-slate-300 px-3 py-2 text-base"
-              value={district}
-              disabled={disabled}
-              onChange={(e) => onChangeDistrict(e.target.value)}
-              onBlur={() => {
-                const norm = normalizeSpaces(district);
-                if (norm !== district) onChangeDistrict(norm);
-              }}
-            />
           </div>
         </div>
       </div>
@@ -299,20 +242,40 @@ export const QuotePreviewForm: React.FC<{
           />
         </div>
 
-        <div className="flex items-end">
+        <div className="flex flex-col items-end">
           <button
             className={UI.btnPrimaryGreen}
             type="button"
-            disabled={disabled || loading || !canCalc}
+            disabled={calcDisabled}
             onClick={onCalc}
-            title={!canCalc ? "请先选择起运仓" : ""}
+            title={calcDisabledReason ?? ""}
           >
             {loading ? "算价中…" : "开始算价"}
           </button>
+
+          {calcDisabledReason ? (
+            <div className="mt-2 text-[11px] text-slate-500">{calcDisabledReason}</div>
+          ) : (
+            <div className="mt-2 text-[11px] text-slate-500">已就绪：可开始算价</div>
+          )}
         </div>
       </div>
 
       {!showDimsWarning ? null : <div className="mt-2 text-sm text-amber-700">体积重输入不完整</div>}
+
+      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+          <div>
+            体积重（kg）=<span className="font-mono mx-1">{fmtKg(volumeWeightKg)}</span>
+            <span className="text-slate-500">（长×宽×高/8000）</span>
+          </div>
+          <div>
+            计费重（kg）=<span className="font-mono mx-1">{fmtKg(chargeableWeightKg)}</span>
+            <span className="text-slate-500">（取实重与体积重较大者）</span>
+          </div>
+          {usingDims ? <span className="text-emerald-700 font-semibold">已按计费重算价</span> : <span className="text-slate-500">未使用体积重</span>}
+        </div>
+      </div>
     </div>
   );
 };

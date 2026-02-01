@@ -11,9 +11,8 @@
 // - segments：重量段方案（保存/启用）
 // - brackets：价格录入（旧入口，后续可降级/删除）
 // - dest_adjustments：目的地附加费（结构化事实）
-// - surcharges：附加费（规则型，bulky/flags 等）
 // - preview：算价预览
-export type SchemeTabKey = "table" | "zones" | "segments" | "brackets" | "dest_adjustments" | "surcharges" | "preview";
+export type SchemeTabKey = "table" | "zones" | "segments" | "brackets" | "dest_adjustments" | "preview";
 
 export type MutateFn = () => Promise<void>;
 

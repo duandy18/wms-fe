@@ -10,10 +10,10 @@
 // - 不做 fallback，不做默认全仓可用
 
 import React, { useEffect, useMemo, useState } from "react";
-import { apiPost } from "../../../../../lib/api";
+import { apiGet, apiPost } from "../../../../../lib/api";
 import type { CalcOut, Dims } from "./types";
 import { normalizeAddrPart, toReasonsList } from "./utils";
-import { QuotePreviewForm } from "./QuotePreviewForm";
+import { QuotePreviewForm, type GeoItem } from "./QuotePreviewForm";
 import { QuotePreviewResult } from "./QuotePreviewResult";
 
 // ✅ 复用仓库域现有接口：不引入新后端能力
@@ -33,6 +33,10 @@ function warehouseLabel(w: WarehouseListItem): string {
   const code = w.code ? String(w.code).trim() : "";
   const name = w.name ? String(w.name).trim() : "";
   return code || name || `WH-${w.id}`;
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 export const QuotePreviewPanel: React.FC<{
@@ -92,16 +96,91 @@ export const QuotePreviewPanel: React.FC<{
     return true;
   }, [disabled, whLoading, parsedWarehouseId]);
 
-  const [province, setProvince] = useState("广东省");
-  const [city, setCity] = useState("深圳市");
-  const [district, setDistrict] = useState("南山区");
+  // ✅ 目的地（GB2260 下拉）
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [provinces, setProvinces] = useState<GeoItem[]>([]);
+  const [cities, setCities] = useState<GeoItem[]>([]);
+  const [provinceCode, setProvinceCode] = useState<string>("");
+  const [cityCode, setCityCode] = useState<string>("");
 
+  const provinceName = useMemo(() => {
+    const hit = provinces.find((x) => x.code === provinceCode);
+    return hit?.name ?? "";
+  }, [provinces, provinceCode]);
+
+  const cityName = useMemo(() => {
+    const hit = cities.find((x) => x.code === cityCode);
+    return hit?.name ?? "";
+  }, [cities, cityCode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setGeoLoading(true);
+      try {
+        const list = await apiGet<GeoItem[]>("/geo/provinces");
+        if (cancelled) return;
+        const arr = Array.isArray(list) ? list : [];
+        setProvinces(arr);
+
+        // 给个默认：优先广东省，否则第一个
+        if (!provinceCode && arr.length) {
+          const gd = arr.find((x) => x.name === "广东省") ?? arr[0];
+          setProvinceCode(gd.code);
+          setCityCode("");
+        }
+      } catch (e) {
+        if (!cancelled) onError(toHumanError(e, "加载省份失败"));
+      } finally {
+        if (!cancelled) setGeoLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onError]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!provinceCode) {
+        setCities([]);
+        setCityCode("");
+        return;
+      }
+      setGeoLoading(true);
+      try {
+        const list = await apiGet<GeoItem[]>(`/geo/provinces/${provinceCode}/cities`);
+        if (cancelled) return;
+        const arr = Array.isArray(list) ? list : [];
+        setCities(arr);
+
+        // 默认：优先深圳市，否则第一个
+        if (arr.length) {
+          const sz = arr.find((x) => x.name === "深圳市") ?? arr[0];
+          setCityCode((prev) => (prev ? prev : sz.code));
+        } else {
+          setCityCode("");
+        }
+      } catch (e) {
+        if (!cancelled) onError(toHumanError(e, "加载城市失败"));
+      } finally {
+        if (!cancelled) setGeoLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [provinceCode, onError]);
+
+  // 重量 / 体积
   const [realWeightKg, setRealWeightKg] = useState("2.36");
   const [lengthCm, setLengthCm] = useState("");
   const [widthCm, setWidthCm] = useState("");
   const [heightCm, setHeightCm] = useState("");
 
-  const [flags, setFlags] = useState(""); // 逗号分隔：bulky,cold,fragile...
+  const [flags, setFlags] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CalcOut | null>(null);
@@ -119,7 +198,7 @@ export const QuotePreviewPanel: React.FC<{
     const w = Number(wt);
     const h = Number(ht);
     if (!Number.isFinite(l) || !Number.isFinite(w) || !Number.isFinite(h)) return null;
-    if (l < 0 || w < 0 || h < 0) return null;
+    if (l <= 0 || w <= 0 || h <= 0) return null;
 
     return { length_cm: l, width_cm: w, height_cm: h };
   }, [lengthCm, widthCm, heightCm]);
@@ -130,11 +209,30 @@ export const QuotePreviewPanel: React.FC<{
     return dims === null;
   }, [lengthCm, widthCm, heightCm, dims]);
 
+  const volumeWeightKg = useMemo(() => {
+    if (!dims) return null;
+    const vw = (dims.length_cm * dims.width_cm * dims.height_cm) / 8000;
+    if (!Number.isFinite(vw) || vw <= 0) return null;
+    return round2(vw);
+  }, [dims]);
+
+  const chargeableWeightKg = useMemo(() => {
+    const realOk = Number.isFinite(parsedReal) && parsedReal > 0;
+    const volOk = volumeWeightKg != null && Number.isFinite(volumeWeightKg) && volumeWeightKg > 0;
+
+    if (!realOk && !volOk) return null;
+    if (!realOk && volOk) return volumeWeightKg!;
+    if (realOk && !volOk) return round2(parsedReal);
+    return round2(Math.max(parsedReal, volumeWeightKg!));
+  }, [parsedReal, volumeWeightKg]);
+
+  const usingDims = useMemo(() => {
+    return volumeWeightKg != null && chargeableWeightKg != null;
+  }, [volumeWeightKg, chargeableWeightKg]);
+
   const flagsList = useMemo(() => {
-    return flags
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
+    const v = String(flags ?? "").trim();
+    return v ? [v] : [];
   }, [flags]);
 
   const handleCalc = async () => {
@@ -143,14 +241,22 @@ export const QuotePreviewPanel: React.FC<{
       return;
     }
 
-    // ✅ 必填前置：起运仓
     if (!Number.isFinite(parsedWarehouseId) || parsedWarehouseId <= 0) {
       onError("请先选择起运仓");
       return;
     }
 
-    if (!Number.isFinite(parsedReal) || parsedReal <= 0) {
-      onError("real_weight_kg 必须是 > 0 的数字");
+    if (!provinceCode || !cityCode) {
+      onError("请先选择省/市");
+      return;
+    }
+    if (!provinceName || !cityName) {
+      onError("省/市名称解析失败：请刷新后重试");
+      return;
+    }
+
+    if (chargeableWeightKg == null || !Number.isFinite(chargeableWeightKg) || chargeableWeightKg <= 0) {
+      onError("计费重必须是 > 0 的数字（请检查实重/体积重输入）");
       return;
     }
 
@@ -158,24 +264,15 @@ export const QuotePreviewPanel: React.FC<{
     setResult(null);
 
     try {
-      const provinceNorm = normalizeAddrPart(province);
-      const cityNorm = normalizeAddrPart(city);
-
-      const districtNormRaw = normalizeAddrPart(district);
-      const districtNorm = districtNormRaw ? districtNormRaw : null;
-
       const body: Record<string, unknown> = {
         scheme_id: schemeId,
-
-        // ✅ 起运仓上下文（必填）
         warehouse_id: parsedWarehouseId,
-
         dest: {
-          province: provinceNorm,
-          city: cityNorm,
-          district: districtNorm,
+          province: normalizeAddrPart(provinceName),
+          city: normalizeAddrPart(cityName),
+          district: null,
         },
-        real_weight_kg: parsedReal,
+        real_weight_kg: chargeableWeightKg,
         flags: flagsList,
       };
 
@@ -186,14 +283,10 @@ export const QuotePreviewPanel: React.FC<{
       }
 
       const res = await apiPost<CalcOut>("/shipping-quote/calc", body);
-
-      // reasons 兼容（不吞错）：确保返回结构在 UI 解释链路上可用（即便 Admin 不展示 reasons）
       toReasonsList(res);
-
       setResult(res);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "算价失败";
-      onError(msg);
+      onError(toHumanError(e, "算价失败"));
       setResult(null);
     } finally {
       setLoading(false);
@@ -212,13 +305,16 @@ export const QuotePreviewPanel: React.FC<{
         onChangeWarehouseId={setWarehouseId}
         onReloadWarehouses={() => void loadWarehouses()}
         canCalc={canCalc}
-        // ===== 目的地 / 重量 / flags / 体积 =====
-        province={province}
-        city={city}
-        district={district}
-        onChangeProvince={setProvince}
-        onChangeCity={setCity}
-        onChangeDistrict={setDistrict}
+        geoLoading={geoLoading}
+        provinces={provinces}
+        cities={cities}
+        provinceCode={provinceCode}
+        cityCode={cityCode}
+        onChangeProvinceCode={(v) => {
+          setProvinceCode(v);
+          setCityCode("");
+        }}
+        onChangeCityCode={setCityCode}
         realWeightKg={realWeightKg}
         onChangeRealWeightKg={setRealWeightKg}
         flags={flags}
@@ -230,6 +326,9 @@ export const QuotePreviewPanel: React.FC<{
         onChangeWidthCm={setWidthCm}
         onChangeHeightCm={setHeightCm}
         showDimsWarning={showDimsWarning}
+        volumeWeightKg={volumeWeightKg}
+        chargeableWeightKg={chargeableWeightKg}
+        usingDims={usingDims}
         onCalc={handleCalc}
       />
 

@@ -1,11 +1,10 @@
 // src/features/admin/shipping-providers/scheme/workbench-page/renderTab.tsx
 
 import React from "react";
-import type { PricingSchemeDetail, PricingSchemeSurcharge, PricingSchemeZone } from "../../api";
+import type { PricingSchemeDetail, PricingSchemeZone } from "../../api";
 import { ZonesPanel } from "../zones/ZonesPanel";
 import { BracketsPanel } from "../brackets/BracketsPanel";
 import SegmentsPanel from "../brackets/SegmentsPanel";
-import { SurchargesPanel } from "../surcharges/SurchargesPanel";
 import { QuotePreviewPanel } from "../preview/QuotePreviewPanel";
 import { PricingTableWorkbenchPanel } from "../table/PricingTableWorkbenchPanel";
 import DestAdjustmentsPanel from "../dest-adjustments/DestAdjustmentsPanel";
@@ -21,7 +20,6 @@ export function renderWorkbenchTab(params: {
   selectedZoneId: number | null;
   setSelectedZoneId: (id: number | null) => void;
   setError: (msg: string) => void;
-  surchargesDisabled: boolean;
 
   actions: {
     zones: {
@@ -34,15 +32,6 @@ export function renderWorkbenchTab(params: {
       onGoZonesTab: () => void;
       onGoSegmentsTab: () => void;
     };
-    surcharges: {
-      onCreate: (payload: { name: string; condition_json: Record<string, unknown>; amount_json: Record<string, unknown> }) => Promise<void>;
-      onPatch: (
-        surchargeId: number,
-        payload: Partial<{ name: string; condition_json: Record<string, unknown>; amount_json: Record<string, unknown>; active: boolean }>,
-      ) => Promise<void>;
-      onToggle: (s: PricingSchemeSurcharge) => Promise<void>;
-      onDelete: (s: PricingSchemeSurcharge) => Promise<void>;
-    };
     destAdjustments: {
       onUpsert: (payload: DestAdjustmentUpsertPayload) => Promise<void>;
       onPatch: (id: number, payload: Partial<{ active: boolean; amount: number; priority: number }>) => Promise<void>;
@@ -50,7 +39,7 @@ export function renderWorkbenchTab(params: {
     };
   };
 }) {
-  const { tab, detail, pageDisabled, flowLocked, selectedZoneId, setSelectedZoneId, setError, surchargesDisabled, actions } = params;
+  const { tab, detail, pageDisabled, flowLocked, selectedZoneId, setSelectedZoneId, setError, actions } = params;
 
   if (tab === "table") {
     return (
@@ -103,20 +92,6 @@ export function renderWorkbenchTab(params: {
         onUpsert={actions.destAdjustments.onUpsert}
         onPatch={actions.destAdjustments.onPatch}
         onDelete={actions.destAdjustments.onDelete}
-      />
-    );
-  }
-
-  if (tab === "surcharges") {
-    return (
-      <SurchargesPanel
-        detail={detail}
-        disabled={surchargesDisabled}
-        onError={(msg) => setError(msg)}
-        onCreate={actions.surcharges.onCreate}
-        onPatch={actions.surcharges.onPatch}
-        onToggle={actions.surcharges.onToggle}
-        onDelete={actions.surcharges.onDelete}
       />
     );
   }

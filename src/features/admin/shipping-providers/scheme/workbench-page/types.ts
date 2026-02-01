@@ -7,7 +7,7 @@ export type WorkbenchLocationState = {
 };
 
 export function isSchemeTabKey(v: unknown): v is SchemeTabKey {
-  const keys: SchemeTabKey[] = ["table", "segments", "zones", "brackets", "dest_adjustments", "surcharges", "preview"];
+  const keys: SchemeTabKey[] = ["table", "segments", "zones", "brackets", "dest_adjustments", "preview"];
   return typeof v === "string" && (keys as string[]).includes(v);
 }
 
