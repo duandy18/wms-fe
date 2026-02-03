@@ -11,7 +11,7 @@ export const ManualAssignBanner: React.FC<{
     <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-[12px] text-red-800">
       <div className="font-semibold">尚未指定发货仓库，当前订单无法发货</div>
       <div className="mt-1 text-[11px] text-red-700">
-        该订单已命中服务归属仓，但执行出库仓为空。请先指定发货仓库后再进行预占 / 拣货 / 发货。
+        该订单已命中服务归属仓，但执行出库仓为空。请先指定发货仓库后再进行拣货 / 发货。
       </div>
       <div className="mt-2">
         <button

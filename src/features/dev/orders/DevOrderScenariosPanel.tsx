@@ -66,10 +66,10 @@ export const DevOrderScenariosPanel: React.FC<Props> = ({
   const disabledReason: string | null = !order
     ? "请先查询并加载一笔订单"
     : !hasFacts
-    ? "该订单没有行事实，无法执行调试场景"
-    : forbidScenarios
-    ? "生命周期健康度为 BAD，禁止执行调试场景"
-    : null;
+      ? "该订单没有行事实，无法执行调试场景"
+      : forbidScenarios
+        ? "生命周期健康度为 BAD，禁止执行调试场景"
+        : null;
 
   const disableAll = isBusy || Boolean(disabledReason);
 
@@ -102,25 +102,9 @@ export const DevOrderScenariosPanel: React.FC<Props> = ({
       <div className="flex flex-wrap gap-4">
         <ScenarioCard
           title="正常履约（完整链路）"
-          desc="按真实流程执行 reserve → pick → ship，全链路验证最常见路径。"
+          desc="按真实流程执行 pick → ship，全链路验证最常见路径。"
           color="bg-emerald-600 hover:bg-emerald-500"
           onClick={() => onRunScenario("normal_fullflow")}
-          disabled={disableAll}
-        />
-
-        <ScenarioCard
-          title="拣货不足（Under Pick）"
-          desc="预占足量，但拣货只拣一半。用于验证库存异常链路。"
-          color="bg-amber-600 hover:bg-amber-500"
-          onClick={() => onRunScenario("under_pick")}
-          disabled={disableAll}
-        />
-
-        <ScenarioCard
-          title="超卖模拟（Oversell）"
-          desc="预占为下单数量的两倍，用于验证超卖与库存风控相关逻辑。"
-          color="bg-rose-600 hover:bg-rose-500"
-          onClick={() => onRunScenario("oversell")}
           disabled={disableAll}
         />
 
@@ -137,7 +121,7 @@ export const DevOrderScenariosPanel: React.FC<Props> = ({
       <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
         <div className="font-semibold text-slate-800">使用建议</div>
         <ul className="mt-1 list-disc pl-4">
-          <li>建议先执行“正常履约”确保链路稳定，再执行异常场景。</li>
+          <li>建议先执行“正常履约”确保链路稳定，再执行其他场景。</li>
           <li>遇到问题时切换到 Flow 页，结合 Trace / Lifecycle / Ledger 分析。</li>
         </ul>
       </div>

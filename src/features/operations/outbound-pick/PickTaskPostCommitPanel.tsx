@@ -7,10 +7,7 @@
 // - Snapshot 批次视图（当前任务第一个商品）
 
 import React from "react";
-import type {
-  ItemDetailResponse,
-  ItemSlice,
-} from "../../inventory/snapshot/api";
+import type { ItemDetailResponse, ItemSlice } from "../../inventory/snapshot/api";
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import type { LedgerRow } from "../../diagnostics/ledger-tool/types";
 
@@ -58,9 +55,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
       <div className="space-y-1">
         <div className="text-[11px] text-slate-500">trace_id</div>
         {traceId ? (
-          <div className="break-all font-mono text-[11px]">
-            {traceId}
-          </div>
+          <div className="break-all font-mono text-[11px]">{traceId}</div>
         ) : (
           <div className="text-[11px] text-slate-400">
             尚未生成 trace_id。提交出库时会自动生成。
@@ -94,9 +89,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
               Trace 事件（最近 20 条）
             </div>
             {traceEvents.length === 0 ? (
-              <div className="text-[11px] text-slate-500">
-                未查询到 Trace 事件。
-              </div>
+              <div className="text-[11px] text-slate-500">未查询到 Trace 事件。</div>
             ) : (
               <div className="max-h-40 overflow-auto rounded border border-slate-100 bg-slate-50">
                 <table className="min-w-full border-collapse text-[11px]">
@@ -120,20 +113,12 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                           key={idx}
                           className="border-t border-slate-100 align-top"
                         >
-                          <td className="whitespace-nowrap px-2 py-1">
-                            {ts}
-                          </td>
-                          <td className="whitespace-nowrap px-2 py-1">
-                            {source}
-                          </td>
-                          <td className="whitespace-nowrap px-2 py-1">
-                            {kind}
-                          </td>
+                          <td className="whitespace-nowrap px-2 py-1">{ts}</td>
+                          <td className="whitespace-nowrap px-2 py-1">{source}</td>
+                          <td className="whitespace-nowrap px-2 py-1">{kind}</td>
                           <td className="px-2 py-1">
                             {summary || (
-                              <span className="text-slate-400">
-                                无摘要
-                              </span>
+                              <span className="text-slate-400">无摘要</span>
                             )}
                           </td>
                         </tr>
@@ -181,9 +166,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                           key={r.id}
                           className="border-t border-slate-100 align-top"
                         >
-                          <td className="whitespace-nowrap px-2 py-1">
-                            {ts}
-                          </td>
+                          <td className="whitespace-nowrap px-2 py-1">{ts}</td>
                           <td className="px-2 py-1 text-right font-mono">
                             {r.warehouse_id ?? "-"}
                           </td>
@@ -199,9 +182,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                           <td className="px-2 py-1 text-right font-mono">
                             {r.after_qty}
                           </td>
-                          <td className="px-2 py-1">
-                            {r.reason ?? "-"}
-                          </td>
+                          <td className="px-2 py-1">{r.reason ?? "-"}</td>
                         </tr>
                       );
                     })}
@@ -227,8 +208,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                   <span className="font-mono">
                     #{snapshot.item_id} {snapshot.item_name ?? ""}
                   </span>
-                  ，总库存 on_hand=
-                  {snapshot.totals?.on_hand_qty ?? 0}，可用=
+                  ，总库存 on_hand={snapshot.totals?.on_hand_qty ?? 0}，可用=
                   {snapshot.totals?.available_qty ?? 0}
                 </div>
                 <div className="max-h-40 overflow-auto rounded border border-slate-100 bg-slate-50">
@@ -239,38 +219,32 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                         <th className="px-2 py-1 text-left">批次</th>
                         <th className="px-2 py-1 text-left">expire</th>
                         <th className="px-2 py-1 text-right">on_hand</th>
-                        <th className="px-2 py-1 text-right">reserved</th>
                         <th className="px-2 py-1 text-right">available</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {(snapshot.slices || []).map(
-                        (s: SliceWithExpire, idx: number) => (
-                          <tr
-                            key={idx}
-                            className="border-t border-slate-100 align-top"
-                          >
-                            <td className="px-2 py-1">
-                              {s.warehouse_name ?? s.warehouse_id ?? "-"}
-                            </td>
-                            <td className="px-2 py-1 font-mono">
-                              {s.batch_code ?? "-"}
-                            </td>
-                            <td className="px-2 py-1">
-                              {s.expiry_date ?? s.expire_at ?? "-"}
-                            </td>
-                            <td className="px-2 py-1 text-right font-mono">
-                              {s.on_hand_qty}
-                            </td>
-                            <td className="px-2 py-1 text-right font-mono">
-                              {s.reserved_qty}
-                            </td>
-                            <td className="px-2 py-1 text-right font-mono">
-                              {s.available_qty}
-                            </td>
-                          </tr>
-                        ),
-                      )}
+                      {(snapshot.slices || []).map((s: SliceWithExpire, idx: number) => (
+                        <tr
+                          key={idx}
+                          className="border-t border-slate-100 align-top"
+                        >
+                          <td className="px-2 py-1">
+                            {s.warehouse_name ?? s.warehouse_id ?? "-"}
+                          </td>
+                          <td className="px-2 py-1 font-mono">
+                            {s.batch_code ?? "-"}
+                          </td>
+                          <td className="px-2 py-1">
+                            {s.expiry_date ?? s.expire_at ?? "-"}
+                          </td>
+                          <td className="px-2 py-1 text-right font-mono">
+                            {s.on_hand_qty}
+                          </td>
+                          <td className="px-2 py-1 text-right font-mono">
+                            {s.available_qty}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>

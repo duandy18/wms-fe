@@ -13,7 +13,6 @@ export interface GlobalAvailableSingle {
   warehouse_id: number;
   item_id: number;
   on_hand: number;
-  reserved_open: number;
   available: number;
   batches: BatchQty[];
 }
@@ -22,7 +21,6 @@ export interface GlobalAvailableSingle {
 export interface WarehouseAvailableModel {
   warehouse_id: number;
   on_hand: number;
-  reserved_open: number;
   available: number;
   batches: BatchQty[];
   is_top: boolean;

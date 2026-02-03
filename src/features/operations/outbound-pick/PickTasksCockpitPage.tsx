@@ -1,8 +1,15 @@
 // src/features/operations/outbound-pick/PickTasksCockpitPage.tsx
 //
-// 拣货任务 Cockpit（订单视角入口版）
-// - 左：订单列表 + 下方订单详情（像入库页）
-// - 右：创建拣货任务（必须选仓库）→ 批次与拣货 → 提交出库 → 提交后链路
+// 拣货任务 Cockpit（打印 → 扫码 → 核对/出库 收敛版）
+// - 左：订单列表（参考入口）
+// - 右：三段流水线：
+//   ① 打印订单（显示 req_qty 订单要求，打印带订单确认码）
+//   ② 扫码拣货（FEFO 批次 + 扫码写任务）
+//   ③ 扫订单确认码核对 & 提交出库（commit）+ 提交后链路
+//
+// 裁决：
+// - 右侧不再承载“创建拣货任务”入口
+// - 右侧始终围绕“打印出来那张订单单据”同步展示
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -20,14 +27,12 @@ import { OrderPickSidebar } from "./OrderPickSidebar";
 import { usePickTasksCockpitController } from "./usePickTasksCockpitController";
 import type { OrderSummary } from "../../orders/api";
 
-import { useActiveWarehouses } from "./orderPick/useActiveWarehouses";
-import { useCreatePickTaskFromOrder } from "./orderPick/useCreatePickTaskFromOrder";
-import { CreatePickTaskCard } from "./orderPick/CreatePickTaskCard";
-
 const PickTasksCockpitPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [printOpen, setPrintOpen] = useState(false);
+
+  // 左侧订单列表的“参考选中”（右侧只做展示同步，不负责创建任务）
   const [pickedOrder, setPickedOrder] = useState<OrderSummary | null>(null);
 
   const c = usePickTasksCockpitController({
@@ -52,48 +57,66 @@ const PickTasksCockpitPage: React.FC = () => {
     if (!c.selectedTask && printOpen) setPrintOpen(false);
   }, [c.selectedTask, printOpen]);
 
-  const wh = useActiveWarehouses({ preferredId: 1 });
-
-  const creator = useCreatePickTaskFromOrder({
-    pickedOrder,
-    selectedWarehouseId: wh.selectedWarehouseId,
-    loadTasks: c.loadTasks,
-    setSelectedTaskId: c.setSelectedTaskId,
-    loadTaskDetail: c.loadTaskDetail,
-  });
+  const pickedOrderLabel = useMemo(() => {
+    if (!pickedOrder) return "未选择（左侧仅用于参考定位）";
+    const plat = String(pickedOrder.platform ?? "").trim() || "-";
+    const shop = String(pickedOrder.shop_id ?? "").trim() || "-";
+    const ext = String(pickedOrder.ext_order_no ?? "").trim() || "-";
+    return `${plat}/${shop} · ${ext}`;
+  }, [pickedOrder]);
 
   return (
     <div className="p-6 space-y-6">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold text-slate-900">拣货</h1>
+        <div className="text-[11px] text-slate-500">
+          推荐流程：先打印订单 → 去扫码拣货 → 回来扫订单确认码核对 → 再 commit。
+        </div>
       </header>
 
       {/* 左右 1:1 平分 */}
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        {/* 左：订单列表（参考） */}
         <OrderPickSidebar onPickOrder={setPickedOrder} />
 
+        {/* 右：执行流水线 */}
         <div className="space-y-6">
-          <CreatePickTaskCard
-            pickedOrder={pickedOrder}
-            warehouses={wh.warehouses}
-            loadingWh={wh.loadingWh}
-            whError={wh.whError}
-            selectedWarehouseId={wh.selectedWarehouseId}
-            setSelectedWarehouseId={wh.setSelectedWarehouseId}
-            creatingTask={creator.creatingTask}
-            createTaskError={creator.createTaskError}
-            createdTask={creator.createdTask}
-            canCreateTask={creator.canCreateTask && !wh.loadingWh && !wh.whError}
-            onCreate={() => void creator.createTask()}
-          />
+          {/* 顶部小摘要：同步“左侧参考订单 / 当前任务” */}
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <div className="text-[11px] text-slate-500">左侧参考订单</div>
+                <div className="mt-1 font-mono text-[12px] text-slate-900">{pickedOrderLabel}</div>
+              </div>
+              <div>
+                <div className="text-[11px] text-slate-500">当前执行任务</div>
+                <div className="mt-1 font-mono text-[12px] text-slate-900">
+                  {c.selectedTask ? `#${c.selectedTask.id} · WH ${c.selectedTask.warehouse_id}` : "未选择任务"}
+                </div>
+                <div className="mt-1 text-[11px] text-slate-500">
+                  {c.selectedTask ? `ref: ${c.selectedTask.ref ?? "-"}` : "请先选择一条拣货任务。"}
+                </div>
+              </div>
+            </div>
+          </section>
 
-          {/* 卡1：任务总览 */}
+          {/* ① 打印订单（同步显示打印内容） */}
           <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-slate-800">任务总览</h2>
-              {c.loadingDetail ? (
-                <span className="text-[11px] text-slate-500">详情加载中…</span>
-              ) : null}
+              <h2 className="text-sm font-semibold text-slate-800">① 打印订单</h2>
+              <button
+                type="button"
+                className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 disabled:opacity-60"
+                onClick={() => setPrintOpen(true)}
+                disabled={!c.selectedTask}
+                title={!c.selectedTask ? "请先选择任务" : ""}
+              >
+                打印订单拣货单
+              </button>
+            </div>
+
+            <div className="text-[11px] text-slate-600">
+              打印的是<strong>订单要求（req_qty）</strong>，拣货时按纸执行；最后扫订单确认码核对后才允许出库提交。
             </div>
 
             <PickTaskDetailPanel
@@ -109,9 +132,9 @@ const PickTasksCockpitPage: React.FC = () => {
             <PickTaskDiffPanel diff={c.diff} />
           </section>
 
-          {/* 卡2：批次与拣货 */}
+          {/* ② 扫码拣货：FEFO + Scan */}
           <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-800">批次与拣货</h2>
+            <h2 className="text-sm font-semibold text-slate-800">② 扫码拣货</h2>
 
             <PickTaskFefoPanel
               detail={c.fefoDetail}
@@ -138,9 +161,9 @@ const PickTasksCockpitPage: React.FC = () => {
             />
           </section>
 
-          {/* 卡3：提交出库 */}
-          <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-800">提交出库</h2>
+          {/* ③ 核对并提交出库 */}
+          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-800">③ 核对并提交出库</h2>
 
             <PickTaskCommitPanel
               task={c.selectedTask}
@@ -151,20 +174,17 @@ const PickTasksCockpitPage: React.FC = () => {
               platform={platform}
               shopId={shopId}
               onCommit={c.handleCommit}
-              onPrint={() => setPrintOpen(true)}
             />
-          </section>
 
-          {/* 卡4：提交后链路 */}
-          <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-800">提交后链路</h2>
-
-            <PickTaskPostCommitPanel
-              traceId={c.traceId}
-              info={c.postCommitInfo}
-              loading={c.postCommitLoading}
-              error={c.postCommitError}
-            />
+            <div className="border-t border-slate-200 pt-4">
+              <div className="mb-2 text-[11px] font-semibold text-slate-700">提交后链路</div>
+              <PickTaskPostCommitPanel
+                traceId={c.traceId}
+                info={c.postCommitInfo}
+                loading={c.postCommitLoading}
+                error={c.postCommitError}
+              />
+            </div>
           </section>
         </div>
       </div>

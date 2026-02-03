@@ -7,6 +7,20 @@ import { parseScanBarcode } from "../../scan/barcodeParser";
 
 import { scanPickTask, type PickTask } from "../pickTasksApi";
 import type { ApiErrorShape, ScanResponseExtended } from "../types_cockpit";
+import type { ItemBasic } from "../../../../master-data/itemsApi";
+
+const NO_BATCH_CODE = "NOEXP";
+
+function isBatchRequired(meta: ItemBasic | null): boolean {
+  if (!meta) return false;
+
+  // 优先使用后端派生字段 requires_batch（若存在）
+  const maybe = meta as unknown as { requires_batch?: unknown; has_shelf_life?: unknown };
+  if (typeof maybe.requires_batch === "boolean") return maybe.requires_batch;
+
+  // 兜底：以 has_shelf_life 推断（与你后端 item_service 的派生逻辑一致）
+  return maybe.has_shelf_life === true;
+}
 
 export function useCockpitScan(args: {
   selectedTask: PickTask | null;
@@ -14,7 +28,7 @@ export function useCockpitScan(args: {
   scanBatchOverride: string;
   setScanBatchOverride: (v: string) => void;
 
-  activeItemMeta: unknown | null;
+  activeItemMeta: ItemBasic | null;
 
   setActiveItemId: (id: number | null) => void;
   loadTaskDetail: (taskId: number) => Promise<void>;
@@ -25,6 +39,7 @@ export function useCockpitScan(args: {
     selectedTask,
     scanBatchOverride,
     setScanBatchOverride,
+    activeItemMeta,
     setActiveItemId,
     loadTaskDetail,
     navigateToBarcodeBind,
@@ -38,7 +53,7 @@ export function useCockpitScan(args: {
 
   const [scanPreview, setScanPreview] = useState<{
     item_id: number;
-    batch_code: string;
+    batch_code: string | null;
     qty: number;
   } | null>(null);
 
@@ -66,7 +81,7 @@ export function useCockpitScan(args: {
     let currentItemId: number | null = null;
 
     try {
-      // 1）本地 parse 只用来拿候选 qty + 批次，不再负责 item_id
+      // 1）本地 parse：只用来拿候选 qty + 批次（若条码带批次）
       const parsedLocal = parseScanBarcode(raw);
 
       const qtyCandidateFromBarcode = parsedLocal.qty;
@@ -77,9 +92,9 @@ export function useCockpitScan(args: {
           ? qtyCandidateFromBarcode
           : 1;
 
-      const parsedBatch = parsedLocal.batch_code ?? "";
+      const parsedBatch = (parsedLocal.batch_code ?? "").trim();
       const overrideBatch = scanBatchOverride.trim();
-      const finalBatch = parsedBatch || overrideBatch;
+      let finalBatch = (parsedBatch || overrideBatch).trim();
 
       // 2）调用 /scan(mode=pick, probe=true)，让后端根据条码主数据解析 item_id
       const probeReq: ScanRequest = {
@@ -104,13 +119,6 @@ export function useCockpitScan(args: {
       const itemId = (extended as ScanResponseExtended).item_id ?? 0;
       currentItemId = itemId;
 
-      // 预览信息（在 UI 显示）
-      setScanPreview({
-        item_id: itemId || 0,
-        batch_code: finalBatch,
-        qty: effectiveQty,
-      });
-
       // 3）根据后端解析结果判断是否可继续
       if (!itemId || itemId <= 0) {
         const msg = `条码 ${raw} 未能解析出有效商品，请在条码管理中完成绑定后再试。`;
@@ -119,16 +127,32 @@ export function useCockpitScan(args: {
         return;
       }
 
-      if (!finalBatch) {
-        throw new Error(
-          "批次不能为空：条码本身不带批次时，必须在下方输入框或通过 FEFO 卡片选择批次。",
-        );
-      }
-
       // 多 item 联动：扫码哪个 item，就把 activeItemId 切换到哪个
       setActiveItemId(itemId);
 
-      // 4）写入任务（不扣库存）
+      // 4）批次策略（人机协同裁决）
+      const batchRequired = isBatchRequired(activeItemMeta);
+
+      if (batchRequired) {
+        // 批次受控：必须由条码或人工输入提供
+        if (!finalBatch) {
+          throw new Error("该商品为批次受控：条码不带批次时，必须在下方输入批次号后再扫码。");
+        }
+      } else {
+        // 非批次受控：不要求操作员录批次；内部落到“无批次桶”
+        if (!finalBatch) {
+          finalBatch = NO_BATCH_CODE;
+        }
+      }
+
+      // 预览信息（在 UI 显示）
+      setScanPreview({
+        item_id: itemId || 0,
+        batch_code: finalBatch || null,
+        qty: effectiveQty,
+      });
+
+      // 5）写入任务（不扣库存）
       await scanPickTask(selectedTask.id, {
         item_id: itemId,
         qty: effectiveQty,

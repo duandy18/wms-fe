@@ -1,7 +1,7 @@
 // src/features/dev/pick-tasks/DevPickTasksCommitCard.tsx
 
 import React from "react";
-import type { CommitFormState } from "../DevPickTasksPanel";
+import type { CommitFormState } from "./types";
 
 interface Props {
   commitForm: CommitFormState;
@@ -25,22 +25,15 @@ export const DevPickTasksCommitCard: React.FC<Props> = ({
   onJumpTrace,
 }) => {
   return (
-    <form
-      onSubmit={onSubmitCommit}
-      className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs"
-    >
-      <h3 className="text-xs font-semibold text-slate-700">
-        commit 出库（扣库存 + outbound）
-      </h3>
+    <form onSubmit={onSubmitCommit} className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+      <h3 className="text-xs font-semibold text-slate-700">commit 出库（扣库存 + outbound）</h3>
       <div className="grid gap-2 md:grid-cols-2">
         <div className="space-y-1">
           <label className="text-[11px] text-slate-600">platform</label>
           <input
             className="w-full rounded border border-slate-300 px-2 py-1 text-xs font-mono"
             value={commitForm.platform}
-            onChange={(e) =>
-              onChangeCommitForm({ platform: e.target.value })
-            }
+            onChange={(e) => onChangeCommitForm({ platform: e.target.value })}
           />
         </div>
         <div className="space-y-1">
@@ -48,22 +41,16 @@ export const DevPickTasksCommitCard: React.FC<Props> = ({
           <input
             className="w-full rounded border border-slate-300 px-2 py-1 text-xs font-mono"
             value={commitForm.shopId}
-            onChange={(e) =>
-              onChangeCommitForm({ shopId: e.target.value })
-            }
+            onChange={(e) => onChangeCommitForm({ shopId: e.target.value })}
           />
         </div>
       </div>
       <div className="space-y-1">
-        <label className="text-[11px] text-slate-600">
-          trace_id（可选，不填则后端用 ref）
-        </label>
+        <label className="text-[11px] text-slate-600">trace_id（可选，不填则后端用 ref）</label>
         <input
           className="w-full rounded border border-slate-300 px-2 py-1 text-[11px] font-mono"
           value={commitForm.traceId}
-          onChange={(e) =>
-            onChangeCommitForm({ traceId: e.target.value })
-          }
+          onChange={(e) => onChangeCommitForm({ traceId: e.target.value })}
           placeholder="默认使用订单 trace_id，留空则后端用 ref 兜底"
         />
       </div>
@@ -71,9 +58,7 @@ export const DevPickTasksCommitCard: React.FC<Props> = ({
         <input
           type="checkbox"
           checked={commitForm.allowDiff}
-          onChange={(e) =>
-            onChangeCommitForm({ allowDiff: e.target.checked })
-          }
+          onChange={(e) => onChangeCommitForm({ allowDiff: e.target.checked })}
         />
         允许存在 OVER/UNDER 仍然 commit（allow_diff=true）
       </label>
@@ -96,14 +81,8 @@ export const DevPickTasksCommitCard: React.FC<Props> = ({
         </button>
       </div>
 
-      {commitLoading && (
-        <div className="mt-1 text-[11px] text-slate-500">提交中…</div>
-      )}
-      {!commitLoading && commitSuccess && (
-        <div className="mt-1 text-[11px] text-emerald-700">
-          最近一次 commit 出库成功。
-        </div>
-      )}
+      {commitLoading && <div className="mt-1 text-[11px] text-slate-500">提交中…</div>}
+      {!commitLoading && commitSuccess && <div className="mt-1 text-[11px] text-emerald-700">最近一次 commit 出库成功。</div>}
     </form>
   );
 };

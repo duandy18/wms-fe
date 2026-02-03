@@ -8,7 +8,6 @@ import {
   fetchTraceById,
   ingestDemoOrder,
   ensureOrderWarehouse,
-  reserveOrder,
   pickOrder,
   shipOrder,
   confirmShipViaDev,
@@ -124,10 +123,8 @@ export function useDevOrdersController(props: Props) {
     getErrorMessage,
     setForm,
 
-    // 注入 API（composition root）
     ingestDemoOrder,
     ensureOrderWarehouse,
-    reserveOrder,
     pickOrder,
     shipOrder,
     confirmShipViaDev,
@@ -145,7 +142,6 @@ export function useDevOrdersController(props: Props) {
     setActiveTab,
     loadOrderAndTrace,
     refetchLifecycle: () => lifecycle.refetch(),
-    reserveOrder,
     pickOrder,
     shipOrder,
     confirmShipViaDev,

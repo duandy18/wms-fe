@@ -40,13 +40,12 @@ export function useScenarios(args: {
 
   // 控制器提供的动作/工具（全部通过注入调用）
   setError: (msg: string | null) => void;
-  setActionLoading: (v: null | "reserve" | "pick" | "ship" | "full") => void;
+  setActionLoading: (v: null | "pick" | "ship" | "full") => void;
   setActiveTab: (t: "flow" | "scenarios" | "tools") => void;
 
   loadOrderAndTrace: () => Promise<void>;
   refetchLifecycle: () => void;
 
-  reserveOrder: (p: { platform: string; shopId: string; extOrderNo: string; lines: LinesPayload }) => Promise<unknown>;
   pickOrder: (p: {
     platform: string;
     shopId: string;
@@ -75,7 +74,6 @@ export function useScenarios(args: {
     setActiveTab,
     loadOrderAndTrace,
     refetchLifecycle,
-    reserveOrder,
     pickOrder,
     shipOrder,
     confirmShipViaDev,
@@ -93,90 +91,6 @@ export function useScenarios(args: {
     await handleFullFlow();
   }
 
-  async function runScenarioUnderPick() {
-    const facts = ensureFacts();
-    if (!order || !facts) {
-      setError("请先加载一笔订单，并确保有行事实。");
-      return;
-    }
-
-    setActionLoading("full");
-    setError(null);
-
-    try {
-      // 1) 按下单数量做预占
-      const reserveLines: LinesPayload = facts.map((f) => ({
-        item_id: f.item_id,
-        qty: Math.max(1, f.qty_ordered || 1),
-      }));
-
-      await reserveOrder({
-        platform: order.platform,
-        shopId: order.shop_id,
-        extOrderNo: order.ext_order_no,
-        lines: reserveLines,
-      });
-
-      // 2) 只拣一半（至少 1）
-      const pickLines: LinesPayload = facts.map((f) => {
-        const ordered = Math.max(1, f.qty_ordered || 1);
-        const pickQty = Math.max(1, Math.floor(ordered / 2));
-        return { item_id: f.item_id, qty: pickQty };
-      });
-
-      await pickOrder({
-        platform: order.platform,
-        shopId: order.shop_id,
-        extOrderNo: order.ext_order_no,
-        warehouse_id: order.warehouse_id ?? 1,
-        batch_code: "AUTO",
-        lines: pickLines,
-      });
-
-      await loadOrderAndTrace();
-      refetchLifecycle();
-      setActiveTab("flow");
-    } catch (err: unknown) {
-      setError(getErrorMessage(err) ?? "拣货不足场景执行失败");
-    } finally {
-      setActionLoading(null);
-    }
-  }
-
-  async function runScenarioOversell() {
-    const facts = ensureFacts();
-    if (!order || !facts) {
-      setError("请先加载一笔订单，并确保有行事实。");
-      return;
-    }
-
-    setActionLoading("reserve");
-    setError(null);
-
-    try {
-      // 预占为下单数量的两倍
-      const lines: LinesPayload = facts.map((f) => ({
-        item_id: f.item_id,
-        qty: Math.max(1, (f.qty_ordered || 1) * 2),
-      }));
-
-      await reserveOrder({
-        platform: order.platform,
-        shopId: order.shop_id,
-        extOrderNo: order.ext_order_no,
-        lines,
-      });
-
-      await loadOrderAndTrace();
-      refetchLifecycle();
-      setActiveTab("flow");
-    } catch (err: unknown) {
-      setError(getErrorMessage(err) ?? "预占超量场景执行失败");
-    } finally {
-      setActionLoading(null);
-    }
-  }
-
   async function runScenarioReturnFlow() {
     const facts = ensureFacts();
     if (!order || !facts) {
@@ -190,14 +104,12 @@ export function useScenarios(args: {
     try {
       const totalShipped = facts.reduce((acc, f) => acc + (f.qty_shipped || 0), 0) ?? 0;
 
-      // 1) 若未发货，先走一遍履约（reserve → pick → ship → confirm）
+      // 1) 若未发货，先走一遍履约（pick → ship → confirm）
       if (totalShipped <= 0) {
         const lines: LinesPayload = facts.map((f) => ({
           item_id: f.item_id,
           qty: Math.max(1, f.qty_ordered || 1),
         }));
-
-        await reserveOrder({ platform: order.platform, shopId: order.shop_id, extOrderNo: order.ext_order_no, lines });
 
         await pickOrder({
           platform: order.platform,
@@ -254,15 +166,15 @@ export function useScenarios(args: {
   }
 
   async function handleScenario(s: ScenarioType) {
+    // 历史场景已下线：不再提供相关按钮，但为了兼容旧 key，这里给出明确提示
+    if (s === "under_pick" || s === "oversell") {
+      setError("该调试场景已下线（旧流程已清退）。");
+      return;
+    }
+
     switch (s) {
       case "normal_fullflow":
         await runScenarioNormalFullflow();
-        return;
-      case "under_pick":
-        await runScenarioUnderPick();
-        return;
-      case "oversell":
-        await runScenarioOversell();
         return;
       case "return_flow":
         await runScenarioReturnFlow();

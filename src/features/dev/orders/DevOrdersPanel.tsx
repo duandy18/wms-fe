@@ -10,7 +10,11 @@ import { DevOrderTraceCard } from "./DevOrderTraceCard";
 
 import { useDevOrdersController } from "./controller";
 
-export type ScenarioType = "normal_fullflow" | "under_pick" | "oversell" | "return_flow";
+export type ScenarioType =
+  | "normal_fullflow"
+  | "under_pick"
+  | "oversell"
+  | "return_flow";
 
 export type DevOrderContext = {
   platform: string;
@@ -87,7 +91,9 @@ export const DevOrdersPanel: React.FC<Props> = (props) => {
 
         {/* 错误 */}
         {c.error && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{c.error}</div>
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {c.error}
+          </div>
         )}
 
         {/* 主体内容 */}
@@ -116,7 +122,6 @@ export const DevOrdersPanel: React.FC<Props> = (props) => {
                 reconcileResult={c.reconcileResult}
                 creatingRma={c.creatingRma}
                 handleCreateRmaTask={() => void c.handleCreateRmaTask()}
-                hasReserved={c.lifecycle.hasReserved}
                 hasShipped={c.lifecycle.hasShipped}
               />
             )}
@@ -138,10 +143,16 @@ export const DevOrdersPanel: React.FC<Props> = (props) => {
         {/* Timeline */}
         {c.traceEvents.length > 0 && (
           <div className="space-y-3 rounded-md border bg-white p-4 shadow-sm">
-            <h2 className="text-xs font-semibold text-slate-800">全链路时间线（Lifecycle + Trace）</h2>
+            <h2 className="text-xs font-semibold text-slate-800">
+              全链路时间线（Lifecycle + Trace）
+            </h2>
             <DevOrderTraceCard
               events={c.traceEvents}
-              focusRef={c.order ? `ORD:${c.order.platform}:${c.order.shop_id}:${c.order.ext_order_no}` : null}
+              focusRef={
+                c.order
+                  ? `ORD:${c.order.platform}:${c.order.shop_id}:${c.order.ext_order_no}`
+                  : null
+              }
             />
           </div>
         )}

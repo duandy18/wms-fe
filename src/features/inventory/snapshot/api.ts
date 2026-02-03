@@ -45,7 +45,6 @@ export interface ItemSlice {
   production_date: string | null;
   expiry_date: string | null;
   on_hand_qty: number;
-  reserved_qty: number;
   available_qty: number;
   near_expiry: boolean;
   is_top: boolean;
@@ -56,7 +55,6 @@ export interface ItemDetailResponse {
   item_name: string;
   totals: {
     on_hand_qty: number;
-    reserved_qty: number;
     available_qty: number;
   };
   slices: ItemSlice[];
@@ -70,7 +68,9 @@ export async function fetchInventorySnapshot(q: string, offset = 0, limit = 20) 
   if (q) params.set("q", q);
   params.set("offset", String(offset));
   params.set("limit", String(limit));
-  return apiGet<InventorySnapshotResponse>(`/snapshot/inventory?${params.toString()}`);
+  return apiGet<InventorySnapshotResponse>(
+    `/snapshot/inventory?${params.toString()}`,
+  );
 }
 
 // 单品详情（Drawer）

@@ -24,21 +24,6 @@ export function styleTraceEvent(ev: TraceEvent) {
     label = "订单";
   }
 
-  // 预占
-  if (source === "reservation") {
-    badgeClassName =
-      "inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[11px]";
-    icon = "📌";
-    label = "预占";
-  }
-
-  if (source === "reservation_consumed") {
-    badgeClassName =
-      "inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 text-[11px]";
-    icon = "✅";
-    label = "预占消耗";
-  }
-
   // 出库
   if (source === "outbound") {
     badgeClassName =
@@ -114,19 +99,11 @@ export function explainTraceEvent(ev: TraceEvent): string {
     (ev.raw?.warehouse_id as number | undefined) ??
     (ev.warehouse_id as number | undefined) ??
     null;
-  const routeMode =
-    (ev.raw?.route_mode as string | undefined) || "";
-  const considered =
-    (ev.raw?.considered as number[] | undefined) || [];
+  const routeMode = (ev.raw?.route_mode as string | undefined) || "";
+  const considered = (ev.raw?.considered as number[] | undefined) || [];
 
   if (source === "order") {
     return base || "订单事件";
-  }
-  if (source === "reservation") {
-    return base || "预占创建 / 更新";
-  }
-  if (source === "reservation_consumed") {
-    return base || "预占被出库消耗";
   }
   if (source === "outbound") {
     return base || "出库提交 / 出库状态变化";
@@ -147,9 +124,7 @@ export function explainTraceEvent(ev: TraceEvent): string {
     if (eventName === "WAREHOUSE_ROUTED") {
       const whText = wh != null ? String(wh) : "?";
       const mode = routeMode || "FALLBACK";
-      const consideredText = considered.length
-        ? considered.join(",")
-        : "无";
+      const consideredText = considered.length ? considered.join(",") : "无";
 
       return (
         base ||

@@ -60,10 +60,8 @@ export function Topbar() {
       { prefix: "/purchase-orders/reports", value: { section: "入库", page: "采购统计" } },
 
       // 订单出库
-      { prefix: "/orders", value: { section: "订单出库", page: "订单选仓" } },
       { prefix: "/outbound/pick-tasks", value: { section: "订单出库", page: "拣货" } },
       { prefix: "/outbound/ship", value: { section: "订单出库", page: "发货" } },
-      { prefix: "/orders/stats", value: { section: "订单出库", page: "订单统计" } },
       { prefix: "/outbound/dashboard", value: { section: "订单出库", page: "出库看板" } },
       { prefix: "/shipping/reports", value: { section: "订单出库", page: "发货成本报表" } },
       { prefix: "/shipping/record", value: { section: "订单出库", page: "发货账本详情" } },
