@@ -29,8 +29,8 @@ export const DevOrderFlowPanel: React.FC<{
   ensuringWarehouse: boolean;
   handleEnsureWarehouse: () => void;
 
-  actionLoading: null | "reserve" | "pick" | "ship" | "full";
-  handleAction: (t: "reserve" | "pick" | "ship") => void;
+  actionLoading: null | "pick" | "ship" | "full";
+  handleAction: (t: "pick" | "ship") => void;
   handleFullFlow: () => void;
 
   reconcileLoading: boolean;
@@ -40,7 +40,6 @@ export const DevOrderFlowPanel: React.FC<{
   creatingRma: boolean;
   handleCreateRmaTask: () => void;
 
-  hasReserved: boolean;
   hasShipped: boolean;
 }> = (props) => {
   const {
@@ -63,7 +62,6 @@ export const DevOrderFlowPanel: React.FC<{
     reconcileResult,
     creatingRma,
     handleCreateRmaTask,
-    hasReserved,
     hasShipped,
   } = props;
 
@@ -111,7 +109,6 @@ export const DevOrderFlowPanel: React.FC<{
         actionLoading={actionLoading}
         onAction={handleAction}
         onFullFlow={handleFullFlow}
-        hasReserved={hasReserved}
         hasShipped={hasShipped}
       />
 

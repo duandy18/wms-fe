@@ -1,7 +1,7 @@
 // src/features/dev/pick-tasks/DevPickTasksScanCard.tsx
 
 import React from "react";
-import type { ScanFormState } from "../DevPickTasksPanel";
+import type { ScanFormState } from "./types";
 
 interface Props {
   scanForm: ScanFormState;
@@ -21,13 +21,8 @@ export const DevPickTasksScanCard: React.FC<Props> = ({
   onSubmitScan,
 }) => {
   return (
-    <form
-      onSubmit={onSubmitScan}
-      className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs"
-    >
-      <h3 className="text-xs font-semibold text-slate-700">
-        扫码拣货（record_scan，仅写任务）
-      </h3>
+    <form onSubmit={onSubmitScan} className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+      <h3 className="text-xs font-semibold text-slate-700">扫码拣货（record_scan，仅写任务）</h3>
       <div className="grid gap-2 md:grid-cols-3">
         <div className="space-y-1">
           <label className="text-[11px] text-slate-600">item_id</label>
@@ -48,15 +43,11 @@ export const DevPickTasksScanCard: React.FC<Props> = ({
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[11px] text-slate-600">
-            batch_code（可为空）
-          </label>
+          <label className="text-[11px] text-slate-600">batch_code（可为空）</label>
           <input
             className="w-full rounded border border-slate-300 px-2 py-1 text-xs font-mono"
             value={scanForm.batchCode}
-            onChange={(e) =>
-              onChangeScanForm({ batchCode: e.target.value })
-            }
+            onChange={(e) => onChangeScanForm({ batchCode: e.target.value })}
             placeholder="例如 BATCH-TEST-001"
           />
         </div>
@@ -69,14 +60,8 @@ export const DevPickTasksScanCard: React.FC<Props> = ({
         {scanLoading ? "写入中…" : "写入拣货任务（不扣库存）"}
       </button>
 
-      {scanLoading && (
-        <div className="mt-1 text-[11px] text-slate-500">处理中…</div>
-      )}
-      {!scanLoading && scanSuccess && (
-        <div className="mt-1 text-[11px] text-emerald-700">
-          最近一次拣货写入成功。
-        </div>
-      )}
+      {scanLoading && <div className="mt-1 text-[11px] text-slate-500">处理中…</div>}
+      {!scanLoading && scanSuccess && <div className="mt-1 text-[11px] text-emerald-700">最近一次拣货写入成功。</div>}
     </form>
   );
 };

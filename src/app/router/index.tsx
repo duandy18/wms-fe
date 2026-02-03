@@ -203,24 +203,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 订单管理：只读权限 orders.read */}
-          <Route
-            path="orders"
-            element={
-              <RequirePermission permission="orders.read">
-                <P.OrdersPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="orders/stats"
-            element={
-              <RequirePermission permission="orders.read">
-                <P.OrdersStatsPage />
-              </RequirePermission>
-            }
-          />
-
           {/* ✅ 权限与账号：三个子页面 */}
           <Route
             path="iam/users"

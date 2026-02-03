@@ -39,9 +39,7 @@ export function useCockpitCommit(args: {
     setPostCommitError(null);
     try {
       // 1) Trace 事件
-      const traceResp = await apiGet<{ events: TraceEvent[] }>(
-        `/debug/trace/${encodeURIComponent(trace_id)}`,
-      );
+      const traceResp = await apiGet<{ events: TraceEvent[] }>(`/debug/trace/${encodeURIComponent(trace_id)}`);
       const traceEvents = traceResp?.events ?? [];
 
       // 2) Ledger 明细
@@ -83,8 +81,14 @@ export function useCockpitCommit(args: {
   }
 
   // ---------------- commit 出库 ----------------
-  const handleCommit = async () => {
+  const handleCommit = async (handoffCode: string) => {
     if (!selectedTask) return;
+
+    const code = String(handoffCode || "").trim();
+    if (!code) {
+      setCommitError("订单确认码不能为空");
+      return;
+    }
 
     setCommitError(null);
     setCommitBusy(true);
@@ -103,6 +107,7 @@ export function useCockpitCommit(args: {
       await commitPickTask(selectedTask.id, {
         platform,
         shop_id,
+        handoff_code: code,
         trace_id: finalTraceId,
         allow_diff: allowDiff,
       });

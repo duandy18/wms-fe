@@ -54,6 +54,7 @@ export interface PickTaskScanPayload {
 export interface PickTaskCommitPayload {
   platform: string;
   shop_id: string;
+  handoff_code: string;
   trace_id?: string | null;
   allow_diff: boolean;
 }
@@ -94,27 +95,16 @@ export async function getPickTask(taskId: number): Promise<PickTask> {
   return apiGet<PickTask>(`/pick-tasks/${taskId}`);
 }
 
-export async function getPickTaskDiff(
-  taskId: number,
-): Promise<PickTaskDiffSummary> {
+export async function getPickTaskDiff(taskId: number): Promise<PickTaskDiffSummary> {
   return apiGet<PickTaskDiffSummary>(`/pick-tasks/${taskId}/diff`);
 }
 
-export async function scanPickTask(
-  taskId: number,
-  payload: PickTaskScanPayload,
-): Promise<PickTask> {
+export async function scanPickTask(taskId: number, payload: PickTaskScanPayload): Promise<PickTask> {
   return apiPost<PickTask>(`/pick-tasks/${taskId}/scan`, payload);
 }
 
-export async function commitPickTask(
-  taskId: number,
-  payload: PickTaskCommitPayload,
-): Promise<PickTaskCommitResult> {
-  return apiPost<PickTaskCommitResult>(
-    `/pick-tasks/${taskId}/commit`,
-    payload,
-  );
+export async function commitPickTask(taskId: number, payload: PickTaskCommitPayload): Promise<PickTaskCommitResult> {
+  return apiPost<PickTaskCommitResult>(`/pick-tasks/${taskId}/commit`, payload);
 }
 
 // 从订单创建拣货任务（用于 Cockpit & DevConsole PickTask 调试）
@@ -124,9 +114,6 @@ export interface PickTaskCreateFromOrderPayload {
   priority?: number;
 }
 
-export async function createPickTaskFromOrder(
-  orderId: number,
-  payload: PickTaskCreateFromOrderPayload,
-): Promise<PickTask> {
+export async function createPickTaskFromOrder(orderId: number, payload: PickTaskCreateFromOrderPayload): Promise<PickTask> {
   return apiPost<PickTask>(`/pick-tasks/from-order/${orderId}`, payload);
 }

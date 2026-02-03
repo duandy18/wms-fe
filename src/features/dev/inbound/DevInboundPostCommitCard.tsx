@@ -46,24 +46,16 @@ const formatTsValue = (ts: string | Date | null | undefined): string => {
 export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
   const info = c.postCommit;
 
-  const traceEvents: TraceEventView[] = (info?.traceEvents ??
-    []) as TraceEventView[];
-  const ledgerRows: LedgerRowView[] = (info?.ledgerRows ??
-    []) as LedgerRowView[];
+  const traceEvents: TraceEventView[] = (info?.traceEvents ?? []) as TraceEventView[];
+  const ledgerRows: LedgerRowView[] = (info?.ledgerRows ?? []) as LedgerRowView[];
   const snapshot = (info?.snapshot ?? null) as SnapshotRowView | null;
 
   const slices: SnapshotSliceView[] = Array.isArray(snapshot?.slices)
-    ? [...(snapshot.slices as SnapshotSliceView[])].sort(
-        (a, b) => {
-          const da = a.expire_at
-            ? Date.parse(a.expire_at)
-            : Number.POSITIVE_INFINITY;
-          const db = b.expire_at
-            ? Date.parse(b.expire_at)
-            : Number.POSITIVE_INFINITY;
-          return da - db;
-        },
-      )
+    ? [...(snapshot.slices as SnapshotSliceView[])].sort((a, b) => {
+        const da = a.expire_at ? Date.parse(a.expire_at) : Number.POSITIVE_INFINITY;
+        const db = b.expire_at ? Date.parse(b.expire_at) : Number.POSITIVE_INFINITY;
+        return da - db;
+      })
     : [];
 
   return (
@@ -114,36 +106,19 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                   </thead>
                   <tbody>
                     {traceEvents.slice(-20).map((ev, idx) => {
-                      const tsRaw =
-                        ev.ts ??
-                        ev.timestamp ??
-                        ev.created_at ??
-                        ev.time ??
-                        null;
+                      const tsRaw = ev.ts ?? ev.timestamp ?? ev.created_at ?? ev.time ?? null;
                       const ts = formatTsValue(tsRaw);
                       const source = ev.source ?? ev.module ?? ev.service ?? "-";
-                      const kind =
-                        ev.kind ?? ev.event_type ?? ev.type ?? "UNKNOWN";
+                      const kind = ev.kind ?? ev.event_type ?? ev.type ?? "UNKNOWN";
                       const summary = ev.summary ?? ev.message ?? "";
 
                       return (
-                        <tr
-                          key={idx}
-                          className="border-t border-slate-100 align-top"
-                        >
-                          <td className="whitespace-nowrap px-2 py-1">
-                            {ts}
-                          </td>
-                          <td className="whitespace-nowrap px-2 py-1">
-                            {source}
-                          </td>
-                          <td className="whitespace-nowrap px-2 py-1">
-                            {kind}
-                          </td>
+                        <tr key={idx} className="border-t border-slate-100 align-top">
+                          <td className="whitespace-nowrap px-2 py-1">{ts}</td>
+                          <td className="whitespace-nowrap px-2 py-1">{source}</td>
+                          <td className="whitespace-nowrap px-2 py-1">{kind}</td>
                           <td className="px-2 py-1">
-                            {summary || (
-                              <span className="text-slate-400">无摘要</span>
-                            )}
+                            {summary || <span className="text-slate-400">无摘要</span>}
                           </td>
                         </tr>
                       );
@@ -183,31 +158,18 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                       const ts = formatTsValue(tsRaw);
 
                       return (
-                        <tr
-                          key={r.id}
-                          className="border-t border-slate-100 align-top"
-                        >
-                          <td className="whitespace-nowrap px-2 py-1">
-                            {ts}
-                          </td>
+                        <tr key={r.id} className="border-t border-slate-100 align-top">
+                          <td className="whitespace-nowrap px-2 py-1">{ts}</td>
                           <td className="px-2 py-1 text-right font-mono">
                             {r.warehouse_id ?? "-"}
                           </td>
                           <td className="px-2 py-1 text-right font-mono">
                             {r.item_id ?? "-"}
                           </td>
-                          <td className="px-2 py-1 font-mono">
-                            {r.batch_code ?? "-"}
-                          </td>
-                          <td className="px-2 py-1 text-right font-mono">
-                            {r.delta}
-                          </td>
-                          <td className="px-2 py-1 text-right font-mono">
-                            {r.after_qty}
-                          </td>
-                          <td className="px-2 py-1">
-                            {r.reason ?? "-"}
-                          </td>
+                          <td className="px-2 py-1 font-mono">{r.batch_code ?? "-"}</td>
+                          <td className="px-2 py-1 text-right font-mono">{r.delta}</td>
+                          <td className="px-2 py-1 text-right font-mono">{r.after_qty}</td>
+                          <td className="px-2 py-1">{r.reason ?? "-"}</td>
                         </tr>
                       );
                     })}
@@ -233,14 +195,11 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                   <span className="font-mono">
                     #{snapshot.item_id} {snapshot.item_name ?? ""}
                   </span>
-                  ，总库存 on_hand=
-                  {snapshot.totals.on_hand_qty}，可用=
+                  ，总库存 on_hand={snapshot.totals.on_hand_qty}，可用=
                   {snapshot.totals.available_qty}
                 </div>
                 {slices.length === 0 ? (
-                  <div className="text-xs text-slate-500">
-                    未查询到任何批次切片。
-                  </div>
+                  <div className="text-xs text-slate-500">未查询到任何批次切片。</div>
                 ) : (
                   <div className="max-h-40 overflow-y-auto rounded border border-slate-100 bg-slate-50">
                     <table className="min-w-full border-collapse text-[11px]">
@@ -251,34 +210,19 @@ export const DevInboundPostCommitCard: React.FC<Props> = ({ c }) => {
                           <th className="px-2 py-1 text-left">批次</th>
                           <th className="px-2 py-1 text-left">expire</th>
                           <th className="px-2 py-1 text-right">on_hand</th>
-                          <th className="px-2 py-1 text-right">reserved</th>
-                          <th className="px-2 py-1 text-right">
-                            available
-                          </th>
+                          <th className="px-2 py-1 text-right">available</th>
                         </tr>
                       </thead>
                       <tbody>
                         {slices.map((s, idx) => (
-                          <tr
-                            key={idx}
-                            className="border-t border-slate-100 align-top"
-                          >
+                          <tr key={idx} className="border-t border-slate-100 align-top">
                             <td className="px-2 py-1">
                               {s.warehouse_name ?? s.warehouse_id ?? "-"}
                             </td>
                             <td className="px-2 py-1">{s.pool ?? "-"}</td>
-                            <td className="px-2 py-1 font-mono">
-                              {s.batch_code ?? "-"}
-                            </td>
-                            <td className="px-2 py-1">
-                              {s.expire_at ?? "-"}
-                            </td>
-                            <td className="px-2 py-1 text-right font-mono">
-                              {s.on_hand_qty}
-                            </td>
-                            <td className="px-2 py-1 text-right font-mono">
-                              {s.reserved_qty}
-                            </td>
+                            <td className="px-2 py-1 font-mono">{s.batch_code ?? "-"}</td>
+                            <td className="px-2 py-1">{s.expire_at ?? "-"}</td>
+                            <td className="px-2 py-1 text-right font-mono">{s.on_hand_qty}</td>
                             <td className="px-2 py-1 text-right font-mono">
                               {s.available_qty}
                             </td>

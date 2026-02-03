@@ -99,10 +99,6 @@ export const ReceiveTaskDetailPage = lazy(() => import("../../features/receive-t
 // 退货任务详情
 export const ReturnTaskDetailPage = lazy(() => import("../../features/return-tasks/ReturnTaskDetailPage"));
 
-// 订单管理
-export const OrdersPage = lazy(() => import("../../features/orders/OrdersPage"));
-export const OrdersStatsPage = lazy(() => import("../../features/orders/OrdersStatsPage"));
-
 // 财务分析
 export const FinanceOverviewPage = lazy(() => import("../../features/finance/FinanceOverviewPage"));
 export const FinanceShopPage = lazy(() => import("../../features/finance/FinanceShopPage"));

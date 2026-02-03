@@ -3,7 +3,7 @@
 import type { DevOrderInfo, DevOrderItemFact, DevOrderReconcileResult, TraceEvent } from "../api/index";
 
 export type DevOrdersTab = "flow" | "scenarios" | "tools";
-export type ActionLoading = null | "reserve" | "pick" | "ship" | "full";
+export type ActionLoading = null | "pick" | "ship" | "full";
 
 export type FormState = {
   platform: string;

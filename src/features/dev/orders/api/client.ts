@@ -83,17 +83,6 @@ export async function reconcileOrdersRange(payload: {
   return apiPost<DevReconcileRangeResult>("/dev/orders/reconcile-range", payload);
 }
 
-// v2 reserve/pick/ship
-export async function reserveOrder(params: {
-  platform: string;
-  shopId: string;
-  extOrderNo: string;
-  lines: { item_id: number; qty: number }[];
-}) {
-  const { platform, shopId, extOrderNo, lines } = params;
-  return apiPost(`/orders/${platform}/${shopId}/${extOrderNo}/reserve`, { lines });
-}
-
 export async function pickOrder(params: {
   platform: string;
   shopId: string;

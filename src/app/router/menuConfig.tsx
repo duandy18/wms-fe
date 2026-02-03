@@ -41,10 +41,8 @@ export const menuSections: RouteSection[] = [
     id: "order-outbound",
     label: "订单出库",
     items: [
-      { path: "/orders", label: "订单选仓", requiredPermissions: ["orders.read"] },
       { path: "/outbound/pick-tasks", label: "拣货", requiredPermissions: ["operations.outbound"] },
       { path: "/outbound/ship", label: "发货", requiredPermissions: ["operations.outbound"] },
-      { path: "/orders/stats", label: "订单统计", requiredPermissions: ["orders.read"] },
       { path: "/outbound/dashboard", label: "出库看板", requiredPermissions: ["report.outbound"] },
       { path: "/shipping/reports", label: "发货成本报表", requiredPermissions: ["report.outbound"] },
       { path: "/shipping/record", label: "发货账本详情", requiredPermissions: ["report.outbound"] },

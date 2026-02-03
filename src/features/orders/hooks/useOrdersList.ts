@@ -60,7 +60,7 @@ export function useOrdersList(args?: { initialPlatform?: string; limit?: number 
       if (filters.shopId.trim()) params.shopId = filters.shopId.trim();
       if (filters.status.trim()) params.status = filters.status.trim();
 
-      // 时间过滤仍支持（OrdersPage 不展示查询卡，但其他地方可能会用）
+      // 时间过滤仍支持（目前主要供其他模块复用）
       if (filters.timeFrom.trim()) params.time_from = `${filters.timeFrom.trim()}T00:00:00Z`;
       if (filters.timeTo.trim()) params.time_to = `${filters.timeTo.trim()}T23:59:59Z`;
 
@@ -68,14 +68,13 @@ export function useOrdersList(args?: { initialPlatform?: string; limit?: number 
 
       const data = Array.isArray(resp.data) ? resp.data : [];
 
-      // ✅ 本页主用途：未发运订单作业台（已发运订单进入“订单统计”）
+      // ✅ 默认用途：未发运订单列表（用于作业侧消费）
       // 注意：这里是前端兜底过滤，后端不变更契约
       const notShipped = data.filter((r) => !isShippedRow(r));
 
       setRows(notShipped);
       setWarehouses(Array.isArray(resp.warehouses) ? resp.warehouses : []);
     } catch (err: unknown) {
-       
       console.error("fetchOrdersSummary failed", err);
       const msg = err instanceof Error ? err.message : "加载订单列表失败";
       setError(msg);

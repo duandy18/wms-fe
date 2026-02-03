@@ -11,13 +11,13 @@ export interface TraceEvent {
   // 事件时间（业务时间 / occurred_at）
   ts: string | Date | null;
 
-  // 事件来源：ledger / reservation / outbound / inbound / snapshot / audit ...
+  // 事件来源：ledger / outbound / inbound / snapshot / audit / event_store ...
   source: string;
 
-  // 事件类型：INBOUND / OUTBOUND / SOFT_SHIP / RESERVE_PERSIST / SNAPSHOT_RUN ...
+  // 事件类型：INBOUND / OUTBOUND / SOFT_SHIP / SNAPSHOT_RUN ...
   kind: string;
 
-  // 业务 ref：订单号 / reservation ref / snapshot job id 等
+  // 业务 ref：订单号 / snapshot job id 等
   ref?: string | null;
 
   // 链路 ID：用于跨 API / 表串联

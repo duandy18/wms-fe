@@ -3,16 +3,8 @@
 import React from "react";
 
 import type { DevOrderView } from "../orders/api/index";
-import type {
-  PickTask,
-  PickTaskDiffSummary,
-  PickTaskCommitResult,
-} from "../../operations/outbound-pick/pickTasksApi";
-import type {
-  CommitFormState,
-  ScanFormState,
-  StockBatchRow,
-} from "../DevPickTasksPanel";
+import type { PickTask, PickTaskDiffSummary, PickTaskCommitResult } from "../../operations/outbound-pick/pickTasksApi";
+import type { CommitFormState, ScanFormState, StockBatchRow } from "./types";
 
 import { DevPickTasksHeader } from "./DevPickTasksHeader";
 import { DevPickTasksContextCards } from "./DevPickTasksContextCards";
@@ -70,20 +62,16 @@ export interface DevPickTasksLayoutProps {
   commitResult: PickTaskCommitResult | null;
 }
 
-export const DevPickTasksLayout: React.FC<DevPickTasksLayoutProps> = (
-  props,
-) => {
+export const DevPickTasksLayout: React.FC<DevPickTasksLayoutProps> = (props) => {
   return (
     <section className="rounded-xl border bg-white p-0">
       {/* 顶部深色条 */}
       <div className="flex items-center justify-between rounded-t-xl bg-slate-900 px-4 py-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-50">
-            拣货任务调试（PickTask Debug）
-          </h2>
+          <h2 className="text-sm font-semibold text-slate-50">拣货任务调试（PickTask Debug）</h2>
           <p className="mt-0.5 text-[11px] text-slate-300">
-            一键生成 demo 订单 & 拣货任务 → FEFO 批次视图 → 扫码拣货（record_scan）
-            → commit 出库（扣库存 + outbound_commits_v2）→ Trace / Ledger 联动验证。
+            一键生成 demo 订单 & 拣货任务 → FEFO 批次视图 → 扫码拣货（record_scan） → commit 出库（扣库存 +
+            outbound_commits_v2）→ Trace / Ledger 联动验证。
           </p>
         </div>
         <div className="text-[11px] text-slate-300">仓库链路验证 · Dev 专用</div>
@@ -135,19 +123,14 @@ export const DevPickTasksLayout: React.FC<DevPickTasksLayoutProps> = (
             commitLoading={props.commitLoading}
             commitSuccess={props.commitSuccess}
             hasTask={!!props.task}
-            hasTrace={
-              !!(props.commitForm.traceId || props.orderView?.trace_id)
-            }
+            hasTrace={!!(props.commitForm.traceId || props.orderView?.trace_id)}
             onChangeCommitForm={props.onChangeCommitForm}
             onSubmitCommit={props.onSubmitCommit}
             onJumpTrace={props.onJumpTrace}
           />
         </div>
 
-        <DevPickTasksErrorAndResult
-          error={props.error}
-          result={props.commitResult}
-        />
+        <DevPickTasksErrorAndResult error={props.error} result={props.commitResult} />
       </div>
     </section>
   );

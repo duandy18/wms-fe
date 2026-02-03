@@ -1,14 +1,8 @@
 // src/components/snapshot/InventoryDrawer.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import type {
-  ItemDetailResponse,
-  ItemSlice,
-} from "../../features/inventory/snapshot/api";
+import type { ItemDetailResponse, ItemSlice } from "../../features/inventory/snapshot/api";
 import { fetchLedgerList } from "../../features/diagnostics/ledger-tool/api";
-import type {
-  LedgerRow,
-  LedgerQueryPayload,
-} from "../../features/diagnostics/ledger-tool/types";
+import type { LedgerRow, LedgerQueryPayload } from "../../features/diagnostics/ledger-tool/types";
 
 interface Props {
   open: boolean;
@@ -102,9 +96,7 @@ export default function InventoryDrawer({
         <header className="h-16 flex items-center justify-between border-b border-slate-200 px-6">
           <div>
             {/* 主标题：24px */}
-            <div className="text-2xl font-semibold text-slate-900">
-              单品明细
-            </div>
+            <div className="text-2xl font-semibold text-slate-900">单品明细</div>
             {item && (
               <div className="mt-1 text-base text-slate-600">
                 #{item.item_id} {item.item_name}
@@ -207,32 +199,18 @@ export default function InventoryDrawer({
 
               {/* 汇总区域 */}
               <section className="border border-slate-200 rounded-lg p-4">
-                <div className="text-lg font-semibold text-slate-800 mb-3">
-                  汇总
-                </div>
+                <div className="text-lg font-semibold text-slate-800 mb-3">汇总</div>
                 <div className="flex gap-8 text-base">
                   <div>
-                    <div className="text-sm text-slate-500 mb-1">
-                      在库 on_hand
-                    </div>
+                    <div className="text-sm text-slate-500 mb-1">在库 on_hand</div>
                     <div className="text-xl font-semibold text-slate-900">
                       {item.totals.on_hand_qty}
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm text-slate-500 mb-1">
-                      可用 available
-                    </div>
+                    <div className="text-sm text-slate-500 mb-1">可用 available</div>
                     <div className="text-xl font-semibold text-slate-900">
                       {item.totals.available_qty}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-500 mb-1">
-                      预占 reserved
-                    </div>
-                    <div className="text-xl font-semibold text-slate-900">
-                      {item.totals.reserved_qty}
                     </div>
                   </div>
                 </div>
@@ -284,9 +262,7 @@ export default function InventoryDrawer({
                             {s.batch_code}
                           </td>
                           <td className="px-3 py-2 text-right">{s.on_hand_qty}</td>
-                          <td className="px-3 py-2 text-right">
-                            {s.available_qty}
-                          </td>
+                          <td className="px-3 py-2 text-right">{s.available_qty}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {s.production_date || "-"}
                           </td>

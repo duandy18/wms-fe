@@ -13,9 +13,8 @@ export const TraceHeader: React.FC = () => {
           Trace 事件流（Events）
         </h2>
         <p className="mt-1 text-xs text-slate-600">
-          根据 trace_id 聚合多表事件（event_store / audit_events /
-          reservations / stock_ledger 等），可按仓库与来源 Source 过滤，
-          支持时间线视图与按 ref 分组视图。
+          根据 trace_id 聚合多表事件（event_store / audit_events / stock_ledger 等），
+          可按仓库与来源 Source 过滤，支持时间线视图与按 ref 分组视图。
         </p>
       </div>
       <div className="hidden text-[11px] text-slate-500 md:block">
