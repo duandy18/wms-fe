@@ -1,11 +1,10 @@
 // src/features/operations/outbound-pick/OrderPickSidebar.tsx
 //
-// 左侧：订单列表（可操作） + 下方订单详情（只读）
-// - 默认只看 status=CREATED（可履约 MVP）
-// - 点击订单行：下方加载订单详情（像入库页）
-// - 把“当前选中订单 summary”回传给右侧（用于创建拣货任务）
+// 左侧：订单列表（可操作） + 下方订单详情（只读） + 创建拣货任务（后端解析执行仓）
+//
+// 方案 1：创建任务只传 order_id，不手工选仓（避免与店铺绑定/路由事实冲突）
 
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { OrderSummary } from "../../orders/api";
 import { useOrdersList } from "../../orders/hooks/useOrdersList";
@@ -13,22 +12,31 @@ import { useOrderInlineDetail } from "../../orders/hooks/useOrderInlineDetail";
 import { OrderInlineDetailPanel } from "../../orders/components/OrderInlineDetailPanel";
 import { formatTs, renderStatus } from "../../orders/ui/format";
 
+import { CreatePickTaskCard } from "./orderPick/CreatePickTaskCard";
+import type { PickTask } from "./pickTasksApi";
+
 type Props = {
   onPickOrder: (summary: OrderSummary | null) => void;
+
+  // 方案 1：不传 warehouse_id，由后端解析
+  onCreatePickTaskFromOrder: (summary: OrderSummary) => Promise<PickTask>;
 };
 
-export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
+export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder, onCreatePickTaskFromOrder }) => {
   const list = useOrdersList({ initialPlatform: "PDD" });
   const detail = useOrderInlineDetail();
 
-  // 固定 MVP：默认只看 CREATED（可履约订单）
-  useEffect(() => {
-    if (list.filters.status.trim().toUpperCase() === "CREATED") return;
-    list.setFilters((prev) => ({ ...prev, status: "CREATED" }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // 固定 MVP：把 status 收敛到 CREATED（幂等）
+  const statusRaw = list.filters.status;
+  const setFilters = list.setFilters;
 
-  // 当详情选中变化时，同步给右侧（创建任务用）
+  useEffect(() => {
+    const st = String(statusRaw || "").trim().toUpperCase();
+    if (st === "CREATED") return;
+    setFilters((prev) => ({ ...prev, status: "CREATED" }));
+  }, [statusRaw, setFilters]);
+
+  // 当详情选中变化时，同步给右侧
   useEffect(() => {
     onPickOrder(detail.selectedSummary ?? null);
   }, [detail.selectedSummary, onPickOrder]);
@@ -37,12 +45,10 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
   useEffect(() => {
     if (!detail.selectedSummary) return;
     const exists = list.rows.some((r) => r.id === detail.selectedSummary?.id);
-    if (!exists) {
-      detail.closeDetail();
-    }
+    if (!exists) detail.closeDetail();
   }, [list.rows, detail]);
 
-  function devConsoleHref() {
+  const devConsoleHref = useCallback((): string => {
     const o = detail.detailOrder;
     if (!o) return "/dev";
     const qs = new URLSearchParams();
@@ -50,6 +56,38 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
     qs.set("shop_id", o.shop_id);
     qs.set("ext_order_no", o.ext_order_no);
     return `/dev?${qs.toString()}`;
+  }, [detail.detailOrder]);
+
+  const pickedOrder = detail.selectedSummary ?? null;
+
+  const [creatingTask, setCreatingTask] = useState(false);
+  const [createTaskError, setCreateTaskError] = useState<string | null>(null);
+  const [createdTask, setCreatedTask] = useState<PickTask | null>(null);
+
+  useEffect(() => {
+    setCreatingTask(false);
+    setCreateTaskError(null);
+    setCreatedTask(null);
+  }, [pickedOrder?.id]);
+
+  const canCreateTask = useMemo(() => {
+    return !!pickedOrder && !creatingTask;
+  }, [pickedOrder, creatingTask]);
+
+  async function handleCreateTask() {
+    if (!pickedOrder) return;
+    setCreateTaskError(null);
+    setCreatedTask(null);
+    setCreatingTask(true);
+    try {
+      const t = await onCreatePickTaskFromOrder(pickedOrder);
+      setCreatedTask(t);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "创建拣货任务失败";
+      setCreateTaskError(msg);
+    } finally {
+      setCreatingTask(false);
+    }
   }
 
   return (
@@ -65,6 +103,8 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
           {list.loading ? "刷新中…" : "刷新"}
         </button>
       </div>
+
+      <div className="text-[11px] text-slate-500">方案 1：不再手工选仓；创建任务时由后端解析执行仓。</div>
 
       {/* 极简过滤：平台/店铺（状态固定 CREATED） */}
       <div className="flex flex-wrap items-end gap-2 text-[11px]">
@@ -109,7 +149,7 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
         {list.error && <div className="text-[11px] text-red-600">{list.error}</div>}
       </div>
 
-      {/* 上：订单列表（整行可点） */}
+      {/* 订单列表 */}
       <div className="border border-slate-200 rounded-lg max-h-[360px] overflow-auto text-xs">
         {list.rows.length === 0 ? (
           <div className="px-3 py-2 text-slate-500">{list.loading ? "加载中…" : "暂无可履约订单（CREATED）。"}</div>
@@ -130,7 +170,9 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
                 return (
                   <tr
                     key={r.id}
-                    className={"cursor-pointer border-t border-slate-100 " + (active ? "bg-sky-50" : "hover:bg-slate-50")}
+                    className={
+                      "cursor-pointer border-t border-slate-100 " + (active ? "bg-sky-50" : "hover:bg-slate-50")
+                    }
                     onClick={() => void detail.loadDetail(r)}
                     title="点击查看订单详情（只读）"
                   >
@@ -149,7 +191,16 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
         )}
       </div>
 
-      {/* 下：订单详情（像入库页一样放在列表下面） */}
+      <CreatePickTaskCard
+        pickedOrder={pickedOrder}
+        creatingTask={creatingTask}
+        createTaskError={createTaskError}
+        createdTask={createdTask}
+        canCreateTask={canCreateTask}
+        onCreate={handleCreateTask}
+      />
+
+      {/* 订单详情 */}
       {detail.selectedSummary && (
         <div className="pt-2">
           <OrderInlineDetailPanel
@@ -163,7 +214,7 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder }) => {
               void detail.reloadDetail();
               void list.loadList();
             }}
-            warehouses={list.warehouses}
+            warehouses={[]}
             devConsoleHref={devConsoleHref}
           />
         </div>

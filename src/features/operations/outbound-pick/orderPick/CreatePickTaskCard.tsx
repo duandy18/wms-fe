@@ -2,33 +2,21 @@
 import React from "react";
 
 import type { OrderSummary } from "../../../orders/api";
-import type { WarehouseListItem } from "../../../admin/warehouses/types";
 import type { PickTask } from "../pickTasksApi";
 
 type Props = {
   pickedOrder: OrderSummary | null;
 
-  warehouses: WarehouseListItem[];
-  loadingWh: boolean;
-  whError: string | null;
-  selectedWarehouseId: number | null;
-  setSelectedWarehouseId: (v: number | null) => void;
-
   creatingTask: boolean;
   createTaskError: string | null;
   createdTask: PickTask | null;
-  canCreateTask: boolean;
 
+  canCreateTask: boolean;
   onCreate: () => void;
 };
 
 export const CreatePickTaskCard: React.FC<Props> = ({
   pickedOrder,
-  warehouses,
-  loadingWh,
-  whError,
-  selectedWarehouseId,
-  setSelectedWarehouseId,
   creatingTask,
   createTaskError,
   createdTask,
@@ -43,9 +31,7 @@ export const CreatePickTaskCard: React.FC<Props> = ({
       </div>
 
       {!pickedOrder ? (
-        <div className="text-xs text-slate-500">
-          请先在左侧选择一张「CREATED」订单。
-        </div>
+        <div className="text-xs text-slate-500">请先在上方列表中选择一张「CREATED」订单。</div>
       ) : (
         <div className="space-y-2 text-[11px] text-slate-700">
           <div>
@@ -55,40 +41,9 @@ export const CreatePickTaskCard: React.FC<Props> = ({
             </span>
           </div>
 
-          {/* 仓库下拉：必选 */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="text-[11px] text-slate-500">选择仓库：</div>
-
-            <select
-              className="h-9 rounded border border-slate-300 bg-white px-2 text-[12px] disabled:opacity-60"
-              value={selectedWarehouseId ?? ""}
-              onChange={(e) => {
-                const v = e.target.value;
-                setSelectedWarehouseId(v ? Number(v) : null);
-              }}
-              disabled={loadingWh || warehouses.length === 0}
-            >
-              <option value="">请选择仓库</option>
-              {warehouses.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}（#{w.id}
-                  {w.code ? ` · ${w.code}` : ""}）
-                </option>
-              ))}
-            </select>
-
-            {loadingWh ? (
-              <span className="text-[11px] text-slate-500">仓库加载中…</span>
-            ) : null}
+          <div className="text-[11px] text-slate-600">
+            方案 1：不再手工选择仓库。后端会基于订单/店铺绑定/路由事实解析执行仓；若解析失败会明确报错并引导配置。
           </div>
-
-          {whError ? <div className="text-[11px] text-red-600">{whError}</div> : null}
-
-          {!whError && !loadingWh && warehouses.length === 0 ? (
-            <div className="text-[11px] text-red-600">
-              当前没有可用仓库（active=true）。请先在「仓库管理」中创建/启用仓库。
-            </div>
-          ) : null}
 
           <button
             type="button"
@@ -99,13 +54,9 @@ export const CreatePickTaskCard: React.FC<Props> = ({
             {creatingTask ? "创建中…" : "创建拣货任务"}
           </button>
 
-          {!canCreateTask ? (
-            <div className="text-[11px] text-slate-500">说明：创建拣货任务前必须选择仓库。</div>
-          ) : null}
+          {!canCreateTask ? <div className="text-[11px] text-slate-500">说明：需先选择订单。</div> : null}
 
-          {createTaskError ? (
-            <div className="text-[11px] text-red-600">{createTaskError}</div>
-          ) : null}
+          {createTaskError ? <div className="text-[11px] text-red-600">{createTaskError}</div> : null}
 
           {createdTask ? (
             <div className="text-[11px] text-emerald-700">

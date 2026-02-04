@@ -16,6 +16,20 @@ export interface PickTaskLine {
   updated_at: string;
 }
 
+export interface PrintJobOut {
+  id: number;
+  kind: string;
+  ref_type: string;
+  ref_id: number;
+  status: string; // queued | printed | failed
+  payload: Record<string, unknown>;
+  requested_at: string;
+  printed_at: string | null;
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PickTask {
   id: number;
   warehouse_id: number;
@@ -28,6 +42,9 @@ export interface PickTask {
   created_at: string;
   updated_at: string;
   lines: PickTaskLine[];
+
+  // ✅ 可观测闭环：最近一次 pick_list print_job（若存在）
+  print_job?: PrintJobOut | null;
 }
 
 export interface PickTaskDiffLine {
@@ -51,16 +68,22 @@ export interface PickTaskScanPayload {
   batch_code?: string | null;
 }
 
+// Phase 2：删除确认码（handoff_code）
 export interface PickTaskCommitPayload {
   platform: string;
   shop_id: string;
-  handoff_code: string;
   trace_id?: string | null;
   allow_diff: boolean;
 }
 
 export interface PickTaskCommitResult {
   status: string;
+
+  // ✅ 蓝皮书合同字段（后端已返回；前端接住更稳）
+  idempotent?: boolean;
+  trace_id?: string | null;
+  committed_at?: string | null;
+
   task_id: number;
   warehouse_id: number;
   platform: string;
@@ -77,15 +100,9 @@ export async function listPickTasks(
   } = {},
 ): Promise<PickTask[]> {
   const params = new URLSearchParams();
-  if (opts.warehouse_id) {
-    params.set("warehouse_id", String(opts.warehouse_id));
-  }
-  if (opts.status) {
-    params.set("status", opts.status);
-  }
-  if (opts.limit) {
-    params.set("limit", String(opts.limit));
-  }
+  if (opts.warehouse_id) params.set("warehouse_id", String(opts.warehouse_id));
+  if (opts.status) params.set("status", opts.status);
+  if (opts.limit) params.set("limit", String(opts.limit));
   const qs = params.toString();
   const url = `/pick-tasks${qs ? `?${qs}` : ""}`;
   return apiGet<PickTask[]>(url);
@@ -109,11 +126,22 @@ export async function commitPickTask(taskId: number, payload: PickTaskCommitPayl
 
 // 从订单创建拣货任务（用于 Cockpit & DevConsole PickTask 调试）
 export interface PickTaskCreateFromOrderPayload {
+  // Phase 2：不再由前端选择仓库；后端解析执行仓
   warehouse_id?: number | null;
+
   source?: string;
   priority?: number;
 }
 
-export async function createPickTaskFromOrder(orderId: number, payload: PickTaskCreateFromOrderPayload): Promise<PickTask> {
-  return apiPost<PickTask>(`/pick-tasks/from-order/${orderId}`, payload);
+/**
+ * createPickTaskFromOrder（方案 1）：
+ * - 只走 /pick-tasks/from-order/{order_id}
+ * - body 可以为空或仅带 source/priority（warehouse_id 由后端解析）
+ */
+export async function createPickTaskFromOrder(
+  orderId: number,
+  payload: PickTaskCreateFromOrderPayload = {},
+): Promise<PickTask> {
+  const endpoint = `/pick-tasks/from-order/${orderId}`;
+  return apiPost<PickTask>(endpoint, payload);
 }

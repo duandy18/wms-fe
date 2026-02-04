@@ -80,15 +80,9 @@ export function useCockpitCommit(args: {
     }
   }
 
-  // ---------------- commit 出库 ----------------
-  const handleCommit = async (handoffCode: string) => {
+  // ---------------- commit 出库（Phase 2：无需确认码） ----------------
+  const handleCommit = async () => {
     if (!selectedTask) return;
-
-    const code = String(handoffCode || "").trim();
-    if (!code) {
-      setCommitError("订单确认码不能为空");
-      return;
-    }
 
     setCommitError(null);
     setCommitBusy(true);
@@ -99,16 +93,14 @@ export function useCockpitCommit(args: {
     try {
       const { platform, shop_id } = currentPlatformShop;
 
-      // 生成 trace_id，用于后续 Trace / Ledger / Snapshot 聚合
-      const finalTraceId = `picktask:${selectedTask.id}:${Date.now()}`;
-      setTraceId(finalTraceId);
+      // 本地生成 trace_id：用于链路聚合（后端也会回传最终 trace_id）
+      const localTraceId = `picktask:${selectedTask.id}:${Date.now()}`;
+      setTraceId(localTraceId);
 
-      // 提交出库（后端 commit 会写 ledger + stocks，并挂 trace_id）
-      await commitPickTask(selectedTask.id, {
+      const res = await commitPickTask(selectedTask.id, {
         platform,
         shop_id,
-        handoff_code: code,
-        trace_id: finalTraceId,
+        trace_id: localTraceId,
         allow_diff: allowDiff,
       });
 
@@ -116,9 +108,13 @@ export function useCockpitCommit(args: {
       await loadTasks();
       await loadTaskDetail(selectedTask.id);
 
-      // 加载提交后链路信息
+      // 尽量使用后端回传的 trace_id（幂等重放/回读更准确）
+      const finalTrace = (res?.trace_id ?? localTraceId) || localTraceId;
+      setTraceId(finalTrace);
+
+      // 加载提交后链路信息（用 trace 聚合）
       const freshTask = await getPickTask(selectedTask.id);
-      await loadPostCommit(finalTraceId, freshTask);
+      await loadPostCommit(finalTrace, freshTask);
     } catch (err: unknown) {
       const e = err as ApiErrorShape;
       console.error("commitPickTask failed:", e);

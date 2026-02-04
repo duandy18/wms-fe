@@ -3,13 +3,10 @@
 // 拣货单打印层（瑞幸小票范式）：
 // - 仅打印这一块内容（@media print 隐藏页面其它区域）
 // - 打开后自动 window.print()
-// - 底部生成条码：WMS:ORDER:v1:{platform}:{shop_id}:{ext_order_no}（用于最后扫码确认出库）
-//   - 若无法从 task.ref 推导（非 ORD:...），则 fallback 到 PICKTASK:<task_id>
+// - Phase 2：删除订单确认码（不生成条码、不做扫码确认）
 
-import React, { useEffect, useMemo, useRef } from "react";
-import JsBarcode from "jsbarcode";
+import React, { useEffect, useMemo } from "react";
 import type { PickTask } from "./pickTasksApi";
-import { buildWmsOrderConfirmCodeFromTaskRef } from "./pickTasksCockpitUtils";
 
 export type ItemBasicLite = {
   name?: string;
@@ -38,19 +35,8 @@ type Props = {
   itemMetaMap?: ItemMetaMap | null;
 };
 
-export const PickTicketPrintModal: React.FC<Props> = ({
-  open,
-  onClose,
-  task,
-  platform,
-  shopId,
-  itemMetaMap,
-}) => {
-  const barcodeRef = useRef<SVGSVGElement | null>(null);
-
+export const PickTicketPrintModal: React.FC<Props> = ({ open, onClose, task, platform, shopId, itemMetaMap }) => {
   const orderRef = String(task.ref || `PICKTASK:${task.id}`);
-  const wmsOrderConfirm = buildWmsOrderConfirmCodeFromTaskRef(task.ref ?? null);
-  const handoffCode = wmsOrderConfirm ?? `PICKTASK:${task.id}`;
 
   const lines = useMemo(() => {
     const raw = (task.lines ?? []) as unknown as PickTaskLineLite[];
@@ -59,7 +45,6 @@ export const PickTicketPrintModal: React.FC<Props> = ({
         const itemId = Number(ln.item_id);
         const req = Number(ln.req_qty ?? 0);
         const picked = Number(ln.picked_qty ?? 0);
-        const batch = String(ln.batch_code ?? "");
 
         const meta = itemMetaMap ? itemMetaMap[itemId] : undefined;
         const name =
@@ -70,27 +55,10 @@ export const PickTicketPrintModal: React.FC<Props> = ({
 
         const sku = meta?.sku ?? meta?.item_code ?? meta?.code ?? "";
 
-        return { itemId, name, sku, batch, req, picked };
+        return { itemId, name, sku, req, picked };
       })
       .filter((x) => x.req > 0); // ✅ 打印的是“订单要求”，不是“已拣”
   }, [task.lines, itemMetaMap]);
-
-  // 渲染条形码
-  useEffect(() => {
-    if (!open) return;
-    if (!barcodeRef.current) return;
-    try {
-      JsBarcode(barcodeRef.current, handoffCode, {
-        format: "CODE128",
-        displayValue: false,
-        margin: 0,
-        height: 52,
-        width: 2,
-      });
-    } catch (e) {
-      console.error("JsBarcode render failed", e);
-    }
-  }, [open, handoffCode]);
 
   // 打开后自动打印
   useEffect(() => {
@@ -116,8 +84,7 @@ export const PickTicketPrintModal: React.FC<Props> = ({
             <div>
               <div className="text-sm font-semibold">拣货单（订单要求）</div>
               <div className="mt-1 text-[11px] text-slate-600">
-                平台 <span className="font-mono">{platform}</span> · 店铺{" "}
-                <span className="font-mono">{shopId}</span>
+                平台 <span className="font-mono">{platform}</span> · 店铺 <span className="font-mono">{shopId}</span>
               </div>
               <div className="mt-1 text-[11px] text-slate-600">
                 任务ID <span className="font-mono">#{task.id}</span> · 仓库{" "}
@@ -132,7 +99,7 @@ export const PickTicketPrintModal: React.FC<Props> = ({
           </div>
 
           <div className="mt-3 text-[11px] text-slate-600">
-            先打印 → 去拣货扫码 → 回出库口扫码订单确认码核对 → 再 commit。
+            Phase 2：按拣货单执行拣货 → 回到系统核对差异（diff）→ 直接提交出库（commit）。
           </div>
 
           <div className="mt-3 rounded-lg border border-slate-200">
@@ -167,22 +134,14 @@ export const PickTicketPrintModal: React.FC<Props> = ({
             </table>
           </div>
 
-          <div className="mt-4 border-t border-dashed border-slate-200 pt-3">
-            <div className="text-[10px] text-slate-500">订单确认码（WMS / 扫码后提交出库）</div>
-            <div className="mt-1 flex items-center justify-between gap-2">
-              <div className="font-mono text-[12px]">{handoffCode}</div>
-              <button
-                type="button"
-                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px]"
-                onClick={onClose}
-              >
-                关闭
-              </button>
-            </div>
-
-            <div className="mt-2 flex justify-center">
-              <svg ref={barcodeRef} style={{ width: "100%", height: "60px" }} />
-            </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px]"
+              onClick={onClose}
+            >
+              关闭
+            </button>
           </div>
 
           <style>{`
