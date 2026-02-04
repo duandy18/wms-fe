@@ -6,26 +6,25 @@ import { createPickTaskFromOrder, type PickTask } from "../pickTasksApi";
 
 export function useCreatePickTaskFromOrder(args: {
   pickedOrder: OrderSummary | null;
-  selectedWarehouseId: number | null;
 
   // PickTasks cockpit controller：用于创建成功后的联动
   loadTasks: () => Promise<void>;
   setSelectedTaskId: (id: number | null) => void;
   loadTaskDetail: (taskId: number) => Promise<void>;
 }) {
-  const { pickedOrder, selectedWarehouseId, loadTasks, setSelectedTaskId, loadTaskDetail } = args;
+  const { pickedOrder, loadTasks, setSelectedTaskId, loadTaskDetail } = args;
 
   const [creatingTask, setCreatingTask] = useState(false);
   const [createTaskError, setCreateTaskError] = useState<string | null>(null);
   const [createdTask, setCreatedTask] = useState<PickTask | null>(null);
 
+  // ✅ Phase 2：创建拣货任务不再要求前端选仓（执行仓由后端根据店铺默认仓解析）
   const canCreateTask = useMemo(() => {
-    return !!pickedOrder && !creatingTask && selectedWarehouseId != null;
-  }, [pickedOrder, creatingTask, selectedWarehouseId]);
+    return !!pickedOrder && !creatingTask;
+  }, [pickedOrder, creatingTask]);
 
   const createTask = useCallback(async () => {
     if (!pickedOrder) return;
-    if (selectedWarehouseId == null) return;
 
     setCreatingTask(true);
     setCreateTaskError(null);
@@ -33,7 +32,6 @@ export function useCreatePickTaskFromOrder(args: {
 
     try {
       const task = await createPickTaskFromOrder(pickedOrder.id, {
-        warehouse_id: selectedWarehouseId,
         source: "ORDER",
         priority: 100,
       });
@@ -51,7 +49,7 @@ export function useCreatePickTaskFromOrder(args: {
     } finally {
       setCreatingTask(false);
     }
-  }, [pickedOrder, selectedWarehouseId, loadTasks, setSelectedTaskId, loadTaskDetail]);
+  }, [pickedOrder, loadTasks, setSelectedTaskId, loadTaskDetail]);
 
   const reset = useCallback(() => {
     setCreatingTask(false);
