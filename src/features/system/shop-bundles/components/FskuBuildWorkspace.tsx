@@ -3,13 +3,20 @@ import React, { useMemo } from "react";
 import type { FskuStatus } from "../types";
 import { useFskuComponents } from "../useFskuComponents";
 import { useItemsPicker } from "../useItemsPicker";
-import { ComponentsCard } from "./build/ComponentsCard";
-import { ItemsPickerCard } from "./build/ItemsPickerCard";
+
+// ⛔️ build 目录被 .gitignore 忽略，不能作为业务代码目录
+// ✅ 已迁移至 workspace/
+import { ComponentsCard } from "./workspace/ComponentsCard";
+import { ItemsPickerCard } from "./workspace/ItemsPickerCard";
 
 export const FskuBuildWorkspace: React.FC<{
   fskuId: number | null;
   status: FskuStatus | null;
-  onCreateDraft: (args: { name: string; shape: "bundle" | "single"; codeText: string }) => Promise<{ id: number; name: string }>;
+  onCreateDraft: (args: {
+    name: string;
+    shape: "bundle" | "single";
+    codeText: string;
+  }) => Promise<{ id: number; name: string }>;
   onPublishSelected: (id: number) => Promise<void>;
 }> = ({ fskuId, status, onCreateDraft, onPublishSelected }) => {
   const readOnly = status === "published" || status === "retired";
@@ -27,8 +34,22 @@ export const FskuBuildWorkspace: React.FC<{
 
   return (
     <div className="grid gap-6 xl:grid-cols-2">
-      <ComponentsCard fskuId={fskuId} status={status} C={C} items={I.items} onCreateDraft={onCreateDraft} onPublishSelected={onPublishSelected} />
-      <ItemsPickerCard fskuId={fskuId} readOnly={readOnly} I={I} C={C} selectedItemIds={selectedItemIds} />
+      <ComponentsCard
+        fskuId={fskuId}
+        status={status}
+        C={C}
+        items={I.items}
+        onCreateDraft={onCreateDraft}
+        onPublishSelected={onPublishSelected}
+      />
+
+      <ItemsPickerCard
+        fskuId={fskuId}
+        readOnly={readOnly}
+        I={I}
+        C={C}
+        selectedItemIds={selectedItemIds}
+      />
     </div>
   );
 };
