@@ -34,22 +34,9 @@ export const FskuBuildWorkspace: React.FC<{
 
   return (
     <div className="grid gap-6 xl:grid-cols-2">
-      <ComponentsCard
-        fskuId={fskuId}
-        status={status}
-        C={C}
-        items={I.items}
-        onCreateDraft={onCreateDraft}
-        onPublishSelected={onPublishSelected}
-      />
+      <ComponentsCard fskuId={fskuId} status={status} C={C} items={I.items} onCreateDraft={onCreateDraft} onPublishSelected={onPublishSelected} />
 
-      <ItemsPickerCard
-        fskuId={fskuId}
-        readOnly={readOnly}
-        I={I}
-        C={C}
-        selectedItemIds={selectedItemIds}
-      />
+      <ItemsPickerCard fskuId={fskuId} readOnly={readOnly} I={I} C={C} selectedItemIds={selectedItemIds} />
     </div>
   );
 };

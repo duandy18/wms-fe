@@ -14,14 +14,34 @@ export type FskuComponent = {
   role: FskuComponentRole;
 };
 
+export type FskuShape = "single" | "bundle";
+
 export type Fsku = {
   id: number; // ✅ 合同：int
+
+  // ✅ list 合同：全局唯一编码
+  code: string;
+
   name: string;
-  unit_label: string;
+
+  // ✅ list 合同：single / bundle
+  shape: FskuShape;
+
+  // ✅ list 合同：draft / published / retired
   status: FskuStatus;
 
-  // ✅ 合同：/fskus list 返回 updated_at（你 curl 已验证）
+  // ✅ list 合同：组合内容摘要（后端一次性返回）
+  components_summary: string;
+
+  // ✅ list 合同：时间线
+  published_at: string | null; // ISO
+  retired_at: string | null; // ISO
+
+  // ✅ list 合同：updated_at（你 curl 已验证）
   updated_at: string; // ISO
+
+  // 其他接口/页面可能会用到；列表不依赖它
+  unit_label?: string;
 };
 
 export type FskuDetail = Fsku & {

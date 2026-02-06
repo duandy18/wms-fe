@@ -24,10 +24,9 @@ export const ComponentsCard: React.FC<{
   const [publishing, setPublishing] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // 新建草稿输入 / 本地备注（不入库）
+  // 新建草稿输入（入库字段仅 name/shape；FSKU code 由后端生成）
   const [draftName, setDraftName] = useState("");
   const [draftShape, setDraftShape] = useState<DraftShape>("bundle");
-  const [draftCodeText, setDraftCodeText] = useState("");
 
   useEffect(() => {
     if (!successMsg) return;
@@ -76,7 +75,6 @@ export const ComponentsCard: React.FC<{
 
     const name = draftName.trim();
     if (!name) {
-      // ✅ 关键修复：不允许空名称。避免“提示条显示名称但输入框没填”的误导。
       setActionError("请先填写“新建草稿名称”（必填）。");
       return;
     }
@@ -86,13 +84,12 @@ export const ComponentsCard: React.FC<{
       const created = await onCreateDraft({
         name,
         shape: draftShape,
-        codeText: draftCodeText,
+        // ✅ 已删除“代码输入框”：这里固定传空串，仅为兼容上层签名；不入库、不参与生成 code
+        codeText: "",
       });
       setSuccessMsg(`创建草稿成功：#${created.id} · 名称=${created.name}`);
 
-      // ✅ 保持输入与事实一致：创建成功后，用后端回写名称回填输入框（避免你以为没生效）
       setDraftName(created.name);
-      // ✅ 不清空 codeText：按原设计保留（本地备注）
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "创建草稿失败";
       setActionError(msg);
@@ -160,12 +157,12 @@ export const ComponentsCard: React.FC<{
         </div>
       </div>
 
-      {/* ✅ 输入区：明确“这是新建用，不回写已存在 FSKU 名称” */}
+      {/* ✅ 新建草稿：只保留必要输入；FSKU code 由后端生成 */}
       <div className="rounded-lg border border-slate-200 p-3 space-y-3">
-        <div className="text-[11px] font-semibold text-slate-700">文件与代码（本地备注，不入库）</div>
+        <div className="text-[11px] font-semibold text-slate-700">新建草稿信息</div>
 
         <label className="block space-y-1">
-          <div className="text-[11px] text-slate-500">新建草稿名称（必填；仅用于“新建草稿”）</div>
+          <div className="text-[11px] text-slate-500">新建草稿名称（必填）</div>
           <input
             className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
             value={draftName}
@@ -186,19 +183,7 @@ export const ComponentsCard: React.FC<{
           </select>
         </label>
 
-        <label className="block space-y-1">
-          <div className="text-[11px] text-slate-500">代码输入框</div>
-          <textarea
-            className="w-full min-h-[220px] rounded-md border border-slate-300 px-2 py-2 font-mono text-xs"
-            value={draftCodeText}
-            onChange={(e) => setDraftCodeText(e.target.value)}
-            placeholder="可粘贴平台侧描述/组合规则/备注代码等（当前仅本地保留；下一阶段再做解析/入库）。"
-          />
-        </label>
-
-        <div className="text-[11px] text-slate-500">
-          提示：发布并锁定后，组成（components）将只读；但本地备注仍可修改（不影响事实）。
-        </div>
+        <div className="text-[11px] text-slate-500">提示：FSKU 编码由后端自动生成；发布并锁定后，组成（components）将只读。</div>
       </div>
 
       {successMsg ? (
