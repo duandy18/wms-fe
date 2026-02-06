@@ -1,5 +1,5 @@
 // src/features/operations/outbound-pick/PickTasksCockpitPage.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { PickTaskDetailPanel } from "./PickTaskDetailPanel";
@@ -14,10 +14,15 @@ import { usePickTasksCockpitController } from "./usePickTasksCockpitController";
 import type { OrderSummary } from "../../orders/api";
 import { createPickTaskFromOrder, type PickTask } from "./pickTasksApi";
 
+import { useOrderInlineDetail } from "../../orders/hooks/useOrderInlineDetail";
+import { PlatformOrderMirrorPanel } from "./PlatformOrderMirrorPanel";
+
 const PickTasksCockpitPage: React.FC = () => {
   const navigate = useNavigate();
   const [printOpen, setPrintOpen] = useState(false);
-  const [pickedOrder, setPickedOrder] = useState<OrderSummary | null>(null);
+
+  // ✅ 订单详情（镜像）：只呈现平台原始订单，不附加作业语义
+  const orderDetail = useOrderInlineDetail();
 
   const c = usePickTasksCockpitController({
     navigateToBarcodeBind: (barcode: string) => {
@@ -28,12 +33,7 @@ const PickTasksCockpitPage: React.FC = () => {
   });
 
   // ✅ 解构需要用于 hooks 的字段，避免直接依赖 c 对象
-  const {
-    scanPreview,
-    scanSuccess,
-    setActiveItemId,
-    selectedTask,
-  } = c;
+  const { scanPreview, scanSuccess, setActiveItemId, selectedTask } = c;
 
   const platform = c.currentPlatformShop?.platform ?? "PDD";
   const shopId = c.currentPlatformShop?.shop_id ?? "1";
@@ -54,13 +54,18 @@ const PickTasksCockpitPage: React.FC = () => {
     setActiveItemId(id);
   }, [scanSuccess, scanPreview?.item_id, setActiveItemId]);
 
-  const pickedOrderLabel = useMemo(() => {
-    if (!pickedOrder) return "未选择（左侧仅用于参考定位）";
-    const plat = String(pickedOrder.platform ?? "").trim() || "-";
-    const shop = String(pickedOrder.shop_id ?? "").trim() || "-";
-    const ext = String(pickedOrder.ext_order_no ?? "").trim() || "-";
-    return `${plat}/${shop} · ${ext}`;
-  }, [pickedOrder]);
+  const selectedOrderId = orderDetail.selectedSummary?.id ?? null;
+
+  const handleSelectOrder = useCallback(
+    (summary: OrderSummary) => {
+      void orderDetail.loadDetail(summary);
+    },
+    [orderDetail],
+  );
+
+  const handleClearSelectedOrder = useCallback(() => {
+    orderDetail.closeDetail();
+  }, [orderDetail]);
 
   async function handleCreatePickTaskFromOrder(
     summary: OrderSummary,
@@ -74,7 +79,6 @@ const PickTasksCockpitPage: React.FC = () => {
     c.setSelectedTaskId(task.id);
     await c.loadTaskDetail(task.id);
 
-    setPickedOrder(summary);
     return task;
   }
 
@@ -87,21 +91,28 @@ const PickTasksCockpitPage: React.FC = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
         <OrderPickSidebar
-          onPickOrder={setPickedOrder}
+          selectedOrderId={selectedOrderId}
+          onSelectOrder={handleSelectOrder}
+          onClearSelectedOrder={handleClearSelectedOrder}
           onCreatePickTaskFromOrder={handleCreatePickTaskFromOrder}
         />
 
         <div className="space-y-6">
+          {/* ✅ 平台订单镜像（不附加任何作业字段/提示/裁决） */}
+          <PlatformOrderMirrorPanel
+            summary={orderDetail.selectedSummary ?? null}
+            detailOrder={orderDetail.detailOrder}
+            loading={orderDetail.detailLoading}
+            error={orderDetail.detailError}
+            onReload={() => {
+              void orderDetail.reloadDetail();
+            }}
+          />
+
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <div className="grid gap-3 md:grid-cols-2">
-              <div>
-                <div className="text-[11px] text-slate-500">左侧参考订单</div>
-                <div className="mt-1 font-mono text-[12px] text-slate-900">
-                  {pickedOrderLabel}
-                </div>
-              </div>
               <div>
                 <div className="text-[11px] text-slate-500">当前执行任务</div>
                 <div className="mt-1 font-mono text-[12px] text-slate-900">
@@ -113,6 +124,13 @@ const PickTasksCockpitPage: React.FC = () => {
                   {selectedTask
                     ? `ref: ${selectedTask.ref ?? "-"}`
                     : "请先选择一条拣货任务。"}
+                </div>
+              </div>
+
+              <div className="hidden md:block">
+                <div className="text-[11px] text-slate-500">说明</div>
+                <div className="mt-1 text-[11px] text-slate-500">
+                  订单区仅用于核对平台原始信息；拣货裁决以任务表格与提交结果为准。
                 </div>
               </div>
             </div>

@@ -92,6 +92,9 @@ export const menuSections: RouteSection[] = [
       { path: "/warehouses", label: "仓库管理", requiredPermissions: ["config.store.write"] },
       { path: "/warehouses/:warehouseId", label: "仓库详情", requiredPermissions: ["config.store.write"], showInSidebar: false },
 
+      // ✅ 主数据：商铺商品组合（FSKU）
+      { path: "/admin/shop-bundles", label: "商铺商品组合", requiredPermissions: ["config.store.write"] },
+
       // ✅ 物流 / 承运商（主数据归位）
       // 语义：Shipping Provider = 仓库可用的快递网点（warehouse_id 是事实边界）
       { path: "/admin/shipping-providers", label: "快递网点", requiredPermissions: ["config.store.write"] },

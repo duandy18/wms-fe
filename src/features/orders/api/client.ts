@@ -1,9 +1,6 @@
 // src/features/orders/api/client.ts
 import { apiGet, apiPost } from "../../../lib/api";
 
-import type { DevOrderView, DevOrderFacts } from "../../dev/orders/api/index";
-import { fetchDevOrderView, fetchDevOrderFacts } from "../../dev/orders/api/index";
-
 import type {
   OrderFacts,
   OrderView,
@@ -59,13 +56,29 @@ export async function fetchOrdersList(
   return r.data;
 }
 
-// 详情/事实暂复用 DevConsole
-export async function fetchOrderView(params: { platform: string; shopId: string; extOrderNo: string }): Promise<OrderView> {
-  return fetchDevOrderView(params) as Promise<(DevOrderView & OrderView)>;
+// ✅ 平台订单镜像：使用 orders 域权威只读接口（不要复用 DevConsole）
+export async function fetchOrderView(params: {
+  platform: string;
+  shopId: string;
+  extOrderNo: string;
+}): Promise<OrderView> {
+  const path = `/orders/${encodeURIComponent(params.platform)}/${encodeURIComponent(
+    params.shopId,
+  )}/${encodeURIComponent(params.extOrderNo)}/view`;
+
+  return apiGet<OrderView>(path);
 }
 
-export async function fetchOrderFacts(params: { platform: string; shopId: string; extOrderNo: string }): Promise<OrderFacts> {
-  return fetchDevOrderFacts(params) as Promise<DevOrderFacts>;
+export async function fetchOrderFacts(params: {
+  platform: string;
+  shopId: string;
+  extOrderNo: string;
+}): Promise<OrderFacts> {
+  const path = `/orders/${encodeURIComponent(params.platform)}/${encodeURIComponent(
+    params.shopId,
+  )}/${encodeURIComponent(params.extOrderNo)}/facts`;
+
+  return apiGet<OrderFacts>(path);
 }
 
 export async function manualAssignFulfillmentWarehouse(args: {

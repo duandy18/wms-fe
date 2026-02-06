@@ -1,7 +1,5 @@
 // src/features/orders/api/types.ts
 
-import type { DevOrderView, DevOrderFacts } from "../../dev/orders/api/index";
-
 export type WarehouseOption = {
   id: number;
   code: string | null;
@@ -40,6 +38,69 @@ export type OrdersSummaryResponse = {
 };
 
 // ------------------------------
+// Platform Order Mirror（只读）
+// ------------------------------
+
+export type PlatformOrderAddress = {
+  receiver_name?: string | null;
+  receiver_phone?: string | null;
+  province?: string | null;
+  city?: string | null;
+  district?: string | null;
+  detail?: string | null;
+  zipcode?: string | null;
+};
+
+export type PlatformOrderLine = {
+  sku?: string | null;
+  title?: string | null;
+  qty: number;
+  item_id?: number | null;
+  spec?: string | null;
+};
+
+export type PlatformOrder = {
+  id: number;
+  platform: string;
+  shop_id: string;
+  ext_order_no: string;
+
+  status?: string | null;
+  created_at: string; // ISO
+  updated_at?: string | null;
+
+  order_amount?: number | null;
+  pay_amount?: number | null;
+
+  buyer_name?: string | null;
+  buyer_phone?: string | null;
+
+  address?: PlatformOrderAddress | null;
+  items: PlatformOrderLine[];
+};
+
+export type OrderView = {
+  ok: boolean;
+  order: PlatformOrder;
+};
+
+export type OrderFactItem = {
+  item_id: number;
+  sku_id?: string | null;
+  title?: string | null;
+
+  qty_ordered: number;
+  qty_shipped: number;
+  qty_returned: number;
+  qty_remaining_refundable: number;
+};
+
+export type OrderFacts = {
+  ok: boolean;
+  items: OrderFactItem[];
+};
+
+// ------------------------------
 // Phase 5.3 Explain（只读对齐）
 // ------------------------------
 
@@ -72,7 +133,3 @@ export type OrderWarehouseAvailabilityResponse = {
   lines: OrderWarehouseAvailabilityLine[];
   matrix: OrderWarehouseAvailabilityCell[];
 };
-
-// 详情/事实暂复用 DevConsole
-export type OrderView = DevOrderView;
-export type OrderFacts = DevOrderFacts;

@@ -51,11 +51,6 @@ export const OrderBasicsCard: React.FC<{
         </div>
 
         <div>
-          <div className="text-[11px] text-slate-500">仓库 ID</div>
-          <div>{order.warehouse_id ?? "-"}</div>
-        </div>
-
-        <div>
           <div className="text-[11px] text-slate-500">金额 / 实付</div>
           <div className="font-mono text-[12px]">
             {order.order_amount ?? "-"} / {order.pay_amount ?? "-"}

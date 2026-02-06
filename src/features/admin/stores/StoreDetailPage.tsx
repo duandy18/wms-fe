@@ -11,7 +11,6 @@ import { useStoreMetaForm } from "./hooks/useStoreMetaForm";
 import { StoreMetaCard } from "./components/StoreMetaCard";
 import { StoreCredentialsPanel } from "./components/StoreCredentialsPanel";
 
-import { StoreSkusCard } from "./store-skus/StoreSkusCard";
 import StoreFulfillmentPolicyCard from "./components/StoreFulfillmentPolicyCard";
 
 export default function StoreDetailPage() {
@@ -46,19 +45,26 @@ export default function StoreDetailPage() {
     <div className="space-y-4 p-4">
       <div className="flex items-center justify-between">
         <PageTitle title="商铺详情" />
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100"
-        >
-          返回商铺管理
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/stores/${storeId}/platform-skus`)}
+            className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+          >
+            平台商品（PSKU）
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+          >
+            返回商铺管理
+          </button>
+        </div>
       </div>
 
       {p.error && (
-        <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
-          {p.error}
-        </div>
+        <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{p.error}</div>
       )}
 
       {meta.metaError && (
@@ -135,7 +141,7 @@ export default function StoreDetailPage() {
             </div>
           </div>
 
-          {/* ✅ 选仓策略（你之前“没发现”的核心原因：以前这里没有任何绑定策略 UI） */}
+          {/* ✅ 选仓策略 */}
           <StoreFulfillmentPolicyCard
             storeId={p.detail.store_id}
             canWrite={p.canWrite}
@@ -143,15 +149,13 @@ export default function StoreDetailPage() {
             onReload={p.reloadDetail}
           />
 
-          <StoreSkusCard
-            canWrite={p.canWrite}
-            store={{
-              store_id: p.detail.store_id,
-              platform: p.detail.platform,
-              shop_id: p.detail.shop_id,
-            }}
-            bindings={p.detail.bindings ?? []}
-          />
+          {/* ✅ Phase A：售卖清单模块暂时退场（避免旧接口 404 误导） */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <div className="font-medium">商铺商品（售卖清单）正在升级</div>
+            <div className="mt-1 text-amber-800">
+              当前后端接口尚未接入，已临时隐藏该模块。请使用右上角「平台商品（PSKU）」查看平台商品事实快照。
+            </div>
+          </div>
         </>
       )}
     </div>

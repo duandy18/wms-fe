@@ -263,6 +263,15 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+          {/* ✅ 旧入口（兼容）：商铺商品组合（FSKU）从 ops 迁到主数据 */}
+          <Route
+            path="ops/shop-bundles"
+            element={
+              <RequirePermission permission="config.store.write">
+                <Navigate to="/admin/shop-bundles" replace />
+              </RequirePermission>
+            }
+          />
 
           {/* ✅ 运价运维中心（治理 / 修复 / 清理） */}
           <Route
@@ -433,6 +442,14 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+<Route
+  path="stores/:storeId/platform-skus"
+  element={
+    <RequirePermission permission="config.store.write">
+      <P.StorePlatformSkusPage />
+    </RequirePermission>
+  }
+/>
           <Route
             path="warehouses"
             element={
@@ -457,6 +474,17 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+
+          {/* ✅ 主数据：商铺商品组合（FSKU） */}
+          <Route
+            path="admin/shop-bundles"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.ShopProductBundlesPage />
+              </RequirePermission>
+            }
+          />
+
           <Route
             path="admin/items"
             element={

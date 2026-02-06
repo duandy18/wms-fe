@@ -34,7 +34,10 @@ export function useOrderDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   const order = orderView?.order ?? null;
-  const traceId = order?.trace_id ?? facts?.order.trace_id ?? null;
+
+  // ✅ PlatformOrder（平台订单镜像）不携带 trace_id；OrderFacts 也不携带 order 字段
+  // ✅ 这里先降级为 null（后续若后端补齐合同字段，再做“合同驱动化”的接入）
+  const traceId: string | null = null;
 
   const hasRemainingRefundable = useMemo(() => {
     if (!facts?.items?.length) return false;
@@ -130,7 +133,9 @@ export function useOrderDetailPage() {
     setError(null);
     try {
       const payload = {
-        warehouse_id: order.warehouse_id ?? 1,
+        // ✅ PlatformOrder 不提供 warehouse_id；这里保留原先默认值
+        // TODO: 后端若提供“执行仓/服务仓/默认仓”等合同字段，再改为合同驱动
+        warehouse_id: 1,
         lines: candidates.map((f) => ({
           item_id: f.item_id,
           qty: f.qty_remaining_refundable,
@@ -158,10 +163,9 @@ export function useOrderDetailPage() {
   const handleViewStock = useCallback(
     (itemId: number) => {
       if (!order) return;
-      const wid = order.warehouse_id ?? "";
       const qs = new URLSearchParams();
       qs.set("item_id", String(itemId));
-      if (wid) qs.set("warehouse_id", String(wid));
+      // ✅ 不再附带 warehouse_id：PlatformOrder 不提供该字段
       navigate(`/tools/stocks?${qs.toString()}`);
     },
     [order, navigate],
