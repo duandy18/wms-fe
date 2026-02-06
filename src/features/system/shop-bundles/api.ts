@@ -8,6 +8,10 @@ function kindOf(x: unknown): string {
   return typeof x;
 }
 
+function isObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
 function asInt(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v)) {
     const i = Math.trunc(v);
@@ -22,16 +26,95 @@ function asInt(v: unknown): number | null {
   return null;
 }
 
+function asStr(v: unknown): string | null {
+  return typeof v === "string" ? v : null;
+}
+
+function asStrOrNull(v: unknown): string | null {
+  if (v === null) return null;
+  return typeof v === "string" ? v : null;
+}
+
 function asRole(v: unknown): "primary" | "gift" | null {
   return v === "primary" || v === "gift" ? v : null;
+}
+
+function asShape(v: unknown): "single" | "bundle" | null {
+  return v === "single" || v === "bundle" ? v : null;
+}
+
+function asStatus(v: unknown): "draft" | "published" | "retired" | null {
+  return v === "draft" || v === "published" || v === "retired" ? v : null;
+}
+
+function parseFskuRow(r: unknown, idx: number): Fsku {
+  if (!isObject(r)) {
+    throw new Error(`合同不匹配：/fskus.items[${idx}] 为 ${kindOf(r)}，期望对象`);
+  }
+
+  const id = asInt(r.id);
+  if (id == null) throw new Error(`合同不匹配：/fskus.items[${idx}].id 非法`);
+
+  const code = asStr(r.code);
+  if (!code) throw new Error(`合同不匹配：/fskus.items[${idx}].code 缺失或非法`);
+
+  const name = asStr(r.name);
+  if (!name) throw new Error(`合同不匹配：/fskus.items[${idx}].name 缺失或非法`);
+
+  const shape = asShape(r.shape);
+  if (shape == null) throw new Error(`合同不匹配：/fskus.items[${idx}].shape 非法（仅允许 single/bundle）`);
+
+  const status = asStatus(r.status);
+  if (status == null) throw new Error(`合同不匹配：/fskus.items[${idx}].status 非法（draft/published/retired）`);
+
+  const componentsSummary = asStr(r.components_summary);
+  if (componentsSummary == null) throw new Error(`合同不匹配：/fskus.items[${idx}].components_summary 缺失或非法`);
+
+  const publishedAt = asStrOrNull(r.published_at);
+  const retiredAt = asStrOrNull(r.retired_at);
+
+  const updatedAt = asStr(r.updated_at);
+  if (!updatedAt) throw new Error(`合同不匹配：/fskus.items[${idx}].updated_at 缺失或非法`);
+
+  const unitLabel = asStr((r as { unit_label?: unknown }).unit_label) ?? undefined;
+
+  return {
+    id,
+    code,
+    name,
+    shape,
+    status,
+    components_summary: componentsSummary,
+    published_at: publishedAt,
+    retired_at: retiredAt,
+    updated_at: updatedAt,
+    unit_label: unitLabel,
+  };
+}
+
+function unwrapFskusList(data: unknown): Fsku[] {
+  const arr: unknown[] | null = Array.isArray(data)
+    ? data
+    : isObject(data) && Array.isArray(data.items)
+      ? (data.items as unknown[])
+      : null;
+
+  if (arr == null) {
+    throw new Error(`合同不匹配：GET /fskus 返回 ${kindOf(data)}，期望数组或 { items: [...] }`);
+  }
+
+  const out: Fsku[] = [];
+  for (let i = 0; i < arr.length; i += 1) {
+    out.push(parseFskuRow(arr[i], i));
+  }
+  return out;
 }
 
 // -------- FSKU --------
 
 export async function apiListFskus(): Promise<Fsku[]> {
-  // 注意：如果后端返回分页 envelope（items/total/...），这里就不该用 Fsku[]。
-  // 目前此函数不在关键路径上；如要使用，建议按合同改成返回 envelope 并刚性解包。
-  return apiFetchJson<Fsku[]>("/fskus", { method: "GET" });
+  const raw = await apiFetchJson<unknown>("/fskus", { method: "GET" });
+  return unwrapFskusList(raw);
 }
 
 export async function apiCreateFskuDraft(args: { name: string; unit_label: string }): Promise<Fsku> {
@@ -42,14 +125,25 @@ export async function apiCreateFskuDraft(args: { name: string; unit_label: strin
   });
 }
 
+export async function apiPatchFskuName(id: number, name: string): Promise<Fsku> {
+  // ✅ 合同：PATCH /fskus/{id} -> 200 + FskuDetailOut（前端只需 name/updated_at 变化即可）
+  return apiFetchJson<Fsku>(`/fskus/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
 export async function apiPublishFsku(id: number): Promise<Fsku> {
   // ✅ 合同：200 + json(status=published)
   return apiFetchJson<Fsku>(`/fskus/${id}/publish`, { method: "POST" });
 }
 
 export async function apiRetireFsku(id: number): Promise<Fsku> {
-  // 合同未在你贴的片段里展示返回形状；先按常见“200 + json”写（不行会直接吐 Problem.message）
   return apiFetchJson<Fsku>(`/fskus/${id}/retire`, { method: "POST" });
+}
+
+export async function apiUnretireFsku(id: number): Promise<Fsku> {
+  return apiFetchJson<Fsku>(`/fskus/${id}/unretire`, { method: "POST" });
 }
 
 // ✅ components 写接口：POST /fskus/{id}/components
@@ -73,9 +167,7 @@ export async function apiGetFskuComponents(id: number): Promise<FskuComponent[]>
 
   const compsUnknown = (data as FskuComponentsReadResp).components;
   if (!Array.isArray(compsUnknown)) {
-    throw new Error(
-      `合同不匹配：GET /fskus/${id}/components.components 返回 ${kindOf(compsUnknown)}，期望 components: []`,
-    );
+    throw new Error(`合同不匹配：GET /fskus/${id}/components.components 返回 ${kindOf(compsUnknown)}，期望 components: []`);
   }
 
   // ✅ 轻量校验每个 component（避免把对象当数组再炸一次）
@@ -109,11 +201,7 @@ export async function apiGetFskuComponents(id: number): Promise<FskuComponent[]>
 
 // -------- Platform mirror --------
 
-export async function apiFetchPlatformMirror(args: {
-  platform: Platform;
-  shop_id: number;
-  platform_sku_id: string;
-}): Promise<PlatformMirror> {
+export async function apiFetchPlatformMirror(args: { platform: Platform; shop_id: number; platform_sku_id: string }): Promise<PlatformMirror> {
   return apiFetchJson<PlatformMirror>("/platform-skus/mirror", {
     method: "POST",
     body: JSON.stringify(args),
@@ -124,11 +212,7 @@ export async function apiFetchPlatformMirror(args: {
 
 type CurrentBindingResp = { current: PlatformSkuBinding | null };
 
-export async function apiGetCurrentBinding(args: {
-  platform: Platform;
-  shop_id: number;
-  platform_sku_id: string;
-}): Promise<PlatformSkuBinding | null> {
+export async function apiGetCurrentBinding(args: { platform: Platform; shop_id: number; platform_sku_id: string }): Promise<PlatformSkuBinding | null> {
   // ✅ 合同：GET /current -> { current: {...} }
   const res = await apiFetchJson<CurrentBindingResp>(`/platform-sku-bindings/current${qs(args)}`, { method: "GET" });
   return res.current ?? null;

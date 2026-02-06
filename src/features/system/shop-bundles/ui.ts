@@ -17,7 +17,15 @@ export function fmtIso(ts: string): string {
 }
 
 export function statusLabel(s: Fsku["status"]): string {
-  if (s === "draft") return "draft";
-  if (s === "published") return "published";
-  return "retired";
+  if (s === "draft") return "草稿";
+  if (s === "published") return "已发布";
+  return "已归档";
+}
+
+export function statusCode(s: Fsku["status"]): string {
+  return s;
+}
+
+export function shapeLabel(shape: Fsku["shape"]): string {
+  return shape === "single" ? "单品" : "组合";
 }
