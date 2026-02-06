@@ -1,30 +1,35 @@
 // src/features/operations/outbound-pick/OrderPickSidebar.tsx
 //
-// 左侧：订单列表（可操作） + 下方订单详情（只读） + 创建拣货任务（后端解析执行仓）
+// 左侧：订单列表（可操作） + 创建拣货任务（后端解析执行仓）
+// 约束：不在 Sidebar 渲染订单详情（详情搬到页面右侧）
 //
 // 方案 1：创建任务只传 order_id，不手工选仓（避免与店铺绑定/路由事实冲突）
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import type { OrderSummary } from "../../orders/api";
 import { useOrdersList } from "../../orders/hooks/useOrdersList";
-import { useOrderInlineDetail } from "../../orders/hooks/useOrderInlineDetail";
-import { OrderInlineDetailPanel } from "../../orders/components/OrderInlineDetailPanel";
 import { formatTs, renderStatus } from "../../orders/ui/format";
 
 import { CreatePickTaskCard } from "./orderPick/CreatePickTaskCard";
 import type { PickTask } from "./pickTasksApi";
 
 type Props = {
-  onPickOrder: (summary: OrderSummary | null) => void;
+  selectedOrderId: number | null;
+  onSelectOrder: (summary: OrderSummary) => void;
+  onClearSelectedOrder: () => void;
 
   // 方案 1：不传 warehouse_id，由后端解析
   onCreatePickTaskFromOrder: (summary: OrderSummary) => Promise<PickTask>;
 };
 
-export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder, onCreatePickTaskFromOrder }) => {
+export const OrderPickSidebar: React.FC<Props> = ({
+  selectedOrderId,
+  onSelectOrder,
+  onClearSelectedOrder,
+  onCreatePickTaskFromOrder,
+}) => {
   const list = useOrdersList({ initialPlatform: "PDD" });
-  const detail = useOrderInlineDetail();
 
   // 固定 MVP：把 status 收敛到 CREATED（幂等）
   const statusRaw = list.filters.status;
@@ -36,29 +41,17 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder, onCreatePickTas
     setFilters((prev) => ({ ...prev, status: "CREATED" }));
   }, [statusRaw, setFilters]);
 
-  // 当详情选中变化时，同步给右侧
+  // 若当前选中订单不在列表里，清掉选择态（右侧也会回空态）
   useEffect(() => {
-    onPickOrder(detail.selectedSummary ?? null);
-  }, [detail.selectedSummary, onPickOrder]);
+    if (!selectedOrderId) return;
+    const exists = list.rows.some((r) => r.id === selectedOrderId);
+    if (!exists) onClearSelectedOrder();
+  }, [selectedOrderId, list.rows, onClearSelectedOrder]);
 
-  // 若当前选中订单不在列表里，清掉详情
-  useEffect(() => {
-    if (!detail.selectedSummary) return;
-    const exists = list.rows.some((r) => r.id === detail.selectedSummary?.id);
-    if (!exists) detail.closeDetail();
-  }, [list.rows, detail]);
-
-  const devConsoleHref = useCallback((): string => {
-    const o = detail.detailOrder;
-    if (!o) return "/dev";
-    const qs = new URLSearchParams();
-    qs.set("platform", o.platform);
-    qs.set("shop_id", o.shop_id);
-    qs.set("ext_order_no", o.ext_order_no);
-    return `/dev?${qs.toString()}`;
-  }, [detail.detailOrder]);
-
-  const pickedOrder = detail.selectedSummary ?? null;
+  const pickedOrder = useMemo(() => {
+    if (!selectedOrderId) return null;
+    return list.rows.find((r) => r.id === selectedOrderId) ?? null;
+  }, [selectedOrderId, list.rows]);
 
   const [creatingTask, setCreatingTask] = useState(false);
   const [createTaskError, setCreateTaskError] = useState<string | null>(null);
@@ -104,7 +97,9 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder, onCreatePickTas
         </button>
       </div>
 
-      <div className="text-[11px] text-slate-500">方案 1：不再手工选仓；创建任务时由后端解析执行仓。</div>
+      <div className="text-[11px] text-slate-500">
+        方案 1：不再手工选仓；创建任务时由后端解析执行仓。
+      </div>
 
       {/* 极简过滤：平台/店铺（状态固定 CREATED） */}
       <div className="flex flex-wrap items-end gap-2 text-[11px]">
@@ -113,7 +108,9 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder, onCreatePickTas
           <input
             className="h-8 w-20 rounded border border-slate-300 px-2 text-[12px]"
             value={list.filters.platform}
-            onChange={(e) => list.setFilters((prev) => ({ ...prev, platform: e.target.value }))}
+            onChange={(e) =>
+              list.setFilters((prev) => ({ ...prev, platform: e.target.value }))
+            }
             placeholder="如 PDD"
           />
         </div>
@@ -123,7 +120,9 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder, onCreatePickTas
           <input
             className="h-8 w-24 rounded border border-slate-300 px-2 text-[12px]"
             value={list.filters.shopId}
-            onChange={(e) => list.setFilters((prev) => ({ ...prev, shopId: e.target.value }))}
+            onChange={(e) =>
+              list.setFilters((prev) => ({ ...prev, shopId: e.target.value }))
+            }
             placeholder="可选"
           />
         </div>
@@ -152,7 +151,9 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder, onCreatePickTas
       {/* 订单列表 */}
       <div className="border border-slate-200 rounded-lg max-h-[360px] overflow-auto text-xs">
         {list.rows.length === 0 ? (
-          <div className="px-3 py-2 text-slate-500">{list.loading ? "加载中…" : "暂无可履约订单（CREATED）。"}</div>
+          <div className="px-3 py-2 text-slate-500">
+            {list.loading ? "加载中…" : "暂无可履约订单（CREATED）。"}
+          </div>
         ) : (
           <table className="min-w-full border-collapse">
             <thead className="bg-slate-50 sticky top-0">
@@ -166,15 +167,16 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder, onCreatePickTas
             </thead>
             <tbody>
               {list.rows.map((r) => {
-                const active = detail.selectedSummary?.id === r.id;
+                const active = selectedOrderId === r.id;
                 return (
                   <tr
                     key={r.id}
                     className={
-                      "cursor-pointer border-t border-slate-100 " + (active ? "bg-sky-50" : "hover:bg-slate-50")
+                      "cursor-pointer border-t border-slate-100 " +
+                      (active ? "bg-sky-50" : "hover:bg-slate-50")
                     }
-                    onClick={() => void detail.loadDetail(r)}
-                    title="点击查看订单详情（只读）"
+                    onClick={() => onSelectOrder(r)}
+                    title="点击在右侧查看订单详情（只读）"
                   >
                     <td className="px-2 py-2">{r.platform}</td>
                     <td className="px-2 py-2">{r.shop_id}</td>
@@ -199,26 +201,6 @@ export const OrderPickSidebar: React.FC<Props> = ({ onPickOrder, onCreatePickTas
         canCreateTask={canCreateTask}
         onCreate={handleCreateTask}
       />
-
-      {/* 订单详情 */}
-      {detail.selectedSummary && (
-        <div className="pt-2">
-          <OrderInlineDetailPanel
-            selectedSummary={detail.selectedSummary}
-            selectedView={detail.selectedView}
-            selectedFacts={detail.selectedFacts}
-            detailLoading={detail.detailLoading}
-            detailError={detail.detailError}
-            onClose={detail.closeDetail}
-            onReload={() => {
-              void detail.reloadDetail();
-              void list.loadList();
-            }}
-            warehouses={[]}
-            devConsoleHref={devConsoleHref}
-          />
-        </div>
-      )}
     </section>
   );
 };

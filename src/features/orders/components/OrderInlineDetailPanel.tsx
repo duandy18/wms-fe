@@ -61,7 +61,10 @@ export const OrderInlineDetailPanel: React.FC<{
   const o = (detailOrder ?? undefined) as OrderWithFulfillment | undefined;
   const fulfillmentStatus = o?.fulfillment_status ?? null;
   const defaultWarehouseId = o?.service_warehouse_id ?? null;
-  const shipWarehouseId = detailOrder?.warehouse_id ?? null;
+
+  // ✅ execWarehouseId：平台订单镜像（PlatformOrder）不带 warehouse_id
+  // ✅ 这里降级为 summary 的只读字段（若存在则展示）
+  const shipWarehouseId = selectedSummary.warehouse_id ?? null;
 
   return (
     <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">

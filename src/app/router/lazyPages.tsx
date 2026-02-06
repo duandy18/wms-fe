@@ -38,6 +38,11 @@ export const OpsOverviewPage = lazy(() => import("../../features/ops/OpsOverview
 export const OpsHealthPage = lazy(() => import("../../features/ops/OpsHealthPage"));
 export const OpsTasksPage = lazy(() => import("../../features/ops/OpsTasksPage"));
 
+// ✅ 系统治理：商铺商品组合（FSKU）
+export const ShopProductBundlesPage = lazy(
+  () => import("../../features/system/shop-bundles/ShopProductBundlesPage"),
+);
+
 // ✅ 运维中心 / 后端调试台（Tab → 页面化）
 export const OpsDevOrdersPage = lazy(() => import("../../features/ops/dev/OpsDevOrdersPage"));
 export const OpsDevPickPage = lazy(() => import("../../features/ops/dev/OpsDevPickPage"));
@@ -53,6 +58,7 @@ export const PricingOpsCleanupPage = lazy(() => import("../../features/ops/prici
 // 主数据
 export const StoresListPage = lazy(() => import("../../features/admin/stores/StoresListPage"));
 export const StoreDetailPage = lazy(() => import("../../features/admin/stores/StoreDetailPage"));
+export const StorePlatformSkusPage = lazy(() => import("../../features/admin/stores/platform-skus/StorePlatformSkusPage"));
 export const ItemsPage = lazy(() => import("../../features/admin/items/ItemsPage"));
 
 // ✅ 权限与账号：3 个子页面（/iam/*）
@@ -81,7 +87,7 @@ export const ShippingProviderDetailPage = lazy(
   () => import("../../features/admin/shipping-providers/pages/ShippingProviderDetailPage"),
 );
 
-// ✅ 运价方案工作台（纵向主线页：包含所有内容，从上到下）
+// ✅ 运价方案工作台（纵向主线页：包含所有内容，从上到下））
 export const SchemeWorkbenchFlowPage = lazy(
   () => import("../../features/admin/shipping-providers/scheme/SchemeWorkbenchFlowPage"),
 );
