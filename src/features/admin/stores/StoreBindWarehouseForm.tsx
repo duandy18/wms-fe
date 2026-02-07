@@ -18,7 +18,7 @@ type Props = {
 const roleOptions: Array<{ value: WarehouseRole; label: string; hint: string }> = [
   { value: "TOP", label: "主仓（优先）", hint: "整单同仓优先选择（只能有一个主仓）" },
   { value: "DEFAULT", label: "次仓（备用）", hint: "主仓不可履约时允许切换（不拆单、不自动兜底）" },
-  { value: "NORMAL", label: "仅绑定（不优先）", hint: "作为备选记录存在，不参与默认裁决" },
+  { value: "NORMAL", label: "仅绑定（不优先）", hint: "" },
 ];
 
 export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSubmit }) => {
@@ -90,8 +90,8 @@ export const StoreBindWarehouseForm: React.FC<Props> = ({ canWrite, saving, onSu
               {loadingWarehouses
                 ? "加载仓库列表中…"
                 : warehouses.length === 0
-                ? "暂无可用仓库"
-                : "请选择仓库"}
+                  ? "暂无可用仓库"
+                  : "请选择仓库"}
             </option>
 
             {warehouses.map((wh) => {

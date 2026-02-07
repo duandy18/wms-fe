@@ -48,13 +48,6 @@ export default function StoreDetailPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => navigate(`/stores/${storeId}/platform-skus`)}
-            className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100"
-          >
-            平台商品（PSKU）
-          </button>
-          <button
-            type="button"
             onClick={() => navigate(-1)}
             className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100"
           >
@@ -141,21 +134,13 @@ export default function StoreDetailPage() {
             </div>
           </div>
 
-          {/* ✅ 选仓策略 */}
+          {/* ✅ 履约入口：店铺 → 仓库绑定（主仓/次仓/优先级/启停） */}
           <StoreFulfillmentPolicyCard
             storeId={p.detail.store_id}
             canWrite={p.canWrite}
             bindings={p.detail.bindings ?? []}
             onReload={p.reloadDetail}
           />
-
-          {/* ✅ Phase A：售卖清单模块暂时退场（避免旧接口 404 误导） */}
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            <div className="font-medium">商铺商品（售卖清单）正在升级</div>
-            <div className="mt-1 text-amber-800">
-              当前后端接口尚未接入，已临时隐藏该模块。请使用右上角「平台商品（PSKU）」查看平台商品事实快照。
-            </div>
-          </div>
         </>
       )}
     </div>
