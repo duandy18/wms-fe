@@ -442,14 +442,7 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-<Route
-  path="stores/:storeId/platform-skus"
-  element={
-    <RequirePermission permission="config.store.write">
-      <P.StorePlatformSkusPage />
-    </RequirePermission>
-  }
-/>
+
           <Route
             path="warehouses"
             element={
@@ -493,6 +486,7 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+
           <Route
             path="admin/suppliers"
             element={

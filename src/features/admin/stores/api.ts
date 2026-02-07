@@ -11,10 +11,6 @@ import type {
   UpdateBindingPayload,
   DefaultWarehouseResponse,
   StorePlatformAuthStatus,
-  StoreSkuListOut,
-  StoreSkuAddIn,
-  StoreSkuAddOut,
-  StoreSkuRemoveOut,
 } from "./types";
 
 type OkEnvelope<T> = { ok: boolean; data: T };
@@ -46,31 +42,19 @@ export async function updateStore(storeId: number, payload: StoreUpdatePayload) 
 
 export async function bindWarehouse(storeId: number, payload: BindWarehousePayload) {
   // 后端通常仍是 { ok, data }，这里用 envelope 护栏，不改变调用方行为
-  const resp = await apiPost<OkEnvelope<Record<string, unknown>>>(
-    `/stores/${storeId}/warehouses/bind`,
-    payload,
-  );
+  const resp = await apiPost<OkEnvelope<Record<string, unknown>>>(`/stores/${storeId}/warehouses/bind`, payload);
   assertOk(resp, "POST /stores/{store_id}/warehouses/bind");
   return resp;
 }
 
-export async function updateBinding(
-  storeId: number,
-  warehouseId: number,
-  payload: UpdateBindingPayload,
-) {
-  const resp = await apiPatch<OkEnvelope<Record<string, unknown>>>(
-    `/stores/${storeId}/warehouses/${warehouseId}`,
-    payload,
-  );
+export async function updateBinding(storeId: number, warehouseId: number, payload: UpdateBindingPayload) {
+  const resp = await apiPatch<OkEnvelope<Record<string, unknown>>>(`/stores/${storeId}/warehouses/${warehouseId}`, payload);
   assertOk(resp, "PATCH /stores/{store_id}/warehouses/{warehouse_id}");
   return resp;
 }
 
 export async function deleteBinding(storeId: number, warehouseId: number) {
-  const resp = await apiDelete<OkEnvelope<Record<string, unknown>>>(
-    `/stores/${storeId}/warehouses/${warehouseId}`,
-  );
+  const resp = await apiDelete<OkEnvelope<Record<string, unknown>>>(`/stores/${storeId}/warehouses/${warehouseId}`);
   assertOk(resp, "DELETE /stores/{store_id}/warehouses/{warehouse_id}");
   return resp;
 }
@@ -83,9 +67,7 @@ export async function fetchDefaultWarehouse(storeId: number) {
 
 // /stores/{store_id}/platform-auth：后端返回 { ok, data }
 export async function fetchStorePlatformAuth(storeId: number): Promise<StorePlatformAuthStatus> {
-  const resp = await apiGet<{ ok: boolean; data: StorePlatformAuthStatus }>(
-    `/stores/${storeId}/platform-auth`,
-  );
+  const resp = await apiGet<{ ok: boolean; data: StorePlatformAuthStatus }>(`/stores/${storeId}/platform-auth`);
   return assertOk(resp, "GET /stores/{store_id}/platform-auth");
 }
 
@@ -102,32 +84,6 @@ export async function saveStorePlatformCredentials(input: {
     access_token: input.accessToken,
     status: "ACTIVE",
   });
-}
-
-/* ================================
- * 商铺 SKU（store_items）- 视图模块
- * ================================ */
-
-export async function fetchStoreSkus(storeId: number): Promise<StoreSkuListOut> {
-  // 约定：GET /stores/{store_id}/items
-  // 注意：后端尚未接入时可能 404；调用方负责降级提示
-  const resp = await apiGet<StoreSkuListOut>(`/stores/${storeId}/items`);
-  assertOk(resp as unknown as OkEnvelope<unknown>, "GET /stores/{store_id}/items");
-  return resp;
-}
-
-export async function addStoreSku(storeId: number, payload: StoreSkuAddIn): Promise<StoreSkuAddOut> {
-  // 约定：POST /stores/{store_id}/items  body: { item_id }
-  const resp = await apiPost<StoreSkuAddOut>(`/stores/${storeId}/items`, payload);
-  assertOk(resp as unknown as OkEnvelope<unknown>, "POST /stores/{store_id}/items");
-  return resp;
-}
-
-export async function removeStoreSku(storeId: number, itemId: number): Promise<StoreSkuRemoveOut> {
-  // 约定：DELETE /stores/{store_id}/items/{item_id}
-  const resp = await apiDelete<StoreSkuRemoveOut>(`/stores/${storeId}/items/${itemId}`);
-  assertOk(resp as unknown as OkEnvelope<unknown>, "DELETE /stores/{store_id}/items/{item_id}");
-  return resp;
 }
 
 // ================================
@@ -170,17 +126,11 @@ export async function updateProvinceRoute(
   routeId: number,
   payload: Partial<{ province: string; warehouse_id: number; priority: number; active: boolean }>,
 ): Promise<{ id: number | null }> {
-  const resp = await apiPatch<RouteWriteOut>(
-    `/stores/${storeId}/routes/provinces/${routeId}`,
-    payload,
-  );
+  const resp = await apiPatch<RouteWriteOut>(`/stores/${storeId}/routes/provinces/${routeId}`, payload);
   return assertOk(resp, "PATCH /stores/{store_id}/routes/provinces/{route_id}");
 }
 
-export async function deleteProvinceRoute(
-  storeId: number,
-  routeId: number,
-): Promise<{ id: number | null }> {
+export async function deleteProvinceRoute(storeId: number, routeId: number): Promise<{ id: number | null }> {
   const resp = await apiDelete<RouteWriteOut>(`/stores/${storeId}/routes/provinces/${routeId}`);
   return assertOk(resp, "DELETE /stores/{store_id}/routes/provinces/{route_id}");
 }
