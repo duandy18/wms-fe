@@ -17,6 +17,9 @@ export type OrderSummary = {
   created_at: string; // ISO
   updated_at?: string | null;
 
+  // ✅ 内部店铺主键（stores.id）：用于治理/解析卡 replay 入参（前端不得推导）
+  store_id?: number | null;
+
   warehouse_id?: number | null;
   service_warehouse_id?: number | null;
   fulfillment_status?: string | null;
