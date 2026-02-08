@@ -478,6 +478,16 @@ const AppRouter: React.FC = () => {
             }
           />
 
+          {/* ✅ 主数据：平台上架 SKU（PSKU） */}
+          <Route
+            path="admin/psku"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.PskuManagePage />
+              </RequirePermission>
+            }
+          />
+
           <Route
             path="admin/items"
             element={

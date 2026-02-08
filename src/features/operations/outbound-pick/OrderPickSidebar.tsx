@@ -14,6 +14,10 @@ import { formatTs, renderStatus } from "../../orders/ui/format";
 import { CreatePickTaskCard } from "./orderPick/CreatePickTaskCard";
 import type { PickTask } from "./pickTasksApi";
 
+// ✅ 新增：订单解析卡（字段驱动：replay，不推导）
+import { OrderExplainCard } from "./orderExplain/OrderExplainCard";
+import type { OrderExplainCardInput } from "./orderExplain/types";
+
 type Props = {
   selectedOrderId: number | null;
   onSelectOrder: (summary: OrderSummary) => void;
@@ -32,6 +36,7 @@ export const OrderPickSidebar: React.FC<Props> = ({
   const list = useOrdersList({ initialPlatform: "PDD" });
 
   // 固定 MVP：把 status 收敛到 CREATED（幂等）
+  // 说明：这里的 status 是“订单头状态 orders.status”，不是履约状态。
   const statusRaw = list.filters.status;
   const setFilters = list.setFilters;
 
@@ -52,6 +57,17 @@ export const OrderPickSidebar: React.FC<Props> = ({
     if (!selectedOrderId) return null;
     return list.rows.find((r) => r.id === selectedOrderId) ?? null;
   }, [selectedOrderId, list.rows]);
+
+  const explainInput = useMemo<OrderExplainCardInput | null>(() => {
+    if (!pickedOrder) return null;
+    return {
+      orderId: pickedOrder.id,
+      platform: pickedOrder.platform,
+      shop_id: pickedOrder.shop_id,
+      ext_order_no: pickedOrder.ext_order_no,
+      store_id: pickedOrder.store_id ?? null,
+    };
+  }, [pickedOrder]);
 
   const [creatingTask, setCreatingTask] = useState(false);
   const [createTaskError, setCreateTaskError] = useState<string | null>(null);
@@ -86,7 +102,7 @@ export const OrderPickSidebar: React.FC<Props> = ({
   return (
     <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-800">订单列表（可履约）</h2>
+        <h2 className="text-sm font-semibold text-slate-800">订单列表（订单头状态）</h2>
         <button
           type="button"
           onClick={() => void list.loadList()}
@@ -97,20 +113,22 @@ export const OrderPickSidebar: React.FC<Props> = ({
         </button>
       </div>
 
-      <div className="text-[11px] text-slate-500">
-        方案 1：不再手工选仓；创建任务时由后端解析执行仓。
+      <div className="text-[11px] text-slate-500 space-y-1">
+        <div>方案 1：不再手工选仓；创建任务时由后端解析执行仓。</div>
+        <div>
+          说明：下方“订单状态”指 <span className="font-mono">orders.status</span>（订单头状态）。
+          履约状态请看右侧业务卡中的 <span className="font-mono">fulfillment_status</span>。
+        </div>
       </div>
 
-      {/* 极简过滤：平台/店铺（状态固定 CREATED） */}
+      {/* 极简过滤：平台/店铺（订单头状态固定 CREATED） */}
       <div className="flex flex-wrap items-end gap-2 text-[11px]">
         <div className="flex flex-col gap-1">
           <span className="text-slate-500">平台</span>
           <input
             className="h-8 w-20 rounded border border-slate-300 px-2 text-[12px]"
             value={list.filters.platform}
-            onChange={(e) =>
-              list.setFilters((prev) => ({ ...prev, platform: e.target.value }))
-            }
+            onChange={(e) => list.setFilters((prev) => ({ ...prev, platform: e.target.value }))}
             placeholder="如 PDD"
           />
         </div>
@@ -120,20 +138,20 @@ export const OrderPickSidebar: React.FC<Props> = ({
           <input
             className="h-8 w-24 rounded border border-slate-300 px-2 text-[12px]"
             value={list.filters.shopId}
-            onChange={(e) =>
-              list.setFilters((prev) => ({ ...prev, shopId: e.target.value }))
-            }
+            onChange={(e) => list.setFilters((prev) => ({ ...prev, shopId: e.target.value }))}
             placeholder="可选"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-slate-500">状态</span>
+          <span className="text-slate-500">订单状态</span>
           <input
-            className="h-8 w-24 rounded border border-slate-200 bg-slate-50 px-2 text-[12px] text-slate-600"
+            className="h-8 w-28 rounded border border-slate-200 bg-slate-50 px-2 text-[12px] text-slate-600"
             value="CREATED"
             readOnly
+            aria-label="订单头状态（orders.status）"
           />
+          <div className="text-[10px] text-slate-400">订单头状态（不是履约状态）</div>
         </div>
 
         <button
@@ -152,7 +170,7 @@ export const OrderPickSidebar: React.FC<Props> = ({
       <div className="border border-slate-200 rounded-lg max-h-[360px] overflow-auto text-xs">
         {list.rows.length === 0 ? (
           <div className="px-3 py-2 text-slate-500">
-            {list.loading ? "加载中…" : "暂无可履约订单（CREATED）。"}
+            {list.loading ? "加载中…" : "暂无订单（订单头状态=CREATED）。"}
           </div>
         ) : (
           <table className="min-w-full border-collapse">
@@ -161,7 +179,7 @@ export const OrderPickSidebar: React.FC<Props> = ({
                 <th className="px-2 py-2 text-left">平台</th>
                 <th className="px-2 py-2 text-left">店铺</th>
                 <th className="px-2 py-2 text-left">外部订单号</th>
-                <th className="px-2 py-2 text-left">状态</th>
+                <th className="px-2 py-2 text-left">订单状态</th>
                 <th className="px-2 py-2 text-left">创建时间</th>
               </tr>
             </thead>
@@ -171,10 +189,7 @@ export const OrderPickSidebar: React.FC<Props> = ({
                 return (
                   <tr
                     key={r.id}
-                    className={
-                      "cursor-pointer border-t border-slate-100 " +
-                      (active ? "bg-sky-50" : "hover:bg-slate-50")
-                    }
+                    className={"cursor-pointer border-t border-slate-100 " + (active ? "bg-sky-50" : "hover:bg-slate-50")}
                     onClick={() => onSelectOrder(r)}
                     title="点击在右侧查看订单详情（只读）"
                   >
@@ -192,6 +207,9 @@ export const OrderPickSidebar: React.FC<Props> = ({
           </table>
         )}
       </div>
+
+      {/* ✅ 订单解析卡：订单列表下方，创建任务上方 */}
+      <OrderExplainCard input={explainInput} />
 
       <CreatePickTaskCard
         pickedOrder={pickedOrder}

@@ -2,9 +2,24 @@
 import React, { useMemo } from "react";
 import type { OrderSummary } from "../../../orders/api";
 import { getObj, getStr, isRecord } from "./jsonPick";
+import type { PlatformOrderReplayOut } from "../orderExplain/types";
+
+type ExplainLite =
+  | { kind: "idle" }
+  | { kind: "missing_key"; reason: string }
+  | { kind: "loading" }
+  | { kind: "ready"; data: PlatformOrderReplayOut }
+  | { kind: "error"; message: string };
 
 function fmtTs(ts: string | null): string {
   return ts && ts.trim() ? ts : "—";
+}
+
+function humanBlockedHint(blockedReasons: string[] | null | undefined): string {
+  const rs = blockedReasons ?? [];
+  if (!rs.length) return "—";
+  if (rs.includes("PROVINCE_MISSING_OR_INVALID")) return "地址省份缺失/无效，无法履约路由（暂不可拣货）。";
+  return rs.join(" / ");
 }
 
 export const OrderMirrorBasics: React.FC<{
@@ -12,7 +27,11 @@ export const OrderMirrorBasics: React.FC<{
   detailOrder: unknown;
   loading: boolean;
   onReload?: () => void;
-}> = ({ summary, detailOrder, loading, onReload }) => {
+
+  // ✅ 解析结果（replay）注入，用于把“可执行信息”体现在地址卡里
+  explain: ExplainLite;
+  onReloadExplain?: () => void;
+}> = ({ summary, detailOrder, loading, onReload, explain, onReloadExplain }) => {
   const detailRec = isRecord(detailOrder) ? detailOrder : null;
 
   const platform = useMemo(() => {
@@ -84,14 +103,25 @@ export const OrderMirrorBasics: React.FC<{
     return getStr(shipping, ["phone", "mobile", "tel", "receiver_phone", "receiverPhone"]) ?? "—";
   }, [shipping]);
 
+  const province = useMemo(() => {
+    if (!shipping) return "";
+    return (getStr(shipping, ["province", "state", "prov"]) ?? "").trim();
+  }, [shipping]);
+
+  const city = useMemo(() => {
+    if (!shipping) return "";
+    return (getStr(shipping, ["city"]) ?? "").trim();
+  }, [shipping]);
+
+  const district = useMemo(() => {
+    if (!shipping) return "";
+    return (getStr(shipping, ["district", "county", "area"]) ?? "").trim();
+  }, [shipping]);
+
   const region = useMemo(() => {
-    if (!shipping) return "—";
-    const province = getStr(shipping, ["province", "state", "prov"]) ?? "";
-    const city = getStr(shipping, ["city"]) ?? "";
-    const district = getStr(shipping, ["district", "county", "area"]) ?? "";
     const parts = [province, city, district].filter((x) => x.trim());
     return parts.length ? parts.join(" ") : "—";
-  }, [shipping]);
+  }, [province, city, district]);
 
   const fullAddress = useMemo(() => {
     if (!shipping) return null;
@@ -101,6 +131,23 @@ export const OrderMirrorBasics: React.FC<{
   }, [shipping]);
 
   const headerLabel = useMemo(() => `${platform}/${shopId} · ${extOrderNo}`, [platform, shopId, extOrderNo]);
+
+  // ---------- explain derived (only from backend fields) ----------
+  const explainData = explain.kind === "ready" ? explain.data : null;
+  const fulfillmentStatus = explainData?.fulfillment_status ?? null;
+  const blockedReasons = explainData?.blocked_reasons ?? null;
+  const isBlocked = (fulfillmentStatus ?? "") === "FULFILLMENT_BLOCKED";
+  const blockedHint = humanBlockedHint(blockedReasons);
+
+  const provinceMissingOrInvalid = isBlocked && (blockedReasons ?? []).includes("PROVINCE_MISSING_OR_INVALID");
+
+  const explainBadge = useMemo(() => {
+    if (explain.kind === "loading") return { text: "解析中…", cls: "bg-slate-50 text-slate-600 border-slate-200" };
+    if (explain.kind === "error") return { text: "解析失败", cls: "bg-red-50 text-red-700 border-red-200" };
+    if (explain.kind === "missing_key") return { text: "缺 store_id", cls: "bg-amber-50 text-amber-800 border-amber-200" };
+    if (explain.kind === "ready") return { text: "已解析", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+    return { text: "未解析", cls: "bg-slate-50 text-slate-600 border-slate-200" };
+  }, [explain.kind]);
 
   return (
     <div className="space-y-3">
@@ -114,17 +161,45 @@ export const OrderMirrorBasics: React.FC<{
           </div>
         </div>
 
-        {onReload ? (
-          <button
-            type="button"
-            className="shrink-0 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-            onClick={onReload}
-            disabled={loading}
-          >
-            {loading ? "刷新中…" : "刷新"}
-          </button>
-        ) : null}
+        <div className="shrink-0 flex items-center gap-2">
+          <span className={"inline-flex items-center rounded-full border px-2 py-1 text-[11px] " + explainBadge.cls}>
+            {explainBadge.text}
+          </span>
+
+          {onReloadExplain ? (
+            <button
+              type="button"
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              onClick={onReloadExplain}
+              disabled={explain.kind === "loading"}
+              title="重放/刷新解析结果"
+            >
+              {explain.kind === "loading" ? "解析中…" : "重放解析"}
+            </button>
+          ) : null}
+
+          {onReload ? (
+            <button
+              type="button"
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              onClick={onReload}
+              disabled={loading}
+            >
+              {loading ? "刷新中…" : "刷新"}
+            </button>
+          ) : null}
+        </div>
       </div>
+
+      {/* ✅ 履约阻塞的“人话提示”放在地址卡上方（用户能懂） */}
+      {isBlocked ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">
+          <div className="font-semibold">暂不可拣货</div>
+          <div className="mt-1">
+            {blockedHint}
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-3 md:grid-cols-2">
         <div className="rounded-lg border border-slate-200 px-3 py-2">
@@ -132,12 +207,29 @@ export const OrderMirrorBasics: React.FC<{
           <div className="mt-1 text-[12px] text-slate-900">
             {consigneeName} · {consigneePhone}
           </div>
-          <div className="mt-1 text-[11px] text-slate-600">{region}</div>
+
+          {/* region 行：如果是省份缺失导致 blocked，则红色强调 */}
+          <div className={"mt-1 text-[11px] " + (provinceMissingOrInvalid ? "text-red-700 font-semibold" : "text-slate-600")}>
+            {region}
+            {provinceMissingOrInvalid ? (
+              <span className="ml-2 rounded bg-red-100 px-2 py-0.5 text-[10px] text-red-700">
+                省份缺失/无效
+              </span>
+            ) : null}
+          </div>
+
           {fullAddress ? (
             <div className="mt-1 text-[11px] text-slate-500 line-clamp-2">{fullAddress}</div>
           ) : (
             <div className="mt-1 text-[11px] text-slate-400">—</div>
           )}
+
+          {/* 额外：把“省份字段是否为空”也提示出来（不推导，只是展示 shipping.province） */}
+          {provinceMissingOrInvalid ? (
+            <div className="mt-2 text-[11px] text-red-700">
+              当前 province：<span className="font-mono">{province ? province : "（空）"}</span>
+            </div>
+          ) : null}
         </div>
 
         <div className="rounded-lg border border-slate-200 px-3 py-2">
