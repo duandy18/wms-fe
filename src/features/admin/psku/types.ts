@@ -37,14 +37,17 @@ export interface PskuBinding {
   updated_by?: string | null;
 }
 
+/**
+ * 旧：店铺局部列表（/stores/{store_id}/platform-skus）
+ * 先保留类型，避免未来别处引用时被误伤。
+ */
 export interface PskuRow {
   id: PskuId;
 
-  // 真实镜像/绑定接口要求 platform
+  // mirror / binding 查询需要 platform
   platform: string;
 
-  // list 接口是 /stores/{store_id}/platform-skus
-  // mirror/binding 接口用 shop_id；这里默认 shop_id == store_id
+  // list 接口：/stores/{store_id}/platform-skus
   store_id: number;
   store_name?: string | null;
 
@@ -74,7 +77,54 @@ export interface BindingHistoryItem {
   note?: string | null;
 }
 
-export interface PskuDetail {
-  psku: PskuRow;
-  history: BindingHistoryItem[];
+/**
+ * ✅ 新：治理总表（/psku-governance）
+ * 后端是“刚性契约”：平铺字段 + governance/action_hint/bind_ctx
+ */
+export type PskuGovernanceStatus = "BOUND" | "UNBOUND" | "LEGACY_ITEM_BOUND";
+export type PskuGovernanceAction = "OK" | "BIND_FIRST" | "MIGRATE_LEGACY";
+export type PskuGovernanceRequired = "fsku_id" | "binding_id" | "to_fsku_id";
+export type PskuGovernanceMirrorFreshness = "ok" | "missing";
+
+export interface PskuGovernanceActionHint {
+  action: PskuGovernanceAction;
+  required: PskuGovernanceRequired[];
+}
+
+export interface PskuBindCtx {
+  suggest_q: string;
+  suggest_fsku_query: string;
+}
+
+export interface PskuGovernanceRow {
+  platform: string;
+  store_id: number;
+  store_name?: string | null;
+
+  platform_sku_id: string;
+  sku_name?: string | null;
+  spec?: string | null;
+
+  mirror_freshness: PskuGovernanceMirrorFreshness;
+
+  binding_id?: number | null;
+
+  fsku_id?: number | null;
+  fsku_code?: string | null;
+  fsku_name?: string | null;
+  fsku_status?: string | null;
+
+  governance: { status: PskuGovernanceStatus };
+  action_hint: PskuGovernanceActionHint;
+
+  bind_ctx?: PskuBindCtx | null;
+
+  component_item_ids: number[];
+}
+
+export interface PskuGovernanceOut {
+  items: PskuGovernanceRow[];
+  total: number;
+  limit: number;
+  offset: number;
 }
