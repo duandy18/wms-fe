@@ -96,7 +96,6 @@ export const menuSections: RouteSection[] = [
       { path: "/admin/shop-bundles", label: "商铺商品组合", requiredPermissions: ["config.store.write"] },
 
       // ✅ 主数据：平台上架 SKU（PSKU）
-      { path: "/admin/psku", label: "平台上架SKU（PSKU）", requiredPermissions: ["config.store.write"] },
 
       // ✅ 物流 / 承运商（主数据归位）
       // 语义：Shipping Provider = 仓库可用的快递网点（warehouse_id 是事实边界）
