@@ -9,10 +9,9 @@ import { useOrderExplain } from "./useOrderExplain";
 // 现在先用最朴素的结构，保证语义正确、字段驱动。
 export const OrderExplainCard: React.FC<{
   input: OrderExplainCardInput | null;
-  onGoBindPsku?: (ctx: { platform?: string; store_id?: number | null; platform_sku_id?: string | null }) => void;
   onGoFsku?: (ctx: { fsku_id?: number | null }) => void;
   onGoFixAddress?: (ctx: { order_id?: number; platform?: string; shop_id?: string; ext_order_no?: string }) => void;
-}> = ({ input, onGoBindPsku, onGoFsku, onGoFixAddress }) => {
+}> = ({ input,  onGoFsku, onGoFixAddress }) => {
   const { state, reload } = useOrderExplain(input);
 
   const title = useMemo(() => {
@@ -57,7 +56,7 @@ export const OrderExplainCard: React.FC<{
         )}
 
         {state.kind === "ready" && (
-          <ExplainBody data={state.data} input={input} onGoBindPsku={onGoBindPsku} onGoFsku={onGoFsku} onGoFixAddress={onGoFixAddress} />
+          <ExplainBody data={state.data} input={input} onGoFsku={onGoFsku} onGoFixAddress={onGoFixAddress} />
         )}
       </div>
     </div>
@@ -67,10 +66,9 @@ export const OrderExplainCard: React.FC<{
 const ExplainBody: React.FC<{
   data: PlatformOrderReplayOut;
   input: OrderExplainCardInput | null;
-  onGoBindPsku?: (ctx: { platform?: string; store_id?: number | null; platform_sku_id?: string | null }) => void;
   onGoFsku?: (ctx: { fsku_id?: number | null }) => void;
   onGoFixAddress?: (ctx: { order_id?: number; platform?: string; shop_id?: string; ext_order_no?: string }) => void;
-}> = ({ data, input, onGoBindPsku, onGoFsku, onGoFixAddress }) => {
+}> = ({ data, input,  onGoFsku, onGoFixAddress }) => {
   const isResolved = data.status !== "UNRESOLVED" && data.status !== "NOT_FOUND";
   const isBlocked = (data.fulfillment_status || "") === "FULFILLMENT_BLOCKED";
 
@@ -83,7 +81,7 @@ const ExplainBody: React.FC<{
         lines={[`status = ${data.status}`, `facts_n = ${data.facts_n}`, `resolved = ${data.resolved?.length ?? 0}`, `unresolved = ${data.unresolved?.length ?? 0}`]}
       >
         {!isResolved && (
-          <UnresolvedList items={data.unresolved} onGoBindPsku={onGoBindPsku} onGoFsku={onGoFsku} platform={data.platform} store_id={data.store_id} />
+          <UnresolvedList items={data.unresolved} onGoFsku={onGoFsku} />
         )}
       </Section>
 
@@ -152,11 +150,8 @@ const Section: React.FC<{
 
 const UnresolvedList: React.FC<{
   items: OrderResolveUnresolved[];
-  platform: string;
-  store_id: number;
-  onGoBindPsku?: (ctx: { platform?: string; store_id?: number | null; platform_sku_id?: string | null }) => void;
   onGoFsku?: (ctx: { fsku_id?: number | null }) => void;
-}> = ({ items, platform, store_id, onGoBindPsku, onGoFsku }) => {
+}> = ({ items, onGoFsku }) => {
   if (!items.length) return null;
 
   return (
@@ -174,11 +169,6 @@ const UnresolvedList: React.FC<{
             </div>
 
             <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-              {u.reason === "MISSING_BINDING" && (
-                <button type="button" onClick={() => onGoBindPsku?.({ platform, store_id, platform_sku_id: u.platform_sku_id ?? null })} style={{ padding: "6px 10px" }}>
-                  去绑定 PSKU
-                </button>
-              )}
 
               {(u.reason === "FSKU_NO_COMPONENTS_OR_NOT_PUBLISHED" || u.reason === "COMPONENT_QTY_INVALID") && (
                 <button type="button" onClick={() => onGoFsku?.({ fsku_id: u.fsku_id ?? null })} style={{ padding: "6px 10px" }}>

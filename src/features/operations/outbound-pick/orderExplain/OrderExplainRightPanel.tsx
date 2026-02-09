@@ -178,7 +178,7 @@ const ExplainContent: React.FC<{ data: PlatformOrderReplayOut }> = ({ data }) =>
 
         {!isResolved ? (
           <div className="mt-2">
-            <div className="text-[11px]">存在未解析行（unresolved），无法形成可执行的拣货清单。请先按提示治理（绑定 PSKU / 发布 FSKU / 修正组件）。</div>
+            <div className="text-[11px]">存在未解析行（unresolved），无法形成可执行的拣货清单。请先按提示治理（发布 FSKU / 修正组件）。</div>
           </div>
         ) : pickList.length === 0 ? (
           <div className="mt-2 text-[11px] text-slate-500">未能生成 item 级拣货清单。</div>

@@ -58,8 +58,6 @@ export const StoresListPage = lazy(() => import("../../features/admin/stores/Sto
 export const StoreDetailPage = lazy(() => import("../../features/admin/stores/StoreDetailPage"));
 export const ItemsPage = lazy(() => import("../../features/admin/items/ItemsPage"));
 
-// ✅ 主数据：平台上架 SKU（PSKU）
-export const PskuManagePage = lazy(() => import("../../features/admin/psku/PskuManagePage"));
 
 // ✅ 权限与账号：3 个子页面（/iam/*）
 export const UsersManagePage = lazy(() => import("../../features/admin/users/iam/UsersManagePage"));
