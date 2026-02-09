@@ -1,181 +1,222 @@
 // src/features/admin/psku/PskuManagePage.tsx
 
 import React, { useEffect, useMemo, useState } from "react";
-import type { PskuRow } from "./types";
-import { fetchPlatformSkus } from "./api";
+import { useSearchParams } from "react-router-dom";
+import type { PskuGovernanceAction, PskuGovernanceRow, PskuGovernanceStatus } from "./types";
+import type { PlatformCode } from "./api";
 import { PskuDetailDrawer } from "./components/PskuDetailDrawer";
+import { PskuGovernanceTable } from "./components/PskuGovernanceTable";
+import { useStorePicker } from "./useStorePicker";
+import { usePskuGovernanceList } from "./hooks/usePskuGovernanceList";
 
-type BoundFilter = "all" | "bound" | "unbound";
+type StatusFilter = "all" | PskuGovernanceStatus;
+type ActionFilter = "all" | PskuGovernanceAction;
 
 const DEFAULT_LIMIT = 50;
 
 export const PskuManagePage: React.FC = () => {
-  const [storeId, setStoreId] = useState<string>("");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const {
+    platformOptions,
+    platformLoading,
+    platformErr,
+
+    platform,
+    setPlatform,
+
+    storeQ,
+    setStoreQ,
+    storeOptions,
+    storeLoading,
+    storeErr,
+    storeId,
+    setStoreId,
+  } = useStorePicker();
+
   const [q, setQ] = useState<string>("");
-  const [bound, setBound] = useState<BoundFilter>("all");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [action, setAction] = useState<ActionFilter>("all");
 
-  const [loading, setLoading] = useState<boolean>(false);
-  const [rows, setRows] = useState<PskuRow[]>([]);
-  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [selectedRow, setSelectedRow] = useState<PskuGovernanceRow | null>(null);
 
-  const [selectedRow, setSelectedRow] = useState<PskuRow | null>(null);
-
-  const parsedStoreId = useMemo((): number | null => {
-    const v = storeId.trim();
-    if (!v) return null;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }, [storeId]);
-
+  // URL -> state：platform（允许空：表示“全部平台汇总”）
   useEffect(() => {
-    if (parsedStoreId == null) {
-      setRows([]);
-      setLoading(false);
-      setErrorMsg("请先输入店铺ID（store_id）。列表接口为 /stores/{store_id}/platform-skus");
-      return;
-    }
+    const p = (searchParams.get("platform") || "").trim().toUpperCase();
+    if (p) setPlatform(p as PlatformCode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
-    let alive = true;
-    setLoading(true);
-    setErrorMsg("");
+  // URL -> state：store_id
+  useEffect(() => {
+    const sidRaw = (searchParams.get("store_id") || "").trim();
+    if (!sidRaw) return;
+    const n = Number(sidRaw);
+    if (!Number.isFinite(n) || n < 1) return;
+    if (storeId == null) setStoreId(n);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
-    fetchPlatformSkus({
-      storeId: parsedStoreId,
-      withBinding: 1,
+  // state -> URL：platform + store_id
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+
+    // ✅ 为空表示“全部平台”，不写入 URL 参数
+    if (platform) next.set("platform", platform);
+    else next.delete("platform");
+
+    if (storeId == null) next.delete("store_id");
+    else next.set("store_id", String(storeId));
+
+    if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platform, storeId]);
+
+  const query = useMemo(
+    () => ({
+      platform: platform || null, // ✅ null => 后端汇总全部平台
+      storeId: storeId ?? null,
+      status: status === "all" ? null : status,
+      action: action === "all" ? null : action,
+      q: q.trim() ? q.trim() : null,
       limit: DEFAULT_LIMIT,
       offset: 0,
-      q: q.trim() ? q.trim() : null,
-    })
-      .then((res) => {
-        if (!alive) return;
-        setRows(res.items);
-      })
-      .catch((e: unknown) => {
-        if (!alive) return;
-        setRows([]);
-        setErrorMsg(e instanceof Error ? e.message : "加载失败");
-      })
-      .finally(() => {
-        if (!alive) return;
-        setLoading(false);
-      });
+    }),
+    [platform, storeId, status, action, q],
+  );
 
-    return () => {
-      alive = false;
-    };
-  }, [parsedStoreId, q]);
+  const L = usePskuGovernanceList(query);
 
-  const filteredRows = useMemo(() => {
-    if (bound === "all") return rows;
-    if (bound === "bound") return rows.filter((r) => !!r.current_binding);
-    return rows.filter((r) => !r.current_binding);
-  }, [rows, bound]);
+  const emptyHint = useMemo(() => {
+    if (platformErr) return "";
+    if (platformLoading) return "加载平台中…";
+    if (!platformOptions.length) return "当前系统没有可用平台（/meta/platforms 为空）。";
+    if (!L.loading && L.rows.length === 0) return "暂无治理对象（或过滤条件过严）。";
+    return "";
+  }, [platformErr, platformLoading, platformOptions.length, L.loading, L.rows.length]);
+
+  const platformLabel = platform ? platform : "ALL";
 
   return (
     <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <h2 style={{ margin: 0 }}>平台上架SKU（PSKU）</h2>
-        <span style={{ color: "#666" }}>
-          mirror-first；绑定必须存在（不留空）；不提供解绑；通过 migrate 替换绑定目标
-        </span>
+        <h2 style={{ margin: 0 }}>平台上架SKU（PSKU）治理工作台</h2>
+        <span style={{ color: "#666" }}>数据源：/psku-governance（后端裁决 status/action/action_hint/bind_ctx；前端不推断）</span>
       </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <select
+          value={platform}
+          onChange={(e) => {
+            const v = (e.target.value || "").trim().toUpperCase();
+            // "" => 全部平台
+            setPlatform(v as PlatformCode);
+            // 切到全部平台时，店铺过滤没有意义（而且 storeOptions 依赖 platform），直接清空
+            if (!v) setStoreId(null);
+          }}
+          style={{ padding: "8px 10px", minWidth: 160 }}
+          disabled={platformLoading || !!platformErr || platformOptions.length === 0}
+        >
+          {platformLoading ? <option value="">加载平台中…</option> : null}
+          {!platformLoading && platformOptions.length === 0 ? <option value="">无可用平台</option> : null}
+          {/* ✅ 新增：全部平台 */}
+          <option value="">全部平台（汇总）</option>
+          {platformOptions.map((o) => (
+            <option key={o.platform} value={o.platform}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+
         <input
-          value={storeId}
-          onChange={(e) => setStoreId(e.target.value)}
-          placeholder="店铺ID store_id（必填）"
-          style={{ width: 180, padding: "8px 10px" }}
+          value={storeQ}
+          onChange={(e) => setStoreQ(e.target.value)}
+          placeholder="店铺搜索（name/shop_id/id）"
+          style={{ width: 260, padding: "8px 10px" }}
+          disabled={storeLoading || !platform || !!platformErr || platformLoading}
+          title={!platform ? "需先选择具体平台，才能加载该平台下的店铺候选" : undefined}
         />
+
+        <select
+          value={storeId ?? ""}
+          onChange={(e) => setStoreId(e.target.value ? Number(e.target.value) : null)}
+          style={{ minWidth: 360, padding: "8px 10px" }}
+          disabled={storeLoading || !!storeErr || !platform || !!platformErr || platformLoading}
+          title={!platform ? "需先选择具体平台，才能按平台加载店铺候选" : undefined}
+        >
+          <option value="">
+            {storeLoading ? "加载店铺中…" : platform ? `店铺过滤（可选，${platform}）` : "店铺过滤（需先选具体平台）"}
+          </option>
+          {storeOptions.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="搜索：q（后端支持）"
+          placeholder="搜索：q（platform_sku_id/sku_name/spec/fsku）"
           style={{ minWidth: 360, padding: "8px 10px" }}
         />
-        <select value={bound} onChange={(e) => setBound(e.target.value as BoundFilter)} style={{ padding: "8px 10px" }}>
-          <option value="all">全部</option>
-          <option value="bound">已绑定</option>
-          <option value="unbound">未绑定</option>
+
+        <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)} style={{ padding: "8px 10px" }}>
+          <option value="all">状态：全部</option>
+          <option value="BOUND">状态：已绑定（BOUND）</option>
+          <option value="UNBOUND">状态：未绑定（UNBOUND）</option>
+          <option value="LEGACY_ITEM_BOUND">状态：遗留绑定（LEGACY_ITEM_BOUND）</option>
+        </select>
+
+        <select value={action} onChange={(e) => setAction(e.target.value as ActionFilter)} style={{ padding: "8px 10px" }}>
+          <option value="all">行动：全部</option>
+          <option value="OK">行动：OK</option>
+          <option value="BIND_FIRST">行动：BIND_FIRST</option>
+          <option value="MIGRATE_LEGACY">行动：MIGRATE_LEGACY</option>
         </select>
       </div>
 
-      {errorMsg ? (
+      {platformErr ? (
         <div style={{ padding: 10, border: "1px solid #f3d3d3", background: "#fff6f6", borderRadius: 10, color: "#a33" }}>
-          {errorMsg}
+          平台列表加载失败：{platformErr}（接口：/meta/platforms）
+        </div>
+      ) : null}
+
+      {storeErr ? (
+        <div style={{ padding: 10, border: "1px solid #f3d3d3", background: "#fff6f6", borderRadius: 10, color: "#a33" }}>
+          店铺列表加载失败：{storeErr}
+        </div>
+      ) : null}
+
+      {L.errorMsg ? (
+        <div style={{ padding: 10, border: "1px solid #f3d3d3", background: "#fff6f6", borderRadius: 10, color: "#a33" }}>
+          {L.errorMsg}
+        </div>
+      ) : null}
+
+      {!platformErr && !storeErr && !L.errorMsg && emptyHint ? (
+        <div style={{ padding: 10, border: "1px solid #eee", background: "#fafafa", borderRadius: 10, color: "#666" }}>
+          {emptyHint} <span style={{ color: "#999" }}>（接口：/psku-governance）</span>
         </div>
       ) : null}
 
       <div style={{ display: "flex", gap: 12, minHeight: 520 }}>
         <div style={{ flex: 1, border: "1px solid #eee", borderRadius: 10, overflow: "hidden" }}>
           <div style={{ padding: 10, borderBottom: "1px solid #eee", display: "flex", alignItems: "center", gap: 10 }}>
-            <strong>列表</strong>
-            {loading ? (
-              <span style={{ color: "#666" }}>加载中…</span>
-            ) : (
-              <span style={{ color: "#666" }}>共 {filteredRows.length} 条</span>
-            )}
+            <strong>治理总表</strong>
+            <span style={{ color: "#666" }}>platform={platformLabel}</span>
+            {storeId != null ? <span style={{ color: "#666" }}>store_id={storeId}</span> : null}
+            {L.loading ? <span style={{ color: "#666" }}>加载中…</span> : <span style={{ color: "#666" }}>total={L.total}（当前 {L.rows.length} 条）</span>}
           </div>
 
-          <div style={{ overflow: "auto" }}>
-            {filteredRows.map((r) => {
-              const title = r.mirror?.title ?? "（无镜像标题）";
-              const skuId = r.mirror?.platform_sku_id ?? "—";
-              const binding = r.current_binding?.fsku
-                ? `${r.current_binding.fsku.code}｜${r.current_binding.fsku.name}`
-                : "未绑定";
-              const isActive = selectedRow?.id === r.id;
-
-              return (
-                <div
-                  key={r.id}
-                  onClick={() => setSelectedRow(r)}
-                  style={{
-                    padding: 12,
-                    borderBottom: "1px solid #f2f2f2",
-                    cursor: "pointer",
-                    background: isActive ? "#f7f9ff" : "white",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 12,
-                  }}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                      <strong>{title}</strong>
-                      <span style={{ color: "#666" }}>{r.platform}</span>
-                      <span style={{ color: "#666" }}>Store {r.store_id}</span>
-                    </div>
-                    <div style={{ color: "#666" }}>platform_sku_id：{skuId}</div>
-                    <div style={{ color: r.current_binding ? "#2b6" : "#c33" }}>绑定：{binding}</div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                    <span style={{ color: "#666" }}>Mirror: {r.mirror_freshness}</span>
-                  </div>
-                </div>
-              );
-            })}
-
-            {!loading && filteredRows.length === 0 ? <div style={{ padding: 16, color: "#666" }}>没有数据</div> : null}
-          </div>
+          <PskuGovernanceTable rows={L.rows} loading={L.loading} selectedRow={selectedRow} onSelectRow={(r) => setSelectedRow(r)} />
         </div>
 
         <PskuDetailDrawer
           row={selectedRow}
           onClose={() => setSelectedRow(null)}
           onChanged={async () => {
-            // 变更后刷新列表：重新拉一次（确保 binding_id / current_binding 更新）
-            const sid = parsedStoreId;
-            if (sid == null) return;
-            const res = await fetchPlatformSkus({
-              storeId: sid,
-              withBinding: 1,
-              limit: DEFAULT_LIMIT,
-              offset: 0,
-              q: q.trim() ? q.trim() : null,
-            });
-            setRows(res.items);
+            await L.reload();
           }}
         />
       </div>
