@@ -564,6 +564,14 @@ const AppRouter: React.FC = () => {
             }
           />
         </Route>
+          <Route
+            path="ops/dev/order-parse-simulator"
+            element={
+              <RequirePermission permission="dev.tools.access">
+                <P.OpsDevOrderParseSimulatorPage />
+              </RequirePermission>
+            }
+          />
 
         {/* 兜底 */}
         <Route path="*" element={<Navigate to="/snapshot" replace />} />

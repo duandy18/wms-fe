@@ -175,6 +175,7 @@ export const menuSections: RouteSection[] = [
       { path: "/ops/dev/inbound", label: "入库链路", requiredPermissions: ["dev.tools.access"], devOnly: true },
       { path: "/ops/dev/count", label: "盘点链路", requiredPermissions: ["dev.tools.access"], devOnly: true },
       { path: "/ops/dev/platform", label: "平台 / 店铺工具", requiredPermissions: ["dev.tools.access"], devOnly: true },
+      { path: "/ops/dev/order-parse-simulator", label: "订单解析模拟", requiredPermissions: ["dev.tools.access"], devOnly: true },
 
       // /dev 兼容入口（如需显示可改 showInSidebar:true）
       { path: "/dev", label: "链路调试（兼容入口）", requiredPermissions: ["dev.tools.access"], devOnly: true, showInSidebar: false },
