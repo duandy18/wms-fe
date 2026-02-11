@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/useItemsPicker.ts
+// admin/shop-bundles/useItemsPicker.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MasterItem } from "./types";
 import { apiListItems } from "./itemsApi";

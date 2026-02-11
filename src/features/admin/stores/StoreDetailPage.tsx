@@ -12,6 +12,7 @@ import { StoreMetaCard } from "./components/StoreMetaCard";
 import { StoreCredentialsPanel } from "./components/StoreCredentialsPanel";
 
 import StoreFulfillmentPolicyCard from "./components/StoreFulfillmentPolicyCard";
+import { StoreMerchantCodeFskuGovernanceCard } from "./components/StoreMerchantCodeFskuGovernanceCard";
 
 export default function StoreDetailPage() {
   const { storeId } = useParams<{ storeId: string }>();
@@ -140,6 +141,14 @@ export default function StoreDetailPage() {
             canWrite={p.canWrite}
             bindings={p.detail.bindings ?? []}
             onReload={p.reloadDetail}
+          />
+
+          {/* ✅ 解析域治理：每个 FSKU 一行（仅 published），默认 merchant_code = fsku.code，勾选批量绑定 */}
+          <StoreMerchantCodeFskuGovernanceCard
+            platform={p.detail.platform as unknown as "PDD" | "JD" | "TMALL" | "OTHER"}
+            shopId={p.detail.shop_id}
+            storeName={p.detail.name}
+            canWrite={p.canWrite}
           />
         </>
       )}

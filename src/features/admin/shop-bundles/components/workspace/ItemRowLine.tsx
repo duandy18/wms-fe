@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/components/build/ItemRowLine.tsx
+// admin/shop-bundles/components/build/ItemRowLine.tsx
 import React from "react";
 import type { MasterItem } from "../../types";
 import { fmt } from "./buildUtils";

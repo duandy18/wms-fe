@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/itemsApi.ts
+// admin/shop-bundles/itemsApi.ts
 import { apiFetchJson, qs } from "./http";
 import type { MasterItem } from "./types";
 

@@ -1,19 +1,11 @@
-// src/features/system/shop-bundles/ShopProductBundlesPage.tsx
+// admin/shop-bundles/ShopProductBundlesPage.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import type { Fsku, Platform } from "./types";
+import type { Fsku } from "./types";
 import { useShopBundles } from "./store";
 import { FskuListPanel } from "./components/FskuListPanel";
-import { PlatformBindingPanel } from "./components/PlatformBindingPanel";
 import { FskuBuildWorkspace } from "./components/FskuBuildWorkspace";
 
 type DraftShape = "bundle" | "single";
-
-function parseShopId(s: string): number | null {
-  const n = Number(s);
-  if (!Number.isFinite(n)) return null;
-  const i = Math.trunc(n);
-  return i >= 0 ? i : null;
-}
 
 function safeFskus(v: unknown): Fsku[] {
   return Array.isArray(v) ? (v as Fsku[]) : [];
@@ -43,11 +35,6 @@ export default function ShopProductBundlesPage() {
 
   const fskus = useMemo(() => safeFskus((B as unknown as { fskus: unknown }).fskus), [B]);
   const [selectedFskuId, setSelectedFskuId] = useState<number | null>(null);
-
-  const [platform, setPlatform] = useState<Platform>("PDD");
-  const [shopId, setShopId] = useState("1");
-  const [platformSkuId, setPlatformSkuId] = useState("");
-  const [reason, setReason] = useState("test");
 
   const [uiNotice, setUiNotice] = useState<UiNotice>(null);
 
@@ -162,44 +149,13 @@ export default function ShopProductBundlesPage() {
     }
   }
 
-  async function handleLoadMirrorAndBindings() {
-    const sku = platformSkuId.trim();
-    if (!sku) return showError("请输入 platform_sku_id。");
-    const sid = parseShopId(shopId);
-    if (sid == null) return showError("shop_id 必须是整数。");
-
-    setUiNotice(null);
-    await Promise.all([
-      B.loadMirror({ platform, shop_id: sid, platform_sku_id: sku }),
-      B.loadBindings({ platform, shop_id: sid, platform_sku_id: sku }),
-    ]);
-  }
-
-  async function handleBindSelectedFsku() {
-    const sku = platformSkuId.trim();
-    if (!sku) return showError("请输入 platform_sku_id。");
-    const sid = parseShopId(shopId);
-    if (sid == null) return showError("shop_id 必须是整数。");
-    if (selectedFskuId == null) return showError("请先选择一个 FSKU。");
-    if (!reason.trim()) return showError("reason 为必填。");
-
-    setUiNotice(null);
-    await B.upsertBinding({
-      platform,
-      shop_id: sid,
-      platform_sku_id: sku,
-      fsku_id: selectedFskuId,
-      reason,
-    });
-    await B.loadBindings({ platform, shop_id: sid, platform_sku_id: sku });
-    showSuccess("绑定已写入（可在右侧历史中查看）");
-  }
-
   return (
     <div className="p-6 space-y-6">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold text-slate-900">商铺商品组合</h1>
-        <div className="text-[11px] text-slate-500">先建设 FSKU（主数据）；再做平台链接反推（下一刀）。</div>
+        <div className="text-[11px] text-slate-500">
+          本页只负责 FSKU 主数据建设与发布；商家规格编码（填写码）→ FSKU 的治理入口已迁移到「商铺详情页」。
+        </div>
       </header>
 
       {uiNotice ? (
@@ -238,29 +194,6 @@ export default function ShopProductBundlesPage() {
           onPublishSelected={handlePublishSelected}
         />
       </section>
-
-      <PlatformBindingPanel
-        platform={platform}
-        setPlatform={setPlatform}
-        shopId={shopId}
-        setShopId={setShopId}
-        platformSkuId={platformSkuId}
-        setPlatformSkuId={setPlatformSkuId}
-        onLoadMirrorAndBindings={handleLoadMirrorAndBindings}
-        mirror={B.mirror}
-        mirrorLoading={B.mirrorLoading}
-        mirrorError={B.mirrorError}
-        currentBinding={B.currentBinding}
-        historyBindings={B.historyBindings}
-        bindingsLoading={B.bindingsLoading}
-        bindingsError={B.bindingsError}
-        reason={reason}
-        setReason={setReason}
-        selectedFskuId={selectedFskuId}
-        selectedFsku={selectedFsku}
-        canBindSelected={selectedFsku?.status === "published"}
-        onBindSelectedFsku={handleBindSelectedFsku}
-      />
     </div>
   );
 }

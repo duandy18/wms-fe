@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/components/build/buildUtils.ts
+// admin/shop-bundles/components/build/buildUtils.ts
 import type { FskuComponent } from "../../types";
 
 export function toIntOrNull(s: string): number | null {

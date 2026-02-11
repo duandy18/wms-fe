@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/components/build/ComponentsTable.tsx
+// admin/shop-bundles/components/build/ComponentsTable.tsx
 import React, { useMemo } from "react";
 import type { FskuComponentRole, MasterItem } from "../../types";
 import type { UseFskuComponentsState } from "../../useFskuComponents";

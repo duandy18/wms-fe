@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/types.ts
+// admin/shop-bundles/types.ts
 
 export type Platform = "PDD" | "JD" | "TMALL" | "OTHER";
 
@@ -18,48 +18,34 @@ export type FskuShape = "single" | "bundle";
 
 export type Fsku = {
   id: number; // ✅ 合同：int
-
-  // ✅ list 合同：全局唯一编码
   code: string;
-
   name: string;
-
-  // ✅ list 合同：single / bundle
   shape: FskuShape;
-
-  // ✅ list 合同：draft / published / retired
   status: FskuStatus;
 
-  // ✅ list 合同：组合内容摘要（后端一次性返回）
+  // 后端聚合摘要：
+  // - components_summary: SKU 版（工程排查）
+  // - components_summary_name: 主数据商品名版（运营/治理展示；可能缺省，用于向后兼容）
   components_summary: string;
+  components_summary_name?: string;
 
-  // ✅ list 合同：时间线
-  published_at: string | null; // ISO
-  retired_at: string | null; // ISO
-
-  // ✅ list 合同：updated_at（你 curl 已验证）
-  updated_at: string; // ISO
-
-  // 其他接口/页面可能会用到；列表不依赖它
+  published_at: string | null;
+  retired_at: string | null;
+  updated_at: string;
   unit_label?: string;
 };
 
 export type FskuDetail = Fsku & {
-  // 详情是否带 components 由后端决定
   components?: FskuComponent[];
 };
 
-// ✅ 主商品数据（items）最小合同（供 FSKU components 选择器使用）
-// 注意：字段名严格对齐后端 /items 返回
 export type MasterItem = {
   id: number;
-
   sku: string;
   name: string;
-
-  barcode: string | null; // 主条码
-  brand: string | null; // 品牌
-  uom: string | null; // 最小包装单位（后端字段名为 uom）
+  barcode: string | null;
+  brand: string | null;
+  uom: string | null;
 };
 
 export type PlatformSkuBinding = {
@@ -73,7 +59,6 @@ export type PlatformSkuBinding = {
   reason: string;
 };
 
-// mirror（本刀不变）
 export type PlatformMirrorLine = {
   platform_sku_id?: string | null;
   item_name?: string | null;
@@ -89,11 +74,59 @@ export type PlatformMirror = {
   lines: PlatformMirrorLine[];
 };
 
-// ✅ Problem shape（合同）
 export type ApiProblem = {
   error_code?: string;
   message?: string;
   http_status?: number;
   trace_id?: string;
   context?: unknown;
+};
+
+// -------------------- Merchant Code ↔ FSKU bindings (治理事实) --------------------
+
+export type FskuLite = {
+  id: number;
+  code: string;
+  name: string;
+  status: FskuStatus | string;
+};
+
+export type StoreLite = {
+  id: number;
+  name: string;
+};
+
+export type MerchantCodeBindingRow = {
+  id: number;
+  platform: string;
+  shop_id: string;
+
+  // ✅ join 展示字段（不落绑定表）
+  store: StoreLite;
+
+  merchant_code: string;
+  fsku_id: number;
+  fsku: FskuLite;
+
+  // ✅ current-only：无 effective_from/effective_to
+  reason: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MerchantCodeBindingsList = {
+  items: MerchantCodeBindingRow[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type MerchantCodeBindingsListResp = {
+  ok: boolean;
+  data: MerchantCodeBindingsList;
+};
+
+export type MerchantCodeBindResp = {
+  ok: boolean;
+  data: MerchantCodeBindingRow;
 };
