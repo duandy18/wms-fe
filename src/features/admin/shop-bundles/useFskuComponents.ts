@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/useFskuComponents.ts
+// admin/shop-bundles/useFskuComponents.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FskuComponent, FskuComponentRole } from "./types";
 import { apiGetFskuComponents, apiReplaceFskuComponents } from "./api";

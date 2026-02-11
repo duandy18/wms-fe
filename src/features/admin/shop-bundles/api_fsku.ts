@@ -1,39 +1,7 @@
-// src/features/system/shop-bundles/api.ts
-import type { Fsku, FskuComponent, Platform, PlatformMirror, PlatformSkuBinding } from "./types";
-import { apiFetchJson, qs } from "./http";
-
-function kindOf(x: unknown): string {
-  if (x === null) return "null";
-  if (Array.isArray(x)) return "array";
-  return typeof x;
-}
-
-function isObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null;
-}
-
-function asInt(v: unknown): number | null {
-  if (typeof v === "number" && Number.isFinite(v)) {
-    const i = Math.trunc(v);
-    return i > 0 ? i : null;
-  }
-  if (typeof v === "string" && v.trim()) {
-    const n = Number(v);
-    if (!Number.isFinite(n)) return null;
-    const i = Math.trunc(n);
-    return i > 0 ? i : null;
-  }
-  return null;
-}
-
-function asStr(v: unknown): string | null {
-  return typeof v === "string" ? v : null;
-}
-
-function asStrOrNull(v: unknown): string | null {
-  if (v === null) return null;
-  return typeof v === "string" ? v : null;
-}
+// admin/shop-bundles/api_fsku.ts
+import type { Fsku, FskuComponent } from "./types";
+import { apiFetchJson } from "./http";
+import { asInt, asStr, asStrOrNull, isObject, kindOf } from "./api_utils";
 
 function asRole(v: unknown): "primary" | "gift" | null {
   return v === "primary" || v === "gift" ? v : null;
@@ -70,6 +38,9 @@ function parseFskuRow(r: unknown, idx: number): Fsku {
   const componentsSummary = asStr(r.components_summary);
   if (componentsSummary == null) throw new Error(`合同不匹配：/fskus.items[${idx}].components_summary 缺失或非法`);
 
+  // ✅ 新字段（可选）：主数据商品名版摘要；缺省则 fallback 到 components_summary
+  const componentsSummaryName = asStr((r as { components_summary_name?: unknown }).components_summary_name) ?? undefined;
+
   const publishedAt = asStrOrNull(r.published_at);
   const retiredAt = asStrOrNull(r.retired_at);
 
@@ -85,6 +56,7 @@ function parseFskuRow(r: unknown, idx: number): Fsku {
     shape,
     status,
     components_summary: componentsSummary,
+    components_summary_name: componentsSummaryName,
     published_at: publishedAt,
     retired_at: retiredAt,
     updated_at: updatedAt,
@@ -197,64 +169,4 @@ export async function apiGetFskuComponents(id: number): Promise<FskuComponent[]>
   }
 
   return out;
-}
-
-// -------- Platform mirror --------
-
-export async function apiFetchPlatformMirror(args: { platform: Platform; shop_id: number; platform_sku_id: string }): Promise<PlatformMirror> {
-  return apiFetchJson<PlatformMirror>("/platform-skus/mirror", {
-    method: "POST",
-    body: JSON.stringify(args),
-  });
-}
-
-// -------- Bindings --------
-
-type CurrentBindingResp = { current: PlatformSkuBinding | null };
-
-export async function apiGetCurrentBinding(args: { platform: Platform; shop_id: number; platform_sku_id: string }): Promise<PlatformSkuBinding | null> {
-  // ✅ 合同：GET /current -> { current: {...} }
-  const res = await apiFetchJson<CurrentBindingResp>(`/platform-sku-bindings/current${qs(args)}`, { method: "GET" });
-  return res.current ?? null;
-}
-
-type HistoryResp = { items: PlatformSkuBinding[] };
-
-export async function apiGetBindingHistory(args: {
-  platform: Platform;
-  shop_id: number;
-  platform_sku_id: string;
-  limit?: number;
-  offset?: number;
-}): Promise<PlatformSkuBinding[]> {
-  // ✅ 合同：GET /history -> { items:[...] }，并支持 limit/offset
-  const q = qs({
-    platform: args.platform,
-    shop_id: args.shop_id,
-    platform_sku_id: args.platform_sku_id,
-    limit: args.limit ?? 50,
-    offset: args.offset ?? 0,
-  });
-  const res = await apiFetchJson<HistoryResp>(`/platform-sku-bindings/history${q}`, { method: "GET" });
-  return res.items ?? [];
-}
-
-export async function apiUpsertBinding(args: {
-  platform: Platform;
-  shop_id: number;
-  platform_sku_id: string;
-  fsku_id: number;
-  reason: string;
-}): Promise<unknown> {
-  // ✅ 合同：POST /platform-sku-bindings -> 201（测试断言 status_code=201，但未断言 body）
-  return apiFetchJson<unknown>("/platform-sku-bindings", {
-    method: "POST",
-    body: JSON.stringify({
-      platform: args.platform,
-      shop_id: args.shop_id,
-      platform_sku_id: args.platform_sku_id,
-      fsku_id: args.fsku_id,
-      reason: args.reason,
-    }),
-  });
 }

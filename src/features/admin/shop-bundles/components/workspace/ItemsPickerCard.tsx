@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/components/build/ItemsPickerCard.tsx
+// admin/shop-bundles/components/build/ItemsPickerCard.tsx
 import React from "react";
 import type { UseItemsPickerState } from "../../useItemsPicker";
 import type { UseFskuComponentsState } from "../../useFskuComponents";

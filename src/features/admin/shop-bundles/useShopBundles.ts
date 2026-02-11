@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/useShopBundles.ts
+// admin/shop-bundles/useShopBundles.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Fsku, Platform, PlatformMirror, PlatformSkuBinding } from "./types";
 import {
@@ -113,6 +113,9 @@ function parseFskuRow(r: unknown, idx: number): Fsku {
     throw new Error(`合同不匹配：/fskus.items[${idx}].components_summary 缺失或非法`);
   }
 
+  // ✅ 新字段（可选）：主数据商品名版摘要；缺省则 fallback 到 components_summary
+  const componentsSummaryName = toStr((r as { components_summary_name?: unknown }).components_summary_name) ?? undefined;
+
   const publishedAt = toStrOrNull(r.published_at);
   const retiredAt = toStrOrNull(r.retired_at);
 
@@ -129,6 +132,7 @@ function parseFskuRow(r: unknown, idx: number): Fsku {
     shape,
     status,
     components_summary: componentsSummary,
+    components_summary_name: componentsSummaryName,
     published_at: publishedAt,
     retired_at: retiredAt,
     updated_at: updatedAt,

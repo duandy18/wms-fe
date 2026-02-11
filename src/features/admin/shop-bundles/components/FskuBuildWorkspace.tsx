@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/components/FskuBuildWorkspace.tsx
+// admin/shop-bundles/components/FskuBuildWorkspace.tsx
 import React, { useMemo } from "react";
 import type { FskuStatus } from "../types";
 import { useFskuComponents } from "../useFskuComponents";

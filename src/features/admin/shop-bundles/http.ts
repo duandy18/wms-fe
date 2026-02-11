@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/http.ts
+// admin/shop-bundles/http.ts
 import type { ApiProblem } from "./types";
 
 const TOKEN_KEY = "WMS_TOKEN";

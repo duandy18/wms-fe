@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/components/PlatformBindingPanel.tsx
+// admin/shop-bundles/components/PlatformBindingPanel.tsx
 import React from "react";
 import type { Fsku, Platform, PlatformMirror, PlatformSkuBinding } from "../types";
 import { PLATFORM_OPTIONS, fmtIso } from "../ui";

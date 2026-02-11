@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/ui.ts
+// admin/shop-bundles/ui.ts
 import type { Fsku, Platform } from "./types";
 
 export function cls(...arr: Array<string | false | null | undefined>): string {

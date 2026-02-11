@@ -1,4 +1,4 @@
-// src/features/system/shop-bundles/components/build/ComponentsCard.tsx
+// admin/shop-bundles/components/build/ComponentsCard.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import type { FskuStatus, MasterItem } from "../../types";
 import type { UseFskuComponentsState } from "../../useFskuComponents";

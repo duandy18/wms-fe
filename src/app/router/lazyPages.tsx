@@ -39,7 +39,7 @@ export const OpsHealthPage = lazy(() => import("../../features/ops/OpsHealthPage
 export const OpsTasksPage = lazy(() => import("../../features/ops/OpsTasksPage"));
 
 // ✅ 系统治理：商铺商品组合（FSKU）
-export const ShopProductBundlesPage = lazy(() => import("../../features/system/shop-bundles/ShopProductBundlesPage"));
+export const ShopProductBundlesPage = lazy(() => import("../../features/admin/shop-bundles/ShopProductBundlesPage"));
 
 // ✅ 运维中心 / 后端调试台（Tab → 页面化）
 export const OpsDevOrdersPage = lazy(() => import("../../features/ops/dev/OpsDevOrdersPage"));
