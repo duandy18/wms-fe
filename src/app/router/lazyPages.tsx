@@ -47,6 +47,7 @@ export const OpsDevPickPage = lazy(() => import("../../features/ops/dev/OpsDevPi
 export const OpsDevInboundPage = lazy(() => import("../../features/ops/dev/OpsDevInboundPage"));
 export const OpsDevCountPage = lazy(() => import("../../features/ops/dev/OpsDevCountPage"));
 export const OpsDevPlatformPage = lazy(() => import("../../features/ops/dev/OpsDevPlatformPage"));
+export const OpsDevOrderParseSimulatorPage = lazy(() => import("../../features/ops/dev/OpsDevOrderParseSimulatorPage"));
 
 // ✅ 运价运维中心（治理 / 修复 / 清理）
 export const PricingOpsCenterPage = lazy(() => import("../../features/ops/pricing-ops/PricingOpsCenterPage"));
