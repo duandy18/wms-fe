@@ -1,5 +1,5 @@
 // src/features/admin/stores/api.ts
-import { apiGet, apiPost, apiPatch, apiDelete } from "../../../lib/api";
+import { apiGet, apiPost, apiPatch, apiDelete, apiPut } from "../../../lib/api";
 import { assertOk } from "../../../lib/assertOk";
 
 import type {
@@ -72,11 +72,7 @@ export async function fetchStorePlatformAuth(storeId: number): Promise<StorePlat
 }
 
 // 手工录入 / 更新平台凭据：POST /platform-shops/credentials
-export async function saveStorePlatformCredentials(input: {
-  platform: string;
-  shopId: string;
-  accessToken: string;
-}) {
+export async function saveStorePlatformCredentials(input: { platform: string; shopId: string; accessToken: string }) {
   // 这里后端未必是 { ok, data }，保持原状，不强行 assertOk
   return apiPost("/platform-shops/credentials", {
     platform: input.platform,
@@ -84,6 +80,114 @@ export async function saveStorePlatformCredentials(input: {
     access_token: input.accessToken,
     status: "ACTIVE",
   });
+}
+
+// ================================
+// 订单模拟：商家清单 / 填写码候选
+// ================================
+
+export type OrderSimFilledCodeOption = {
+  filled_code: string;
+  suggested_title: string;
+  components_summary: string;
+};
+
+type OrderSimFilledCodeOptionsEnvelope = {
+  ok: boolean;
+  data: { items: OrderSimFilledCodeOption[] };
+};
+
+export async function fetchOrderSimFilledCodeOptions(storeId: number): Promise<OrderSimFilledCodeOption[]> {
+  const resp = await apiGet<OrderSimFilledCodeOptionsEnvelope>(`/stores/${storeId}/order-sim/filled-code-options`);
+  const out = assertOk(resp, "GET /stores/{store_id}/order-sim/filled-code-options");
+  return out.items;
+}
+
+export type OrderSimMerchantLineRow = {
+  row_no: number;
+  filled_code: string | null;
+  title: string | null;
+  spec: string | null;
+  version: number;
+  updated_at: string | null;
+};
+
+type OrderSimMerchantLinesEnvelope = {
+  ok: boolean;
+  data: { store_id: number; items: OrderSimMerchantLineRow[] };
+};
+
+export async function fetchOrderSimMerchantLines(storeId: number): Promise<OrderSimMerchantLineRow[]> {
+  const resp = await apiGet<OrderSimMerchantLinesEnvelope>(`/stores/${storeId}/order-sim/merchant-lines`);
+  const out = assertOk(resp, "GET /stores/{store_id}/order-sim/merchant-lines");
+  return out.items;
+}
+
+export type OrderSimMerchantLinePutItem = {
+  row_no: number;
+  filled_code?: string | null;
+  title?: string | null;
+  spec?: string | null;
+  if_version?: number | null;
+};
+
+type OrderSimMerchantLinesPutIn = { items: OrderSimMerchantLinePutItem[] };
+
+export async function putOrderSimMerchantLines(storeId: number, payload: OrderSimMerchantLinesPutIn): Promise<OrderSimMerchantLineRow[]> {
+  const resp = await apiPut<OrderSimMerchantLinesEnvelope>(`/stores/${storeId}/order-sim/merchant-lines`, payload);
+  const out = assertOk(resp, "PUT /stores/{store_id}/order-sim/merchant-lines");
+  return out.items;
+}
+
+// ================================
+// 订单模拟：客户购物车（cart）+ 地址
+// ================================
+
+// ✅ 契约：qty 永远为 integer（未勾选行用 0），不传 null
+export type OrderSimCartRow = {
+  row_no: number;
+  checked: boolean;
+  qty: number;
+  version: number;
+  updated_at: string | null;
+};
+
+type OrderSimCartEnvelope = {
+  ok: boolean;
+  data: {
+    store_id: number;
+    province: string | null;
+    city: string | null;
+    items: OrderSimCartRow[];
+  };
+};
+
+export type OrderSimCartPutItem = {
+  row_no: number;
+  checked: boolean;
+  qty: number;
+  if_version?: number | null;
+};
+
+type OrderSimCartPutIn = {
+  province: string | null;
+  city: string | null;
+  items: OrderSimCartPutItem[];
+};
+
+export async function fetchOrderSimCart(storeId: number): Promise<{ province: string | null; city: string | null; items: OrderSimCartRow[] }> {
+  const resp = await apiGet<OrderSimCartEnvelope>(`/stores/${storeId}/order-sim/cart`);
+  const out = assertOk(resp, "GET /stores/{store_id}/order-sim/cart");
+  return { province: out.province ?? null, city: out.city ?? null, items: out.items };
+}
+
+export async function putOrderSimCart(
+  storeId: number,
+  payload: OrderSimCartPutIn,
+): Promise<{ province: string | null; city: string | null; items: OrderSimCartRow[] }> {
+  const resp = await apiPut<OrderSimCartEnvelope>(`/stores/${storeId}/order-sim/cart`, payload);
+  const out = assertOk(resp, "PUT /stores/{store_id}/order-sim/cart");
+  return { province: out.province ?? null, city: out.city ?? null, items: out.items };
 }
 
 // ================================
