@@ -1,7 +1,8 @@
 // src/features/admin/items/components/ItemsListTable.tsx
 
-import React from "react";
+import React, { useState } from "react";
 import type { Item } from "../api";
+import { useItemsStore } from "../itemsStore";
 
 function hasShelfLife(it: Item): boolean {
   return !!it.has_shelf_life;
@@ -28,9 +29,25 @@ function formatShelfUnitCn(u: unknown): string {
 
 const StatusBadge: React.FC<{ enabled: boolean }> = ({ enabled }) => {
   return enabled ? (
-    <span className="inline-flex items-center rounded px-2 py-1 text-sm font-semibold bg-emerald-100 text-emerald-800">有效</span>
+    <span className="inline-flex items-center rounded px-2 py-1 text-sm font-semibold bg-emerald-100 text-emerald-800">
+      有效
+    </span>
   ) : (
-    <span className="inline-flex items-center rounded px-2 py-1 text-sm font-semibold bg-red-100 text-red-800">无效</span>
+    <span className="inline-flex items-center rounded px-2 py-1 text-sm font-semibold bg-red-100 text-red-800">
+      无效
+    </span>
+  );
+};
+
+const TestBadge: React.FC<{ isTest: boolean }> = ({ isTest }) => {
+  return isTest ? (
+    <span className="inline-flex items-center rounded px-2 py-1 text-[12px] font-semibold border border-amber-200 bg-amber-50 text-amber-800">
+      TEST
+    </span>
+  ) : (
+    <span className="inline-flex items-center rounded px-2 py-1 text-[12px] font-semibold border border-slate-200 bg-white text-slate-600">
+      PROD
+    </span>
   );
 };
 
@@ -40,6 +57,18 @@ export const ItemsListTable: React.FC<{
   onEdit: (it: Item) => void;
   onManageBarcodes: (it: Item) => void;
 }> = ({ rows, primaryBarcodes, onEdit, onManageBarcodes }) => {
+  const toggleItemTest = useItemsStore((s) => s.toggleItemTest);
+  const [savingId, setSavingId] = useState<number | null>(null);
+
+  async function onToggle(it: Item, next: boolean): Promise<void> {
+    setSavingId(it.id);
+    try {
+      await toggleItemTest({ itemId: it.id, next });
+    } finally {
+      setSavingId((cur) => (cur === it.id ? null : cur));
+    }
+  }
+
   return (
     <table className="min-w-full border-collapse text-base">
       <thead>
@@ -52,6 +81,9 @@ export const ItemsListTable: React.FC<{
           {/* ✅ 新增：品牌 / 品类 */}
           <th className="border px-4 py-3 text-left font-semibold">品牌</th>
           <th className="border px-4 py-3 text-left font-semibold">品类</th>
+
+          {/* ✅ 新增：测试集合显性化（DEFAULT） */}
+          <th className="border px-4 py-3 text-left font-semibold">测试集合</th>
 
           <th className="border px-4 py-3 text-left font-semibold">供货商</th>
           <th className="border px-4 py-3 text-left font-semibold">单位净重(kg)</th>
@@ -70,6 +102,7 @@ export const ItemsListTable: React.FC<{
           const hasSL = hasShelfLife(it);
           const sv = hasSL ? formatShelfValue(it.shelf_life_value) : "—";
           const su = hasSL ? formatShelfUnitCn(it.shelf_life_unit) : "—";
+          const disabled = savingId === it.id;
 
           return (
             <tr key={it.id} className="border-t">
@@ -81,6 +114,22 @@ export const ItemsListTable: React.FC<{
               {/* ✅ brand/category */}
               <td className="px-4 py-3">{it.brand ?? "—"}</td>
               <td className="px-4 py-3">{it.category ?? "—"}</td>
+
+              {/* ✅ 测试集合：Badge + Switch */}
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <TestBadge isTest={!!it.is_test} />
+                  <label className="inline-flex items-center gap-2 select-none">
+                    <input
+                      type="checkbox"
+                      checked={!!it.is_test}
+                      disabled={disabled}
+                      onChange={(e) => void onToggle(it, e.target.checked)}
+                    />
+                    <span className="text-[12px] text-slate-600">{disabled ? "保存中…" : "切换"}</span>
+                  </label>
+                </div>
+              </td>
 
               <td className="px-4 py-3">{supplierLabel(it)}</td>
               <td className="px-4 py-3 font-mono">{it.weight_kg ?? "—"}</td>
@@ -99,8 +148,9 @@ export const ItemsListTable: React.FC<{
 
               <td className="px-4 py-3">
                 <button
-                  className="rounded bg-emerald-100 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-200"
+                  className="rounded bg-emerald-100 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
                   onClick={() => onEdit(it)}
+                  disabled={disabled}
                 >
                   编辑
                 </button>
@@ -108,8 +158,9 @@ export const ItemsListTable: React.FC<{
 
               <td className="px-4 py-3">
                 <button
-                  className="rounded bg-sky-100 px-4 py-2 text-sm text-sky-700 hover:bg-sky-200"
+                  className="rounded bg-sky-100 px-4 py-2 text-sm text-sky-700 hover:bg-sky-200 disabled:opacity-60"
                   onClick={() => onManageBarcodes(it)}
+                  disabled={disabled}
                 >
                   管理
                 </button>

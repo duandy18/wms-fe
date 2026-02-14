@@ -4,6 +4,8 @@ export type RouteMode = "STRICT_TOP" | "FALLBACK" | string;
 
 export type WarehouseRole = "NORMAL" | "TOP" | "DEFAULT";
 
+export type ShopType = "TEST" | "PROD" | string;
+
 // 商铺列表项
 export interface StoreListItem {
   id: number;
@@ -12,6 +14,9 @@ export interface StoreListItem {
   name: string;
   active: boolean;
   route_mode: RouteMode;
+
+  // ✅ 新增：店铺类型（测试宇宙显性化）
+  shop_type: ShopType;
 
   // 主数据扩展字段
   email: string | null;
@@ -49,6 +54,9 @@ export interface StoreDetailData {
 
   // ✅ 与列表保持一致：路由模式属于店铺配置的一部分
   route_mode?: RouteMode | null;
+
+  // ✅ 新增：店铺类型（详情页可展示；后端若未返回则允许缺省）
+  shop_type?: ShopType | null;
 
   // 主数据扩展字段（详情页可编辑）
   email: string | null;

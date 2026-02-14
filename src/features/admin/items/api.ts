@@ -33,6 +33,9 @@ export interface Item {
   requires_batch?: boolean;
   requires_dates?: boolean;
   default_batch_code?: string | null;
+
+  // ✅ 新增：后端投影字段（DEFAULT Test Set membership）
+  is_test: boolean;
 }
 
 export interface NextSkuOut {
@@ -130,8 +133,7 @@ export async function updateItem(id: number, input: ItemUpdateInput): Promise<It
 
   // ✅ brand/category：可更新；空串 => null（清空）
   if (input.brand !== undefined) body.brand = input.brand?.trim() ? input.brand.trim() : null;
-  if (input.category !== undefined)
-    body.category = input.category?.trim() ? input.category.trim() : null;
+  if (input.category !== undefined) body.category = input.category?.trim() ? input.category.trim() : null;
 
   if (input.enabled !== undefined) body.enabled = input.enabled;
 
@@ -151,4 +153,15 @@ export async function updateItem(id: number, input: ItemUpdateInput): Promise<It
   if (input.shelf_life_unit !== undefined) body.shelf_life_unit = input.shelf_life_unit;
 
   return apiPatch<Item>(`/items/${id}`, body);
+}
+
+// ===========================
+// Test Set toggle (DEFAULT)
+// ===========================
+export async function enableItemTest(id: number): Promise<Item> {
+  return apiPost<Item>(`/items/${id}/test:enable`, {});
+}
+
+export async function disableItemTest(id: number): Promise<Item> {
+  return apiPost<Item>(`/items/${id}/test:disable`, {});
 }
