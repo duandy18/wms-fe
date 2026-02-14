@@ -43,16 +43,29 @@ function SortHeader({
     <button
       type="button"
       onClick={() => onSort(columnKey)}
-      className={
-        "inline-flex items-center gap-0.5 " +
-        (isActive ? "text-slate-900 font-semibold" : "text-slate-700")
-      }
+      className={"inline-flex items-center gap-0.5 " + (isActive ? "text-slate-900 font-semibold" : "text-slate-700")}
     >
       <span>{label}</span>
       {arrow && <span className="text-[11px]">{arrow}</span>}
     </button>
   );
 }
+
+const ShopTypeBadge: React.FC<{ shopType: string | null | undefined }> = ({ shopType }) => {
+  const t = (shopType || "").toUpperCase();
+  if (t === "TEST") {
+    return (
+      <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+        测试
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600">
+      实际
+    </span>
+  );
+};
 
 export const StoresTable: React.FC<StoresTableProps> = ({
   canRead,
@@ -87,9 +100,7 @@ export const StoresTable: React.FC<StoresTableProps> = ({
   if (visibleStores.length === 0) {
     return (
       <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-4 py-6 text-base text-slate-500">
-          {showInactive ? "暂无店铺记录。" : "暂无启用的店铺。"}
-        </div>
+        <div className="px-4 py-6 text-base text-slate-500">{showInactive ? "暂无店铺记录。" : "暂无启用的店铺。"}</div>
       </section>
     );
   }
@@ -102,11 +113,7 @@ export const StoresTable: React.FC<StoresTableProps> = ({
           共 {visibleStores.length} 条（当前仅显示{showInactive ? "全部店铺" : "启用店铺"}）
         </div>
         <label className="text-sm text-slate-600 flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={showInactive}
-            onChange={(e) => onToggleShowInactive(e.target.checked)}
-          />
+          <input type="checkbox" checked={showInactive} onChange={(e) => onToggleShowInactive(e.target.checked)} />
           显示停用店铺
         </label>
       </div>
@@ -115,40 +122,20 @@ export const StoresTable: React.FC<StoresTableProps> = ({
         <thead className="bg-slate-50 border-b border-slate-300">
           <tr>
             <th className="px-4 py-3 text-left w-16">
-              <SortHeader
-                label="ID"
-                sortKey={sortKey}
-                sortAsc={sortAsc}
-                columnKey="id"
-                onSort={onSort}
-              />
+              <SortHeader label="ID" sortKey={sortKey} sortAsc={sortAsc} columnKey="id" onSort={onSort} />
             </th>
             <th className="px-4 py-3 text-left w-24">
-              <SortHeader
-                label="platform"
-                sortKey={sortKey}
-                sortAsc={sortAsc}
-                columnKey="platform"
-                onSort={onSort}
-              />
+              <SortHeader label="platform" sortKey={sortKey} sortAsc={sortAsc} columnKey="platform" onSort={onSort} />
             </th>
             <th className="px-4 py-3 text-left w-40">
-              <SortHeader
-                label="shop_id"
-                sortKey={sortKey}
-                sortAsc={sortAsc}
-                columnKey="shop_id"
-                onSort={onSort}
-              />
+              <SortHeader label="shop_id" sortKey={sortKey} sortAsc={sortAsc} columnKey="shop_id" onSort={onSort} />
             </th>
+
+            {/* ✅ 店铺类型（测试宇宙显性化） */}
+            <th className="px-4 py-3 text-left w-24">类型</th>
+
             <th className="px-4 py-3 text-left w-48">
-              <SortHeader
-                label="名称"
-                sortKey={sortKey}
-                sortAsc={sortAsc}
-                columnKey="name"
-                onSort={onSort}
-              />
+              <SortHeader label="名称" sortKey={sortKey} sortAsc={sortAsc} columnKey="name" onSort={onSort} />
             </th>
 
             <th className="px-4 py-3 text-left w-32">联系人</th>
@@ -165,22 +152,21 @@ export const StoresTable: React.FC<StoresTableProps> = ({
             return (
               <tr
                 key={s.id}
-                className={
-                  "border-b border-slate-200 hover:bg-slate-50 " +
-                  (inactive ? "bg-slate-50 text-slate-400" : "")
-                }
+                className={"border-b border-slate-200 hover:bg-slate-50 " + (inactive ? "bg-slate-50 text-slate-400" : "")}
               >
                 <td className="px-4 py-3 font-medium text-sm">{s.id}</td>
                 <td className="px-4 py-3 text-sm">{s.platform}</td>
                 <td className="px-4 py-3 text-sm">{s.shop_id}</td>
+
+                {/* ✅ 类型：测试 / 实际 */}
+                <td className="px-4 py-3 text-sm">
+                  <ShopTypeBadge shopType={s.shop_type} />
+                </td>
+
                 <td className="px-4 py-3 text-sm">{s.name}</td>
 
-                <td className="px-4 py-3 text-sm">
-                  {s.contact_name && s.contact_name.trim() ? s.contact_name : "—"}
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  {s.contact_phone && s.contact_phone.trim() ? s.contact_phone : "—"}
-                </td>
+                <td className="px-4 py-3 text-sm">{s.contact_name && s.contact_name.trim() ? s.contact_name : "—"}</td>
+                <td className="px-4 py-3 text-sm">{s.contact_phone && s.contact_phone.trim() ? s.contact_phone : "—"}</td>
                 <td className="px-4 py-3 text-sm">{s.email && s.email.trim() ? s.email : "—"}</td>
 
                 <td className="px-4 py-3 text-sm">
@@ -208,9 +194,7 @@ export const StoresTable: React.FC<StoresTableProps> = ({
                   <button
                     className={
                       "px-3 py-1.5 rounded-lg border text-xs " +
-                      (inactive
-                        ? "border-slate-300 text-slate-400 cursor-not-allowed"
-                        : "border-slate-400 text-slate-800 hover:bg-slate-100")
+                      (inactive ? "border-slate-300 text-slate-400 cursor-not-allowed" : "border-slate-400 text-slate-800 hover:bg-slate-100")
                     }
                     onClick={() => !inactive && onOpenDetail(s.id)}
                     disabled={inactive}
