@@ -12,7 +12,7 @@ import {
   apiUnretireFsku,
   apiUpsertBinding,
 } from "./api";
-import { apiFetchJson } from "./http";
+import { apiListFskusGlobal } from "./api_fsku";
 
 export type ShopBundlesState = {
   fskus: Fsku[];
@@ -47,118 +47,6 @@ export type ShopBundlesState = {
   }) => Promise<void>;
 };
 
-function isObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null;
-}
-
-function kindOf(x: unknown): string {
-  if (x === null) return "null";
-  if (Array.isArray(x)) return "array";
-  return typeof x;
-}
-
-function toInt(v: unknown): number | null {
-  if (typeof v === "number" && Number.isFinite(v)) {
-    const i = Math.trunc(v);
-    return i > 0 ? i : null;
-  }
-  if (typeof v === "string" && v.trim()) {
-    const n = Number(v);
-    if (!Number.isFinite(n)) return null;
-    const i = Math.trunc(n);
-    return i > 0 ? i : null;
-  }
-  return null;
-}
-
-function toStr(v: unknown): string | null {
-  return typeof v === "string" ? v : null;
-}
-
-function toStrOrNull(v: unknown): string | null {
-  if (v === null) return null;
-  return typeof v === "string" ? v : null;
-}
-
-function toShape(v: unknown): "single" | "bundle" | null {
-  return v === "single" || v === "bundle" ? v : null;
-}
-
-function toStatus(v: unknown): "draft" | "published" | "retired" | null {
-  return v === "draft" || v === "published" || v === "retired" ? v : null;
-}
-
-function parseFskuRow(r: unknown, idx: number): Fsku {
-  if (!isObject(r)) {
-    throw new Error(`合同不匹配：/fskus.items[${idx}] 为 ${kindOf(r)}，期望对象`);
-  }
-
-  const id = toInt(r.id);
-  if (id == null) throw new Error(`合同不匹配：/fskus.items[${idx}].id 非法`);
-
-  const code = toStr(r.code);
-  if (!code) throw new Error(`合同不匹配：/fskus.items[${idx}].code 缺失或非法`);
-
-  const name = toStr(r.name);
-  if (!name) throw new Error(`合同不匹配：/fskus.items[${idx}].name 缺失或非法`);
-
-  const shape = toShape(r.shape);
-  if (shape == null) throw new Error(`合同不匹配：/fskus.items[${idx}].shape 非法（仅允许 single/bundle）`);
-
-  const status = toStatus(r.status);
-  if (status == null) throw new Error(`合同不匹配：/fskus.items[${idx}].status 非法（draft/published/retired）`);
-
-  const componentsSummary = toStr(r.components_summary);
-  if (componentsSummary == null) {
-    throw new Error(`合同不匹配：/fskus.items[${idx}].components_summary 缺失或非法`);
-  }
-
-  // ✅ 新字段（可选）：主数据商品名版摘要；缺省则 fallback 到 components_summary
-  const componentsSummaryName = toStr((r as { components_summary_name?: unknown }).components_summary_name) ?? undefined;
-
-  const publishedAt = toStrOrNull(r.published_at);
-  const retiredAt = toStrOrNull(r.retired_at);
-
-  const updatedAt = toStr(r.updated_at);
-  if (!updatedAt) throw new Error(`合同不匹配：/fskus.items[${idx}].updated_at 缺失或非法`);
-
-  // unit_label：列表不依赖，但创建草稿/编辑区可能用到；允许缺省
-  const unitLabel = toStr((r as { unit_label?: unknown }).unit_label) ?? undefined;
-
-  return {
-    id,
-    code,
-    name,
-    shape,
-    status,
-    components_summary: componentsSummary,
-    components_summary_name: componentsSummaryName,
-    published_at: publishedAt,
-    retired_at: retiredAt,
-    updated_at: updatedAt,
-    unit_label: unitLabel,
-  };
-}
-
-function unwrapFskusList(data: unknown): Fsku[] {
-  // 合同允许：{items:[...], total, limit, offset} 或直接数组（兼容）
-  const arr: unknown[] | null = Array.isArray(data)
-    ? data
-    : isObject(data) && Array.isArray(data.items)
-      ? (data.items as unknown[])
-      : null;
-
-  if (arr == null) {
-    throw new Error(`合同不匹配：GET /fskus 返回 ${kindOf(data)}，期望数组或 { items: [...] }`);
-  }
-
-  const out: Fsku[] = [];
-  for (let i = 0; i < arr.length; i += 1) {
-    out.push(parseFskuRow(arr[i], i));
-  }
-  return out;
-}
-
 export function useShopBundles(): ShopBundlesState {
   const [fskus, setFskus] = useState<Fsku[]>([]);
   const [fskusLoading, setFskusLoading] = useState(false);
@@ -177,9 +65,8 @@ export function useShopBundles(): ShopBundlesState {
     setFskusLoading(true);
     setFskusError(null);
     try {
-      // ✅ 刚性合同：对 list 字段做校验，确保 code/shape/components_summary/time 都可用
-      const raw = await apiFetchJson<unknown>("/fskus", { method: "GET" });
-      const list = unwrapFskusList(raw);
+      // ✅ 终态 C：全局主数据只走 Global API（不带 store_id）
+      const list = await apiListFskusGlobal({ limit: 200, offset: 0 });
       setFskus(list);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "加载 FSKU 列表失败";

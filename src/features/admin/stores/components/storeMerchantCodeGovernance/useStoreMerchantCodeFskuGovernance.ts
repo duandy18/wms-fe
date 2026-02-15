@@ -1,15 +1,11 @@
 // src/features/admin/stores/components/storeMerchantCodeGovernance/useStoreMerchantCodeFskuGovernance.ts
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Fsku, MerchantCodeBindingRow } from "../../../shop-bundles/types";
-import { useShopBundles } from "../../../shop-bundles/store";
-import {
-  apiBindMerchantCode,
-  apiListMerchantCodeBindings,
-  apiUnbindMerchantCodeBinding,
-} from "../../../shop-bundles/api_merchant_code_bindings";
+import { apiListStoreFskus } from "../../../shop-bundles/api_fsku";
+import { apiBindMerchantCode, apiListMerchantCodeBindings, apiUnbindMerchantCodeBinding } from "../../../shop-bundles/api_merchant_code_bindings";
 import type { GovernanceActions, GovernanceProps, GovernanceState, RowState } from "./types";
-import { safeFskus, toMsg } from "./types";
+import { toMsg } from "./types";
 
 function buildCurrentIndex(rows: MerchantCodeBindingRow[]): Map<string, MerchantCodeBindingRow> {
   const m = new Map<string, MerchantCodeBindingRow>();
@@ -21,11 +17,10 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
   state: GovernanceState;
   actions: GovernanceActions;
 } {
-  const { platform, shopId, canWrite } = props;
+  const { storeId, platform, shopId, canWrite } = props;
 
-  const B = useShopBundles();
-  const allFskus = useMemo(() => safeFskus((B as unknown as { fskus: unknown }).fskus), [B]);
-  const fskus = useMemo(() => allFskus.filter((x) => x.status === "published"), [allFskus]);
+  const [fskus, setFskus] = useState<Fsku[]>([]);
+  const [fskusLoading, setFskusLoading] = useState(false);
 
   const [banner, setBanner] = useState<GovernanceState["banner"]>(null);
   const [loading, setLoading] = useState(false);
@@ -36,6 +31,26 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
   const [reason, setReason] = useState("store governance: merchant_code defaults to fsku.code");
 
   const [rowState, setRowState] = useState<Record<string, RowState>>({});
+
+  const refreshFskus = useCallback(async () => {
+    const sid = Math.trunc(storeId);
+    if (!Number.isFinite(sid) || sid <= 0) {
+      setFskus([]);
+      return;
+    }
+
+    setFskusLoading(true);
+    try {
+      // ✅ 终态 C：店铺治理卡只走 Store-scoped API（带 store_id，PROD 会过滤测试 FSKU）
+      const list = await apiListStoreFskus({ storeId: sid, status: "published", limit: 200, offset: 0 });
+      setFskus(list.filter((x) => x.status === "published"));
+    } catch (e: unknown) {
+      setFskus([]);
+      setBanner({ kind: "error", message: `加载 FSKU 列表失败：${toMsg(e)}` });
+    } finally {
+      setFskusLoading(false);
+    }
+  }, [storeId]);
 
   // 补齐/清理 rowState
   useEffect(() => {
@@ -66,7 +81,7 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     return n;
   }, [fskus, rowState]);
 
-  async function refreshBindings() {
+  const refreshBindings = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiListMerchantCodeBindings({
@@ -83,12 +98,12 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     } finally {
       setLoading(false);
     }
-  }
+  }, [platform, shopId]);
 
   useEffect(() => {
+    void refreshFskus();
     void refreshBindings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platform, shopId]);
+  }, [refreshFskus, refreshBindings]);
 
   function setCheckedAll(checked: boolean) {
     setRowState((prev) => {
@@ -235,14 +250,14 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     fskus,
     rowState,
     banner,
-    loading,
+    loading: loading || fskusLoading,
     reason,
     selectedCount,
     currentByMerchantCode,
   };
 
   const actions: GovernanceActions = {
-    refreshFskus: async () => B.refreshFskus(),
+    refreshFskus,
     refreshBindings,
     setReason,
     setCheckedAll,
