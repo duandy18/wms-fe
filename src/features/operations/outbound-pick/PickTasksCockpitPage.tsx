@@ -11,11 +11,31 @@ import { PickTaskScanBar } from "./PickTaskScanBar";
 import { OrderPickSidebar } from "./OrderPickSidebar";
 
 import { usePickTasksCockpitController } from "./usePickTasksCockpitController";
-import type { OrderSummary } from "../../orders/api";
+import type { OrderSummary, OrderView } from "../../orders/api";
 import { createPickTaskFromOrder, type PickTask } from "./pickTasksApi";
 
 import { useOrderInlineDetail } from "../../orders/hooks/useOrderInlineDetail";
 import { PlatformOrderMirrorPanel } from "./PlatformOrderMirrorPanel";
+
+function normalizeOrderForMirror(input: unknown): OrderView["order"] | null {
+  if (!input || typeof input !== "object") return null;
+
+  const obj = input as Record<string, unknown>;
+
+  // 形态 A：就是 OrderView（外壳）
+  if ("order" in obj) {
+    const inner = obj.order;
+    if (inner && typeof inner === "object") return inner as OrderView["order"];
+    return null;
+  }
+
+  // 形态 B：就是 OrderView["order"]（内层）
+  if ("platform" in obj && "shop_id" in obj && "ext_order_no" in obj) {
+    return obj as unknown as OrderView["order"];
+  }
+
+  return null;
+}
 
 const PickTasksCockpitPage: React.FC = () => {
   const navigate = useNavigate();
@@ -82,6 +102,10 @@ const PickTasksCockpitPage: React.FC = () => {
     return task;
   }
 
+  const mirrorOrder = useMemo(() => {
+    return normalizeOrderForMirror(orderDetail.detailOrder);
+  }, [orderDetail.detailOrder]);
+
   return (
     <div className="p-6 space-y-6">
       <header className="space-y-1">
@@ -103,7 +127,7 @@ const PickTasksCockpitPage: React.FC = () => {
           {/* ✅ 平台订单镜像（不附加任何作业字段/提示/裁决） */}
           <PlatformOrderMirrorPanel
             summary={orderDetail.selectedSummary ?? null}
-            detailOrder={orderDetail.detailOrder}
+            detailOrder={mirrorOrder}
             loading={orderDetail.detailLoading}
             error={orderDetail.detailError}
             onReload={() => {

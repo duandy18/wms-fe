@@ -1,6 +1,6 @@
 // src/features/operations/outbound-pick/platformOrderMirror/OrderMirrorLinesTable.tsx
 import React, { useMemo } from "react";
-import { getArr, getNum, getStr, isRecord } from "./jsonPick";
+import type { OrderView } from "../../../orders/api";
 import type { PlatformOrderReplayOut } from "../orderExplain/types";
 
 type ExplainLite =
@@ -12,30 +12,38 @@ type ExplainLite =
 
 type Line = {
   sku: string;
-  name: string;
-  qty: number;
+  title: string;
   spec: string;
+  qty: number;
+  price: string;
+  amount: string;
 };
 
-function normalizeLines(detailOrder: unknown): Line[] {
-  if (!isRecord(detailOrder)) return [];
+function safeText(v: string | null | undefined): string {
+  const s = v == null ? "" : String(v);
+  return s.trim() ? s.trim() : "—";
+}
 
-  const arr =
-    getArr(detailOrder, ["items", "lines", "order_lines", "order_items", "orderItems"]) ?? [];
+function safeNum(v: number | null | undefined): number {
+  if (v == null) return 0;
+  return Number.isFinite(v) ? v : 0;
+}
 
-  const out: Line[] = [];
-  for (const it of arr) {
-    if (!isRecord(it)) continue;
+function safeMoney(v: number | null | undefined): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  return String(v);
+}
 
-    const sku =
-      getStr(it, ["sku", "item_sku", "seller_sku", "merchant_sku", "outer_sku", "code"]) ?? "—";
-    const name = getStr(it, ["name", "title", "item_name", "product_name", "goods_name"]) ?? "—";
-    const qty = getNum(it, ["qty", "quantity", "count", "num", "buy_qty"]) ?? 0;
-    const spec = getStr(it, ["spec", "specification", "variant", "attrs", "sku_spec"]) ?? "";
-
-    out.push({ sku, name, qty, spec });
-  }
-  return out;
+function normalizeLines(order: OrderView["order"] | null): Line[] {
+  const items = order?.items ?? [];
+  return items.map((it) => ({
+    sku: safeText(it.sku ?? "—"),
+    title: safeText(it.title ?? "—"),
+    spec: safeText(it.spec ?? "—"),
+    qty: safeNum(it.qty),
+    price: safeMoney(it.price ?? null),
+    amount: safeMoney(it.amount ?? null),
+  }));
 }
 
 function toInt(x: unknown): number | null {
@@ -52,14 +60,16 @@ function buildPickListFromExplain(
   const resolved = data.resolved;
   if (Array.isArray(resolved)) {
     for (const row of resolved) {
-      if (!isRecord(row)) continue;
-      const raw = row["expanded_items"];
+      if (!row || typeof row !== "object") continue;
+      const rec = row as Record<string, unknown>;
+      const raw = rec["expanded_items"];
       if (!Array.isArray(raw)) continue;
 
       for (const it of raw) {
-        if (!isRecord(it)) continue;
-        const itemId = toInt(it["item_id"]);
-        const needQty = toInt(it["need_qty"]);
+        if (!it || typeof it !== "object") continue;
+        const r = it as Record<string, unknown>;
+        const itemId = toInt(r["item_id"]);
+        const needQty = toInt(r["need_qty"]);
         if (itemId == null || needQty == null) continue;
         m.set(itemId, (m.get(itemId) ?? 0) + needQty);
       }
@@ -72,10 +82,10 @@ function buildPickListFromExplain(
 }
 
 export const OrderMirrorLinesTable: React.FC<{
-  detailOrder: unknown;
+  detailOrder: OrderView["order"] | null;
   loading: boolean;
 
-  // ✅ 解析结果注入：在“商品卡”里显示解析后拣货清单
+  // ✅ 解析结果注入：降级为“可选展开”
   explain: ExplainLite;
   onReloadExplain?: () => void;
 }> = ({ detailOrder, loading, explain, onReloadExplain }) => {
@@ -93,104 +103,37 @@ export const OrderMirrorLinesTable: React.FC<{
   return (
     <div className="rounded-lg border border-slate-200">
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 bg-slate-50">
-        <div className="text-[11px] font-semibold text-slate-700">商品明细</div>
-        <div className="flex items-center gap-2">
-          {onReloadExplain ? (
-            <button
-              type="button"
-              className="text-[11px] px-2 py-1 rounded border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
-              onClick={onReloadExplain}
-              disabled={explain.kind === "loading"}
-              title="重放/刷新解析结果"
-            >
-              {explain.kind === "loading" ? "解析中…" : "重放解析"}
-            </button>
-          ) : null}
-          <div className="text-[11px] text-slate-500">
-            {lines.length ? `平台原始行：共 ${lines.length} 行` : "平台原始行：—"}
-          </div>
+        <div className="text-[11px] font-semibold text-slate-700">商品明细（平台镜像）</div>
+        <div className="text-[11px] text-slate-500">
+          {lines.length ? `共 ${lines.length} 行` : "—"}
         </div>
       </div>
 
-      {/* ✅ 解析后的拣货清单（用户能执行） */}
-      <div className="px-3 py-3 border-b border-slate-200">
-        <div className="flex items-center justify-between">
-          <div className="text-[11px] font-semibold text-slate-700">拣货清单（解析后）</div>
-          <div className="text-[11px] text-slate-500">
-            {explain.kind === "ready"
-              ? isResolved
-                ? "已生成"
-                : "需治理"
-              : explain.kind === "loading"
-              ? "解析中…"
-              : "—"}
-          </div>
-        </div>
-
-        {explain.kind === "missing_key" ? (
-          <div className="mt-2 text-[12px] text-amber-700">{explain.reason}</div>
-        ) : explain.kind === "error" ? (
-          <div className="mt-2 text-[12px] text-red-700">{explain.message}</div>
-        ) : explain.kind === "loading" ? (
-          <div className="mt-2 text-[12px] text-slate-500">解析中…</div>
-        ) : explain.kind === "ready" ? (
-          !isResolved ? (
-            <div className="mt-2 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
-              <div className="font-semibold">暂无法生成拣货清单</div>
-              <div className="mt-1">
-                {unresolvedN > 0
-                  ? `存在未解析行（${unresolvedN}）— 请先完成 PSKU 绑定 / FSKU 发布与组件配置。`
-                  : `status=${status ?? "—"}（请先治理解析链路）。`}
-              </div>
-            </div>
-          ) : pickList.length ? (
-            <div className="mt-2 overflow-auto rounded border border-slate-200">
-              <table className="min-w-full border-collapse text-xs">
-                <thead className="bg-white sticky top-0">
-                  <tr className="text-[11px] text-slate-600 border-b border-slate-200">
-                    <th className="px-3 py-2 text-left">item_id</th>
-                    <th className="px-3 py-2 text-right">应拣数量</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pickList.map((x) => (
-                    <tr key={x.item_id} className="border-b border-slate-100">
-                      <td className="px-3 py-2 font-mono text-[11px] text-slate-800">{x.item_id}</td>
-                      <td className="px-3 py-2 text-right font-mono text-slate-900">{x.need_qty}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="mt-2 text-[12px] text-slate-500">已解析，但未得到 item 级清单。</div>
-          )
-        ) : (
-          <div className="mt-2 text-[12px] text-slate-500">请选择订单后查看解析清单。</div>
-        )}
-      </div>
-
-      {/* 平台原始行（核对用） */}
+      {/* ✅ 平台原始行（核对用，对账优先） */}
       {loading ? (
         <div className="px-3 py-3 text-[12px] text-slate-500">加载中…</div>
       ) : lines.length ? (
-        <div className="max-h-[260px] overflow-auto">
+        <div className="max-h-[320px] overflow-auto">
           <table className="min-w-full border-collapse text-xs">
             <thead className="sticky top-0 bg-white">
               <tr className="text-[11px] text-slate-600 border-b border-slate-200">
-                <th className="px-3 py-2 text-left">SKU</th>
-                <th className="px-3 py-2 text-left">商品</th>
+                <th className="px-3 py-2 text-left">标题</th>
                 <th className="px-3 py-2 text-left">规格</th>
                 <th className="px-3 py-2 text-right">数量</th>
+                <th className="px-3 py-2 text-right">单价</th>
+                <th className="px-3 py-2 text-right">小计</th>
+                <th className="px-3 py-2 text-left">SKU</th>
               </tr>
             </thead>
             <tbody>
               {lines.map((ln, idx) => (
                 <tr key={`${ln.sku}-${idx}`} className="border-b border-slate-100">
-                  <td className="px-3 py-2 font-mono text-[11px] text-slate-800">{ln.sku}</td>
-                  <td className="px-3 py-2 text-slate-900">{ln.name}</td>
-                  <td className="px-3 py-2 text-slate-600">{ln.spec || "—"}</td>
+                  <td className="px-3 py-2 text-slate-900">{ln.title}</td>
+                  <td className="px-3 py-2 text-slate-600">{ln.spec}</td>
                   <td className="px-3 py-2 text-right font-mono text-slate-900">{ln.qty}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-700">{ln.price}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-900">{ln.amount}</td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-slate-700">{ln.sku}</td>
                 </tr>
               ))}
             </tbody>
@@ -198,9 +141,88 @@ export const OrderMirrorLinesTable: React.FC<{
         </div>
       ) : (
         <div className="px-3 py-3 text-[12px] text-slate-500">
-          暂无商品明细（或后端未返回 items/lines 字段）。
+          暂无商品明细（后端未返回 items）。
         </div>
       )}
+
+      {/* ✅ 解析后的拣货清单：可选展开，不抢主视觉 */}
+      <details className="border-t border-slate-200 bg-slate-50 px-3 py-2">
+        <summary className="cursor-pointer list-none select-none">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-semibold text-slate-700">解析后的拣货清单（可选）</div>
+            <div className="text-[11px] text-slate-500">
+              {explain.kind === "ready"
+                ? isResolved
+                  ? "已生成"
+                  : "需治理"
+                : explain.kind === "loading"
+                ? "解析中…"
+                : "—"}
+            </div>
+          </div>
+        </summary>
+
+        <div className="mt-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] text-slate-600">
+              status：<span className="font-mono text-slate-900">{safeText(status ?? "—")}</span>
+            </div>
+            {onReloadExplain ? (
+              <button
+                type="button"
+                className="text-[11px] px-2 py-1 rounded border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                onClick={onReloadExplain}
+                disabled={explain.kind === "loading"}
+                title="重放/刷新解析结果"
+              >
+                {explain.kind === "loading" ? "解析中…" : "重放解析"}
+              </button>
+            ) : null}
+          </div>
+
+          {explain.kind === "missing_key" ? (
+            <div className="text-[12px] text-amber-700">{explain.reason}</div>
+          ) : explain.kind === "error" ? (
+            <div className="text-[12px] text-red-700">{explain.message}</div>
+          ) : explain.kind === "loading" ? (
+            <div className="text-[12px] text-slate-500">解析中…</div>
+          ) : explain.kind === "ready" ? (
+            !isResolved ? (
+              <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+                <div className="font-semibold">暂无法生成拣货清单</div>
+                <div className="mt-1">
+                  {unresolvedN > 0
+                    ? `存在未解析行（${unresolvedN}）— 请先完成 PSKU 绑定 / FSKU 发布与组件配置。`
+                    : `status=${safeText(status ?? "—")}（请先治理解析链路）。`}
+                </div>
+              </div>
+            ) : pickList.length ? (
+              <div className="overflow-auto rounded border border-slate-200 bg-white">
+                <table className="min-w-full border-collapse text-xs">
+                  <thead className="bg-white sticky top-0">
+                    <tr className="text-[11px] text-slate-600 border-b border-slate-200">
+                      <th className="px-3 py-2 text-left">item_id</th>
+                      <th className="px-3 py-2 text-right">应拣数量</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pickList.map((x) => (
+                      <tr key={x.item_id} className="border-b border-slate-100">
+                        <td className="px-3 py-2 font-mono text-[11px] text-slate-800">{x.item_id}</td>
+                        <td className="px-3 py-2 text-right font-mono text-slate-900">{x.need_qty}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-[12px] text-slate-500">已解析，但未得到 item 级清单。</div>
+            )
+          ) : (
+            <div className="text-[12px] text-slate-500">请选择订单后查看解析清单。</div>
+          )}
+        </div>
+      </details>
     </div>
   );
 };
