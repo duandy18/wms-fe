@@ -54,16 +54,24 @@ export const StoreOrderSimSection: React.FC<{
         shopId={shopId}
         storeId={storeId}
         model={m.sim}
+        customerDraft={m.customerDraft}
+        setCustomerDraft={m.setCustomerDraft}
         onSave={m.saveCart}
         saving={m.cartSaving}
         saveError={m.cartSaveError}
         justSaved={m.cartJustSaved}
       />
 
-      <StoreOrderIngestExecuteCard platform={platform} shopId={shopId} storeId={storeId} model={m.sim} />
+      <StoreOrderIngestExecuteCard
+        platform={platform}
+        shopId={shopId}
+        storeId={storeId}
+        model={m.sim}
+        onResetWorkspace={m.resetCartWorkspace}
+      />
 
       <div className="text-xs text-slate-500">
-        提示：商家卡=维护并保存可售卖清单（事实）；客户卡=输入并保存（工作区）；执行卡=调用 ingest 并展示最近一次结果。
+        提示：商家卡=维护并保存可售卖清单（事实）；客户卡=输入并保存（工作区）；执行卡=预览→确认生成。确认生成成功后建议清空工作区开始下一单。
       </div>
     </div>
   );
