@@ -45,7 +45,6 @@ export default function StoreDetailPage() {
     canWrite: p.canWrite,
   });
 
-  // 你原来这里的 storeOrderGenEnabled 一直 true，我保留结构但简化
   const storeOrderGenEnabled = true;
 
   if (invalidId) {
@@ -140,6 +139,7 @@ export default function StoreDetailPage() {
           <StoreFulfillmentPolicyCard storeId={p.detail.store_id} canWrite={p.canWrite} bindings={p.detail.bindings ?? []} onReload={p.reloadDetail} />
 
           <StoreMerchantCodeFskuGovernanceCard
+            storeId={p.detail.store_id}
             platform={p.detail.platform as unknown as "PDD" | "JD" | "TMALL" | "OTHER"}
             shopId={p.detail.shop_id}
             storeName={p.detail.name}
@@ -147,12 +147,7 @@ export default function StoreDetailPage() {
           />
 
           {/* ✅ 订单模拟三张卡：只对测试店铺有效（enabled=false 时 DOM 不存在、也不会打接口） */}
-          <StoreOrderSimSection
-            enabled={storeOrderGenEnabled && isTestStore}
-            platform={String(p.detail.platform).toUpperCase()}
-            shopId={String(p.detail.shop_id)}
-            storeId={p.detail.store_id}
-          />
+          <StoreOrderSimSection enabled={storeOrderGenEnabled && isTestStore} platform={String(p.detail.platform).toUpperCase()} shopId={String(p.detail.shop_id)} storeId={p.detail.store_id} />
         </>
       )}
     </div>

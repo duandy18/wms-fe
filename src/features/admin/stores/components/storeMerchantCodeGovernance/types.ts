@@ -11,6 +11,7 @@ export type RowState = {
 };
 
 export type GovernanceProps = {
+  storeId: number;
   platform: Platform;
   shopId: string;
   storeName: string;

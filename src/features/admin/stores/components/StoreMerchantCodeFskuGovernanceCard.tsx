@@ -6,6 +6,7 @@ import { useStoreMerchantCodeFskuGovernance } from "./storeMerchantCodeGovernanc
 import { StoreMerchantCodeFskuGovernanceTable } from "./storeMerchantCodeGovernance/StoreMerchantCodeFskuGovernanceTable";
 
 export const StoreMerchantCodeFskuGovernanceCard: React.FC<{
+  storeId: number;
   platform: Platform;
   shopId: string;
   storeName: string;
@@ -18,11 +19,9 @@ export const StoreMerchantCodeFskuGovernanceCard: React.FC<{
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-semibold text-slate-900">店铺商品代码 ↔ 仓库代码（FSKU）绑定</div>
-          <div className="mt-1 text-xs text-slate-600">
-            目标：每个 FSKU 一行，默认店铺商品代码 = FSKU.code；勾选后可批量写入绑定事实。
-          </div>
+          <div className="mt-1 text-xs text-slate-600">目标：每个 FSKU 一行，默认店铺商品代码 = FSKU.code；勾选后可批量写入绑定事实。</div>
           <div className="mt-1 text-xs text-slate-500">
-            当前店铺：{props.storeName}（{props.platform}/{props.shopId}）｜仅展示已发布 FSKU
+            当前店铺：{props.storeName}（{props.platform}/{props.shopId}｜store_id={props.storeId}）｜仅展示已发布 FSKU
           </div>
         </div>
       </div>
