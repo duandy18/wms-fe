@@ -1,8 +1,9 @@
 // src/features/operations/outbound-pick/PlatformOrderMirrorPanel.tsx
 import React, { useMemo } from "react";
-import type { OrderSummary } from "../../orders/api";
+import type { OrderSummary, OrderView } from "../../orders/api";
 import { OrderMirrorBasics } from "./platformOrderMirror/OrderMirrorBasics";
 import { OrderMirrorLinesTable } from "./platformOrderMirror/OrderMirrorLinesTable";
+import { RawJsonPanel } from "./platformOrderMirror/RawJsonPanel";
 
 // ✅ 解析结果：通过 replay 得到（字段驱动，不推导）
 import { useOrderExplain } from "./orderExplain/useOrderExplain";
@@ -10,7 +11,8 @@ import type { OrderExplainCardInput, PlatformOrderReplayOut } from "./orderExpla
 
 type Props = {
   summary: OrderSummary | null;
-  detailOrder: unknown;
+  // ✅ 镜像口径：只接 /orders/.../view 的 order（不接 response 外壳）
+  detailOrder: OrderView["order"] | null;
   loading: boolean;
   error: string | null;
   onReload?: () => void;
@@ -44,6 +46,8 @@ export const PlatformOrderMirrorPanel: React.FC<Props> = ({
   const explainHook = useOrderExplain(input);
   const explain: ExplainLite = explainHook.state;
 
+  const raw = detailOrder?.raw ?? null;
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
       <OrderMirrorBasics
@@ -66,6 +70,17 @@ export const PlatformOrderMirrorPanel: React.FC<Props> = ({
         loading={loading}
         explain={explain}
         onReloadExplain={() => void explainHook.reload()}
+      />
+
+      {/* ✅ 第一项任务：点击订单即可看到原始镜像（Raw JSON） */}
+      <RawJsonPanel
+        title="原始镜像（Raw JSON）"
+        payload={
+          raw ?? {
+            hint: "暂无 raw 镜像：请确认后端 /orders/.../view 返回 order.raw。",
+          }
+        }
+        defaultOpen={false}
       />
     </section>
   );

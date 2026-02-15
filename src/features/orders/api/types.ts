@@ -60,6 +60,14 @@ export type PlatformOrderLine = {
   qty: number;
   item_id?: number | null;
   spec?: string | null;
+
+  // ✅ 镜像展示用（不参与作业逻辑）
+  price?: number | null;
+  discount?: number | null;
+  amount?: number | null;
+
+  // 平台原始扩展字段（JSONB）
+  extras?: Record<string, unknown> | null;
 };
 
 export type PlatformOrder = {
@@ -80,6 +88,9 @@ export type PlatformOrder = {
 
   address?: PlatformOrderAddress | null;
   items: PlatformOrderLine[];
+
+  // ✅ 后端 /orders/.../view 返回：orders/order_items/order_address 的 json-friendly bundle
+  raw?: Record<string, unknown> | null;
 };
 
 export type OrderView = {
