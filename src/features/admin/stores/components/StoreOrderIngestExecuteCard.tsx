@@ -2,151 +2,29 @@
 
 import React, { useMemo, useState } from "react";
 import type { StoreOrderIngestSimModel } from "./useStoreOrderIngestSimulator";
-import { apiIngestPlatformOrder } from "../api_order_ingest";
-import type { IngestOut, NextAction, ResolvedRow } from "../api_order_ingest";
-
-function buildExtOrderNo(platform: string, shopId: string): string {
-  const ts = Date.now();
-  const rand = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, "0");
-  return `TEST-PICK-${String(platform).toUpperCase()}-${String(shopId)}-${ts}-${rand}`;
-}
-
-async function copyText(text: string): Promise<boolean> {
-  try {
-    if (navigator?.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    // ignore
-  }
-  return false;
-}
-
-function ActionButtons(props: { actions: NextAction[] | null; storeId: number }) {
-  const actions = props.actions ?? [];
-  if (!actions.length) return null;
-
-  function asObj(x: unknown): Record<string, unknown> | null {
-    return x && typeof x === "object" ? (x as Record<string, unknown>) : null;
-  }
-  function asString(x: unknown): string | null {
-    return typeof x === "string" ? x : null;
-  }
-  function asNumber(x: unknown): number | null {
-    return typeof x === "number" && Number.isFinite(x) ? x : null;
-  }
-  function getPayload(a: NextAction): unknown {
-    return (a as unknown as { payload?: unknown }).payload;
-  }
-
-  return (
-    <div className="mt-2 flex flex-wrap gap-2">
-      {actions.map((a, i) => {
-        if (a.action === "go_store_fsku_binding_governance") {
-          const p = asObj(getPayload(a));
-          const storeId = asNumber(p?.store_id) ?? props.storeId;
-          const mc = asString(p?.merchant_code) ?? "";
-          const href = `/stores/${storeId}?focus_merchant_code=${encodeURIComponent(mc)}`;
-          return (
-            <button
-              key={`${a.action}-${i}`}
-              type="button"
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-              onClick={() => {
-                window.location.href = href;
-              }}
-            >
-              {a.label}
-            </button>
-          );
-        }
-
-        if (a.action === "bind_merchant_code") {
-          const endpoint = (a as unknown as { endpoint?: unknown }).endpoint;
-          const payload = getPayload(a);
-          const payloadText = JSON.stringify(
-            { endpoint: typeof endpoint === "string" ? endpoint : undefined, payload },
-            null,
-            2
-          );
-
-          return (
-            <button
-              key={`${a.action}-${i}`}
-              type="button"
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-              onClick={async () => {
-                const ok = await copyText(payloadText);
-                if (!ok) window.prompt("复制以下内容用于人工绑定：", payloadText);
-              }}
-            >
-              复制：{a.label}
-            </button>
-          );
-        }
-
-        const raw = JSON.stringify(a, null, 2);
-        return (
-          <button
-            key={`${a.action}-${i}`}
-            type="button"
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-            onClick={async () => {
-              const ok = await copyText(raw);
-              if (!ok) window.prompt("复制动作信息：", raw);
-            }}
-          >
-            复制动作：{a.label || a.action}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function RowDetail(props: { row: ResolvedRow; storeId: number }) {
-  const r = props.row;
-
-  return (
-    <div className="mt-2 rounded-md border border-slate-200 bg-white p-3">
-      <div className="text-xs text-slate-700">
-        <span className="font-semibold">reason：</span>
-        <span className="font-mono">{r.reason ?? "-"}</span>
-        {r.hint ? <span className="ml-2 text-slate-500">（{r.hint}）</span> : null}
-      </div>
-
-      {r.risk_level || r.risk_reason ? (
-        <div className="mt-1 text-xs">
-          <span className="font-semibold text-slate-700">risk：</span>
-          <span className="font-mono text-slate-700">{r.risk_level ?? "-"}</span>
-          {r.risk_reason ? <span className="ml-2 text-slate-600">{r.risk_reason}</span> : null}
-        </div>
-      ) : null}
-
-      {r.risk_flags && r.risk_flags.length ? (
-        <div className="mt-1 text-xs text-slate-500">
-          flags：<span className="font-mono">{r.risk_flags.join(", ")}</span>
-        </div>
-      ) : null}
-
-      <ActionButtons actions={r.next_actions} storeId={props.storeId} />
-    </div>
-  );
-}
+import { apiIngestPlatformOrder, apiOrderSimGenerate, apiOrderSimPreview } from "../api_order_ingest";
+import type { IngestOut, OrderSimPreviewOut } from "../api_order_ingest";
+import { buildIdempotencyKey } from "./order-sim/execute/utils";
+import { PreviewHumanPanel } from "./order-sim/execute/PreviewHumanPanel";
+import { JsonBox } from "./order-sim/execute/JsonBox";
+import { RowDetail } from "./order-sim/execute/RowDetail";
 
 export const StoreOrderIngestExecuteCard: React.FC<{
   platform: string;
   shopId: string;
   storeId: number;
   model: StoreOrderIngestSimModel;
-}> = ({ platform, shopId, storeId, model }) => {
+  onResetWorkspace: () => Promise<void>;
+}> = ({ platform, shopId, storeId, model, onResetWorkspace }) => {
   const { state } = model;
 
-  const [running, setRunning] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
+
+  const [lastPreview, setLastPreview] = useState<OrderSimPreviewOut | null>(null);
   const [lastOut, setLastOut] = useState<IngestOut | null>(null);
 
   const summaryLine = useMemo(() => {
@@ -155,7 +33,44 @@ export const StoreOrderIngestExecuteCard: React.FC<{
     return `status=${lastOut.status} id=${lastOut.id ?? "-"} unresolved=${lastOut.unresolved.length} blocked=${blocked || "-"}`;
   }, [lastOut]);
 
-  async function onExecute() {
+  async function resetWorkspaceUiAndDb() {
+    setResetting(true);
+    try {
+      await onResetWorkspace();
+      setLastPreview(null);
+      setLastOut(null);
+      setError(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "清空失败";
+      setError(msg);
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  async function onPreview() {
+    setError(null);
+    setLastPreview(null);
+
+    if (!state.canExecute) {
+      setError(state.validateMessage ?? "执行条件未满足");
+      return;
+    }
+
+    setPreviewing(true);
+    try {
+      const key = buildIdempotencyKey("PREVIEW");
+      const out = await apiOrderSimPreview({ storeId, idempotency_key: key });
+      setLastPreview(out);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "请求失败";
+      setError(msg);
+    } finally {
+      setPreviewing(false);
+    }
+  }
+
+  async function onGenerate() {
     setError(null);
     setLastOut(null);
 
@@ -164,9 +79,37 @@ export const StoreOrderIngestExecuteCard: React.FC<{
       return;
     }
 
-    setRunning(true);
+    setGenerating(true);
     try {
-      const ext = buildExtOrderNo(platform, shopId);
+      const key = buildIdempotencyKey("GEN");
+      const out = await apiOrderSimGenerate({ storeId, idempotency_key: key });
+      setLastOut(out);
+
+      // ✅ 生成成功后：自动清空工作区，准备下一单
+      if (String(out.status).toUpperCase() === "OK") {
+        await resetWorkspaceUiAndDb();
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "请求失败";
+      setError(msg);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  // 旧入口保留（极简）：直接调 /platform-orders/ingest（不推荐）
+  async function onLegacyIngest() {
+    setError(null);
+    setLastOut(null);
+
+    if (!state.canExecute) {
+      setError(state.validateMessage ?? "执行条件未满足");
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const ext = `TEST-PICK-${String(platform).toUpperCase()}-${String(shopId)}-${Date.now()}`;
       const out = await apiIngestPlatformOrder({
         platform,
         shop_id: shopId,
@@ -185,28 +128,61 @@ export const StoreOrderIngestExecuteCard: React.FC<{
       const msg = e instanceof Error ? e.message : "请求失败";
       setError(msg);
     } finally {
-      setRunning(false);
+      setGenerating(false);
     }
   }
+
+  const busy = previewing || generating || resetting;
 
   return (
     <div className="rounded-xl border bg-white p-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <div className="text-base font-semibold text-slate-900">执行生成（调用 ingest）</div>
+          <div className="text-base font-semibold text-slate-900">执行生成（预览 → 确认生成）</div>
           <div className="mt-1 text-xs text-slate-500">
-            本卡负责调用 <span className="font-mono">POST /platform-orders/ingest</span> 并展示最近一次执行结果。
+            推荐路径：先预览（不落库），再确认生成（落库）。确认生成成功后系统会自动清空工作区，方便继续下一单。
           </div>
         </div>
 
-        <button
-          type="button"
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
-          onClick={() => void onExecute()}
-          disabled={running || !state.canExecute}
-        >
-          {running ? "执行中…" : "生成测试订单（1 单）"}
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 disabled:opacity-50"
+            onClick={() => void onPreview()}
+            disabled={busy || !state.canExecute}
+          >
+            {previewing ? "预览中…" : "预览（不落库）"}
+          </button>
+
+          <button
+            type="button"
+            className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
+            onClick={() => void onGenerate()}
+            disabled={busy || !state.canExecute}
+          >
+            {generating ? "生成中…" : "确认生成（落库）"}
+          </button>
+
+          <button
+            type="button"
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 disabled:opacity-50"
+            onClick={() => void resetWorkspaceUiAndDb()}
+            disabled={busy}
+            title="清空客户信息/勾选/qty/预览结果，开始下一单"
+          >
+            {resetting ? "清空中…" : "开始下一单"}
+          </button>
+
+          <button
+            type="button"
+            className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 disabled:opacity-50"
+            onClick={() => void onLegacyIngest()}
+            disabled={busy || !state.canExecute}
+            title="兼容旧路径：POST /platform-orders/ingest（不推荐）"
+          >
+            旧：ingest
+          </button>
+        </div>
       </div>
 
       {!state.canExecute && state.validateMessage ? (
@@ -214,6 +190,8 @@ export const StoreOrderIngestExecuteCard: React.FC<{
       ) : null}
 
       {error ? <div className="mt-2 text-sm text-red-600">{error}</div> : null}
+
+      {lastPreview ? <PreviewHumanPanel storeId={storeId} data={lastPreview} /> : null}
 
       {lastOut ? (
         <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -244,6 +222,11 @@ export const StoreOrderIngestExecuteCard: React.FC<{
               </div>
             </div>
           ) : null}
+
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-slate-600 hover:text-slate-800">查看原始 JSON（排障用）</summary>
+            <JsonBox title="generate result（raw）" value={lastOut} />
+          </details>
         </div>
       ) : null}
     </div>

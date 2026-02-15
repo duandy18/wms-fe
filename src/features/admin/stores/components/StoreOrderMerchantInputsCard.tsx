@@ -2,6 +2,9 @@
 
 import React, { useMemo } from "react";
 import type { OrderSimFilledCodeOption } from "../api";
+import { FilledCodeCombobox, type ComboPick } from "./order-sim/FilledCodeCombobox";
+import { deriveValidMerchantLines, hasAnyNonEmptyMerchantLine } from "./order-sim/deriveValidMerchantLines";
+import { isBlank, normText } from "./order-sim/textUtils";
 
 export type MerchantOrderLineInput = {
   filled_code: string;
@@ -15,12 +18,10 @@ export type MerchantOrderLineOut = {
   spec: string | null;
 };
 
-function isBlank(s: string): boolean {
-  return s.trim().length === 0;
-}
-
-function normText(s: string): string {
-  return (s ?? "").trim();
+function buildEmptyRowsLike(rows: MerchantOrderLineInput[]): MerchantOrderLineInput[] {
+  const next = rows.slice(0, 6).map(() => ({ filled_code: "", title: "", spec: "" }));
+  while (next.length < 6) next.push({ filled_code: "", title: "", spec: "" });
+  return next;
 }
 
 export const StoreOrderMerchantInputsCard: React.FC<{
@@ -56,29 +57,12 @@ export const StoreOrderMerchantInputsCard: React.FC<{
 }) => {
   const optionsByCode = useMemo(() => {
     const m = new Map<string, OrderSimFilledCodeOption>();
-    for (const it of filledCodeOptions) {
-      m.set(normText(it.filled_code), it);
-    }
+    for (const it of filledCodeOptions) m.set(normText(it.filled_code), it);
     return m;
   }, [filledCodeOptions]);
 
   const validLines = useMemo<MerchantOrderLineOut[]>(() => {
-    const out: MerchantOrderLineOut[] = [];
-    for (const r of rows) {
-      const filled = r.filled_code ?? "";
-      const titleText = r.title ?? "";
-      const specText = r.spec ?? "";
-
-      const isEmptyRow = isBlank(filled) && isBlank(titleText) && isBlank(specText);
-      if (isEmptyRow) continue;
-
-      out.push({
-        filled_code: filled.trim(),
-        title: isBlank(titleText) ? null : titleText.trim(),
-        spec: isBlank(specText) ? null : specText.trim(),
-      });
-    }
-    return out.slice(0, 6);
+    return deriveValidMerchantLines(rows);
   }, [rows]);
 
   React.useEffect(() => {
@@ -93,32 +77,32 @@ export const StoreOrderMerchantInputsCard: React.FC<{
     updateRow(idx, { filled_code: "", title: "", spec: "" });
   }
 
+  function clearAllRows() {
+    onChangeRows(buildEmptyRowsLike(rows));
+  }
+
   function onFilledCodeChange(idx: number, raw: string) {
-    const code = raw;
-    const norm = normText(code);
-    const opt = norm ? optionsByCode.get(norm) ?? null : null;
+    updateRow(idx, { filled_code: raw });
+  }
 
-    if (!opt) {
-      updateRow(idx, { filled_code: code });
-      return;
-    }
-
+  function onFilledCodePick(idx: number, picked: ComboPick) {
     updateRow(idx, {
-      filled_code: opt.filled_code,
-      title: opt.suggested_title ?? "",
-      spec: opt.components_summary ?? "",
+      filled_code: picked.filled_code,
+      title: picked.suggested_title ?? "",
+      spec: picked.components_summary ?? "",
     });
   }
 
-  const hasAnyNonEmpty = useMemo(() => {
-    return rows.some((r) => !isBlank(r.filled_code) || !isBlank(r.title) || !isBlank(r.spec));
-  }, [rows]);
+  const hasAnyNonEmpty = useMemo(() => hasAnyNonEmptyMerchantLine(rows), [rows]);
 
   async function handleSave() {
     await onSave(rows);
   }
 
-  const datalistId = "order-sim-filled-code-options";
+  function handleNewProduct() {
+    if (saving) return;
+    clearAllRows();
+  }
 
   return (
     <div className="rounded-xl border bg-white p-4">
@@ -126,11 +110,21 @@ export const StoreOrderMerchantInputsCard: React.FC<{
         <div>
           <div className="text-base font-semibold text-slate-900">{title ?? "商家后台：可售卖清单（固定 6 行）"}</div>
           <div className="mt-1 text-xs text-slate-500">
-            规格编码从后端“已绑定填写码”下拉选择；选择后自动带出标题与规格摘要。标题可修改；规格为只读展示（不参与解析）。
+            规格编码从后端“已绑定填写码”候选中选择；选择后自动带出标题与规格摘要。标题可修改；规格为只读展示（不参与解析）。
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            onClick={handleNewProduct}
+            disabled={saving}
+            title="清空输入，开始配置新上商品（不会自动保存）"
+          >
+            新上商品
+          </button>
+
           <button
             type="button"
             className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
@@ -157,12 +151,6 @@ export const StoreOrderMerchantInputsCard: React.FC<{
       ) : null}
 
       <div className="mt-3 overflow-x-auto">
-        <datalist id={datalistId}>
-          {filledCodeOptions.map((o) => (
-            <option key={o.filled_code} value={o.filled_code} label={o.suggested_title} />
-          ))}
-        </datalist>
-
         <table className="min-w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-slate-500">
@@ -174,8 +162,10 @@ export const StoreOrderMerchantInputsCard: React.FC<{
           </thead>
           <tbody>
             {rows.slice(0, 6).map((r, idx) => {
-              const norm = normText(r.filled_code);
-              const hit = norm ? optionsByCode.get(norm) ?? null : null;
+              const hit = (() => {
+                const norm = normText(r.filled_code);
+                return norm ? optionsByCode.get(norm) ?? null : null;
+              })();
 
               const lineCount = (r.spec || "")
                 .split("\n")
@@ -188,16 +178,15 @@ export const StoreOrderMerchantInputsCard: React.FC<{
 
                   <td className="py-2 pr-2">
                     <div className="flex items-center gap-2">
-                      <input
-                        className={[
-                          "w-full rounded-md border px-2 py-1 text-sm",
-                          hit ? "border-emerald-300" : "border-slate-300",
-                        ].join(" ")}
+                      <FilledCodeCombobox
                         value={r.filled_code}
-                        onChange={(e) => onFilledCodeChange(idx, e.target.value)}
-                        placeholder={optionsLoading ? "候选加载中…" : "选择已绑定填写码"}
+                        onChange={(v) => onFilledCodeChange(idx, v)}
+                        onPick={(picked) => onFilledCodePick(idx, picked)}
                         disabled={saving || optionsLoading}
-                        list={datalistId}
+                        loading={optionsLoading}
+                        options={filledCodeOptions}
+                        hit={hit}
+                        placeholder={optionsLoading ? "候选加载中…" : "点击选择已绑定填写码（支持输入过滤）"}
                       />
                       <button
                         type="button"
@@ -210,7 +199,7 @@ export const StoreOrderMerchantInputsCard: React.FC<{
                       </button>
                     </div>
                     <div className="mt-1 text-[11px] text-slate-500">
-                      候选：{filledCodeOptions.length} {hit ? "· 已匹配绑定" : ""} · 可修改；聚焦后按 ↓ 或输入筛选
+                      候选：{filledCodeOptions.length} {hit ? "· 已匹配绑定" : ""} · 支持输入过滤、↑↓选择、Enter确认、Esc关闭
                     </div>
                   </td>
 
