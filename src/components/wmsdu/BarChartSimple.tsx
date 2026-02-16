@@ -55,10 +55,10 @@ export const BarChartSimple: React.FC<BarChartSimpleProps> = ({
             tick={{ fontSize: 10, fill: "#6b7280" }}
           />
           <Tooltip
-            formatter={(value: number | string | undefined) => [
-              `${value ?? 0}${valueSuffix}`,
-              "值",
-            ]}
+            formatter={(value) => {
+              const v = Array.isArray(value) ? value.join(",") : value;
+              return [`${v ?? 0}${valueSuffix}`, "值"] as const;
+            }}
             labelFormatter={(l) => `${l}`}
           />
           <Bar dataKey="value" fill="#38bdf8" radius={[3, 3, 0, 0]} />

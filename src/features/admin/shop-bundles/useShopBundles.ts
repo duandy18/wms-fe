@@ -31,7 +31,7 @@ export type ShopBundlesState = {
   bindingsError: string | null;
   loadBindings: (args: { platform: Platform; shop_id: number; platform_sku_id: string }) => Promise<void>;
 
-  createFskuDraft: (args: { name: string; unit_label: string }) => Promise<Fsku>;
+  createFskuDraft: (args: { name: string; shape: "single" | "bundle"; code?: string | null; unit_label: string }) => Promise<Fsku>;
   publishFsku: (id: number) => Promise<void>;
   retireFsku: (id: number) => Promise<void>;
   unretireFsku: (id: number) => Promise<void>;
@@ -110,7 +110,7 @@ export function useShopBundles(): ShopBundlesState {
   }, []);
 
   const createFskuDraft = useCallback(
-    async (args: { name: string; unit_label: string }) => {
+    async (args: { name: string; shape: "single" | "bundle"; code?: string | null; unit_label: string }) => {
       const created = await apiCreateFskuDraft(args);
       await refreshFskus();
       return created;
