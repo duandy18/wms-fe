@@ -94,8 +94,13 @@ export default function ShopProductBundlesPage() {
   async function handleCreateDraft(args: { name: string; shape: DraftShape; codeText: string }) {
     setUiNotice(null);
     try {
+      const defaultName = args.shape === "single" ? "新单品" : "新组合";
+      const code = args.codeText && args.codeText.trim() ? args.codeText.trim() : null;
+
       const created = await B.createFskuDraft({
-        name: args.name || "新组合",
+        name: args.name || defaultName,
+        shape: args.shape,
+        code,
         unit_label: "件",
       });
 

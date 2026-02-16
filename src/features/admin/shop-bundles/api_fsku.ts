@@ -146,10 +146,20 @@ export async function apiListFskus(): Promise<Fsku[]> {
   return apiListFskusGlobal();
 }
 
-export async function apiCreateFskuDraft(args: { name: string; unit_label: string }): Promise<Fsku> {
+export async function apiCreateFskuDraft(args: {
+  name: string;
+  shape: "single" | "bundle";
+  code?: string | null;
+  unit_label: string;
+}): Promise<Fsku> {
   return apiFetchJson<Fsku>("/fskus", {
     method: "POST",
-    body: JSON.stringify({ name: args.name, unit_label: args.unit_label }),
+    body: JSON.stringify({
+      name: args.name,
+      code: args.code ?? null,
+      shape: args.shape,
+      unit_label: args.unit_label,
+    }),
   });
 }
 
