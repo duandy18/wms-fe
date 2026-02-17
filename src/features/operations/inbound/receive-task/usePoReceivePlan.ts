@@ -10,13 +10,13 @@ export type PlanRow = {
   sku: string;
   spec: string;
 
-  // ✅ 主口径：最小单位
+  // ✅ 主口径：最小单位（base）
   ordered_base: number;
   received_base: number;
   remain_base: number;
   base_uom: string;
 
-  // ✅ 辅助口径：采购单位（用于括号解释）
+  // ✅ 辅助口径：采购单位（用于括号解释；不参与事实比较）
   ordered_purchase: number;
   received_purchase: number;
   remain_purchase: number;
@@ -49,25 +49,22 @@ function purchaseUomLabel(line: PurchaseOrderDetailLine): string {
   return p || "采购单位";
 }
 
-function toBaseQty(line: PurchaseOrderDetailLine, purchaseQty: number): number {
+function baseToPurchaseQty(line: PurchaseOrderDetailLine, baseQty: number): number {
   const upc = unitsPerCase(line);
-  const q = safeInt(purchaseQty, 0);
-  return q * upc;
+  const q = safeInt(baseQty, 0);
+  return Math.floor(q / upc);
 }
 
 export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [qtyMap, setQtyMap] = useState<Record<number, string>>({});
 
-  // ✅ PO 刷新版本：同一 po.id 下，只要 “应收/已收”变化，就视为新一轮计划（清空勾选/数量）
-  // 这里仍使用采购单位字段做 rev key（后端事实更新会变动 qty_received/qty_remaining 等）。
+  // ✅ PO 刷新版本：同一 po.id 下，只要 base 事实变化，就视为新一轮计划（清空勾选/数量）
   const poRevKey = useMemo(() => {
     if (!po) return "";
     const parts = (po.lines ?? []).map((l) => {
-      const ordered = l.qty_ordered ?? 0;
-      const received = l.qty_received ?? 0;
       const upc = l.units_per_case ?? 1;
-      return `${l.id}:${ordered}:${received}:${upc}`;
+      return `${l.id}:${l.qty_ordered_base}:${l.qty_received_base}:${l.qty_remaining_base}:${upc}`;
     });
     return `${po.id}|${parts.join("|")}`;
   }, [po]);
@@ -81,7 +78,7 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
     lastRevRef.current = poRevKey;
   }, [po?.id, poRevKey]);
 
-  // ✅ 同一 PO 刷新（qty_received 等变化）也要重置：提交完成后必须“干净”
+  // ✅ 同一 PO 刷新（base 事实变化）也要重置：提交完成后必须“干净”
   useEffect(() => {
     if (!po) return;
     if (!lastRevRef.current) {
@@ -98,20 +95,22 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
   const rows: PlanRow[] = useMemo(() => {
     if (!po) return [];
 
-    // ✅ “采购计划未完成清单”：只保留 remain_base > 0 的行
+    // ✅ “采购计划未完成清单”：只保留 remain_base > 0 的行（严格 base 合同）
     return (po.lines ?? [])
       .map((l) => {
         const ordered_purchase = safeInt(l.qty_ordered, 0);
-        const received_purchase = safeInt(l.qty_received, 0);
-        const remain_purchase = Math.max(ordered_purchase - received_purchase, 0);
+
+        const ordered_base = safeInt(l.qty_ordered_base, 0);
+        const received_base = safeInt(l.qty_received_base, 0);
+        const remain_base = safeInt(l.qty_remaining_base, 0);
 
         const upc = unitsPerCase(l);
         const base_uom = baseUomLabel(l);
         const purchase_uom = purchaseUomLabel(l);
 
-        const ordered_base = toBaseQty(l, ordered_purchase);
-        const received_base = toBaseQty(l, received_purchase);
-        const remain_base = Math.max(ordered_base - received_base, 0);
+        // 展示用：把 base 换算成采购单位（向下取整）
+        const received_purchase = baseToPurchaseQty(l, received_base);
+        const remain_purchase = Math.max(ordered_purchase - received_purchase, 0);
 
         return {
           poLineId: l.id,

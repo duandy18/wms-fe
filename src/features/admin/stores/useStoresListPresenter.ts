@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../shared/useAuth";
 import { fetchStores, updateStore, createStore } from "./api";
-import type { StoreListItem } from "./types";
+import type { ShopType, StoreListItem } from "./types";
 
 export type SortKey = "id" | "platform" | "shop_id" | "name";
 
@@ -22,6 +22,9 @@ export function useStoresListPresenter() {
   const [plat, setPlat] = useState("PDD");
   const [shopId, setShopId] = useState("");
   const [name, setName] = useState("");
+
+  // ✅ 新增：创建时选择店铺类型（TEST/PROD）
+  const [shopType, setShopType] = useState<ShopType>("PROD");
 
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortAsc, setSortAsc] = useState<boolean>(true);
@@ -90,14 +93,18 @@ export function useStoresListPresenter() {
         platform: plat.trim().toUpperCase(),
         shop_id: shopId.trim(),
         name: name || null,
+        shop_type: shopType,
       });
+
       setPlat("PDD");
       setShopId("");
       setName("");
+      setShopType("PROD");
+
       await load();
     } catch (err: unknown) {
-      const e = err as ApiErrorShape | undefined;
-      setError(e?.message ?? "创建店铺失败");
+      const e2 = err as ApiErrorShape | undefined;
+      setError(e2?.message ?? "创建店铺失败");
     } finally {
       setSaving(false);
     }
@@ -165,9 +172,13 @@ export function useStoresListPresenter() {
     plat,
     shopId,
     name,
+    shopType,
+
     setPlat,
     setShopId,
     setName,
+    setShopType,
+
     handleCreate,
 
     visibleStores,

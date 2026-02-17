@@ -1,11 +1,17 @@
 // src/features/admin/stores/StoreCreateForm.tsx
 
 import React from "react";
+import type { ShopType } from "./types";
 
 type StoreCreateFormProps = {
   plat: string;
   shopId: string;
   name: string;
+
+  // ✅ 新增：店铺类型（创建时选择 TEST / PROD）
+  shopType?: ShopType;
+  onShopTypeChange?: (v: ShopType) => void;
+
   saving: boolean;
   canWrite: boolean;
   onPlatChange: (v: string) => void;
@@ -18,6 +24,8 @@ export const StoreCreateForm: React.FC<StoreCreateFormProps> = ({
   plat,
   shopId,
   name,
+  shopType,
+  onShopTypeChange,
   saving,
   canWrite,
   onPlatChange,
@@ -27,15 +35,13 @@ export const StoreCreateForm: React.FC<StoreCreateFormProps> = ({
 }) => {
   if (!canWrite) return null;
 
+  const currentType: ShopType = shopType ?? "PROD";
+
   return (
     <section className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-      <h2 className="text-lg font-semibold text-slate-800">
-        创建 / 补录店铺
-      </h2>
-      <form
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 text-base"
-        onSubmit={onSubmit}
-      >
+      <h2 className="text-lg font-semibold text-slate-800">创建 / 补录店铺</h2>
+
+      <form className="grid grid-cols-1 md:grid-cols-5 gap-4 text-base" onSubmit={onSubmit}>
         <div className="flex flex-col gap-1">
           <label className="text-sm text-slate-500">platform</label>
           <input
@@ -54,6 +60,21 @@ export const StoreCreateForm: React.FC<StoreCreateFormProps> = ({
             onChange={(e) => onShopIdChange(e.target.value)}
             placeholder="平台店铺 ID"
           />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm text-slate-500">店铺类型</label>
+          <select
+            className="border rounded-lg px-3 py-2 text-base"
+            value={currentType}
+            onChange={(e) => onShopTypeChange?.(e.target.value as ShopType)}
+          >
+            <option value="PROD">实际店铺</option>
+            <option value="TEST">测试店铺</option>
+          </select>
+          <div className="text-[11px] text-slate-500">
+            TEST 用于 order-sim 等门禁功能；PROD 为正常履约店铺。
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
