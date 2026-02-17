@@ -4,7 +4,7 @@ export type RouteMode = "STRICT_TOP" | "FALLBACK" | string;
 
 export type WarehouseRole = "NORMAL" | "TOP" | "DEFAULT";
 
-export type ShopType = "TEST" | "PROD" | string;
+export type ShopType = "TEST" | "PROD";
 
 // 商铺列表项
 export interface StoreListItem {
@@ -76,6 +76,9 @@ export interface StoreCreatePayload {
   platform: string;
   shop_id: string;
   name?: string | null;
+
+  // ✅ 合同收敛：创建时显式选择 TEST/PROD（后端应据此写入门禁表）
+  shop_type: ShopType;
 }
 
 export interface StoreUpdatePayload {

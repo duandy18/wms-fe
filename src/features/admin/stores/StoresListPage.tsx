@@ -31,6 +31,8 @@ export default function StoresListPage() {
         plat={p.plat}
         shopId={p.shopId}
         name={p.name}
+        shopType={p.shopType}
+        onShopTypeChange={p.setShopType}
         saving={p.saving}
         canWrite={p.canWrite}
         onPlatChange={p.setPlat}
