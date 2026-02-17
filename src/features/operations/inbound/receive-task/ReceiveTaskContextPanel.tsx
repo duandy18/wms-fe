@@ -40,17 +40,60 @@ export function ReceiveTaskContextPanel(props: {
     String(task.source_type ?? "").toUpperCase() === "PO" &&
     task.po_id === po.id;
 
+  // ✅ 解构：避免 useMemo 依赖整个 p 对象（eslint hooks 警告）
+  const {
+    rows,
+    selectedIds,
+    qtyMap,
+    batchMap,
+    prodMap,
+    expMap,
+    planValid,
+    selected: selectedMap,
+    toggleLine,
+    updateQty,
+    updateBatch,
+    updateProd,
+    updateExp,
+    validateQty,
+    validateMeta,
+    applyDefault,
+  } = p;
+
   const selectedLines = React.useMemo(() => {
-    const out: { po_line_id: number; qty_planned: number }[] = [];
-    for (const id of p.selectedIds) {
-      const raw = (p.qtyMap[id] ?? "").trim();
-      const qty = Number(raw);
-      if (Number.isFinite(qty) && Number.isInteger(qty) && qty > 0) {
-        out.push({ po_line_id: id, qty_planned: qty });
-      }
+    const out: Array<{
+      po_line_id: number;
+      qty_planned: number;
+      batch_code?: string | null;
+      production_date?: string | null;
+      expiry_date?: string | null;
+    }> = [];
+
+    const rowMap = new Map<number, (typeof rows)[number]>();
+    for (const r of rows) rowMap.set(r.poLineId, r);
+
+    for (const id of selectedIds) {
+      const row = rowMap.get(id);
+      if (!row) continue;
+
+      const rawQty = (qtyMap[id] ?? "").trim();
+      const qty = Number(rawQty);
+      if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty <= 0) continue;
+
+      const batch = (batchMap[id] ?? "").trim();
+      const prod = (prodMap[id] ?? "").trim();
+      const exp = (expMap[id] ?? "").trim();
+
+      out.push({
+        po_line_id: id,
+        qty_planned: qty,
+        batch_code: batch ? batch : null,
+        production_date: prod ? prod : null,
+        expiry_date: exp ? exp : null,
+      });
     }
     return out;
-  }, [p.selectedIds, p.qtyMap]);
+  }, [selectedIds, qtyMap, batchMap, prodMap, expMap, rows]);
 
   const canCreate =
     mode === "PO" &&
@@ -58,18 +101,13 @@ export function ReceiveTaskContextPanel(props: {
     !isTaskForCurrentPo &&
     v.verified &&
     selectedLines.length > 0 &&
-    p.planValid &&
+    planValid &&
     !c.creatingTask;
 
   const actionBtn =
     mode === "PO" ? (
       isTaskForCurrentPo ? (
-        <button
-          type="button"
-          disabled
-          className={InboundUI.btnGhost}
-          title="当前采购单已创建收货任务"
-        >
+        <button type="button" disabled className={InboundUI.btnGhost} title="当前采购单已创建收货任务">
           已创建任务 #{task?.id}
         </button>
       ) : (
@@ -87,11 +125,7 @@ export function ReceiveTaskContextPanel(props: {
   return (
     <div className={InboundUI.cardGap}>
       <div className="flex items-center justify-between gap-2">
-        {showTitle ? (
-          <div className={InboundUI.title}>{titleText ?? "收货任务（创建 / 绑定）"}</div>
-        ) : (
-          <div />
-        )}
+        {showTitle ? <div className={InboundUI.title}>{titleText ?? "收货任务（创建 / 绑定）"}</div> : <div />}
         <div className="shrink-0">{actionBtn}</div>
       </div>
 
@@ -100,43 +134,29 @@ export function ReceiveTaskContextPanel(props: {
       {isTaskForCurrentPo ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-900">
           <div className="font-medium">
-            当前任务：#{task?.id} · {taskStatusLabel(task?.status)} · 行数{" "}
-            {task?.lines?.length ?? 0}
+            当前任务：#{task?.id} · {taskStatusLabel(task?.status)} · 行数 {task?.lines?.length ?? 0}
           </div>
         </div>
       ) : null}
 
       {mode === "PO" && po && !isTaskForCurrentPo ? (
         <>
-          {/* 验货确认：横排 / 放大 / 明确 */}
           <div className="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
             <div className="text-sm font-semibold text-slate-900">验货确认</div>
 
             <div className="flex items-center gap-6">
               <label className="flex items-center gap-2 text-lg font-medium">
-                <input
-                  type="checkbox"
-                  checked={v.checkGoods}
-                  onChange={(e) => v.setCheckGoods(e.target.checked)}
-                />
+                <input type="checkbox" checked={v.checkGoods} onChange={(e) => v.setCheckGoods(e.target.checked)} />
                 商品已核验
               </label>
 
               <label className="flex items-center gap-2 text-lg font-medium">
-                <input
-                  type="checkbox"
-                  checked={v.checkSpec}
-                  onChange={(e) => v.setCheckSpec(e.target.checked)}
-                />
+                <input type="checkbox" checked={v.checkSpec} onChange={(e) => v.setCheckSpec(e.target.checked)} />
                 规格已核验
               </label>
 
               <label className="flex items-center gap-2 text-lg font-medium">
-                <input
-                  type="checkbox"
-                  checked={v.checkQty}
-                  onChange={(e) => v.setCheckQty(e.target.checked)}
-                />
+                <input type="checkbox" checked={v.checkQty} onChange={(e) => v.setCheckQty(e.target.checked)} />
                 数量已核验
               </label>
             </div>
@@ -145,22 +165,25 @@ export function ReceiveTaskContextPanel(props: {
           <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="text-base font-semibold text-slate-900">采购计划未完成清单</div>
-              <button
-                type="button"
-                onClick={p.applyDefault}
-                className="text-[12px] text-slate-700 hover:text-slate-900"
-              >
+              <button type="button" onClick={applyDefault} className="text-[12px] text-slate-700 hover:text-slate-900">
                 按剩余应收填充
               </button>
             </div>
 
             <PoReceivePlanTable
-              rows={p.rows}
-              selected={p.selected}
-              qtyMap={p.qtyMap}
-              onToggle={p.toggleLine}
-              onQtyChange={p.updateQty}
-              validate={p.validateQty}
+              rows={rows}
+              selected={selectedMap}
+              qtyMap={qtyMap}
+              batchMap={batchMap}
+              prodMap={prodMap}
+              expMap={expMap}
+              onToggle={toggleLine}
+              onQtyChange={updateQty}
+              onBatchChange={updateBatch}
+              onProdChange={updateProd}
+              onExpChange={updateExp}
+              validateQty={validateQty}
+              validateMeta={validateMeta}
             />
           </div>
         </>

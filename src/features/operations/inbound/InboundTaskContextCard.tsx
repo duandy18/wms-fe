@@ -11,6 +11,7 @@ import { PurchaseOrderContextPanel } from "./purchase-context";
 import { ReceiveTaskContextPanel } from "./receive-task";
 import { useInboundTaskContextModel } from "./purchase-context";
 import { InboundUI } from "./ui";
+import { getInboundUiCaps, taskStatusLabel } from "./stateMachine";
 
 interface Props {
   c: InboundCockpitController;
@@ -21,6 +22,13 @@ export const InboundTaskContextCard: React.FC<Props> = ({ c }) => {
   const task = c.currentTask;
 
   const m = useInboundTaskContextModel(c);
+
+  const caps = getInboundUiCaps({
+    currentTask: c.currentTask,
+    committing: c.committing,
+    manualDraft: c.manualDraft,
+    varianceSummary: c.varianceSummary,
+  });
 
   return (
     <section className={`${InboundUI.card} ${InboundUI.cardPad} ${InboundUI.cardGap}`}>
@@ -35,6 +43,32 @@ export const InboundTaskContextCard: React.FC<Props> = ({ c }) => {
           {c.taskError && <div className={InboundUI.danger}>{c.taskError}</div>}
         </div>
       </div>
+
+      {/* ✅ 状态显性化：把“你现在在哪”钉在 UI 上 */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm text-slate-600">
+          {task ? (
+            <>
+              当前任务 <span className="font-mono">#{task.id}</span> · {taskStatusLabel(task)}
+              {po ? <span className="ml-2 text-slate-500">（采购单 #{po.id}）</span> : null}
+            </>
+          ) : (
+            <span className="text-slate-500">尚未绑定收货任务</span>
+          )}
+        </div>
+
+        <div
+          className={[
+            "shrink-0 rounded-full px-3 py-1 text-[12px] font-medium border",
+            caps.isCommitted ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-700 border-slate-200",
+          ].join(" ")}
+          title={caps.status}
+        >
+          {caps.isCommitted ? "已入库" : task ? "进行中" : "未开始"}
+        </div>
+      </div>
+
+      {caps.blockedReason ? <div className="text-[13px] text-slate-600">提示：{caps.blockedReason}</div> : null}
 
       {m.mode === "PO" ? (
         <div className={InboundUI.cardGap}>

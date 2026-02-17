@@ -1,36 +1,33 @@
 // src/features/operations/inbound/SupplementLink.tsx
-// 统一“去补录”入口：打开 /inbound 内的补录抽屉（通过 query 控制）
+// 统一“去补录”入口：滚动定位到 Inbound 页内的补录区域（不跳转、不带 query）
 
-import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
+import React, { useCallback } from "react";
 
-export type SupplementSource = "purchase" | "return" | "misc";
+export const INBOUND_SUPPLEMENT_ANCHOR_ID = "inbound-supplement";
 
 export const SupplementLink: React.FC<{
-  source?: SupplementSource;
-  taskId?: number | null; // ✅ 本次任务口径（可选）
   className?: string;
   children?: React.ReactNode;
-}> = ({ source = "purchase", taskId = null, className, children }) => {
-  const to = useMemo(() => {
-    const sp = new URLSearchParams();
-    sp.set("supplement", "1");
-    sp.set("source", source);
-    if (taskId != null && Number.isFinite(taskId) && taskId > 0) {
-      sp.set("task_id", String(taskId));
+}> = ({ className, children }) => {
+  const onClick = useCallback(() => {
+    const el = document.getElementById(INBOUND_SUPPLEMENT_ANCHOR_ID);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      // 轻微闪一下提醒（不依赖任何库）
+      el.classList.add("ring-2", "ring-sky-300");
+      window.setTimeout(() => {
+        el.classList.remove("ring-2", "ring-sky-300");
+      }, 900);
     }
-    return `/inbound?${sp.toString()}`;
-  }, [source, taskId]);
+  }, []);
 
   return (
-    <Link
-      to={to}
-      className={
-        className ??
-        "text-sky-700 hover:text-sky-900 underline underline-offset-2"
-      }
+    <button
+      type="button"
+      onClick={onClick}
+      className={className ?? "text-sky-700 hover:text-sky-900 underline underline-offset-2"}
     >
       {children ?? "去补录"}
-    </Link>
+    </button>
   );
 };

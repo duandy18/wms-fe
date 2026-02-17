@@ -1,6 +1,6 @@
 // src/features/operations/inbound/receive-task/usePoReceivePlan.ts
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PurchaseOrderDetail, PurchaseOrderDetailLine } from "../../../purchase-orders/api";
 
 export type PlanRow = {
@@ -23,6 +23,11 @@ export type PlanRow = {
   purchase_uom: string;
 
   units_per_case: number; // 1采购单位=多少最小单位
+
+  // ✅ 保质期策略（来自详情态行）
+  has_shelf_life: boolean;
+  shelf_life_value: number | null;
+  shelf_life_unit: string | null;
 };
 
 function safeInt(v: unknown, fallback: number): number {
@@ -55,11 +60,30 @@ function baseToPurchaseQty(line: PurchaseOrderDetailLine, baseQty: number): numb
   return Math.floor(q / upc);
 }
 
+function normalizeBatch(v: string): string {
+  return (v ?? "").trim();
+}
+
+function normalizeDateStr(v: string): string {
+  return (v ?? "").trim();
+}
+
+function requiresExpiryExplicit(row: PlanRow): boolean {
+  if (!row.has_shelf_life) return false;
+  if (row.shelf_life_value == null) return true;
+  if (!row.shelf_life_unit || !String(row.shelf_life_unit).trim()) return true;
+  return false;
+}
+
 export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [qtyMap, setQtyMap] = useState<Record<number, string>>({});
 
-  // ✅ PO 刷新版本：同一 po.id 下，只要 base 事实变化，就视为新一轮计划（清空勾选/数量）
+  // ✅ Phase 3：创建任务阶段输入批次/生产日期/到期日期（必要时）
+  const [batchMap, setBatchMap] = useState<Record<number, string>>({});
+  const [prodMap, setProdMap] = useState<Record<number, string>>({});
+  const [expMap, setExpMap] = useState<Record<number, string>>({});
+
   const poRevKey = useMemo(() => {
     if (!po) return "";
     const parts = (po.lines ?? []).map((l) => {
@@ -71,14 +95,15 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
 
   const lastRevRef = useRef<string>("");
 
-  // 切换 PO 时重置
   useEffect(() => {
     setSelected({});
     setQtyMap({});
+    setBatchMap({});
+    setProdMap({});
+    setExpMap({});
     lastRevRef.current = poRevKey;
   }, [po?.id, poRevKey]);
 
-  // ✅ 同一 PO 刷新（base 事实变化）也要重置：提交完成后必须“干净”
   useEffect(() => {
     if (!po) return;
     if (!lastRevRef.current) {
@@ -88,6 +113,9 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
     if (lastRevRef.current !== poRevKey) {
       setSelected({});
       setQtyMap({});
+      setBatchMap({});
+      setProdMap({});
+      setExpMap({});
       lastRevRef.current = poRevKey;
     }
   }, [poRevKey, po]);
@@ -95,7 +123,6 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
   const rows: PlanRow[] = useMemo(() => {
     if (!po) return [];
 
-    // ✅ “采购计划未完成清单”：只保留 remain_base > 0 的行（严格 base 合同）
     return (po.lines ?? [])
       .map((l) => {
         const ordered_purchase = safeInt(l.qty_ordered, 0);
@@ -108,7 +135,6 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
         const base_uom = baseUomLabel(l);
         const purchase_uom = purchaseUomLabel(l);
 
-        // 展示用：把 base 换算成采购单位（向下取整）
         const received_purchase = baseToPurchaseQty(l, received_base);
         const remain_purchase = Math.max(ordered_purchase - received_purchase, 0);
 
@@ -130,21 +156,42 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
           purchase_uom,
 
           units_per_case: upc,
+
+          has_shelf_life: Boolean(l.has_shelf_life ?? false),
+          shelf_life_value: l.shelf_life_value == null ? null : Number(l.shelf_life_value),
+          shelf_life_unit: l.shelf_life_unit == null ? null : String(l.shelf_life_unit),
         };
       })
       .filter((r) => r.remain_base > 0);
   }, [po]);
 
-  function validateQty(v: string, remain_base: number): string | null {
+  const validateQty = useCallback((v: string, remain_base: number): string | null => {
     if (!v) return "请输入数量";
     const n = Number(v);
     if (!Number.isInteger(n)) return "必须为整数";
     if (n <= 0) return "必须大于 0";
     if (n > remain_base) return "超过剩余应收";
     return null;
-  }
+  }, []);
 
-  // ✅ PO 刷新后对齐（但不做“自动勾选”）：只做安全修正
+  const validateMeta = useCallback(
+    (row: PlanRow): { batch?: string; prod?: string; exp?: string } | null => {
+      if (!row.has_shelf_life) return null;
+
+      const batch = normalizeBatch(batchMap[row.poLineId] ?? "");
+      const prod = normalizeDateStr(prodMap[row.poLineId] ?? "");
+      const exp = normalizeDateStr(expMap[row.poLineId] ?? "");
+
+      const out: { batch?: string; prod?: string; exp?: string } = {};
+      if (!batch) out.batch = "批次必填";
+      if (!prod) out.prod = "生产日期必填";
+      if (requiresExpiryExplicit(row) && !exp) out.exp = "到期日期必填（无法推算）";
+
+      return Object.keys(out).length > 0 ? out : null;
+    },
+    [batchMap, prodMap, expMap],
+  );
+
   useEffect(() => {
     const rowMap = new Map<number, PlanRow>();
     for (const r of rows) rowMap.set(r.poLineId, r);
@@ -177,8 +224,39 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
       }
       return next;
     });
+
+    setBatchMap((prev) => {
+      const next: Record<number, string> = {};
+      for (const k of Object.keys(prev)) {
+        const id = Number(k);
+        if (!selected[id]) continue;
+        if (!rowMap.has(id)) continue;
+        next[id] = prev[id];
+      }
+      return next;
+    });
+    setProdMap((prev) => {
+      const next: Record<number, string> = {};
+      for (const k of Object.keys(prev)) {
+        const id = Number(k);
+        if (!selected[id]) continue;
+        if (!rowMap.has(id)) continue;
+        next[id] = prev[id];
+      }
+      return next;
+    });
+    setExpMap((prev) => {
+      const next: Record<number, string> = {};
+      for (const k of Object.keys(prev)) {
+        const id = Number(k);
+        if (!selected[id]) continue;
+        if (!rowMap.has(id)) continue;
+        next[id] = prev[id];
+      }
+      return next;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows]);
+  }, [rows, validateQty]);
 
   function toggleLine(id: number, checked: boolean, remain_base: number) {
     if (remain_base <= 0) return;
@@ -186,11 +264,24 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
     setSelected((m) => ({ ...m, [id]: checked }));
 
     if (checked) {
-      // ✅ 勾选即覆盖填充 remain（最小单位口径）
       setQtyMap((m) => ({ ...m, [id]: String(remain_base) }));
     } else {
-      // ✅ 取消勾选：清除该行数量（防残留）
       setQtyMap((m) => {
+        const next = { ...m };
+        delete next[id];
+        return next;
+      });
+      setBatchMap((m) => {
+        const next = { ...m };
+        delete next[id];
+        return next;
+      });
+      setProdMap((m) => {
+        const next = { ...m };
+        delete next[id];
+        return next;
+      });
+      setExpMap((m) => {
         const next = { ...m };
         delete next[id];
         return next;
@@ -201,8 +292,16 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
   function updateQty(id: number, v: string) {
     setQtyMap((m) => ({ ...m, [id]: v }));
   }
+  function updateBatch(id: number, v: string) {
+    setBatchMap((m) => ({ ...m, [id]: v }));
+  }
+  function updateProd(id: number, v: string) {
+    setProdMap((m) => ({ ...m, [id]: v }));
+  }
+  function updateExp(id: number, v: string) {
+    setExpMap((m) => ({ ...m, [id]: v }));
+  }
 
-  // 是否至少选择了一行
   const hasSelection = useMemo(() => Object.values(selected).some(Boolean), [selected]);
 
   const planValid = useMemo(() => {
@@ -210,11 +309,15 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
 
     for (const r of rows) {
       if (!selected[r.poLineId]) continue;
-      const err = validateQty(qtyMap[r.poLineId] ?? "", r.remain_base);
-      if (err) return false;
+
+      const errQty = validateQty(qtyMap[r.poLineId] ?? "", r.remain_base);
+      if (errQty) return false;
+
+      const errMeta = validateMeta(r);
+      if (errMeta) return false;
     }
     return true;
-  }, [rows, selected, qtyMap, hasSelection]);
+  }, [rows, selected, qtyMap, hasSelection, validateQty, validateMeta]);
 
   function applyDefault() {
     const s: Record<number, boolean> = {};
@@ -236,11 +339,18 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
     rows,
     selected,
     qtyMap,
+    batchMap,
+    prodMap,
+    expMap,
     selectedIds,
     planValid,
     toggleLine,
     updateQty,
+    updateBatch,
+    updateProd,
+    updateExp,
     validateQty,
+    validateMeta,
     applyDefault,
   };
 }

@@ -41,6 +41,18 @@ export type InboundManualDraftSummary = {
   totalQty: number;
 };
 
+/**
+ * ✅ Phase 3：选择式创建任务的 payload（V2）
+ * - 在原有 qty_planned/base 合同之上，允许携带批次/生产日期/到期日期
+ * - 是否必填由后端基于 Item 主数据裁决（has_shelf_life 等）
+ */
+export type ReceiveTaskCreateFromPoSelectedLinePayloadV2 =
+  ReceiveTaskCreateFromPoSelectedLinePayload & {
+    batch_code?: string | null;
+    production_date?: string | null;
+    expiry_date?: string | null;
+  };
+
 export interface InboundCockpitController {
   // ===== state =====
   poIdInput: string;
@@ -83,9 +95,9 @@ export interface InboundCockpitController {
   /** 旧：整单/剩余应收创建（保留备用） */
   createTaskFromPo: () => Promise<void>;
 
-  /** 新：选择式创建（本次到货批次） */
+  /** 新：选择式创建（本次到货批次）—— Phase 3：支持批次/生产日期/到期日期 */
   createTaskFromPoSelected: (
-    lines: ReceiveTaskCreateFromPoSelectedLinePayload[],
+    lines: ReceiveTaskCreateFromPoSelectedLinePayloadV2[],
   ) => Promise<void>;
 
   bindTaskById: () => Promise<void>;

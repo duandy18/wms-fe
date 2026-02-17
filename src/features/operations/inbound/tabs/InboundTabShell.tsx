@@ -8,8 +8,8 @@ export const InboundTabShell: React.FC<{
 }> = ({ left, right }) => {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-6 items-start">
-      {left}
-      {right}
+      <div className="min-w-0">{left}</div>
+      <div className="min-w-0">{right}</div>
     </div>
   );
 };
