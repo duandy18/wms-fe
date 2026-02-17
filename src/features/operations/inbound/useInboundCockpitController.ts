@@ -15,15 +15,13 @@ import { useMemo, useRef, useState } from "react";
 import type { ParsedBarcode } from "../scan/barcodeParser";
 
 import type { PurchaseOrderDetail } from "../../purchase-orders/api";
-import type {
-  ReceiveTask,
-  ReceiveTaskCreateFromPoSelectedLinePayload,
-} from "../../receive-tasks/api";
+import type { ReceiveTask } from "../../receive-tasks/api";
 
 import type {
   InboundCockpitController,
   InboundScanHistoryEntry,
   InboundManualDraftSummary,
+  ReceiveTaskCreateFromPoSelectedLinePayloadV2,
 } from "./types";
 
 import { calcVariance } from "./cockpit/utils";
@@ -35,10 +33,7 @@ import {
   createTaskFromPo as doCreateTaskFromPo,
   createTaskFromPoSelected as doCreateTaskFromPoSelected,
 } from "./cockpit/task";
-import {
-  handleScan as doHandleScan,
-  handleScanParsed as doHandleScanParsed,
-} from "./cockpit/scan";
+import { handleScan as doHandleScan, handleScanParsed as doHandleScanParsed } from "./cockpit/scan";
 import { updateLineMeta as doUpdateLineMeta } from "./cockpit/lineMeta";
 import { manualReceiveLine as doManualReceiveLine } from "./cockpit/manual";
 import { commit as doCommit } from "./cockpit/commit";
@@ -71,9 +66,7 @@ export function useInboundCockpitController(): InboundCockpitController {
   const [activeItemId, setActiveItemId] = useState<number | null>(null);
 
   // ✅ 手工收货：未落地输入（草稿）摘要，用于 commit 前硬阻断
-  const [manualDraft, setManualDraft] = useState<InboundManualDraftSummary>(
-    EMPTY_MANUAL_DRAFT,
-  );
+  const [manualDraft, setManualDraft] = useState<InboundManualDraftSummary>(EMPTY_MANUAL_DRAFT);
 
   const varianceSummary = useMemo(() => calcVariance(currentTask), [currentTask]);
 
@@ -153,12 +146,11 @@ export function useInboundCockpitController(): InboundCockpitController {
     setManualDraft(EMPTY_MANUAL_DRAFT);
   }
 
-  async function createTaskFromPoSelected(
-    lines: ReceiveTaskCreateFromPoSelectedLinePayload[],
-  ) {
+  async function createTaskFromPoSelected(lines: ReceiveTaskCreateFromPoSelectedLinePayloadV2[]) {
     // ✅ 口径钉死：
-    // - ReceiveTaskCreateFromPoSelectedLinePayload.qty_planned 为“最小单位数量（base unit）”
+    // - qty_planned 为“最小单位数量（base unit）”
     // - 后端会把它落到 ReceiveTaskLine.expected_qty（同样是最小单位口径）
+    // ✅ Phase 3：允许携带 batch_code / production_date / expiry_date（由后端基于 Item 主数据裁决必填）
     await doCreateTaskFromPoSelected({
       currentPo,
       selectedLines: lines,

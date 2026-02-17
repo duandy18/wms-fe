@@ -14,6 +14,11 @@ type SupplementUpdatedDetail = {
   remainingHard?: number;
 };
 
+function hasPlannedLine(l: { expected_qty?: number | null }): boolean {
+  const v = Number(l.expected_qty ?? 0);
+  return Number.isFinite(v) && v > 0;
+}
+
 export function useInboundCommitModel(
   c: InboundCockpitController & {
     traceId: string;
@@ -40,11 +45,23 @@ export function useInboundCommitModel(
 
   const traceQuery = useMemo(() => buildTraceQuery(c.traceId), [c.traceId]);
 
+  /**
+   * ✅ Phase 3 收紧：hard blocked 不再依赖 scanned_qty>0
+   *
+   * 原因：后端在 commit 时会对“任务内的保质期行”做强合同校验；
+   * 若前端仍只在 scanned>0 才阻断，会出现“按钮可点 → 422 才报错”的体验裂缝。
+   *
+   * 规则（与后端更一致）：
+   * - 只要该行属于本任务（expected_qty>0 / planned line）
+   * - 且该行要求 batch / date
+   * - 且缺失对应字段
+   * → 视为 hardBlocked（必须先补录）
+   */
   const hardBlockedLines = useMemo(() => {
     if (!task) return [];
     return task.lines.filter((l) => {
-      const scanned = l.scanned_qty ?? 0;
-      if (scanned <= 0) return false;
+      // 只对“任务行”做硬合同校验：避免把历史/空行也拉进来
+      if (!hasPlannedLine(l)) return false;
 
       const batch = (l.batch_code ?? "").trim();
       const prod = (l.production_date ?? "").trim();
@@ -58,14 +75,21 @@ export function useInboundCommitModel(
 
   const topHardBlocked = useMemo(() => hardBlockedLines.slice(0, 5), [hardBlockedLines]);
 
+  /**
+   * 软建议：用于提示“建议补录”，不阻断提交。
+   * - 有保质期但缺日期（或缺批次）
+   * - 或者缺日期但不是硬要求
+   */
   const softSuggestLines = useMemo(() => {
     if (!task) return [];
     return task.lines.filter((l) => {
-      const scanned = l.scanned_qty ?? 0;
-      if (scanned <= 0) return false;
+      if (!hasPlannedLine(l)) return false;
 
       const batch = (l.batch_code ?? "").trim();
+      // 缺批次一定给建议（即使不硬阻断也要提示）
       if (!batch) return true;
+
+      // 有批次但缺日期：建议补齐
       return !hasAnyDate(l);
     });
   }, [task]);

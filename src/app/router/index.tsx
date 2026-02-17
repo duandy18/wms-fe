@@ -7,7 +7,6 @@ import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AppLayout } from "../layout/AppLayout";
 import { RequireAuth, RequirePermission, ForbiddenPage, RouteLoading } from "./guards";
 import * as P from "./lazyPages";
-import { ReceiveSupplementPage } from "../../features/operations/inbound/ReceiveSupplementPage";
 
 /* ✅ 兼容入口：统一收敛到“编辑网点”唯一入口 */
 function RedirectToProviderEdit() {
@@ -69,14 +68,6 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="operations.inbound">
                 <P.InboundCockpitPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="inbound/supplement"
-            element={
-              <RequirePermission permission="operations.inbound">
-                <ReceiveSupplementPage />
               </RequirePermission>
             }
           />

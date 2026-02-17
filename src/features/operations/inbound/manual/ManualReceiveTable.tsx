@@ -38,6 +38,7 @@ export const ManualReceiveTable: React.FC<{
 
   activeItemId?: number | null;
 
+  // 任务 id 不再用于补录链接跳转（补录已常驻），保留仅用于未来展示/调试
   taskId?: number | null;
 
   hardMissingByItemId: Record<number, string[]>;
@@ -131,19 +132,19 @@ export const ManualReceiveTable: React.FC<{
                 r.judge === "OK"
                   ? "text-emerald-700"
                   : r.judge === "OVER"
-                  ? "text-amber-700"
-                  : r.judge === "UNDER"
-                  ? "text-rose-700"
-                  : "text-slate-500";
+                    ? "text-amber-700"
+                    : r.judge === "UNDER"
+                      ? "text-rose-700"
+                      : "text-slate-500";
 
               const judgeText =
                 r.judge === "OK"
                   ? "正常"
                   : r.judge === "OVER"
-                  ? "超收"
-                  : r.judge === "UNDER"
-                  ? "少收"
-                  : "无计划";
+                    ? "超收"
+                    : r.judge === "UNDER"
+                      ? "少收"
+                      : "无计划";
 
               const varianceText = r.variance == null ? "-" : String(r.variance);
 
@@ -164,9 +165,7 @@ export const ManualReceiveTable: React.FC<{
                     <div className="flex items-center gap-2">
                       <div className="font-medium text-slate-900">{l.item_name ?? "（未命名商品）"}</div>
                       {isActive ? (
-                        <span className="rounded bg-sky-100 px-2 py-0.5 text-[12px] text-sky-800">
-                          已定位
-                        </span>
+                        <span className="rounded bg-sky-100 px-2 py-0.5 text-[12px] text-sky-800">已定位</span>
                       ) : null}
                     </div>
                     <div className={InboundUI.quiet}>{l.spec_text ?? "-"}</div>
@@ -194,17 +193,11 @@ export const ManualReceiveTable: React.FC<{
                   <td className={InboundUI.td}>
                     {r.showHard ? (
                       <div className="text-rose-700 font-medium">
-                        必须补录：缺{formatMissing(r.hardMissing)}{" "}
-                        <SupplementLink source="purchase" taskId={taskId}>
-                          去补录
-                        </SupplementLink>
+                        必须补录：缺{formatMissing(r.hardMissing)} <SupplementLink>去补录</SupplementLink>
                       </div>
                     ) : r.showSoft ? (
                       <div className="text-slate-700">
-                        建议补录：缺{formatMissing(r.softMissing)}{" "}
-                        <SupplementLink source="purchase" taskId={taskId}>
-                          去补录
-                        </SupplementLink>
+                        建议补录：缺{formatMissing(r.softMissing)} <SupplementLink>去补录</SupplementLink>
                       </div>
                     ) : (
                       <div className="text-slate-400">-</div>
@@ -230,6 +223,9 @@ export const ManualReceiveTable: React.FC<{
           )}
         </tbody>
       </table>
+
+      {/* 不占视觉，但保留一个 debug hint 位：避免未来 taskId 成为“死参数” */}
+      {taskId ? <div className="hidden" aria-hidden="true">{`task:${taskId}`}</div> : null}
     </div>
   );
 };

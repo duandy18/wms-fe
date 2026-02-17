@@ -5,9 +5,9 @@ import {
   createReceiveTaskFromPo,
   createReceiveTaskFromPoSelected,
   type ReceiveTask,
-  type ReceiveTaskCreateFromPoSelectedLinePayload,
 } from "../../../receive-tasks/api";
 import type { PurchaseOrderDetail } from "../../../purchase-orders/api";
+import type { ReceiveTaskCreateFromPoSelectedLinePayloadV2 } from "../types";
 import { getErrMsg } from "./utils";
 
 export async function internalLoadTask(args: {
@@ -35,7 +35,6 @@ export async function internalLoadTask(args: {
     setCommitError(null);
     setActiveItemId(null);
   } catch (err: unknown) {
-     
     console.error("fetchReceiveTask error", err);
     setCurrentTask(null);
     setTaskError(getErrMsg(err, "加载收货任务失败"));
@@ -112,7 +111,6 @@ export async function createTaskFromPo(args: {
     setCommitError(null);
     setActiveItemId(null);
   } catch (err: unknown) {
-     
     console.error("createReceiveTaskFromPo failed", err);
     setTaskError(getErrMsg(err, "从采购单创建收货任务失败"));
   } finally {
@@ -123,7 +121,7 @@ export async function createTaskFromPo(args: {
 /** 新：选择式创建（本次到货批次） */
 export async function createTaskFromPoSelected(args: {
   currentPo: PurchaseOrderDetail | null;
-  selectedLines: ReceiveTaskCreateFromPoSelectedLinePayload[];
+  selectedLines: ReceiveTaskCreateFromPoSelectedLinePayloadV2[];
   setCreatingTask: (v: boolean) => void;
   setTaskError: (v: string | null) => void;
   setCurrentTask: (v: ReceiveTask | null) => void;
@@ -156,6 +154,7 @@ export async function createTaskFromPoSelected(args: {
   setCreatingTask(true);
   setTaskError(null);
   try {
+    // ✅ Phase 3：selectedLines 允许携带 batch_code / production_date / expiry_date，直接透传给后端
     const task = await createReceiveTaskFromPoSelected(poId, {
       warehouse_id: currentPo.warehouse_id,
       lines: selectedLines,
@@ -165,7 +164,6 @@ export async function createTaskFromPoSelected(args: {
     setCommitError(null);
     setActiveItemId(null);
   } catch (err: unknown) {
-     
     console.error("createReceiveTaskFromPoSelected failed", err);
     setTaskError(getErrMsg(err, "创建本次到货收货任务失败"));
   } finally {

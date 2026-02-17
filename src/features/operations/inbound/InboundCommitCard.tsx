@@ -11,6 +11,7 @@ import { MismatchConfirmModal } from "./commit/MismatchConfirmModal";
 import { CommitSupplementPanels } from "./commit/CommitSupplementPanels";
 import { useInboundCommitModel } from "./commit/useInboundCommitModel";
 import { InboundUI } from "./ui";
+import { getInboundUiCaps } from "./stateMachine";
 
 type InboundCommitController = InboundCockpitController & {
   traceId: string;
@@ -28,8 +29,18 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
   const navigate = useNavigate();
   const m = useInboundCommitModel(c);
 
-  const commitAreaDisabled =
-    m.isCommitted || !!c.committing || m.commitBlocked || m.manualDraftBlocked;
+  const caps = getInboundUiCaps({
+    currentTask: c.currentTask,
+    committing: c.committing,
+    manualDraft: c.manualDraft,
+    varianceSummary: c.varianceSummary,
+  });
+
+  // ✅ 原有更细阻断（缺批次/缺日期/草稿/差异确认等）
+  const commitAreaDisabledByModel = m.isCommitted || !!c.committing || m.commitBlocked || m.manualDraftBlocked;
+
+  // ✅ Phase 3 新增：最低门槛阻断（必须产生实收）
+  const commitAreaDisabled = commitAreaDisabledByModel || !caps.canCommitClick;
 
   const handleCommitClick = async () => {
     await m.handleCommitClick();
@@ -50,6 +61,13 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
         {c.commitError ? <span className="text-xs text-red-600">{c.commitError}</span> : null}
       </div>
 
+      {/* ✅ Phase 3：最低门槛阻断原因显性化（避免“按钮灰了但不知道为啥”） */}
+      {!caps.canCommitClick && !m.isCommitted ? (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700">
+          提交暂不可用：{caps.blockedReason ?? "请先完成扫码/录入形成实收，再提交入库"}
+        </div>
+      ) : null}
+
       {!m.task ? null : (
         <>
           <div className={InboundUI.subtitle}>
@@ -67,8 +85,8 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
                 c.varianceSummary.totalVariance === 0
                   ? "text-emerald-700 font-mono"
                   : c.varianceSummary.totalVariance > 0
-                  ? "text-amber-700 font-mono"
-                  : "text-rose-700 font-mono"
+                    ? "text-amber-700 font-mono"
+                    : "text-rose-700 font-mono"
               }
             >
               {c.varianceSummary.totalVariance}
@@ -81,9 +99,7 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
             supplementHint={m.supplementHint}
             manualDraftBlocked={m.manualDraftBlocked}
             manualDraft={
-              c.manualDraft
-                ? { touchedLines: c.manualDraft.touchedLines, totalQty: c.manualDraft.totalQty }
-                : null
+              c.manualDraft ? { touchedLines: c.manualDraft.touchedLines, totalQty: c.manualDraft.totalQty } : null
             }
             commitBlocked={m.commitBlocked}
             hardBlockedLines={m.hardBlockedLines}
@@ -102,6 +118,11 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
                 disabled={commitAreaDisabled}
                 onClick={() => void handleCommitClick()}
                 className={InboundUI.btnPrimary}
+                title={
+                  commitAreaDisabled
+                    ? caps.blockedReason ?? m.blockedMsg ?? "当前状态不可提交"
+                    : undefined
+                }
               >
                 {m.isCommitted ? "已入库" : c.committing ? "提交中…" : "确认入库"}
               </button>

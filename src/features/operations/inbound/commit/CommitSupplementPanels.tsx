@@ -48,9 +48,7 @@ export const CommitSupplementPanels: React.FC<{
               : "rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
           }
         >
-          <div className="font-semibold">
-            {supplementHint.kind === "done" ? "补录完成" : "补录仍未完成"}
-          </div>
+          <div className="font-semibold">{supplementHint.kind === "done" ? "补录完成" : "补录仍未完成"}</div>
           <div className="text-[11px] opacity-90 mt-1">{supplementHint.text}</div>
         </div>
       ) : null}
@@ -71,10 +69,7 @@ export const CommitSupplementPanels: React.FC<{
 
           <div className="text-[11px] text-amber-800">
             影响行数：<span className="font-mono">{hardBlockedLines.length}</span> 行。请到{" "}
-            <SupplementLink source="purchase" taskId={taskId}>
-              收货补录
-            </SupplementLink>{" "}
-            补齐必需字段。
+            <SupplementLink>收货补录</SupplementLink> 补齐必需字段。
           </div>
 
           <ul className="list-disc pl-5 text-[11px] text-amber-800 space-y-1">
@@ -90,35 +85,28 @@ export const CommitSupplementPanels: React.FC<{
                   <span className="font-medium">{safeLineName(l)}</span>
                   <span className="ml-2 text-amber-800/80">
                     缺 {miss.join(" / ")}，已收 <span className="font-mono">{l.scanned_qty ?? 0}</span>
+                    {taskId ? <span className="ml-2">（任务 #{taskId}）</span> : null}
                   </span>
                 </li>
               );
             })}
             {hardBlockedLines.length > topHardBlocked.length ? (
               <li className="text-amber-800/80">
-                还有{" "}
-                <span className="font-mono">
-                  {hardBlockedLines.length - topHardBlocked.length}
-                </span>{" "}
-                行未展示…
+                还有 <span className="font-mono">{hardBlockedLines.length - topHardBlocked.length}</span> 行未展示…
               </li>
             ) : null}
           </ul>
 
           <div className="flex items-center gap-2">
-            <SupplementLink source="purchase" taskId={taskId}>
-              去补录
-            </SupplementLink>
+            <SupplementLink>去补录</SupplementLink>
           </div>
         </div>
       ) : softSuggestLines.length > 0 ? (
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800 space-y-2">
           <div className="font-semibold">提示：存在建议补录项（不影响入库）</div>
           <div className="text-[11px] text-slate-700">
-            影响行数：<span className="font-mono">{softSuggestLines.length}</span> 行。
-            <SupplementLink source="purchase" taskId={taskId}>
-              去补录
-            </SupplementLink>
+            影响行数：<span className="font-mono">{softSuggestLines.length}</span> 行。{" "}
+            <SupplementLink>去补录</SupplementLink>
           </div>
         </div>
       ) : null}

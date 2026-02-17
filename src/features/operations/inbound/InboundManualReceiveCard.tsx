@@ -5,6 +5,7 @@ import type { InboundCockpitController } from "./types";
 import { useInboundManualReceiveModel } from "./manual/useInboundManualReceiveModel";
 import { ManualReceiveTable } from "./manual/ManualReceiveTable";
 import { InboundUI } from "./ui";
+import { getInboundUiCaps } from "./stateMachine";
 
 interface Props {
   c: InboundCockpitController;
@@ -13,6 +14,13 @@ interface Props {
 export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
   const m = useInboundManualReceiveModel(c);
   const [editing, setEditing] = useState<boolean>(false);
+
+  const caps = getInboundUiCaps({
+    currentTask: c.currentTask,
+    committing: c.committing,
+    manualDraft: c.manualDraft,
+    varianceSummary: c.varianceSummary,
+  });
 
   const activeLine = useMemo(() => {
     if (c.activeItemId == null) return null;
@@ -28,8 +36,19 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
     );
   }
 
+  // ✅ Phase 3：终态/提交中统一禁用（不靠“编辑开关”）
+  const allowOperate = caps.canManualReceive;
+
+  // 仅当允许操作时，才允许进入编辑态；否则强制退出编辑态
+  if (!allowOperate && editing) {
+    // 避免在 render 里 setState 的副作用：保持 UI 不进入编辑即可
+    //（这里不调用 setEditing(false)，只通过禁用/遮罩防止继续操作）
+  }
+
   const batchDisabled =
-    !editing || m.savingAll || m.savingItemId != null || m.preview.touchedLines === 0;
+    !editing || !allowOperate || m.savingAll || m.savingItemId != null || m.preview.touchedLines === 0;
+
+  const editBtnDisabled = !allowOperate || m.savingAll || m.savingItemId != null;
 
   return (
     <section className={`${InboundUI.card} ${InboundUI.cardPad} ${InboundUI.cardGap}`}>
@@ -51,7 +70,7 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
               type="button"
               className={InboundUI.btnGhost}
               onClick={() => setEditing(false)}
-              disabled={m.savingAll || m.savingItemId != null}
+              disabled={editBtnDisabled}
             >
               取消
             </button>
@@ -60,6 +79,8 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
               type="button"
               className={InboundUI.btnGhost}
               onClick={() => setEditing(true)}
+              disabled={editBtnDisabled}
+              title={!allowOperate ? caps.blockedReason ?? "当前状态不允许录入" : undefined}
             >
               编辑
             </button>
@@ -67,9 +88,15 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
         </div>
       </div>
 
+      {!allowOperate ? (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700">
+          录入已禁用：{caps.blockedReason ?? "当前状态不允许录入"}
+        </div>
+      ) : null}
+
       {m.error && <div className={InboundUI.danger}>{m.error}</div>}
 
-      <div className={editing ? "" : "pointer-events-none opacity-70"}>
+      <div className={editing && allowOperate ? "" : "pointer-events-none opacity-70"}>
         <ManualReceiveTable
           lines={m.lines}
           qtyInputs={m.qtyInputs}
@@ -84,7 +111,7 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
         />
       </div>
 
-      {editing && (
+      {editing && allowOperate && (
         <div className="flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
           <div className="text-[12px] text-slate-700">
             本次将记录 <span className="font-mono">{m.preview.touchedLines}</span> 行，共{" "}
@@ -96,6 +123,13 @@ export const InboundManualReceiveCard: React.FC<Props> = ({ c }) => {
             disabled={batchDisabled}
             onClick={() => void m.handleReceiveBatch()}
             className={InboundUI.btnPrimary}
+            title={
+              !allowOperate
+                ? caps.blockedReason ?? "当前状态不允许录入"
+                : m.preview.touchedLines === 0
+                  ? "尚未填写任何数量"
+                  : undefined
+            }
           >
             {m.savingAll ? "记录中…" : "一键记录本次"}
           </button>
