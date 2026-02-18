@@ -46,7 +46,7 @@ export function PurchaseOrderDetailReadonly(props: {
 
       <div className="flex items-center justify-between gap-2">
         <div className={InboundUI.quiet}>
-          当前采购单 #{po.id}
+          采购单 #{po.id}
           {rightHint ? <span className="ml-2">{rightHint}</span> : null}
           {refreshErr ? <span className={`ml-2 ${InboundUI.danger}`}>{refreshErr}</span> : null}
         </div>
@@ -55,18 +55,14 @@ export function PurchaseOrderDetailReadonly(props: {
           type="button"
           className={InboundUI.btnGhost}
           onClick={() => onRefresh?.()}
+          disabled={!onRefresh || refreshing}
           title="刷新采购单行明细（提交入库后用于同步最新已收/剩余）"
         >
           {refreshing ? "刷新中…" : "刷新"}
         </button>
       </div>
 
-      <PurchaseOrderLinesTable
-        po={po}
-        selectedLineId={selectedLineId}
-        onSelectLine={setSelectedLineId}
-        mode="inbound"
-      />
+      <PurchaseOrderLinesTable po={po} selectedLineId={selectedLineId} onSelectLine={setSelectedLineId} mode="inbound" />
     </div>
   );
 }

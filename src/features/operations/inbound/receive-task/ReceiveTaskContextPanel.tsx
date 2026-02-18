@@ -13,8 +13,8 @@ type InboundMode = "PO" | "ORDER";
 function taskStatusLabel(raw?: string | null): string {
   const s = String(raw ?? "").trim().toUpperCase();
   if (!s) return "未知";
-  if (s === "DRAFT") return "待提交";
-  if (s === "CREATED") return "已创建";
+  if (s === "DRAFT") return "进行中";
+  if (s === "CREATED") return "已开始";
   if (s === "COMMITTED") return "已入库";
   return s;
 }
@@ -95,7 +95,7 @@ export function ReceiveTaskContextPanel(props: {
     return out;
   }, [selectedIds, qtyMap, batchMap, prodMap, expMap, rows]);
 
-  const canCreate =
+  const canStart =
     mode === "PO" &&
     !!po &&
     !isTaskForCurrentPo &&
@@ -107,17 +107,17 @@ export function ReceiveTaskContextPanel(props: {
   const actionBtn =
     mode === "PO" ? (
       isTaskForCurrentPo ? (
-        <button type="button" disabled className={InboundUI.btnGhost} title="当前采购单已创建收货任务">
-          已创建任务 #{task?.id}
+        <button type="button" disabled className={InboundUI.btnGhost} title="当前采购单已开始收货作业">
+          继续收货（#{task?.id}）
         </button>
       ) : (
         <button
           type="button"
-          disabled={!canCreate}
+          disabled={!canStart}
           onClick={() => void c.createTaskFromPoSelected(selectedLines)}
           className={InboundUI.btnPrimary}
         >
-          {c.creatingTask ? "创建中…" : "创建"}
+          {c.creatingTask ? "开始中…" : "开始收货"}
         </button>
       )
     ) : null;
@@ -125,16 +125,16 @@ export function ReceiveTaskContextPanel(props: {
   return (
     <div className={InboundUI.cardGap}>
       <div className="flex items-center justify-between gap-2">
-        {showTitle ? <div className={InboundUI.title}>{titleText ?? "收货任务（创建 / 绑定）"}</div> : <div />}
+        {showTitle ? <div className={InboundUI.title}>{titleText ?? "开始收货"}</div> : <div />}
         <div className="shrink-0">{actionBtn}</div>
       </div>
 
-      {!po && mode === "PO" ? <div className={InboundUI.quiet}>请先选择采购单。</div> : null}
+      {!po && mode === "PO" ? <div className={InboundUI.quiet}>请先在左侧选择采购单。</div> : null}
 
       {isTaskForCurrentPo ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-900">
           <div className="font-medium">
-            当前任务：#{task?.id} · {taskStatusLabel(task?.status)} · 行数 {task?.lines?.length ?? 0}
+            当前作业：#{task?.id} · {taskStatusLabel(task?.status)} · 行数 {task?.lines?.length ?? 0}
           </div>
         </div>
       ) : null}
@@ -164,7 +164,7 @@ export function ReceiveTaskContextPanel(props: {
 
           <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-base font-semibold text-slate-900">采购计划未完成清单</div>
+              <div className="text-base font-semibold text-slate-900">本次到货（录入数量 + 批次信息）</div>
               <button type="button" onClick={applyDefault} className="text-[12px] text-slate-700 hover:text-slate-900">
                 按剩余应收填充
               </button>

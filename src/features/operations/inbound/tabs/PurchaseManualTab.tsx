@@ -33,10 +33,11 @@ export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({ c
     varianceSummary: c.varianceSummary,
   });
 
+  // ===== 左侧：只做“选择” =====
   const left = (
     <div className="space-y-4">
       <section className={`${InboundUI.card} ${InboundUI.cardPad} space-y-3`}>
-        <div className="text-base font-semibold text-slate-900">需要收货的采购单</div>
+        <div className="text-base font-semibold text-slate-900">采购单列表</div>
 
         {c.loadingPo ? (
           <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-[13px] text-sky-800">
@@ -74,25 +75,25 @@ export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({ c
         />
       </section>
 
-      <PurchaseOrderDetailReadonly po={po} />
+      <div className={InboundUI.quiet}>右侧查看采购单详情并完成本次收货作业。</div>
     </div>
   );
 
+  // ===== 右侧：从上到下是“详情 → 收货 → 提交” =====
   const right = (
     <div className="space-y-4">
-      {/* ✅ 状态显性化 */}
-      <section className={`${InboundUI.card} ${InboundUI.cardPad} space-y-2`}>
+      {/* ① 订单/PO 详情（只读） */}
+      <section className={`${InboundUI.card} ${InboundUI.cardPad} ${InboundUI.cardGap}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <div className="text-base font-semibold text-slate-900">作业状态</div>
+            <div className="text-base font-semibold text-slate-900">订单详情（只读）</div>
             <div className="text-sm text-slate-600">
               {task ? (
                 <>
-                  当前任务 <span className="font-mono">#{task.id}</span> · {taskStatusLabel(task)}
-                  {po ? <span className="ml-2 text-slate-500">（关联采购单 #{po.id}）</span> : null}
+                  当前作业 <span className="font-mono">#{task.id}</span> · {taskStatusLabel(task)}
                 </>
               ) : (
-                <span className="text-slate-500">尚未绑定收货任务</span>
+                <span className="text-slate-500">尚未开始收货</span>
               )}
             </div>
           </div>
@@ -123,31 +124,39 @@ export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({ c
             差异合计 <span className="font-mono text-slate-900">{c.varianceSummary.totalVariance}</span>
           </div>
         </div>
+
+        <div className="pt-2">
+          <PurchaseOrderDetailReadonly po={po} />
+        </div>
       </section>
 
-      {/* ① 创建/绑定任务 */}
-      <section className={`${InboundUI.card} ${InboundUI.cardPad}`}>
-        <ReceiveTaskContextPanel c={c} mode="PO" po={po} task={task} showTitle titleText="创建收货任务" />
-      </section>
-
-      {/* ② 收货执行区 */}
-      <InboundScanCard c={c} />
-      <InboundManualReceiveCard c={c} />
-
-      {/* ③ ✅ 补录常驻区（不再抽屉/不再单独页） */}
-      <section id={INBOUND_SUPPLEMENT_ANCHOR_ID} className={`${InboundUI.card} ${InboundUI.cardPad} ${InboundUI.cardGap}`}>
+      {/* ② 收货操作：开始收货 + 扫码/录入（同一条主线，不拆步骤） */}
+      <section className={`${InboundUI.card} ${InboundUI.cardPad} ${InboundUI.cardGap}`}>
         <div className="flex items-center justify-between gap-2">
-          <div>
-            <h2 className={InboundUI.title}>收货补录</h2>
-            <div className={InboundUI.subtitle}>在此处补齐批次 / 生产日期 / 到期日期（仅影响本次收货任务）。</div>
-          </div>
-          {task ? <div className="text-[11px] text-slate-500">本次任务 #{task.id}</div> : null}
+          <h2 className={InboundUI.title}>收货操作</h2>
+          {task ? <div className="text-[11px] text-slate-500">本次作业 #{task.id}</div> : null}
         </div>
 
-        <ReceiveSupplementPanel initialSourceType="PURCHASE" taskId={task?.id ?? null} showTitle={false} compact={true} />
+        {/* 开始收货（本质=创建本次作业） */}
+        <ReceiveTaskContextPanel c={c} mode="PO" po={po} task={task} showTitle={false} titleText="开始收货" />
+
+        {/* 扫码 / 手工录入都在同一层面 */}
+        <InboundScanCard c={c} />
+        <InboundManualReceiveCard c={c} />
+
+        {/* 异常通道：补录不抢主线注意力，放在收货操作区的末尾 */}
+        <details id={INBOUND_SUPPLEMENT_ANCHOR_ID} className="rounded-lg border border-slate-200 bg-white">
+          <summary className="cursor-pointer select-none px-4 py-3 text-[13px] text-slate-700">
+            异常补录（仅当系统提示缺批次/缺日期时再打开）
+          </summary>
+          <div className="px-4 pb-4 pt-1 space-y-2">
+            <div className={InboundUI.subtitle}>补齐批次 / 生产日期 / 到期日期（仅影响本次作业）。</div>
+            <ReceiveSupplementPanel initialSourceType="PURCHASE" taskId={task?.id ?? null} showTitle={false} compact={true} />
+          </div>
+        </details>
       </section>
 
-      {/* ④ 提交区 */}
+      {/* ③ 提交区（唯一出口，固定在最下） */}
       <InboundCommitCard c={c} />
     </div>
   );
