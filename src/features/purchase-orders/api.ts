@@ -3,9 +3,8 @@ import { apiGet, apiPost } from "../../lib/api";
 
 export type PurchaseOrderStatus =
   | "CREATED"
-  | "PARTIAL"
-  | "RECEIVED"
   | "CLOSED"
+  | "CANCELED"
   | string;
 
 // ----------------------
@@ -40,6 +39,9 @@ export interface PurchaseOrderListItem {
   id: number;
   supplier: string;
   warehouse_id: number;
+
+  // ✅ 展示字段：仓库名称（后端列表态已补齐；但前端类型必须容忍旧数据/详情态缺失）
+  warehouse_name?: string | null;
 
   supplier_id: number | null;
   supplier_name: string | null;
