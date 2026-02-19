@@ -32,9 +32,13 @@ export function useInboundTaskContextModel(c: InboundCockpitController) {
       setLoadingPoOptions(true);
       setPoOptionsError(null);
       try {
+        // ✅ 收货入库页：只展示“待执行/待收货”的采购计划
+        // 计划生命周期：CREATED / CANCELED / CLOSED
+        // 本页只关心 CREATED
         const list = await fetchPurchaseOrders({
           skip: 0,
           limit: 50,
+          status: "CREATED",
         });
         setPoOptions(list);
       } catch (err: unknown) {
