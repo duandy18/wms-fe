@@ -1,7 +1,7 @@
 // src/features/admin/items/create/submit.ts
 
 import type { Supplier } from "../../suppliers/api";
-import type { Item, ItemCreateInput } from "../api";
+import type { Item, ItemCreateInput } from "../../../../contracts/item/contract";
 import { createItem } from "../api";
 import type { FormState } from "./types";
 import { effectiveUom } from "./types";
@@ -19,7 +19,10 @@ export async function submitCreateItem(args: {
 
   // 供货商必须存在（UI级防撞墙）
   if (!supLoading && suppliers.length === 0) {
-    return { ok: false, error: "没有可用供货商。请先到「系统管理 → 供应商主数据」新建供应商。" };
+    return {
+      ok: false,
+      error: "没有可用供货商。请先到「系统管理 → 供应商主数据」新建供应商。",
+    };
   }
 
   const name = form.name.trim();
@@ -27,6 +30,10 @@ export async function submitCreateItem(args: {
 
   // ✅ spec：可选展示文本（空串视为 undefined，不传）
   const spec = form.spec.trim() || undefined;
+
+  // ✅ brand / category：可选展示文本（空串视为 undefined）
+  const brand = form.brand.trim() || undefined;
+  const category = form.category.trim() || undefined;
 
   const supplierId = Number(form.supplier_id);
   if (!form.supplier_id || !Number.isFinite(supplierId) || supplierId <= 0) {
@@ -51,7 +58,6 @@ export async function submitCreateItem(args: {
 
   const has_shelf_life = form.shelf_mode === "yes";
 
-  // 当有效期=有：默认有效期值必填 + 单位必选
   let shelf_life_value: number | null = null;
   let shelf_life_unit: "MONTH" | "DAY" | null = null;
 
@@ -74,8 +80,9 @@ export async function submitCreateItem(args: {
   return {
     body: {
       name,
-      // ✅ 新增：规格（可选）
       spec,
+      brand,
+      category,
 
       supplier_id: supplierId,
       uom,

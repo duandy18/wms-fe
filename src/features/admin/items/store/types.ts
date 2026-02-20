@@ -1,6 +1,6 @@
 // src/features/admin/items/store/types.ts
 
-import type { Item } from "../api";
+import type { Item } from "../../../../contracts/item/contract";
 
 export type EnabledFilter = "all" | "enabled" | "disabled";
 

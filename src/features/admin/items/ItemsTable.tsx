@@ -2,28 +2,22 @@
 // 商品列表（商品主数据核心视图）
 //
 // 职责收敛：
-// - 本文件只做：取 store 状态、过滤 rows、打开编辑、保存、渲染两个子组件（表格 + 编辑弹窗）
+// - 本文件只做：取 store 状态、过滤 rows、触发“上方编辑器进入编辑模式”、渲染表格
 // - 表格渲染交给 components/ItemsListTable
-// - 编辑弹窗交给 components/ItemEditModal
-// - 供应商 options 由 hook 统一加载（带缓存/错误）
+// - 商品编辑器统一由 ItemsFormSection 承担（本文件不再弹窗编辑）
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useItemsStore } from "./itemsStore";
-import { updateItem, type Item } from "./api";
-import { useSuppliersOptions } from "./hooks/useSuppliersOptions";
-import { errMsg, toNumberOrNull } from "./itemsHelpers";
 import ItemsListTable from "./components/ItemsListTable";
-import ItemEditModal, { type ItemDraft } from "./components/ItemEditModal";
+import type { Item } from "./api";
 
-function hasShelfLife(it: Item): boolean {
-  return !!it.has_shelf_life;
-}
+const EDITOR_ANCHOR_ID = "items-editor";
 
 export const ItemsTable: React.FC = () => {
   const items = useItemsStore((s) => s.items);
   const filter = useItemsStore((s) => s.filter);
   const primaryBarcodes = useItemsStore((s) => s.primaryBarcodes);
-  const loadItems = useItemsStore((s) => s.loadItems);
+  const setSelectedItem = useItemsStore((s) => s.setSelectedItem);
 
   const rows = useMemo(() => {
     if (filter === "enabled") return items.filter((i) => i.enabled);
@@ -31,108 +25,16 @@ export const ItemsTable: React.FC = () => {
     return items;
   }, [items, filter]);
 
-  const { suppliers, supLoading, supError, ensureSuppliers, resetSuppliersError } = useSuppliersOptions();
-
-  const [editing, setEditing] = useState<Item | null>(null);
-  const [draft, setDraft] = useState<ItemDraft | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const openEdit = async (it: Item) => {
-    await ensureSuppliers();
-
-    const uom = (it.uom ?? "").trim();
-    const COMMON_UOMS = ["袋", "个", "罐", "箱", "瓶"];
-    const presetHit = COMMON_UOMS.includes(uom);
-
-    const hasSL = hasShelfLife(it);
-
-    setEditing(it);
-    setError(null);
-    resetSuppliersError();
-
-    setDraft({
-      name: it.name ?? "",
-      spec: (it.spec ?? "").trim(),
-
-      brand: (it.brand ?? "").trim(),
-      category: (it.category ?? "").trim(),
-
-      supplier_id: it.supplier_id ?? null,
-      weight_kg: it.weight_kg == null ? "" : String(it.weight_kg),
-
-      uom_mode: presetHit ? "preset" : "custom",
-      uom_preset: presetHit ? uom : (COMMON_UOMS[0] ?? "个"),
-      uom_custom: presetHit ? "" : uom,
-
-      shelf_mode: hasSL ? "yes" : "no",
-      shelf_value: hasSL ? (it.shelf_life_value == null ? "" : String(it.shelf_life_value)) : "",
-      shelf_unit: (it.shelf_life_unit ?? "MONTH") as "MONTH" | "DAY",
-
-      enabled: !!it.enabled,
-    });
+  const gotoEditor = () => {
+    // 尽量滚动到编辑器锚点；没有也不报错
+    const el = document.getElementById(EDITOR_ANCHOR_ID);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const closeEdit = () => {
-    if (saving) return;
-    setEditing(null);
-    setDraft(null);
-    setError(null);
-    resetSuppliersError();
-  };
-
-  const saveEdit = async () => {
-    if (!editing || !draft) return;
-
-    const name = draft.name.trim();
-    if (!name) return setError("商品名称不能为空");
-
-    if (!draft.supplier_id) return setError("必须选择供货商");
-
-    const uom = draft.uom_mode === "preset" ? draft.uom_preset.trim() : draft.uom_custom.trim();
-    if (!uom) return setError("最小包装单位不能为空");
-
-    const weight_kg = toNumberOrNull(draft.weight_kg);
-    if (weight_kg !== null && weight_kg < 0) return setError("单位净重必须是 >= 0 的数字");
-
-    const has_shelf_life = draft.shelf_mode === "yes";
-    let shelf_life_value: number | undefined = undefined;
-    let shelf_life_unit: "MONTH" | "DAY" | undefined = undefined;
-
-    if (has_shelf_life && draft.shelf_value.trim()) {
-      const n = toNumberOrNull(draft.shelf_value);
-      if (n === null || n < 0) return setError("默认有效期数值必须是 >= 0 的数字");
-      shelf_life_value = n;
-      shelf_life_unit = draft.shelf_unit;
-    }
-
-    setSaving(true);
-    setError(null);
-    try {
-      await updateItem(editing.id, {
-        name,
-        supplier_id: draft.supplier_id,
-        weight_kg: weight_kg === null ? null : weight_kg,
-        uom,
-
-        spec: draft.spec, // 空串 => api.ts 转 null（清空）
-
-        brand: draft.brand,
-        category: draft.category,
-
-        enabled: draft.enabled,
-        has_shelf_life,
-        ...(shelf_life_value !== undefined ? { shelf_life_value } : {}),
-        ...(shelf_life_unit !== undefined ? { shelf_life_unit } : {}),
-      });
-
-      await loadItems();
-      closeEdit();
-    } catch (e: unknown) {
-      setError(errMsg(e, "保存失败"));
-    } finally {
-      setSaving(false);
-    }
+  const onEdit = (it: Item) => {
+    // ✅ 单一入口：列表编辑只负责“切换上方编辑器状态”
+    setSelectedItem(it);
+    gotoEditor();
   };
 
   return (
@@ -140,26 +42,10 @@ export const ItemsTable: React.FC = () => {
       <ItemsListTable
         rows={rows}
         primaryBarcodes={primaryBarcodes}
-        onEdit={(it) => void openEdit(it)}
-        // ✅ 合并：管理条码也走编辑弹窗（条码区块已在弹窗内）
-        onManageBarcodes={(it) => void openEdit(it)}
+        onEdit={(it) => void onEdit(it)}
+        // ✅ 合并：管理条码也走上方编辑器（条码区块在编辑器内）
+        onManageBarcodes={(it) => void onEdit(it)}
       />
-
-      {editing && draft ? (
-        <ItemEditModal
-          open={true}
-          saving={saving}
-          itemId={editing.id}
-          suppliers={suppliers}
-          supLoading={supLoading}
-          error={error}
-          supError={supError}
-          draft={draft}
-          onChangeDraft={setDraft}
-          onClose={closeEdit}
-          onSave={() => void saveEdit()}
-        />
-      ) : null}
     </>
   );
 };

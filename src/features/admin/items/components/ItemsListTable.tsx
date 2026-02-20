@@ -1,7 +1,7 @@
 // src/features/admin/items/components/ItemsListTable.tsx
 
 import React, { useState } from "react";
-import type { Item } from "../api";
+import type { Item } from "../../../../contracts/item/contract";
 import { useItemsStore } from "../itemsStore";
 
 function hasShelfLife(it: Item): boolean {
