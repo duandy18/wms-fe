@@ -88,7 +88,7 @@ export const ItemSelectorDialog: React.FC<Props> = ({
                   <th className="px-3 py-2 text-left">SKU</th>
                   <th className="px-3 py-2 text-left">名称</th>
                   <th className="px-3 py-2 text-left">规格</th>
-                  <th className="px-3 py-2 text-left">单位</th>
+                  <th className="px-3 py-2 text-left">最小单位</th>
                 </tr>
               </thead>
               <tbody>

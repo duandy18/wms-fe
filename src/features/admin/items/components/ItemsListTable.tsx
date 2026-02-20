@@ -78,6 +78,9 @@ export const ItemsListTable: React.FC<{
           <th className="border px-4 py-3 text-left font-semibold">主条码</th>
           <th className="border px-4 py-3 text-left font-semibold">商品名称</th>
 
+          {/* ✅ 新增：规格（items.spec，主数据可治理字段） */}
+          <th className="border px-4 py-3 text-left font-semibold">规格</th>
+
           {/* ✅ 新增：品牌 / 品类 */}
           <th className="border px-4 py-3 text-left font-semibold">品牌</th>
           <th className="border px-4 py-3 text-left font-semibold">品类</th>
@@ -89,8 +92,7 @@ export const ItemsListTable: React.FC<{
           <th className="border px-4 py-3 text-left font-semibold">单位净重(kg)</th>
           <th className="border px-4 py-3 text-left font-semibold">最小包装单位</th>
           <th className="border px-4 py-3 text-left font-semibold">有效期</th>
-          <th className="border px-4 py-3 text-left font-semibold">默认有效期值</th>
-          <th className="border px-4 py-3 text-left font-semibold">单位</th>
+          <th className="border px-4 py-3 text-left font-semibold">默认保质期</th>
           <th className="border px-4 py-3 text-left font-semibold">状态</th>
           <th className="border px-4 py-3 text-left font-semibold">编辑</th>
           <th className="border px-4 py-3 text-left font-semibold">条码</th>
@@ -102,6 +104,8 @@ export const ItemsListTable: React.FC<{
           const hasSL = hasShelfLife(it);
           const sv = hasSL ? formatShelfValue(it.shelf_life_value) : "—";
           const su = hasSL ? formatShelfUnitCn(it.shelf_life_unit) : "—";
+          const shelfText = hasSL && sv !== "—" && su !== "—" ? `${sv} ${su}` : "—";
+          const shelfMissing = hasSL && (sv === "—" || su === "—");
           const disabled = savingId === it.id;
 
           return (
@@ -110,6 +114,9 @@ export const ItemsListTable: React.FC<{
               <td className="px-4 py-3 font-mono">{it.id}</td>
               <td className="px-4 py-3 font-mono">{primaryBarcodes[it.id] ?? "—"}</td>
               <td className="px-4 py-3 font-medium">{it.name}</td>
+
+              {/* ✅ spec */}
+              <td className="px-4 py-3 text-slate-700 whitespace-pre-line">{it.spec ?? "—"}</td>
 
               {/* ✅ brand/category */}
               <td className="px-4 py-3">{it.brand ?? "—"}</td>
@@ -137,10 +144,9 @@ export const ItemsListTable: React.FC<{
               <td className="px-4 py-3">{hasSL ? "有" : "无"}</td>
 
               <td className="px-4 py-3 font-mono">
-                {sv}
-                {hasSL && sv === "—" ? <span className="ml-2 text-[11px] text-amber-700">未配置</span> : null}
+                {shelfText}
+                {shelfMissing ? <span className="ml-2 text-[11px] text-amber-700">未配置</span> : null}
               </td>
-              <td className="px-4 py-3">{su}</td>
 
               <td className="px-4 py-3">
                 <StatusBadge enabled={!!it.enabled} />

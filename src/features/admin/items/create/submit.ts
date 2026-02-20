@@ -25,6 +25,9 @@ export async function submitCreateItem(args: {
   const name = form.name.trim();
   if (!name) return { ok: false, error: "商品名称不能为空" };
 
+  // ✅ spec：可选展示文本（空串视为 undefined，不传）
+  const spec = form.spec.trim() || undefined;
+
   const supplierId = Number(form.supplier_id);
   if (!form.supplier_id || !Number.isFinite(supplierId) || supplierId <= 0) {
     return { ok: false, error: "供货商必须选择" };
@@ -71,6 +74,9 @@ export async function submitCreateItem(args: {
   return {
     body: {
       name,
+      // ✅ 新增：规格（可选）
+      spec,
+
       supplier_id: supplierId,
       uom,
       weight_kg,

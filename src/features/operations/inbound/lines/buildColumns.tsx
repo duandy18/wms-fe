@@ -37,7 +37,7 @@ export function buildInboundLinesColumns(args: {
     },
     {
       key: "uom",
-      header: "单位",
+      header: "最小单位",
       render: (l) => (
         <span className="text-base text-slate-800">
           {formatUnitExpr(l)}

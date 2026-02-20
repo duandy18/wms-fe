@@ -39,7 +39,7 @@ export const DevInboundLinesCard: React.FC<Props> = ({ c }) => {
     },
     {
       key: "uom",
-      header: "单位",
+      header: "最小单位",
       render: (l) =>
         l.purchase_uom
           ? `${l.purchase_uom}${l.units_per_case ? `(${l.units_per_case}/${l.base_uom || ""})` : ""}`

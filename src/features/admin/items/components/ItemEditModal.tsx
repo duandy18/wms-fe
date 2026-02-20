@@ -8,11 +8,15 @@ import { ItemBasicFields } from "./edit/ItemBasicFields";
 import { ItemUomAndWeightSection } from "./edit/ItemUomAndWeightSection";
 import { ItemShelfLifeSection } from "./edit/ItemShelfLifeSection";
 import { ItemStatusSection } from "./edit/ItemStatusSection";
+import ItemBarcodesSection from "./edit/ItemBarcodesSection";
 
 export type ItemDraft = {
   name: string;
 
-  // ✅ 新增：品牌 / 品类（主数据字段）
+  // ✅ 规格（items.spec，展示文本）
+  spec: string;
+
+  // ✅ 品牌 / 品类（主数据字段）
   brand: string;
   category: string;
 
@@ -34,6 +38,9 @@ export const ItemEditModal: React.FC<{
   open: boolean;
   saving: boolean;
 
+  // ✅ 当前编辑的 itemId（用于条码管理区块）
+  itemId: number;
+
   suppliers: Supplier[];
   supLoading: boolean;
 
@@ -48,6 +55,7 @@ export const ItemEditModal: React.FC<{
 }> = ({
   open,
   saving,
+  itemId,
   suppliers,
   supLoading,
   error,
@@ -74,23 +82,14 @@ export const ItemEditModal: React.FC<{
           onChangeDraft={onChangeDraft}
         />
 
-        <ItemUomAndWeightSection
-          draft={draft}
-          saving={saving}
-          onChangeDraft={onChangeDraft}
-        />
+        <ItemUomAndWeightSection draft={draft} saving={saving} onChangeDraft={onChangeDraft} />
 
-        <ItemShelfLifeSection
-          draft={draft}
-          saving={saving}
-          onChangeDraft={onChangeDraft}
-        />
+        <ItemShelfLifeSection draft={draft} saving={saving} onChangeDraft={onChangeDraft} />
 
-        <ItemStatusSection
-          draft={draft}
-          saving={saving}
-          onChangeDraft={onChangeDraft}
-        />
+        <ItemStatusSection draft={draft} saving={saving} onChangeDraft={onChangeDraft} />
+
+        {/* ✅ 合并：条码管理并入主编辑弹窗（仍然走 /item-barcodes，不走 /items） */}
+        <ItemBarcodesSection itemId={itemId} disabled={saving} />
 
         <div className="flex justify-end gap-3">
           <button

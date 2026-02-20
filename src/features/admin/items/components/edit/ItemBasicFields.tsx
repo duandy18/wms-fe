@@ -25,6 +25,18 @@ export const ItemBasicFields: React.FC<{
         />
       </div>
 
+      {/* ✅ 新增：规格（items.spec） */}
+      <div className="space-y-2">
+        <div className="text-sm font-medium">规格</div>
+        <input
+          className="w-full rounded border px-3 py-2 text-base"
+          value={draft.spec}
+          onChange={(e) => onChangeDraft({ ...draft, spec: e.target.value })}
+          disabled={saving}
+          placeholder="可选，如：85g*12袋 / 1.5kg / 30ml"
+        />
+      </div>
+
       {/* ✅ 新增：品牌 / 品类 */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

@@ -5,6 +5,10 @@ export type StatusMode = "enabled" | "disabled";
 
 export interface FormState {
   name: string;
+
+  // ✅ 新增：规格（items.spec，展示文本）
+  spec: string;
+
   supplier_id: string;
 
   uom_mode: "preset" | "custom";
@@ -26,6 +30,10 @@ export const COMMON_UOMS = ["PCS", "袋", "个", "罐", "箱", "瓶"];
 
 export const EMPTY_FORM: FormState = {
   name: "",
+
+  // ✅ 新增：规格默认空
+  spec: "",
+
   supplier_id: "",
 
   uom_mode: "preset",

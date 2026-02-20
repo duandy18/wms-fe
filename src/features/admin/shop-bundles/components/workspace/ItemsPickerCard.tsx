@@ -58,7 +58,7 @@ export const ItemsPickerCard: React.FC<{
                   <th className="px-2 py-2 text-left border-r border-slate-200 w-[240px]">商品名称</th>
                   <th className="px-2 py-2 text-left border-r border-slate-200 w-[180px]">主条码</th>
                   <th className="px-2 py-2 text-left border-r border-slate-200 w-[110px]">品牌</th>
-                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[80px]">单位</th>
+                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[80px]">最小单位</th>
                   <th className="px-2 py-2 text-center w-[70px]">选择</th>
                 </tr>
               </thead>
