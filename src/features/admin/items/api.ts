@@ -21,17 +21,27 @@ export async function createItem(input: ItemCreateInput): Promise<Item> {
     throw new Error("supplier_id 必须为有效数字（>0）");
   }
 
+  const name = String(input.name ?? "").trim();
+  if (!name) throw new Error("name 不能为空");
+
+  const uom = String(input.uom ?? "").trim();
+  if (!uom) throw new Error("uom 必须填写");
+
+  const barcode = String(input.barcode ?? "").trim();
+  if (!barcode) throw new Error("barcode 必须填写");
+
   const body: Record<string, unknown> = {
-    name: input.name.trim(),
-    spec: input.spec?.trim() || undefined,
-    uom: input.uom.trim(),
-    barcode: input.barcode.trim(),
+    name,
+    spec: typeof input.spec === "string" ? input.spec.trim() || undefined : undefined,
+
+    uom,
+    barcode,
 
     // ✅ brand/category：可选，空串视为 null
-    brand: input.brand?.trim() ? input.brand.trim() : null,
-    category: input.category?.trim() ? input.category.trim() : null,
+    brand: typeof input.brand === "string" && input.brand.trim() ? input.brand.trim() : null,
+    category: typeof input.category === "string" && input.category.trim() ? input.category.trim() : null,
 
-    enabled: input.enabled,
+    enabled: Boolean(input.enabled),
     supplier_id: supplierId,
     weight_kg: input.weight_kg,
     has_shelf_life: input.has_shelf_life,
@@ -45,13 +55,13 @@ export async function createItem(input: ItemCreateInput): Promise<Item> {
 export async function updateItem(id: number, input: ItemUpdateInput): Promise<Item> {
   const body: Record<string, unknown> = {};
 
-  if (input.name !== undefined) body.name = input.name?.trim() || "";
-  if (input.spec !== undefined) body.spec = input.spec?.trim() || null;
-  if (input.uom !== undefined) body.uom = input.uom?.trim() || null;
+  if (input.name !== undefined) body.name = typeof input.name === "string" ? input.name.trim() : input.name ?? "";
+  if (input.spec !== undefined) body.spec = typeof input.spec === "string" ? input.spec.trim() || null : input.spec ?? null;
+  if (input.uom !== undefined) body.uom = typeof input.uom === "string" ? input.uom.trim() || null : input.uom ?? null;
 
   // ✅ brand/category：可更新；空串 => null（清空）
-  if (input.brand !== undefined) body.brand = input.brand?.trim() ? input.brand.trim() : null;
-  if (input.category !== undefined) body.category = input.category?.trim() ? input.category.trim() : null;
+  if (input.brand !== undefined) body.brand = typeof input.brand === "string" && input.brand.trim() ? input.brand.trim() : null;
+  if (input.category !== undefined) body.category = typeof input.category === "string" && input.category.trim() ? input.category.trim() : null;
 
   if (input.enabled !== undefined) body.enabled = input.enabled;
 

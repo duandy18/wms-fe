@@ -4,12 +4,38 @@ import React, { useState } from "react";
 import type { Item } from "../../../../contracts/item/contract";
 import { useItemsStore } from "../itemsStore";
 
+type UnknownRecord = Record<string, unknown>;
+
+function asRecord(v: unknown): UnknownRecord {
+  return (v ?? {}) as UnknownRecord;
+}
+
+function getString(v: unknown): string | null {
+  return typeof v === "string" ? v : null;
+}
+
+function getBoolean(v: unknown): boolean | null {
+  return typeof v === "boolean" ? v : null;
+}
+
 function hasShelfLife(it: Item): boolean {
-  return !!it.has_shelf_life;
+  // it.has_shelf_life 在 generated schema 里可能是 optional/nullable
+  return Boolean((it as UnknownRecord)["has_shelf_life"]);
 }
 
 function supplierLabel(it: Item): string {
-  return it.supplier_name ?? it.supplier ?? (it.supplier_id != null ? `ID=${it.supplier_id}` : "—");
+  const r = asRecord(it);
+
+  const sn = getString(r["supplier_name"]);
+  if (sn && sn.trim()) return sn;
+
+  const sp = getString(r["supplier"]);
+  if (sp && sp.trim()) return sp;
+
+  const sid = r["supplier_id"];
+  if (typeof sid === "number" || typeof sid === "string") return `ID=${String(sid)}`;
+
+  return "—";
 }
 
 function formatShelfValue(v: unknown): string {
@@ -77,17 +103,10 @@ export const ItemsListTable: React.FC<{
           <th className="border px-4 py-3 text-left font-semibold">商品ID</th>
           <th className="border px-4 py-3 text-left font-semibold">主条码</th>
           <th className="border px-4 py-3 text-left font-semibold">商品名称</th>
-
-          {/* ✅ 新增：规格（items.spec，主数据可治理字段） */}
           <th className="border px-4 py-3 text-left font-semibold">规格</th>
-
-          {/* ✅ 新增：品牌 / 品类 */}
           <th className="border px-4 py-3 text-left font-semibold">品牌</th>
           <th className="border px-4 py-3 text-left font-semibold">品类</th>
-
-          {/* ✅ 新增：测试集合显性化（DEFAULT） */}
           <th className="border px-4 py-3 text-left font-semibold">测试集合</th>
-
           <th className="border px-4 py-3 text-left font-semibold">供货商</th>
           <th className="border px-4 py-3 text-left font-semibold">单位净重(kg)</th>
           <th className="border px-4 py-3 text-left font-semibold">最小包装单位</th>
@@ -101,11 +120,26 @@ export const ItemsListTable: React.FC<{
 
       <tbody>
         {rows.map((it) => {
+          const r = asRecord(it);
+
+          const spec = getString(r["spec"]) ?? "—";
+          const brand = getString(r["brand"]) ?? "—";
+          const category = getString(r["category"]) ?? "—";
+
+          const isTest = Boolean(getBoolean(r["is_test"]) ?? false);
+          const enabled = Boolean(getBoolean(r["enabled"]) ?? false);
+
+          const weight = r["weight_kg"];
+          const weightText = weight === null || weight === undefined ? "—" : String(weight);
+
+          const uom = getString(r["uom"]) ?? "—";
+
           const hasSL = hasShelfLife(it);
-          const sv = hasSL ? formatShelfValue(it.shelf_life_value) : "—";
-          const su = hasSL ? formatShelfUnitCn(it.shelf_life_unit) : "—";
+          const sv = hasSL ? formatShelfValue(r["shelf_life_value"]) : "—";
+          const su = hasSL ? formatShelfUnitCn(r["shelf_life_unit"]) : "—";
           const shelfText = hasSL && sv !== "—" && su !== "—" ? `${sv} ${su}` : "—";
           const shelfMissing = hasSL && (sv === "—" || su === "—");
+
           const disabled = savingId === it.id;
 
           return (
@@ -115,21 +149,17 @@ export const ItemsListTable: React.FC<{
               <td className="px-4 py-3 font-mono">{primaryBarcodes[it.id] ?? "—"}</td>
               <td className="px-4 py-3 font-medium">{it.name}</td>
 
-              {/* ✅ spec */}
-              <td className="px-4 py-3 text-slate-700 whitespace-pre-line">{it.spec ?? "—"}</td>
+              <td className="px-4 py-3 text-slate-700 whitespace-pre-line">{spec}</td>
+              <td className="px-4 py-3">{brand}</td>
+              <td className="px-4 py-3">{category}</td>
 
-              {/* ✅ brand/category */}
-              <td className="px-4 py-3">{it.brand ?? "—"}</td>
-              <td className="px-4 py-3">{it.category ?? "—"}</td>
-
-              {/* ✅ 测试集合：Badge + Switch */}
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <TestBadge isTest={!!it.is_test} />
+                  <TestBadge isTest={isTest} />
                   <label className="inline-flex items-center gap-2 select-none">
                     <input
                       type="checkbox"
-                      checked={!!it.is_test}
+                      checked={isTest}
                       disabled={disabled}
                       onChange={(e) => void onToggle(it, e.target.checked)}
                     />
@@ -139,8 +169,8 @@ export const ItemsListTable: React.FC<{
               </td>
 
               <td className="px-4 py-3">{supplierLabel(it)}</td>
-              <td className="px-4 py-3 font-mono">{it.weight_kg ?? "—"}</td>
-              <td className="px-4 py-3">{it.uom ?? "—"}</td>
+              <td className="px-4 py-3 font-mono">{weightText}</td>
+              <td className="px-4 py-3">{uom}</td>
               <td className="px-4 py-3">{hasSL ? "有" : "无"}</td>
 
               <td className="px-4 py-3 font-mono">
@@ -149,7 +179,7 @@ export const ItemsListTable: React.FC<{
               </td>
 
               <td className="px-4 py-3">
-                <StatusBadge enabled={!!it.enabled} />
+                <StatusBadge enabled={enabled} />
               </td>
 
               <td className="px-4 py-3">
