@@ -31,7 +31,7 @@ export const ScanCountItemMetaCard: React.FC<Props> = ({
               <span className="font-semibold">{itemMeta.name}</span>
             </div>
             <div>规格：{itemMeta.spec || "（未填写）"}</div>
-            <div>单位：{itemMeta.uom || "PCS（默认）"}</div>
+            <div>最小单位：{itemMeta.uom || "PCS（默认）"}</div>
             <div>
               状态：{" "}
               {itemMeta.enabled === false ? (

@@ -13,7 +13,18 @@ import { getErrorMessage } from "./errors";
 
 export type BarcodeKind = "CUSTOM" | "EAN13" | "EAN8" | "UPC" | "INNER";
 
-export function useItemBarcodesPanelModel() {
+type UseItemBarcodesPanelModelArgs = {
+  /**
+   * Inline 模式：直接指定 itemId（不依赖 store.selectedItem）
+   */
+  itemId?: number;
+  /**
+   * Inline 模式可选：禁用 closePanel 行为（默认 false）
+   */
+  disableClosePanel?: boolean;
+};
+
+export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) {
   const selectedItem = useItemsStore((s) => s.selectedItem);
   const scannedBarcode = useItemsStore((s) => s.scannedBarcode);
 
@@ -24,6 +35,9 @@ export function useItemBarcodesPanelModel() {
   const setPanelOpen = useItemsStore((s) => s.setPanelOpen);
   const setScannedBarcode = useItemsStore((s) => s.setScannedBarcode);
 
+  const explicitItemId = args?.itemId;
+  const itemId: number | null = explicitItemId != null ? explicitItemId : (selectedItem ? selectedItem.id : null);
+
   const [barcodes, setBarcodes] = useState<ItemBarcode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +46,12 @@ export function useItemBarcodesPanelModel() {
   const [newKind, setNewKind] = useState<BarcodeKind>("CUSTOM");
   const [saving, setSaving] = useState(false);
 
-  const hasSelection = !!selectedItem;
+  const hasSelection = itemId != null;
 
   const closePanel = () => {
+    // Inline 模式：不允许清空 store 状态
+    if (explicitItemId != null || args?.disableClosePanel) return;
+
     setSelectedItem(null);
     setPanelOpen(false);
 
@@ -49,17 +66,17 @@ export function useItemBarcodesPanelModel() {
   };
 
   const updatePrimaryLocal = (list: ItemBarcode[]) => {
-    if (!selectedItem) return;
+    if (itemId == null) return;
     const primary = list.find((b) => b.is_primary);
-    setPrimaryBarcodeLocal(selectedItem.id, primary ? primary.barcode : null);
+    setPrimaryBarcodeLocal(itemId, primary ? primary.barcode : null);
   };
 
   const refresh = async () => {
-    if (!selectedItem) return;
+    if (itemId == null) return;
     setLoading(true);
     setError(null);
     try {
-      const list = await fetchItemBarcodes(selectedItem.id);
+      const list = await fetchItemBarcodes(itemId);
       setBarcodes(list);
       updatePrimaryLocal(list);
       await loadItems();
@@ -71,7 +88,7 @@ export function useItemBarcodesPanelModel() {
   };
 
   useEffect(() => {
-    if (!selectedItem) {
+    if (itemId == null) {
       setBarcodes([]);
       setError(null);
       setNewCode("");
@@ -84,7 +101,7 @@ export function useItemBarcodesPanelModel() {
       setLoading(true);
       setError(null);
       try {
-        const list = await fetchItemBarcodes(selectedItem.id);
+        const list = await fetchItemBarcodes(itemId);
         if (cancelled) return;
         setBarcodes(list);
         updatePrimaryLocal(list);
@@ -102,23 +119,25 @@ export function useItemBarcodesPanelModel() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedItem?.id]);
+  }, [itemId]);
 
   useEffect(() => {
+    // 只有 Panel 模式才从 scannedBarcode 带入输入框
+    if (explicitItemId != null) return;
     if (!scannedBarcode) return;
     setNewCode(scannedBarcode);
-  }, [scannedBarcode]);
+  }, [explicitItemId, scannedBarcode]);
 
   const canSubmit = useMemo(() => {
-    if (!selectedItem) return false;
+    if (itemId == null) return false;
     if (saving) return false;
     if (!newCode.trim()) return false;
     return true;
-  }, [selectedItem, saving, newCode]);
+  }, [itemId, saving, newCode]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedItem) return;
+    if (itemId == null) return;
 
     const code = newCode.trim();
     if (!code) {
@@ -130,7 +149,7 @@ export function useItemBarcodesPanelModel() {
     setError(null);
     try {
       const created = await createItemBarcode({
-        item_id: selectedItem.id,
+        item_id: itemId,
         barcode: code,
         kind: newKind,
         active: true,
@@ -147,7 +166,7 @@ export function useItemBarcodesPanelModel() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!selectedItem) return;
+    if (itemId == null) return;
     if (!window.confirm("确认删除该条码吗？")) return;
 
     try {
@@ -159,7 +178,7 @@ export function useItemBarcodesPanelModel() {
   };
 
   const handleSetPrimary = async (id: number) => {
-    if (!selectedItem) return;
+    if (itemId == null) return;
     try {
       await setPrimaryBarcode(id);
       await refresh();
@@ -169,7 +188,7 @@ export function useItemBarcodesPanelModel() {
   };
 
   return {
-    selectedItem,
+    itemId,
     hasSelection,
 
     barcodes,

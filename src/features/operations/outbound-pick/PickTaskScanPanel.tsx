@@ -105,7 +105,7 @@ export const PickTaskScanPanel: React.FC<Props> = ({
           </div>
           <div className="text-[11px] text-slate-500">
             {activeItemMeta.spec && `规格：${activeItemMeta.spec} `}
-            {activeItemMeta.uom && ` · 单位：${activeItemMeta.uom}`}
+            {activeItemMeta.uom && ` · 最小单位：${activeItemMeta.uom}`}
           </div>
           <div className="mt-1 text-[11px] text-slate-600">
             批次策略：{" "}

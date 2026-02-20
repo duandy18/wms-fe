@@ -68,7 +68,7 @@ export const ItemUomAndWeightSection: React.FC<{
           系统中库存数量、重量、有效期均以此为最小单位计算。
         </div>
         <div className="text-[11px] text-slate-500">
-          当前单位：<span className="font-mono">{uom || "—"}</span>
+          当前最小单位：<span className="font-mono">{uom || "—"}</span>
         </div>
       </div>
     </div>

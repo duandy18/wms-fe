@@ -1,10 +1,8 @@
 // src/features/operations/inbound/purchase-context/PurchaseOrderDetailReadonly.tsx
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import type { PurchaseOrderDetail } from "../../../purchase-orders/api";
-import { PurchaseOrderHeaderCard } from "../../../purchase-orders/PurchaseOrderHeaderCard";
 import { PurchaseOrderLinesTable } from "../../../purchase-orders/PurchaseOrderLinesTable";
-import { calcPoProgress } from "./poHelpers";
 import { InboundUI } from "../ui";
 
 export function PurchaseOrderDetailReadonly(props: {
@@ -20,8 +18,6 @@ export function PurchaseOrderDetailReadonly(props: {
 
   const [selectedLineId, setSelectedLineId] = useState<number | null>(null);
 
-  const totals = useMemo(() => calcPoProgress(po), [po]);
-
   React.useEffect(() => {
     if (!po || !po.lines || po.lines.length === 0) {
       setSelectedLineId(null);
@@ -36,14 +32,7 @@ export function PurchaseOrderDetailReadonly(props: {
 
   return (
     <div className={InboundUI.cardGap}>
-      <PurchaseOrderHeaderCard
-        po={po}
-        poRef={`PO-${po.id}`}
-        totalQtyOrdered={totals.ordered}
-        totalQtyReceived={totals.received}
-        mode="inbound"
-      />
-
+      {/* ✅ 入库页：不展示 PO 基本信息（锚点已在左侧列表），这里只保留轻量工具条 */}
       <div className="flex items-center justify-between gap-2">
         <div className={InboundUI.quiet}>
           采购单 #{po.id}

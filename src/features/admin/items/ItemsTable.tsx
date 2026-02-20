@@ -24,8 +24,6 @@ export const ItemsTable: React.FC = () => {
   const filter = useItemsStore((s) => s.filter);
   const primaryBarcodes = useItemsStore((s) => s.primaryBarcodes);
   const loadItems = useItemsStore((s) => s.loadItems);
-  const setSelectedItem = useItemsStore((s) => s.setSelectedItem);
-  const setPanelOpen = useItemsStore((s) => s.setPanelOpen);
 
   const rows = useMemo(() => {
     if (filter === "enabled") return items.filter((i) => i.enabled);
@@ -33,8 +31,7 @@ export const ItemsTable: React.FC = () => {
     return items;
   }, [items, filter]);
 
-  const { suppliers, supLoading, supError, ensureSuppliers, resetSuppliersError } =
-    useSuppliersOptions();
+  const { suppliers, supLoading, supError, ensureSuppliers, resetSuppliersError } = useSuppliersOptions();
 
   const [editing, setEditing] = useState<Item | null>(null);
   const [draft, setDraft] = useState<ItemDraft | null>(null);
@@ -56,8 +53,8 @@ export const ItemsTable: React.FC = () => {
 
     setDraft({
       name: it.name ?? "",
+      spec: (it.spec ?? "").trim(),
 
-      // ✅ brand/category：主数据可维护字段（空 -> ""，提交时再转 null）
       brand: (it.brand ?? "").trim(),
       category: (it.category ?? "").trim(),
 
@@ -118,7 +115,8 @@ export const ItemsTable: React.FC = () => {
         weight_kg: weight_kg === null ? null : weight_kg,
         uom,
 
-        // ✅ 保存 brand/category（api.ts 会将空串转成 null）
+        spec: draft.spec, // 空串 => api.ts 转 null（清空）
+
         brand: draft.brand,
         category: draft.category,
 
@@ -127,6 +125,7 @@ export const ItemsTable: React.FC = () => {
         ...(shelf_life_value !== undefined ? { shelf_life_value } : {}),
         ...(shelf_life_unit !== undefined ? { shelf_life_unit } : {}),
       });
+
       await loadItems();
       closeEdit();
     } catch (e: unknown) {
@@ -142,16 +141,15 @@ export const ItemsTable: React.FC = () => {
         rows={rows}
         primaryBarcodes={primaryBarcodes}
         onEdit={(it) => void openEdit(it)}
-        onManageBarcodes={(it) => {
-          setSelectedItem(it);
-          setPanelOpen(true);
-        }}
+        // ✅ 合并：管理条码也走编辑弹窗（条码区块已在弹窗内）
+        onManageBarcodes={(it) => void openEdit(it)}
       />
 
       {editing && draft ? (
         <ItemEditModal
           open={true}
           saving={saving}
+          itemId={editing.id}
           suppliers={suppliers}
           supLoading={supLoading}
           error={error}

@@ -7,7 +7,7 @@ import type { Item } from "./api";
 import { useItemsStore } from "./itemsStore";
 
 import { useSuppliersOptions } from "./create/useSuppliersOptions";
-import { COMMON_UOMS, EMPTY_FORM, type FormState, type ShelfMode, type StatusMode } from "./create/types";
+import { EMPTY_FORM, type FormState, type ShelfMode, type StatusMode } from "./create/types";
 import { submitCreateItem, runCreateItem } from "./create/submit";
 
 const ItemsFormSection: React.FC = () => {
@@ -98,8 +98,8 @@ const ItemsFormSection: React.FC = () => {
       )}
 
       <form onSubmit={submit} className="space-y-4">
-        {/* Row 1: 商品名称 / 主条码 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Row 1: 商品名称 / 规格 / 主条码 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
             className="rounded border px-3 py-2"
             placeholder="商品名称"
@@ -107,6 +107,15 @@ const ItemsFormSection: React.FC = () => {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             disabled={saving}
           />
+
+          <input
+            className="rounded border px-3 py-2"
+            placeholder="规格（可选，如：85g*12袋）"
+            value={form.spec}
+            onChange={(e) => setForm({ ...form, spec: e.target.value })}
+            disabled={saving}
+          />
+
           <input
             className="rounded border px-3 py-2 font-mono"
             placeholder="主条码"
@@ -157,7 +166,7 @@ const ItemsFormSection: React.FC = () => {
               disabled={saving}
             >
               <option value="">最小包装单位（必选）</option>
-              {COMMON_UOMS.map((u) => (
+              {["PCS", "袋", "包", "罐", "瓶", "箱", "件"].map((u) => (
                 <option key={u} value={u}>
                   {u}
                 </option>
@@ -177,7 +186,7 @@ const ItemsFormSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Row 3: 有效期 / 默认有效期值 / 单位 */}
+        {/* Row 3: 有效期 / 默认保质期数值 / 保质期单位 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <select
             className="rounded border px-3 py-2"
@@ -198,7 +207,7 @@ const ItemsFormSection: React.FC = () => {
 
           <input
             className="rounded border px-3 py-2 font-mono"
-            placeholder="默认有效期值"
+            placeholder="默认保质期数值"
             value={form.shelf_life_value}
             onChange={(e) => setForm({ ...form, shelf_life_value: e.target.value })}
             disabled={!shelfEnabled || saving}
@@ -212,8 +221,8 @@ const ItemsFormSection: React.FC = () => {
             }
             disabled={!shelfEnabled || saving}
           >
-            <option value="MONTH">单位：月</option>
-            <option value="DAY">单位：天</option>
+            <option value="MONTH">保质期单位：月</option>
+            <option value="DAY">保质期单位：天</option>
           </select>
         </div>
 

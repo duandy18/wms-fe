@@ -11,33 +11,6 @@ interface PurchaseOrderLinesTableProps {
   mode?: "default" | "inbound";
 }
 
-function formatShelfValue(v: unknown): string {
-  if (v === null || v === undefined) return "—";
-  const n = Number(v);
-  if (!Number.isFinite(n)) return "—";
-  return String(Math.trunc(n));
-}
-
-function formatShelfUnitCn(u: unknown): string {
-  if (!u) return "—";
-  const s = String(u).toUpperCase();
-  if (s === "MONTH") return "月";
-  if (s === "DAY") return "天";
-  return "—";
-}
-
-const StatusBadge: React.FC<{ enabled: boolean }> = ({ enabled }) => {
-  return enabled ? (
-    <span className="inline-flex items-center rounded px-2 py-1 text-sm font-semibold bg-emerald-100 text-emerald-800">
-      有效
-    </span>
-  ) : (
-    <span className="inline-flex items-center rounded px-2 py-1 text-sm font-semibold bg-red-100 text-red-800">
-      无效
-    </span>
-  );
-};
-
 function unitsPerCase(line: PurchaseOrderDetailLine): number {
   const n = Number(line.units_per_case ?? 1);
   return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 1;
@@ -56,88 +29,28 @@ function purchaseUomLabel(line: PurchaseOrderDetailLine): string {
   return p || "采购单位";
 }
 
-function orderedBase(line: PurchaseOrderDetailLine): number {
-  const upc = unitsPerCase(line);
-  const orderedPurchase = Number(line.qty_ordered ?? 0);
-  return Math.trunc(Number.isFinite(orderedPurchase) ? orderedPurchase : 0) * upc;
+function fmtMoney(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  const s = String(v).trim();
+  return s ? s : "—";
 }
 
-function receivedBase(line: PurchaseOrderDetailLine): number {
-  // ✅ 约定：qty_received 在本系统中已为最小单位（base）
-  const n = Number(line.qty_received ?? 0);
+function fmtDiscount(v: unknown): string {
+  if (v === null || v === undefined) return "0";
+  const n = Number(v);
+  if (!Number.isFinite(n)) return String(v);
+  return String(n);
+}
+
+function orderedPurchaseQty(line: PurchaseOrderDetailLine): number {
+  const n = Number(line.qty_ordered ?? 0);
   return Math.trunc(Number.isFinite(n) ? n : 0);
 }
 
-function remainBase(line: PurchaseOrderDetailLine): number {
-  return Math.max(orderedBase(line) - receivedBase(line), 0);
-}
-
-function computeWorkStatus(line: PurchaseOrderDetailLine): { text: string; className: string } {
-  const o = orderedBase(line);
-  const r = receivedBase(line);
-
-  if (r <= 0) return { text: "未收", className: "text-slate-500" };
-  if (r < o) return { text: "收货中", className: "text-amber-700" };
-  return { text: "已收完", className: "text-emerald-700" };
-}
-
-function renderOrderedBase(line: PurchaseOrderDetailLine) {
-  const baseQty = orderedBase(line);
-  const upc = unitsPerCase(line);
-  const baseUom = baseUomLabel(line);
-  const puom = purchaseUomLabel(line);
-  return (
-    <div className="text-right">
-      <div className="font-mono">
-        {baseQty} <span className="text-slate-600">{baseUom}</span>
-      </div>
-      <div className="text-[11px] text-slate-500">
-        （{Math.trunc(Number(line.qty_ordered ?? 0))} {puom} × {upc} {baseUom}/{puom}）
-      </div>
-    </div>
-  );
-}
-
-function renderReceivedBase(line: PurchaseOrderDetailLine) {
-  const rBase = receivedBase(line);
-  const upc = unitsPerCase(line);
-  const baseUom = baseUomLabel(line);
-  const puom = purchaseUomLabel(line);
-
-  const approxPurchase = Math.floor(rBase / upc);
-  const hasFraction = rBase % upc !== 0;
-
-  return (
-    <div className="text-right">
-      <div className="font-mono">
-        {rBase} <span className="text-slate-600">{baseUom}</span>
-      </div>
-      <div className="text-[11px] text-slate-500">
-        （≈{approxPurchase}{hasFraction ? "+" : ""} {puom}）
-      </div>
-    </div>
-  );
-}
-
-function renderRemainBase(line: PurchaseOrderDetailLine) {
-  const x = remainBase(line);
-  const upc = unitsPerCase(line);
-  const baseUom = baseUomLabel(line);
-  const puom = purchaseUomLabel(line);
-
-  const approxPurchase = Math.floor(x / upc);
-  const hasFraction = x % upc !== 0;
-
-  return (
-    <div className="text-right">
-      <div className="font-mono">
-        {x} <span className="text-slate-600">{baseUom}</span>
-      </div>
-      <div className="text-[11px] text-slate-500">
-        （≈{approxPurchase}{hasFraction ? "+" : ""} {puom}）
-      </div>
-    </div>
-  );
+function orderedBaseQty(line: PurchaseOrderDetailLine): number {
+  // ✅ 后端已提供 qty_ordered_base（合同事实），前端不再自行乘 upc
+  const n = Number((line as { qty_ordered_base?: number | null }).qty_ordered_base ?? 0);
+  return Math.trunc(Number.isFinite(n) ? n : 0);
 }
 
 export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = ({
@@ -148,15 +61,106 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
 }) => {
   const isInbound = mode === "inbound";
 
-  const columns: ColumnDef<PurchaseOrderDetailLine>[] = [
+  // ✅ 入库模式：只保留 PO 行合同事实列（不混执行/主数据百科）
+  const inboundColumns: ColumnDef<PurchaseOrderDetailLine>[] = [
     {
       key: "line_no",
       header: "行号",
+      render: (line) => <span className="font-mono text-[12px] text-slate-500">{line.line_no}</span>,
+    },
+    {
+      key: "item_sku",
+      header: "SKU",
+      render: (line) => <span className="font-mono">{line.item_sku ?? line.sku ?? "—"}</span>,
+    },
+    {
+      key: "item_name",
+      header: "商品名称",
+      render: (line) => <span className="font-medium">{line.item_name ?? "—"}</span>,
+    },
+    {
+      key: "spec_text",
+      header: "规格",
+      render: (line) => <span className="text-slate-700">{line.spec_text ?? "—"}</span>,
+    },
+
+    // ✅ 单位换算单独一列
+    {
+      key: "units_per_case",
+      header: "换算",
+      align: "right",
       render: (line) => (
-        <span className={`font-mono ${isInbound ? "text-[12px]" : "text-[11px]"} text-slate-500`}>
-          {line.line_no}
-        </span>
+        <div className="text-right">
+          <div className="font-mono">
+            {unitsPerCase(line)}{" "}
+            <span className="text-slate-600">
+              {baseUomLabel(line)}/{purchaseUomLabel(line)}
+            </span>
+          </div>
+        </div>
       ),
+    },
+
+    {
+      key: "qty_ordered",
+      header: "订购数量",
+      align: "right",
+      render: (line) => (
+        <div className="text-right">
+          <div className="font-mono">
+            {orderedPurchaseQty(line)} <span className="text-slate-600">{purchaseUomLabel(line)}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "qty_ordered_base",
+      header: "订购数量（最小单位）",
+      align: "right",
+      render: (line) => (
+        <div className="text-right">
+          <div className="font-mono">
+            {orderedBaseQty(line)} <span className="text-slate-600">{baseUomLabel(line)}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "supply_price",
+      header: "采购单价",
+      align: "right",
+      render: (line) => (
+        <span className="font-mono">{fmtMoney((line as { supply_price?: unknown }).supply_price)}</span>
+      ),
+    },
+    {
+      key: "discount_amount",
+      header: "折扣",
+      align: "right",
+      render: (line) => {
+        const amt = fmtDiscount((line as { discount_amount?: unknown }).discount_amount);
+        const note = String((line as { discount_note?: unknown }).discount_note ?? "").trim();
+        return (
+          <div className="text-right">
+            <div className="font-mono">{amt}</div>
+            {note ? <div className="text-[11px] text-slate-500">{note}</div> : null}
+          </div>
+        );
+      },
+    },
+    {
+      key: "remark",
+      header: "备注",
+      render: (line) => <span className="text-slate-700">{(line as { remark?: string | null }).remark ?? "—"}</span>,
+    },
+  ];
+
+  // default 模式保持原先全量（不动）
+  const defaultColumns: ColumnDef<PurchaseOrderDetailLine>[] = [
+    {
+      key: "line_no",
+      header: "行号",
+      render: (line) => <span className="font-mono text-[11px] text-slate-500">{line.line_no}</span>,
     },
     {
       key: "sku",
@@ -193,58 +197,29 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       render: (line) => (line.has_shelf_life == null ? "—" : line.has_shelf_life ? "有" : "无"),
     },
     {
-      key: "shelf_life_value",
-      header: "默认有效期值",
-      render: (line) => {
-        if (!line.has_shelf_life) return "—";
-        const sv = formatShelfValue(line.shelf_life_value);
-        return (
-          <span className="font-mono">
-            {sv}
-            {sv === "—" ? <span className="ml-2 text-[11px] text-amber-700">未配置</span> : null}
-          </span>
-        );
-      },
-    },
-    {
-      key: "shelf_life_unit",
-      header: "单位",
-      render: (line) => (!line.has_shelf_life ? "—" : formatShelfUnitCn(line.shelf_life_unit)),
-    },
-    {
-      key: "enabled",
-      header: "状态",
-      render: (line) => (line.enabled == null ? "—" : <StatusBadge enabled={!!line.enabled} />),
-    },
-
-    {
       key: "qty_ordered_base",
       header: "订购数量（最小单位）",
       align: "right",
-      render: (line) => renderOrderedBase(line),
-    },
-    {
-      key: "qty_received_base",
-      header: "已收数量（最小单位）",
-      align: "right",
-      render: (line) => renderReceivedBase(line),
-    },
-    {
-      key: "qty_remaining_base",
-      header: "剩余（最小单位）",
-      align: "right",
-      render: (line) => renderRemainBase(line),
-    },
-
-    {
-      key: "work_status",
-      header: "作业状态",
       render: (line) => {
-        const s = computeWorkStatus(line);
-        return <span className={s.className}>{s.text}</span>;
+        const baseQty = orderedBaseQty(line);
+        const upc = unitsPerCase(line);
+        const baseUom = baseUomLabel(line);
+        const puom = purchaseUomLabel(line);
+        return (
+          <div className="text-right">
+            <div className="font-mono">
+              {baseQty} <span className="text-slate-600">{baseUom}</span>
+            </div>
+            <div className="text-[11px] text-slate-500">
+              （{orderedPurchaseQty(line)} {puom} × {upc} {baseUom}/{puom}）
+            </div>
+          </div>
+        );
       },
     },
   ];
+
+  const columns = isInbound ? inboundColumns : defaultColumns;
 
   const cardCls = isInbound
     ? "bg-white border border-slate-200 rounded-xl p-5 space-y-4"

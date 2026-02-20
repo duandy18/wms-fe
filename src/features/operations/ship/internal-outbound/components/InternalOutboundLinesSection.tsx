@@ -107,7 +107,7 @@ export const InternalOutboundLinesSection: React.FC<{
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-600">单位</label>
+            <label className="text-xs text-slate-600">最小单位</label>
             <input
               className="rounded-lg border px-3 py-2"
               value={uomInput}
@@ -170,7 +170,7 @@ export const InternalOutboundLinesSection: React.FC<{
                 <th className="px-2 py-1 text-left">Item ID</th>
                 <th className="px-2 py-1 text-left">批次</th>
                 <th className="px-2 py-1 text-right">数量</th>
-                <th className="px-2 py-1 text-left">单位</th>
+                <th className="px-2 py-1 text-left">最小单位</th>
                 <th className="px-2 py-1 text-left">备注</th>
               </tr>
             </thead>
