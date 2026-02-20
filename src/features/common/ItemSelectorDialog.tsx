@@ -6,8 +6,8 @@
 // - 点击一行回调 (item_id, sku, name)
 
 import React, { useMemo, useState } from "react";
+import type { Item } from "@/contracts/item/contract";
 import { useItemsStore } from "@/features/admin/items/itemsStore";
-import type { Item } from "@/features/admin/items/api";
 
 type Props = {
   open: boolean;

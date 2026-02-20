@@ -7,9 +7,9 @@
 // - 商品编辑器统一由 ItemsFormSection 承担（本文件不再弹窗编辑）
 
 import React, { useMemo } from "react";
+import type { Item } from "@/contracts/item/contract";
 import { useItemsStore } from "./itemsStore";
 import ItemsListTable from "./components/ItemsListTable";
-import type { Item } from "./api";
 
 const EDITOR_ANCHOR_ID = "items-editor";
 
