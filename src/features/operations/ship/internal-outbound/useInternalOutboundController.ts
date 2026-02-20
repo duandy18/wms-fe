@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { apiGet, apiPost } from "@/lib/api";
-import type { Item } from "@/features/admin/items/api";
+import type { Item } from "@/contracts/item/contract";
 
 import {
   DOC_TYPES,

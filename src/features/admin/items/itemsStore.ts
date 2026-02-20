@@ -1,7 +1,7 @@
 // src/features/admin/items/itemsStore.ts
 import { create } from "zustand";
+import type { Item } from "@/contracts/item/contract";
 import { disableItemTest, enableItemTest, fetchItems } from "./api";
-import type { Item } from "./api";
 import type { ItemsState, ApiErrorShape } from "./store/types";
 import { buildBarcodeMaps } from "./store/buildBarcodeMaps";
 

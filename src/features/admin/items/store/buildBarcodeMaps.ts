@@ -1,6 +1,6 @@
 // src/features/admin/items/store/buildBarcodeMaps.ts
 
-import type { Item } from "../api";
+import type { Item } from "../../../../contracts/item/contract";
 import type { ItemBarcode } from "../../../../master-data/itemBarcodesApi";
 import { fetchBarcodesByItems } from "../../../../master-data/itemBarcodesApi";
 

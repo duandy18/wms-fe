@@ -1,91 +1,9 @@
 // src/features/admin/items/api.ts
 import { apiGet, apiPost, apiPatch } from "../../../lib/api";
-
-export interface Item {
-  id: number;
-  sku: string;
-  name: string;
-  spec?: string | null;
-  uom?: string | null;
-  barcode?: string | null;
-
-  // ✅ 新增：品牌 / 品类（主数据字段，可为空）
-  brand?: string | null;
-  category?: string | null;
-
-  enabled: boolean;
-
-  // ✅ DB 已 NOT NULL：不再允许空
-  supplier_id: number;
-  supplier_name?: string | null;
-  supplier?: string | null;
-
-  created_at?: string | null;
-  updated_at?: string | null;
-
-  weight_kg?: number | null;
-
-  has_shelf_life?: boolean | null;
-
-  shelf_life_value?: number | null;
-  shelf_life_unit?: "DAY" | "MONTH" | null;
-
-  requires_batch?: boolean;
-  requires_dates?: boolean;
-  default_batch_code?: string | null;
-
-  // ✅ 新增：后端投影字段（DEFAULT Test Set membership）
-  is_test: boolean;
-}
+import type { Item, ItemCreateInput, ItemUpdateInput } from "../../../contracts/item/contract";
 
 export interface NextSkuOut {
   sku: string;
-}
-
-export interface ItemCreateInput {
-  // ✅ SKU 统一由后端生成：前端不提供 sku
-  name: string;
-  spec?: string | null;
-  uom: string; // ✅ 新建即完整：必填
-  barcode: string; // ✅ 主条码必填
-
-  // ✅ 新增：品牌 / 品类（可选）
-  brand?: string | null;
-  category?: string | null;
-
-  enabled: boolean;
-
-  // ✅ DB 已 NOT NULL：必填
-  supplier_id: number;
-
-  weight_kg: number;
-
-  has_shelf_life: boolean;
-
-  shelf_life_value?: number | null;
-  shelf_life_unit?: "DAY" | "MONTH" | null;
-}
-
-export interface ItemUpdateInput {
-  name?: string | null;
-  spec?: string | null;
-  uom?: string | null;
-
-  // ✅ 新增：品牌 / 品类（可选）
-  brand?: string | null;
-  category?: string | null;
-
-  enabled?: boolean;
-
-  // ✅ 允许调整供应商，但不允许置空
-  supplier_id?: number;
-
-  weight_kg?: number | null;
-
-  has_shelf_life?: boolean | null;
-
-  shelf_life_value?: number | null;
-  shelf_life_unit?: "DAY" | "MONTH" | null;
 }
 
 export async function fetchItems(): Promise<Item[]> {
