@@ -182,6 +182,12 @@ export function validateEdit(
     return { ok: false, fieldErrors: { weight_kg: "单位净重必须是 >= 0 的数字" } };
   }
 
+  // ✅ 编辑也允许改主条码：不允许为空
+  const barcode = base.data.barcode.trim();
+  if (!barcode) {
+    return { ok: false, fieldErrors: { barcode: "主条码必须填写" } };
+  }
+
   const hasShelf = base.data.shelf_mode === "yes";
 
   // ✅ Phase 1：case_ratio 允许空；非空必须是 >=1 的整数
@@ -210,6 +216,9 @@ export function validateEdit(
 
       enabled: base.data.status === "enabled",
       has_shelf_life: hasShelf,
+
+      // ✅ 关键：把 barcode 带进更新体
+      barcode,
     },
   };
 }

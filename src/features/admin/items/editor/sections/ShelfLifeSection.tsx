@@ -36,7 +36,7 @@ const ShelfLifeSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
       <div>
         <input
           className="rounded border px-3 py-2 w-full font-mono"
-          placeholder="默认保质期数值"
+          placeholder="默认保质期数值（可选，如：18）"
           value={form.shelf_life_value}
           onChange={(e) => setForm({ ...form, shelf_life_value: e.target.value })}
           disabled={!shelfEnabled || vm.saving}
@@ -48,9 +48,7 @@ const ShelfLifeSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
         <select
           className="rounded border px-3 py-2 w-full"
           value={form.shelf_life_unit}
-          onChange={(e) =>
-            setForm({ ...form, shelf_life_unit: e.target.value as "MONTH" | "DAY" })
-          }
+          onChange={(e) => setForm({ ...form, shelf_life_unit: e.target.value as "MONTH" | "DAY" })}
           disabled={!shelfEnabled || vm.saving}
         >
           <option value="MONTH">保质期单位：月</option>
