@@ -32,8 +32,6 @@ export type ItemsState = {
   scannedBarcode: string | null;
   selectedItem: Item | null;
 
-  panelOpen: boolean;
-
   primaryBarcodes: Record<number, string>;
   barcodeCounts: Record<number, number>;
   barcodeOwners: Record<string, number[]>;
@@ -47,7 +45,6 @@ export type ItemsState = {
 
   setScannedBarcode: (code: string | null) => void;
   setSelectedItem: (item: Item | null) => void;
-  setPanelOpen: (v: boolean) => void;
 
   setProbeState: (data: {
     result?: ScanProbeResult;

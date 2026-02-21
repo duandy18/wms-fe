@@ -3,6 +3,8 @@
 import React from "react";
 import type { BarcodeKind } from "./useItemBarcodesPanelModel";
 
+export const ITEMS_ADD_BARCODE_INPUT_ID = "items-add-barcode-input";
+
 export const AddBarcodeForm: React.FC<{
   newCode: string;
   newKind: BarcodeKind;
@@ -13,10 +15,25 @@ export const AddBarcodeForm: React.FC<{
   onChangeKind: (v: BarcodeKind) => void;
 
   onSubmit: (e: React.FormEvent) => void;
-}> = ({ newCode, newKind, saving, canSubmit, onChangeCode, onChangeKind, onSubmit }) => {
+
+  /**
+   * 可选：用于聚焦/自动化
+   */
+  inputId?: string;
+}> = ({
+  newCode,
+  newKind,
+  saving,
+  canSubmit,
+  onChangeCode,
+  onChangeKind,
+  onSubmit,
+  inputId,
+}) => {
   return (
     <form onSubmit={onSubmit} className="mt-3 flex flex-wrap items-center gap-3">
       <input
+        id={inputId}
         className="min-w-[280px] rounded border px-4 py-3 text-lg font-mono"
         placeholder="新条码"
         value={newCode}

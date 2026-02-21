@@ -23,8 +23,6 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
   scannedBarcode: null,
   selectedItem: null,
 
-  panelOpen: false,
-
   primaryBarcodes: {},
   barcodeCounts: {},
   barcodeOwners: {},
@@ -45,7 +43,6 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
 
   setScannedBarcode: (code) => set({ scannedBarcode: code }),
   setSelectedItem: (item) => set({ selectedItem: item }),
-  setPanelOpen: (v) => set({ panelOpen: v }),
 
   setPrimaryBarcodeLocal: (itemId, barcode) =>
     set((state) => {

@@ -32,7 +32,6 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
   const loadItems = useItemsStore((s) => s.loadItems);
 
   const setSelectedItem = useItemsStore((s) => s.setSelectedItem);
-  const setPanelOpen = useItemsStore((s) => s.setPanelOpen);
   const setScannedBarcode = useItemsStore((s) => s.setScannedBarcode);
 
   const explicitItemId = args?.itemId;
@@ -53,7 +52,6 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
     if (explicitItemId != null || args?.disableClosePanel) return;
 
     setSelectedItem(null);
-    setPanelOpen(false);
 
     setBarcodes([]);
     setError(null);

@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { ItemEditorVm } from "../useItemEditor";
+import { CREATE_BARCODE_INPUT_ID } from "../ItemEditorContainer";
 
 const FieldError: React.FC<{ msg?: string }> = ({ msg }) =>
   msg ? <div className="mt-1 text-xs text-red-600">{msg}</div> : null;
@@ -36,6 +37,7 @@ const BasicSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
 
         <div>
           <input
+            id={CREATE_BARCODE_INPUT_ID}
             className="rounded border px-3 py-2 w-full font-mono"
             placeholder={vm.mode === "edit" ? "主条码（编辑请在条码区块管理）" : "主条码"}
             value={vm.mode === "edit" ? vm.selectedPrimaryBarcode : form.barcode}
