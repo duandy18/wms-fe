@@ -18,6 +18,10 @@ function getBoolean(v: unknown): boolean | null {
   return typeof v === "boolean" ? v : null;
 }
 
+function getNumber(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
 function hasShelfLife(it: Item): boolean {
   // it.has_shelf_life 在 generated schema 里可能是 optional/nullable
   return Boolean((it as UnknownRecord)["has_shelf_life"]);
@@ -51,6 +55,26 @@ function formatShelfUnitCn(u: unknown): string {
   if (s === "MONTH") return "月";
   if (s === "DAY") return "天";
   return "—";
+}
+
+function formatPackagingSummary(it: Item): string {
+  const r = asRecord(it);
+
+  const ratioRaw = getNumber(r["case_ratio"]);
+  const ratio = ratioRaw === null ? null : Math.trunc(ratioRaw);
+  if (ratio === null || ratio < 1) return "—";
+
+  const baseUom = getString(r["uom"]) ?? "";
+  if (!baseUom.trim()) return "—";
+
+  const packUom = (getString(r["case_uom"]) ?? "").trim() || "箱";
+  return `1${packUom} = ${ratio}${baseUom}`;
+}
+
+function formatPackUom(it: Item): string {
+  const r = asRecord(it);
+  const packUom = (getString(r["case_uom"]) ?? "").trim();
+  return packUom || "箱";
 }
 
 const StatusBadge: React.FC<{ enabled: boolean }> = ({ enabled }) => {
@@ -108,7 +132,9 @@ export const ItemsListTable: React.FC<{
           <th className="border px-4 py-3 text-left font-semibold">测试集合</th>
           <th className="border px-4 py-3 text-left font-semibold">供货商</th>
           <th className="border px-4 py-3 text-left font-semibold">单位净重(kg)</th>
-          <th className="border px-4 py-3 text-left font-semibold">最小包装单位</th>
+          <th className="border px-4 py-3 text-left font-semibold">最小单位</th>
+          <th className="border px-4 py-3 text-left font-semibold">包装单位</th>
+          <th className="border px-4 py-3 text-left font-semibold">单位换算</th>
           <th className="border px-4 py-3 text-left font-semibold">有效期</th>
           <th className="border px-4 py-3 text-left font-semibold">默认保质期</th>
           <th className="border px-4 py-3 text-left font-semibold">状态</th>
@@ -131,6 +157,8 @@ export const ItemsListTable: React.FC<{
           const weightText = weight === null || weight === undefined ? "—" : String(weight);
 
           const uom = getString(r["uom"]) ?? "—";
+          const packUom = formatPackUom(it);
+          const packaging = formatPackagingSummary(it);
 
           const hasSL = hasShelfLife(it);
           const sv = hasSL ? formatShelfValue(r["shelf_life_value"]) : "—";
@@ -169,6 +197,8 @@ export const ItemsListTable: React.FC<{
               <td className="px-4 py-3">{supplierLabel(it)}</td>
               <td className="px-4 py-3 font-mono">{weightText}</td>
               <td className="px-4 py-3">{uom}</td>
+              <td className="px-4 py-3">{packUom}</td>
+              <td className="px-4 py-3 font-mono">{packaging}</td>
               <td className="px-4 py-3">{hasSL ? "有" : "无"}</td>
 
               <td className="px-4 py-3 font-mono">

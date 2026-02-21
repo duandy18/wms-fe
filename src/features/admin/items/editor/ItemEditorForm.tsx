@@ -9,7 +9,6 @@ import SupplierSection from "./sections/SupplierSection";
 import UomAndWeightSection from "./sections/UomAndWeightSection";
 import ShelfLifeSection from "./sections/ShelfLifeSection";
 import StatusSection from "./sections/StatusSection";
-import BarcodeSection from "./sections/BarcodeSection";
 
 const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
   return (
@@ -36,10 +35,6 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
         <UomAndWeightSection vm={vm} />
         <ShelfLifeSection vm={vm} />
         <StatusSection vm={vm} />
-
-        {vm.mode === "edit" && vm.selectedItem ? (
-          <BarcodeSection itemId={vm.selectedItem.id} disabled={vm.saving} />
-        ) : null}
 
         <button
           type="submit"

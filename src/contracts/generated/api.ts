@@ -2736,6 +2736,8 @@ const ItemOut = z
   .object({
     barcode: z.union([z.string(), z.null()]).optional(),
     brand: z.union([z.string(), z.null()]).optional(),
+    case_ratio: z.union([z.number(), z.null()]).optional(),
+    case_uom: z.union([z.string(), z.null()]).optional(),
     category: z.union([z.string(), z.null()]).optional(),
     created_at: z.union([z.string(), z.null()]).optional(),
     default_batch_code: z.union([z.string(), z.null()]).optional(),
@@ -2762,6 +2764,8 @@ const ItemCreate = z
   .object({
     barcode: z.union([z.string(), z.null()]).optional(),
     brand: z.union([z.string(), z.null()]).optional(),
+    case_ratio: z.union([z.number(), z.null()]).optional(),
+    case_uom: z.union([z.string(), z.null()]).optional(),
     category: z.union([z.string(), z.null()]).optional(),
     enabled: z.boolean().optional().default(true),
     has_shelf_life: z.union([z.boolean(), z.null()]).optional(),
@@ -2779,6 +2783,8 @@ const ItemUpdate = z
   .object({
     barcode: z.union([z.string(), z.null()]),
     brand: z.union([z.string(), z.null()]),
+    case_ratio: z.union([z.number(), z.null()]),
+    case_uom: z.union([z.string(), z.null()]),
     category: z.union([z.string(), z.null()]),
     enabled: z.union([z.boolean(), z.null()]),
     has_shelf_life: z.union([z.boolean(), z.null()]),

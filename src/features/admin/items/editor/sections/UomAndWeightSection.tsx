@@ -6,14 +6,45 @@ import type { ItemEditorVm } from "../useItemEditor";
 const FieldError: React.FC<{ msg?: string }> = ({ msg }) =>
   msg ? <div className="mt-1 text-xs text-red-600">{msg}</div> : null;
 
+function parsePositiveInt(text: string): number | null {
+  const t = (text ?? "").trim();
+  if (!t) return null;
+  if (!/^\d+$/.test(t)) return null;
+  const n = Number(t);
+  if (!Number.isFinite(n)) return null;
+  const i = Math.trunc(n);
+  if (i < 1) return null;
+  return i;
+}
+
+const UOM_PRESETS = ["PCS", "袋", "包", "罐", "瓶", "箱", "件"];
+const PACK_UOM_PRESETS = ["箱", "盒", "件", "包", "袋", "瓶", "罐"];
+
+function norm(s: string): string {
+  return (s ?? "").trim();
+}
+
 const UomAndWeightSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
   const { form, setForm, fieldErrors } = vm;
 
+  const ratio = parsePositiveInt(form.case_ratio);
+  const ratioTouched = norm(form.case_ratio).length > 0;
+  const ratioInvalid = ratioTouched && ratio === null;
+
+  // --- 包装单位：用 select 驱动 form.case_uom（不引入新字段） ---
+  const caseUomText = norm(form.case_uom);
+  const packSelectValue =
+    !caseUomText || PACK_UOM_PRESETS.includes(caseUomText) ? caseUomText : "__CUSTOM__";
+
+  // --- 最小单位：select + custom 输入（沿用既有 uom_mode） ---
+  const uomSelectValue = form.uom_mode === "preset" ? form.uom_preset : "__CUSTOM__";
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      {/* 1) 单位净重 */}
       <div>
         <input
-          className="rounded border px-3 py-2 w-full font-mono"
+          className="w-full rounded border px-3 py-2 text-base font-mono"
           placeholder="单位净重(kg)"
           value={form.weight_kg}
           onChange={(e) => setForm({ ...form, weight_kg: e.target.value })}
@@ -22,38 +53,94 @@ const UomAndWeightSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
         <FieldError msg={fieldErrors.weight_kg} />
       </div>
 
-      <div className="space-y-2 md:col-span-2">
-        <select
-          className="w-full rounded border px-3 py-2"
-          value={form.uom_mode === "preset" ? form.uom_preset : "__CUSTOM__"}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v === "__CUSTOM__") {
-              setForm({ ...form, uom_mode: "custom", uom_custom: "" });
-            } else {
-              setForm({ ...form, uom_mode: "preset", uom_preset: v });
-            }
-          }}
-          disabled={vm.saving}
-        >
-          <option value="">最小包装单位（必选）</option>
-          {["PCS", "袋", "包", "罐", "瓶", "箱", "件"].map((u) => (
-            <option key={u} value={u}>
-              {u}
-            </option>
-          ))}
-          <option value="__CUSTOM__">自定义</option>
-        </select>
-        <FieldError msg={fieldErrors.uom_preset} />
-
+      {/* 2) 最小单位（必选） */}
+      <div>
         {form.uom_mode === "custom" ? (
           <input
-            className="w-full rounded border px-3 py-2"
-            placeholder="最小包装单位"
+            className="w-full rounded border px-3 py-2 text-base"
+            placeholder="最小单位（自定义）"
             value={form.uom_custom}
             onChange={(e) => setForm({ ...form, uom_custom: e.target.value })}
             disabled={vm.saving}
           />
+        ) : (
+          <select
+            className="w-full rounded border px-3 py-2 text-base"
+            value={uomSelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "__CUSTOM__") {
+                setForm({ ...form, uom_mode: "custom", uom_custom: "" });
+              } else {
+                setForm({ ...form, uom_mode: "preset", uom_preset: v });
+              }
+            }}
+            disabled={vm.saving}
+          >
+            <option value="">最小单位（必选）</option>
+            {UOM_PRESETS.map((u) => (
+              <option key={u} value={u}>
+                {u}
+              </option>
+            ))}
+            <option value="__CUSTOM__">自定义</option>
+          </select>
+        )}
+        <FieldError msg={fieldErrors.uom_preset} />
+      </div>
+
+      {/* 3) 包装单位（可选，下拉） */}
+      <div>
+        {packSelectValue === "__CUSTOM__" ? (
+          <input
+            className="w-full rounded border px-3 py-2 text-base"
+            placeholder="包装单位（自定义，可选）"
+            value={form.case_uom}
+            onChange={(e) => setForm({ ...form, case_uom: e.target.value })}
+            disabled={vm.saving}
+          />
+        ) : (
+          <select
+            className="w-full rounded border px-3 py-2 text-base"
+            value={packSelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "__CUSTOM__") {
+                setForm({ ...form, case_uom: "" });
+              } else {
+                setForm({ ...form, case_uom: v });
+              }
+            }}
+            disabled={vm.saving}
+          >
+            <option value="">包装单位（可选，默认：箱）</option>
+            {PACK_UOM_PRESETS.map((u) => (
+              <option key={u} value={u}>
+                {u}
+              </option>
+            ))}
+            <option value="__CUSTOM__">自定义</option>
+          </select>
+        )}
+        <FieldError msg={fieldErrors.case_uom} />
+      </div>
+
+      {/* 4) 单位换算（整数，可选） */}
+      <div>
+        <input
+          className={[
+            "w-full rounded border px-3 py-2 text-base font-mono",
+            ratioInvalid ? "border-red-300" : "border-slate-200",
+          ].join(" ")}
+          placeholder="单位换算（整数，可选，如：12）"
+          value={form.case_ratio}
+          onChange={(e) => setForm({ ...form, case_ratio: e.target.value })}
+          disabled={vm.saving}
+          inputMode="numeric"
+        />
+        <FieldError msg={fieldErrors.case_ratio} />
+        {!fieldErrors.case_ratio && ratioTouched && ratioInvalid ? (
+          <div className="mt-1 text-xs text-red-600">请输入 ≥ 1 的整数</div>
         ) : null}
       </div>
     </div>
