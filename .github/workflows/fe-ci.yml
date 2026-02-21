@@ -34,14 +34,23 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
+      - name: Ensure OpenAPI snapshot exists
+        run: |
+          test -f openapi/_current.json
+
+      - name: Generate contracts
+        run: pnpm gen:contracts
+
+      - name: Ensure generated contracts are up to date
+        run: |
+          git diff --exit-code -- src/contracts/generated
+
       - name: Lint
         run: pnpm lint
 
-      - name: Typecheck
-        run: pnpm exec tsc --noEmit
+      - name: Test (vitest)
+        run: pnpm test
 
-      - name: Test (vitest, 若无则跳过)
-        run: pnpm test --if-present
-
+      # ✅ build 已包含 `tsc -b`，无需再单独 typecheck 一遍
       - name: Build
         run: pnpm build
