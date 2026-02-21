@@ -39,10 +39,10 @@ const BasicSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
           <input
             id={CREATE_BARCODE_INPUT_ID}
             className="rounded border px-3 py-2 w-full font-mono"
-            placeholder={vm.mode === "edit" ? "主条码（编辑请在条码区块管理）" : "主条码"}
-            value={vm.mode === "edit" ? vm.selectedPrimaryBarcode : form.barcode}
+            placeholder={vm.mode === "edit" ? "主条码（可编辑，保存后生效）" : "主条码（必填）"}
+            value={form.barcode}
             onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-            disabled={vm.saving || vm.mode === "edit"}
+            disabled={vm.saving}
           />
           <FieldError msg={fieldErrors.barcode} />
         </div>

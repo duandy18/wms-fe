@@ -1,6 +1,6 @@
 // src/features/admin/items/editor/useItemEditor.ts
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Supplier } from "../../suppliers/api";
 import type { Item } from "../../../../contracts/item/contract";
 import { updateItem } from "../api";
@@ -35,6 +35,7 @@ export type ItemEditorVm = {
   canSubmit: boolean;
 
   resetToCreate: () => void;
+  resetToEditOriginal: () => void;
   submit: (e: React.FormEvent) => Promise<void>;
 };
 
@@ -78,8 +79,21 @@ export default function useItemEditor(args: {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [created, setCreated] = useState<{ id: number; sku: string } | null>(null);
 
+  // ✅ 防 emptyForm 引用抖动导致 edit 回显反复覆盖用户输入
+  const emptyFormRef = useRef<FormState>(emptyForm);
   useEffect(() => {
-    if (!selectedItem) return;
+    emptyFormRef.current = emptyForm;
+  }, [emptyForm]);
+
+  // ✅ 保存“进入编辑时”的原始快照：用于“放弃修改”
+  const initialEditFormRef = useRef<FormState | null>(null);
+
+  useEffect(() => {
+    if (!selectedItem) {
+      // 离开 edit 模式时清空快照
+      initialEditFormRef.current = null;
+      return;
+    }
 
     setError(null);
     setFlash(null);
@@ -90,12 +104,16 @@ export default function useItemEditor(args: {
 
     const ratioRaw = r["case_ratio"];
     const ratioText =
-      typeof ratioRaw === "number" && Number.isFinite(ratioRaw) ? String(Math.trunc(ratioRaw)) : "";
+      typeof ratioRaw === "number" && Number.isFinite(ratioRaw)
+        ? String(Math.trunc(ratioRaw))
+        : typeof ratioRaw === "string"
+          ? ratioRaw.trim()
+          : "";
 
     const caseUomText = typeof r["case_uom"] === "string" ? r["case_uom"].trim() : "";
 
-    setForm({
-      ...emptyForm,
+    const nextForm: FormState = {
+      ...emptyFormRef.current,
       name: selectedItem.name ?? "",
       spec: (selectedItem.spec ?? "").trim(),
       brand: (selectedItem.brand ?? "").trim(),
@@ -118,14 +136,32 @@ export default function useItemEditor(args: {
 
       status: selectedItem.enabled ? "enabled" : "disabled",
 
+      // ✅ 条码：以传入 primary barcode 为准
       barcode: selectedPrimaryBarcode,
-    });
-  }, [selectedItem, selectedPrimaryBarcode, emptyForm]);
+    };
+
+    setForm(nextForm);
+    initialEditFormRef.current = { ...nextForm };
+  }, [selectedItem, selectedPrimaryBarcode]);
 
   const resetToCreate = () => {
     if (saving) return;
     onResetToCreate();
-    setForm({ ...emptyForm });
+    setForm({ ...emptyFormRef.current });
+    setError(null);
+    setFlash(null);
+    setFieldErrors({});
+    setCreated(null);
+    initialEditFormRef.current = null;
+  };
+
+  const resetToEditOriginal = () => {
+    if (saving) return;
+    if (!selectedItem) return;
+    const snap = initialEditFormRef.current;
+    if (!snap) return;
+
+    setForm({ ...snap });
     setError(null);
     setFlash(null);
     setFieldErrors({});
@@ -168,7 +204,7 @@ export default function useItemEditor(args: {
           const createdItem = await runCreateItem(prepared.body);
           setCreated({ id: createdItem.id, sku: createdItem.sku });
           setFlash({ kind: "success", text: "创建成功" });
-          setForm({ ...emptyForm });
+          setForm({ ...emptyFormRef.current });
           await onAfterSaved();
         } catch (ex: unknown) {
           const msg = ex instanceof Error ? ex.message : "创建商品失败";
@@ -195,8 +231,12 @@ export default function useItemEditor(args: {
       await updateItem(selectedItem.id, r.body);
       await onAfterSaved();
       setFlash({ kind: "success", text: "保存成功" });
+
+      // 保存成功后，更新“原始快照”，避免用户点“放弃修改”又回滚到旧值
+      initialEditFormRef.current = { ...form };
+
       onResetToCreate();
-      setForm({ ...emptyForm });
+      setForm({ ...emptyFormRef.current });
     } catch (ex: unknown) {
       const msg = errMsg(ex, "保存失败");
       setError(msg);
@@ -230,6 +270,7 @@ export default function useItemEditor(args: {
     canSubmit,
 
     resetToCreate,
+    resetToEditOriginal,
     submit,
   };
 }

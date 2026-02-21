@@ -88,6 +88,17 @@ export async function updateItem(id: number, input: ItemUpdateInput): Promise<It
   if (input.shelf_life_value !== undefined) body.shelf_life_value = input.shelf_life_value;
   if (input.shelf_life_unit !== undefined) body.shelf_life_unit = input.shelf_life_unit;
 
+  // ✅ 关键：允许编辑区修改主条码
+  if (input.barcode !== undefined) {
+    const bc = typeof input.barcode === "string" ? input.barcode.trim() : input.barcode;
+    if (typeof bc === "string") {
+      if (!bc) throw new Error("barcode 必须填写");
+      body.barcode = bc;
+    } else {
+      body.barcode = bc;
+    }
+  }
+
   return apiPatch<Item>(`/items/${id}`, body);
 }
 

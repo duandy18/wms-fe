@@ -36,13 +36,27 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
         <ShelfLifeSection vm={vm} />
         <StatusSection vm={vm} />
 
-        <button
-          type="submit"
-          disabled={!vm.canSubmit}
-          className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
-        >
-          {vm.saving ? "保存中…" : vm.mode === "edit" ? "保存修改" : "保存商品"}
-        </button>
+        <div className="flex items-center gap-3">
+          {vm.mode === "edit" ? (
+            <button
+              type="button"
+              onClick={vm.resetToEditOriginal}
+              disabled={vm.saving}
+              className="rounded border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              title="放弃本次编辑的所有修改，恢复到进入编辑时的状态"
+            >
+              放弃修改
+            </button>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={!vm.canSubmit}
+            className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
+          >
+            {vm.saving ? "保存中…" : vm.mode === "edit" ? "保存修改" : "保存商品"}
+          </button>
+        </div>
       </form>
     </>
   );
