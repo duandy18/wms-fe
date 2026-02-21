@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // ✅ 关键提速：generated 是机器产物，不参与 eslint 扫描
+  globalIgnores(['dist', 'src/contracts/generated/**']),
+
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -42,6 +44,7 @@ export default defineConfig([
       ],
     },
   },
+
   {
     // ✅ 白名单：桥接层允许读 generated（只允许 contract.ts/tsx）
     files: ['src/contracts/**/contract.ts', 'src/contracts/**/contract.tsx'],

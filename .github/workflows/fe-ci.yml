@@ -34,10 +34,12 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
+      # ✅ 失败要尽早：没有快照就别浪费后续时间
       - name: Ensure OpenAPI snapshot exists
         run: |
           test -f openapi/_current.json
 
+      # ✅ 失败要尽早：generated 不一致直接 fail
       - name: Generate contracts
         run: pnpm gen:contracts
 
@@ -51,6 +53,6 @@ jobs:
       - name: Test (vitest)
         run: pnpm test
 
-      # ✅ build 已包含 `tsc -b`，无需再单独 typecheck 一遍
+      # ✅ build 已包含 `tsc -b`
       - name: Build
         run: pnpm build
