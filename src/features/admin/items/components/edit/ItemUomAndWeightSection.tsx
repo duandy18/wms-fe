@@ -6,9 +6,18 @@ import type { ItemDraft } from "../ItemEditModal";
 const COMMON_UOMS = ["袋", "个", "罐", "箱", "瓶"];
 
 function effectiveUom(draft: ItemDraft): string {
-  return draft.uom_mode === "preset"
-    ? draft.uom_preset.trim()
-    : draft.uom_custom.trim();
+  return draft.uom_mode === "preset" ? draft.uom_preset.trim() : draft.uom_custom.trim();
+}
+
+function parsePositiveInt(text: string): number | null {
+  const t = (text ?? "").trim();
+  if (!t) return null;
+  if (!/^\d+$/.test(t)) return null;
+  const n = Number(t);
+  if (!Number.isFinite(n)) return null;
+  const i = Math.trunc(n);
+  if (i < 1) return null;
+  return i;
 }
 
 export const ItemUomAndWeightSection: React.FC<{
@@ -16,26 +25,25 @@ export const ItemUomAndWeightSection: React.FC<{
   saving: boolean;
   onChangeDraft: (next: ItemDraft) => void;
 }> = ({ draft, saving, onChangeDraft }) => {
-  const uom = effectiveUom(draft);
+  void effectiveUom(draft);
+
+  const ratio = parsePositiveInt(draft.case_ratio);
+  const ratioTouched = (draft.case_ratio ?? "").trim().length > 0;
+  const ratioInvalid = ratioTouched && ratio === null;
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <div className="space-y-2">
-        <div className="text-sm font-medium">单位净重（kg）</div>
+      <div>
         <input
           className="w-full rounded border px-3 py-2 text-base font-mono"
+          placeholder="单位净重(kg)"
           value={draft.weight_kg}
           onChange={(e) => onChangeDraft({ ...draft, weight_kg: e.target.value })}
           disabled={saving}
-          placeholder="可为空"
         />
-        <div className="text-[11px] text-slate-500">
-          表示 1 个「最小包装单位」的净重（统一用 kg 存储）。
-        </div>
       </div>
 
       <div className="space-y-2">
-        <div className="text-sm font-medium">最小包装单位</div>
         <select
           className="w-full rounded border px-3 py-2 text-base"
           value={draft.uom_mode === "preset" ? draft.uom_preset : "__CUSTOM__"}
@@ -57,19 +65,38 @@ export const ItemUomAndWeightSection: React.FC<{
         {draft.uom_mode === "custom" ? (
           <input
             className="w-full rounded border px-3 py-2 text-base"
-            placeholder="输入最小包装单位"
+            placeholder="最小单位（自定义）"
             value={draft.uom_custom}
             onChange={(e) => onChangeDraft({ ...draft, uom_custom: e.target.value })}
             disabled={saving}
           />
         ) : null}
 
-        <div className="text-[11px] text-slate-500">
-          系统中库存数量、重量、有效期均以此为最小单位计算。
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            className="w-full rounded border border-slate-200 px-3 py-2 text-base"
+            placeholder="包装单位（可选，默认：箱）"
+            value={draft.case_uom}
+            onChange={(e) => onChangeDraft({ ...draft, case_uom: e.target.value })}
+            disabled={saving}
+          />
+
+          <input
+            className={[
+              "w-full rounded border px-3 py-2 text-base font-mono",
+              ratioInvalid ? "border-red-300" : "border-slate-200",
+            ].join(" ")}
+            placeholder="单位换算（整数，可选，如：12）"
+            value={draft.case_ratio}
+            onChange={(e) => onChangeDraft({ ...draft, case_ratio: e.target.value })}
+            disabled={saving}
+            inputMode="numeric"
+          />
         </div>
-        <div className="text-[11px] text-slate-500">
-          当前最小单位：<span className="font-mono">{uom || "—"}</span>
-        </div>
+
+        {ratioTouched && ratioInvalid ? (
+          <div className="text-xs text-red-600">请输入 ≥ 1 的整数</div>
+        ) : null}
       </div>
     </div>
   );

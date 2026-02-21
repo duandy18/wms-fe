@@ -10,6 +10,17 @@ export type SubmitResult =
   | { ok: true; created: { id: number; sku: string } }
   | { ok: false; error: string };
 
+function parseCaseRatio(v: string): number | null {
+  const s = v.trim();
+  if (!s) return null;
+  if (!/^\d+$/.test(s)) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n)) return null;
+  const i = Math.trunc(n);
+  if (i < 1) return null;
+  return i;
+}
+
 export async function submitCreateItem(args: {
   form: FormState;
   suppliers: Supplier[];
@@ -41,7 +52,15 @@ export async function submitCreateItem(args: {
   }
 
   const uom = effectiveUom(form);
-  if (!uom) return { ok: false, error: "最小包装单位必须选择或填写" };
+  if (!uom) return { ok: false, error: "最小单位必须选择或填写" };
+
+  // ✅ Phase 1：结构化包装（允许空；非空必须整数 >=1）
+  const ratioText = form.case_ratio.trim();
+  const case_ratio = parseCaseRatio(ratioText);
+  if (ratioText && case_ratio === null) {
+    return { ok: false, error: "箱装倍率必须为 ≥ 1 的整数" };
+  }
+  const case_uom = form.case_uom.trim() || null;
 
   // 单位净重必填（允许 0）
   const weightRaw = form.weight_kg.trim();
@@ -86,6 +105,8 @@ export async function submitCreateItem(args: {
 
       supplier_id: supplierId,
       uom,
+      case_ratio,
+      case_uom,
       weight_kg,
 
       has_shelf_life,

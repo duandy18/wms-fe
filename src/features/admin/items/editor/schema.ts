@@ -1,10 +1,7 @@
 // src/features/admin/items/editor/schema.ts
 
 import { z } from "zod";
-import type {
-  ItemCreateInput,
-  ItemUpdateInput,
-} from "../../../../contracts/item/contract";
+import type { ItemCreateInput, ItemUpdateInput } from "../../../../contracts/item/contract";
 import type { FormState } from "../create/types";
 
 export type Flash = { kind: "success" | "error"; text: string } | null;
@@ -22,6 +19,10 @@ export const itemFormSchema = z.object({
   uom_preset: z.string(),
   uom_custom: z.string(),
 
+  // ✅ Phase 1：结构化包装字段（字符串态，校验在 validate 内做）
+  case_ratio: z.string(),
+  case_uom: z.string(),
+
   weight_kg: z.string(),
 
   shelf_mode: z.enum(["yes", "no"]),
@@ -35,9 +36,7 @@ export const itemFormSchema = z.object({
 export type ItemFormValues = z.infer<typeof itemFormSchema>;
 
 function effectiveUom(f: ItemFormValues): string {
-  return f.uom_mode === "preset"
-    ? f.uom_preset.trim()
-    : f.uom_custom.trim();
+  return f.uom_mode === "preset" ? f.uom_preset.trim() : f.uom_custom.trim();
 }
 
 function parseSupplierId(v: string): number | null {
@@ -50,6 +49,17 @@ function parseNonNegativeNumber(v: string): number | null {
   if (!s) return null;
   const n = Number(s);
   return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function parseCaseRatio(v: string): number | null {
+  const s = v.trim();
+  if (!s) return null;
+  if (!/^\d+$/.test(s)) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n)) return null;
+  const i = Math.trunc(n);
+  if (i < 1) return null;
+  return i;
 }
 
 export function validateCreate(
@@ -76,7 +86,7 @@ export function validateCreate(
 
   const uom = effectiveUom(base.data);
   if (!uom) {
-    return { ok: false, fieldErrors: { uom_preset: "最小包装单位不能为空" } };
+    return { ok: false, fieldErrors: { uom_preset: "最小单位不能为空" } };
   }
 
   const weight = parseNonNegativeNumber(base.data.weight_kg);
@@ -88,6 +98,16 @@ export function validateCreate(
   if (!barcode) {
     return { ok: false, fieldErrors: { barcode: "主条码必须填写" } };
   }
+
+  // ✅ Phase 1：case_ratio 允许空；非空必须是 >=1 的整数
+  const ratioText = base.data.case_ratio.trim();
+  const ratio = parseCaseRatio(ratioText);
+  if (ratioText && ratio === null) {
+    return { ok: false, fieldErrors: { case_ratio: "箱装倍率必须为 ≥ 1 的整数" } };
+  }
+
+  const case_uom = base.data.case_uom.trim() || null;
+  const case_ratio = ratio; // number | null
 
   const hasShelf = base.data.shelf_mode === "yes";
 
@@ -116,6 +136,8 @@ export function validateCreate(
 
       supplier_id: supplierId,
       uom,
+      case_ratio,
+      case_uom,
       weight_kg: weight,
 
       has_shelf_life: hasShelf,
@@ -152,7 +174,7 @@ export function validateEdit(
 
   const uom = effectiveUom(base.data);
   if (!uom) {
-    return { ok: false, fieldErrors: { uom_preset: "最小包装单位不能为空" } };
+    return { ok: false, fieldErrors: { uom_preset: "最小单位不能为空" } };
   }
 
   const weight = parseNonNegativeNumber(base.data.weight_kg);
@@ -161,6 +183,16 @@ export function validateEdit(
   }
 
   const hasShelf = base.data.shelf_mode === "yes";
+
+  // ✅ Phase 1：case_ratio 允许空；非空必须是 >=1 的整数
+  const ratioText = base.data.case_ratio.trim();
+  const ratio = parseCaseRatio(ratioText);
+  if (ratioText && ratio === null) {
+    return { ok: false, fieldErrors: { case_ratio: "箱装倍率必须为 ≥ 1 的整数" } };
+  }
+
+  const case_uom = base.data.case_uom.trim() || null;
+  const case_ratio = ratio; // number | null
 
   return {
     ok: true,
@@ -172,6 +204,8 @@ export function validateEdit(
 
       supplier_id: supplierId,
       uom,
+      case_ratio,
+      case_uom,
       weight_kg: weight,
 
       enabled: base.data.status === "enabled",

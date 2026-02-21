@@ -8,7 +8,6 @@ import { ItemBasicFields } from "./edit/ItemBasicFields";
 import { ItemUomAndWeightSection } from "./edit/ItemUomAndWeightSection";
 import { ItemShelfLifeSection } from "./edit/ItemShelfLifeSection";
 import { ItemStatusSection } from "./edit/ItemStatusSection";
-import ItemBarcodesSection from "./edit/ItemBarcodesSection";
 
 export type ItemDraft = {
   name: string;
@@ -27,6 +26,12 @@ export type ItemDraft = {
   uom_preset: string;
   uom_custom: string;
 
+  // ✅ Phase 1：结构化包装（仅一层箱装）
+  // - case_ratio：整数，允许空
+  // - case_uom：可选，默认展示为“箱”（留空不影响事实口径）
+  case_ratio: string;
+  case_uom: string;
+
   shelf_mode: "yes" | "no";
   shelf_value: string;
   shelf_unit: "MONTH" | "DAY";
@@ -38,7 +43,7 @@ export const ItemEditModal: React.FC<{
   open: boolean;
   saving: boolean;
 
-  // ✅ 当前编辑的 itemId（用于条码管理区块）
+  // 当前编辑的 itemId（保留兼容：上游可能仍传入；本弹窗不再负责条码治理）
   itemId: number;
 
   suppliers: Supplier[];
@@ -65,9 +70,12 @@ export const ItemEditModal: React.FC<{
   onClose,
   onSave,
 }) => {
+  // 避免未使用参数 lint；条码治理已从本弹窗移除
+  void itemId;
+
   return (
     <ModalShell open={open} title="编辑商品" saving={saving} onClose={onClose}>
-      {(error || supError) ? (
+      {error || supError ? (
         <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-base text-red-700">
           {error ?? supError}
         </div>
@@ -87,9 +95,6 @@ export const ItemEditModal: React.FC<{
         <ItemShelfLifeSection draft={draft} saving={saving} onChangeDraft={onChangeDraft} />
 
         <ItemStatusSection draft={draft} saving={saving} onChangeDraft={onChangeDraft} />
-
-        {/* ✅ 合并：条码管理并入主编辑弹窗（仍然走 /item-barcodes，不走 /items） */}
-        <ItemBarcodesSection itemId={itemId} disabled={saving} />
 
         <div className="flex justify-end gap-3">
           <button

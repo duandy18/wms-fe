@@ -7,13 +7,7 @@ import { updateItem } from "../api";
 import { runCreateItem, submitCreateItem } from "../create/submit";
 import type { FormState } from "../create/types";
 import { errMsg } from "../itemsHelpers";
-import {
-  type Flash,
-  type FieldErrors,
-  type ItemFormValues,
-  validateCreate,
-  validateEdit,
-} from "./schema";
+import { type Flash, type FieldErrors, type ItemFormValues, validateCreate, validateEdit } from "./schema";
 
 export type ItemEditorMode = "create" | "edit";
 
@@ -43,6 +37,12 @@ export type ItemEditorVm = {
   resetToCreate: () => void;
   submit: (e: React.FormEvent) => Promise<void>;
 };
+
+type UnknownRecord = Record<string, unknown>;
+
+function asRecord(v: unknown): UnknownRecord {
+  return (v ?? {}) as UnknownRecord;
+}
 
 export default function useItemEditor(args: {
   selectedItem: Item | null;
@@ -86,6 +86,14 @@ export default function useItemEditor(args: {
     setFieldErrors({});
     setCreated(null);
 
+    const r = asRecord(selectedItem);
+
+    const ratioRaw = r["case_ratio"];
+    const ratioText =
+      typeof ratioRaw === "number" && Number.isFinite(ratioRaw) ? String(Math.trunc(ratioRaw)) : "";
+
+    const caseUomText = typeof r["case_uom"] === "string" ? r["case_uom"].trim() : "";
+
     setForm({
       ...emptyForm,
       name: selectedItem.name ?? "",
@@ -99,6 +107,10 @@ export default function useItemEditor(args: {
       uom_mode: "preset",
       uom_preset: (selectedItem.uom ?? "").trim(),
       uom_custom: "",
+
+      // ✅ Phase 1：回显结构化包装字段
+      case_ratio: ratioText,
+      case_uom: caseUomText,
 
       shelf_mode: selectedItem.has_shelf_life ? "yes" : "no",
       shelf_life_value: selectedItem.shelf_life_value == null ? "" : String(selectedItem.shelf_life_value),

@@ -19,6 +19,12 @@ export interface FormState {
   uom_preset: string;
   uom_custom: string;
 
+  // ✅ Phase 1：结构化包装（仅一层箱装）
+  // - case_ratio：整数（字符串态），允许空
+  // - case_uom：箱装单位名（字符串态），允许空（展示默认“箱”）
+  case_ratio: string;
+  case_uom: string;
+
   weight_kg: string;
 
   shelf_mode: ShelfMode;
@@ -47,6 +53,10 @@ export const EMPTY_FORM: FormState = {
   uom_mode: "preset",
   uom_preset: "",
   uom_custom: "",
+
+  // ✅ Phase 1：默认未配置
+  case_ratio: "",
+  case_uom: "",
 
   weight_kg: "",
 

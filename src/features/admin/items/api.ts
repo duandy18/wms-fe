@@ -37,6 +37,10 @@ export async function createItem(input: ItemCreateInput): Promise<Item> {
     uom,
     barcode,
 
+    // ✅ Phase 1：结构化包装（允许 null）
+    case_ratio: input.case_ratio ?? null,
+    case_uom: typeof input.case_uom === "string" ? input.case_uom.trim() || null : input.case_uom ?? null,
+
     // ✅ brand/category：可选，空串视为 null
     brand: typeof input.brand === "string" && input.brand.trim() ? input.brand.trim() : null,
     category: typeof input.category === "string" && input.category.trim() ? input.category.trim() : null,
@@ -58,6 +62,10 @@ export async function updateItem(id: number, input: ItemUpdateInput): Promise<It
   if (input.name !== undefined) body.name = typeof input.name === "string" ? input.name.trim() : input.name ?? "";
   if (input.spec !== undefined) body.spec = typeof input.spec === "string" ? input.spec.trim() || null : input.spec ?? null;
   if (input.uom !== undefined) body.uom = typeof input.uom === "string" ? input.uom.trim() || null : input.uom ?? null;
+
+  // ✅ Phase 1：结构化包装（允许显式清空）
+  if (input.case_ratio !== undefined) body.case_ratio = input.case_ratio;
+  if (input.case_uom !== undefined) body.case_uom = typeof input.case_uom === "string" ? input.case_uom.trim() || null : input.case_uom ?? null;
 
   // ✅ brand/category：可更新；空串 => null（清空）
   if (input.brand !== undefined) body.brand = typeof input.brand === "string" && input.brand.trim() ? input.brand.trim() : null;
