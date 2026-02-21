@@ -1,12 +1,41 @@
 // src/features/admin/items/components/edit/ItemBarcodesSection.tsx
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useItemBarcodesPanelModel } from "../../barcodes-panel/useItemBarcodesPanelModel";
 import { BarcodesTable } from "../../barcodes-panel/BarcodesTable";
-import { AddBarcodeForm } from "../../barcodes-panel/AddBarcodeForm";
+import { AddBarcodeForm, ITEMS_ADD_BARCODE_INPUT_ID } from "../../barcodes-panel/AddBarcodeForm";
+
+type ItemsBarcodeScannedDetail = { code: string };
+
+function isItemsBarcodeScannedEvent(e: Event): e is CustomEvent<ItemsBarcodeScannedDetail> {
+  return e instanceof CustomEvent && typeof (e.detail as ItemsBarcodeScannedDetail | undefined)?.code === "string";
+}
 
 export const ItemBarcodesSection: React.FC<{ itemId: number; disabled?: boolean }> = ({ itemId, disabled }) => {
   const m = useItemBarcodesPanelModel({ itemId, disableClosePanel: true });
+
+  useEffect(() => {
+    function onScanned(e: Event) {
+      if (!isItemsBarcodeScannedEvent(e)) return;
+      const code = e.detail.code.trim();
+      if (!code) return;
+
+      // ✅ 写入新增条码输入框
+      m.setNewCode(code);
+
+      // ✅ 强制聚焦新增条码输入框
+      requestAnimationFrame(() => {
+        const el = document.getElementById(ITEMS_ADD_BARCODE_INPUT_ID);
+        if (el instanceof HTMLInputElement) {
+          el.focus();
+          el.select();
+        }
+      });
+    }
+
+    window.addEventListener("items:barcode-scanned", onScanned as EventListener);
+    return () => window.removeEventListener("items:barcode-scanned", onScanned as EventListener);
+  }, [m]);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
@@ -31,6 +60,7 @@ export const ItemBarcodesSection: React.FC<{ itemId: number; disabled?: boolean 
 
       <div className={disabled ? "opacity-60 pointer-events-none" : ""}>
         <AddBarcodeForm
+          inputId={ITEMS_ADD_BARCODE_INPUT_ID}
           newCode={m.newCode}
           newKind={m.newKind}
           saving={m.saving}

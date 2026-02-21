@@ -43,8 +43,6 @@ export const ItemsTable: React.FC = () => {
         rows={rows}
         primaryBarcodes={primaryBarcodes}
         onEdit={(it) => void onEdit(it)}
-        // ✅ 合并：管理条码也走上方编辑器（条码区块在编辑器内）
-        onManageBarcodes={(it) => void onEdit(it)}
       />
     </>
   );

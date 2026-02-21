@@ -81,8 +81,7 @@ export const ItemsListTable: React.FC<{
   rows: Item[];
   primaryBarcodes: Record<number, string>;
   onEdit: (it: Item) => void;
-  onManageBarcodes: (it: Item) => void;
-}> = ({ rows, primaryBarcodes, onEdit, onManageBarcodes }) => {
+}> = ({ rows, primaryBarcodes, onEdit }) => {
   const toggleItemTest = useItemsStore((s) => s.toggleItemTest);
   const [savingId, setSavingId] = useState<number | null>(null);
 
@@ -114,7 +113,6 @@ export const ItemsListTable: React.FC<{
           <th className="border px-4 py-3 text-left font-semibold">默认保质期</th>
           <th className="border px-4 py-3 text-left font-semibold">状态</th>
           <th className="border px-4 py-3 text-left font-semibold">编辑</th>
-          <th className="border px-4 py-3 text-left font-semibold">条码</th>
         </tr>
       </thead>
 
@@ -189,16 +187,6 @@ export const ItemsListTable: React.FC<{
                   disabled={disabled}
                 >
                   编辑
-                </button>
-              </td>
-
-              <td className="px-4 py-3">
-                <button
-                  className="rounded bg-sky-100 px-4 py-2 text-sm text-sky-700 hover:bg-sky-200 disabled:opacity-60"
-                  onClick={() => onManageBarcodes(it)}
-                  disabled={disabled}
-                >
-                  管理
                 </button>
               </td>
             </tr>
