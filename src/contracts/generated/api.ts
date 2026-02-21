@@ -3,179 +3,179 @@ import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
 import { z } from "zod";
 
 type AlertsResponse = {
+  alerts?: Array<AlertItem> | undefined;
   day: string;
   platform?: ((string | null) | Array<string | null>) | undefined;
-  alerts?: Array<AlertItem> | undefined;
 };
 type AlertItem = {
-  severity: string;
-  domain: string;
   code: string;
-  title: string;
-  message: string;
   count: number;
-  threshold?: ((number | null) | Array<number | null>) | undefined;
+  domain: string;
+  message: string;
   meta?: {} | undefined;
+  severity: string;
+  threshold?: ((number | null) | Array<number | null>) | undefined;
+  title: string;
 };
 type CleanupShellSchemesOut = {
-  ok?: boolean | undefined;
+  candidates?: Array<ShellSchemeRow> | undefined;
+  candidates_n: number;
+  deleted_n?: number | undefined;
   dry_run: boolean;
   include_surcharge_only: boolean;
   limit: number;
-  candidates_n: number;
-  deleted_n?: number | undefined;
-  candidates?: Array<ShellSchemeRow> | undefined;
+  ok?: boolean | undefined;
 };
 type ShellSchemeRow = {
-  scheme_id: number;
-  name: string;
   active: boolean;
-  tpl_n?: number | undefined;
-  surcharge_n?: number | undefined;
+  name: string;
+  scheme_id: number;
   seg_n?: number | undefined;
+  surcharge_n?: number | undefined;
+  tpl_n?: number | undefined;
   wh_n?: number | undefined;
   zone_n?: number | undefined;
 };
 type CopyZoneBracketsOut = {
-  ok?: boolean | undefined;
-  target_zone_id: number;
-  source_zone_id: number;
-  conflict_policy: string;
   active_policy: string;
-  summary: CopyZoneBracketsSummary;
+  conflict_policy: string;
   created?: Array<ZoneBracketOut> | undefined;
-  updated?: Array<ZoneBracketOut> | undefined;
-  skipped?: Array<ZoneBracketOut> | undefined;
   failed?: Array<{}> | undefined;
-};
-type CopyZoneBracketsSummary = {
-  source_count: number;
-  created_count: number;
-  updated_count: number;
-  skipped_count: number;
-  failed_count: number;
+  ok?: boolean | undefined;
+  skipped?: Array<ZoneBracketOut> | undefined;
+  source_zone_id: number;
+  summary: CopyZoneBracketsSummary;
+  target_zone_id: number;
+  updated?: Array<ZoneBracketOut> | undefined;
 };
 type ZoneBracketOut = {
-  id: number;
-  zone_id: number;
-  min_kg: string;
-  max_kg?: ((string | null) | Array<string | null>) | undefined;
-  pricing_mode: string;
-  flat_amount?: ((string | null) | Array<string | null>) | undefined;
-  base_amount?: ((string | null) | Array<string | null>) | undefined;
-  rate_per_kg?: ((string | null) | Array<string | null>) | undefined;
-  base_kg?: ((string | null) | Array<string | null>) | undefined;
-  price_json?: {} | undefined;
   active: boolean;
+  base_amount?: ((string | null) | Array<string | null>) | undefined;
+  base_kg?: ((string | null) | Array<string | null>) | undefined;
+  flat_amount?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
+  max_kg?: ((string | null) | Array<string | null>) | undefined;
+  min_kg: string;
+  price_json?: {} | undefined;
+  pricing_mode: string;
+  rate_per_kg?: ((string | null) | Array<string | null>) | undefined;
+  zone_id: number;
+};
+type CopyZoneBracketsSummary = {
+  created_count: number;
+  failed_count: number;
+  skipped_count: number;
+  source_count: number;
+  updated_count: number;
 };
 type DevFakeOrdersGenerateIn = {
-  seed: {};
   generate?: FakeGenerateParams | undefined;
+  seed: {};
 };
 type FakeGenerateParams = Partial<{
   count: number;
-  lines_min: number;
   lines_max: number;
-  qty_min: number;
+  lines_min: number;
   qty_max: number;
+  qty_min: number;
   rng_seed: number;
 }>;
 type DevFakeOrdersRunIn = {
-  seed: {};
   generate?: FakeGenerateParams | undefined;
+  seed: {};
   watch_filled_codes?: Array<string> | undefined;
   with_replay?: boolean | undefined;
 };
 type DevOrderFacts = {
-  order: DevOrderInfo;
   items?: Array<DevOrderItemFact> | undefined;
-};
-type DevOrderInfo = {
-  id: number;
-  platform: string;
-  shop_id: string;
-  ext_order_no: string;
-  status?: ((string | null) | Array<string | null>) | undefined;
-  trace_id?: ((string | null) | Array<string | null>) | undefined;
-  created_at: string;
-  updated_at?: ((string | null) | Array<string | null>) | undefined;
-  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
-  order_amount?: ((number | null) | Array<number | null>) | undefined;
-  pay_amount?: ((number | null) | Array<number | null>) | undefined;
+  order: DevOrderInfo;
 };
 type DevOrderItemFact = {
   item_id: number;
+  qty_ordered: number;
+  qty_remaining_refundable: number;
+  qty_returned: number;
+  qty_shipped: number;
   sku_id?: ((string | null) | Array<string | null>) | undefined;
   title?: ((string | null) | Array<string | null>) | undefined;
-  qty_ordered: number;
-  qty_shipped: number;
-  qty_returned: number;
-  qty_remaining_refundable: number;
 };
-type DevOrderReconcileResultModel = {
-  order_id: number;
+type DevOrderInfo = {
+  created_at: string;
+  ext_order_no: string;
+  id: number;
+  order_amount?: ((number | null) | Array<number | null>) | undefined;
+  pay_amount?: ((number | null) | Array<number | null>) | undefined;
   platform: string;
   shop_id: string;
+  status?: ((string | null) | Array<string | null>) | undefined;
+  trace_id?: ((string | null) | Array<string | null>) | undefined;
+  updated_at?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
+};
+type DevOrderReconcileResultModel = {
   ext_order_no: string;
   issues?: Array<string> | undefined;
   lines?: Array<DevOrderReconcileLine> | undefined;
+  order_id: number;
+  platform: string;
+  shop_id: string;
 };
 type DevOrderReconcileLine = {
   item_id: number;
+  qty_ordered: number;
+  qty_returned: number;
+  qty_shipped: number;
+  remaining_refundable: number;
   sku_id?: ((string | null) | Array<string | null>) | undefined;
   title?: ((string | null) | Array<string | null>) | undefined;
-  qty_ordered: number;
-  qty_shipped: number;
-  qty_returned: number;
-  remaining_refundable: number;
 };
 type DevOrderView = {
   order: DevOrderInfo;
   trace_id?: ((string | null) | Array<string | null>) | undefined;
 };
 type ExplainPurchaseOrder = {
+  closed_at?: ((string | null) | Array<string | null>) | undefined;
+  created_at: string;
   id: number;
-  supplier_id?: ((number | null) | Array<number | null>) | undefined;
-  supplier_name?: ((string | null) | Array<string | null>) | undefined;
-  warehouse_id: number;
-  purchaser: string;
+  last_received_at?: ((string | null) | Array<string | null>) | undefined;
+  lines?: Array<ExplainPurchaseOrderLine> | undefined;
   purchase_time: string;
+  purchaser: string;
   remark?: ((string | null) | Array<string | null>) | undefined;
   status: string;
-  created_at: string;
+  supplier_id?: ((number | null) | Array<number | null>) | undefined;
+  supplier_name?: ((string | null) | Array<string | null>) | undefined;
   updated_at: string;
-  last_received_at?: ((string | null) | Array<string | null>) | undefined;
-  closed_at?: ((string | null) | Array<string | null>) | undefined;
-  lines?: Array<ExplainPurchaseOrderLine> | undefined;
+  warehouse_id: number;
 };
 type ExplainPurchaseOrderLine = {
+  base_uom?: ((string | null) | Array<string | null>) | undefined;
+  category?: ((string | null) | Array<string | null>) | undefined;
   id: number;
-  po_id: number;
-  line_no: number;
   item_id: number;
   item_name?: ((string | null) | Array<string | null>) | undefined;
   item_sku?: ((string | null) | Array<string | null>) | undefined;
-  category?: ((string | null) | Array<string | null>) | undefined;
-  spec_text?: ((string | null) | Array<string | null>) | undefined;
-  base_uom?: ((string | null) | Array<string | null>) | undefined;
+  line_no: number;
+  po_id: number;
   purchase_uom?: ((string | null) | Array<string | null>) | undefined;
-  units_per_case?: ((number | null) | Array<number | null>) | undefined;
   qty_ordered: number;
   qty_received: number;
-  status: string;
   remark?: ((string | null) | Array<string | null>) | undefined;
+  spec_text?: ((string | null) | Array<string | null>) | undefined;
+  status: string;
+  units_per_case?: ((number | null) | Array<number | null>) | undefined;
 };
 type FefoRiskMetricsResponse = {
   as_of: string;
   items: Array<FefoItemRisk>;
 };
 type FefoItemRisk = {
+  fefo_hit_rate_7d: number;
   item_id: number;
-  sku: string;
   name: string;
   near_expiry_batches: number;
-  fefo_hit_rate_7d: number;
   risk_score: number;
+  sku: string;
 };
 type FskuComponentsReplaceIn = {
   components: Array<FskuComponentIn>;
@@ -186,16 +186,16 @@ type FskuComponentIn = {
   role: "primary" | "gift";
 };
 type FskuDetailOut = {
-  id: number;
   code: string;
+  components: Array<FskuComponentOut>;
+  created_at: string;
+  id: number;
   name: string;
-  shape: "single" | "bundle";
-  status: string;
   published_at: (string | null) | Array<string | null>;
   retired_at: (string | null) | Array<string | null>;
-  created_at: string;
+  shape: "single" | "bundle";
+  status: string;
   updated_at: string;
-  components: Array<FskuComponentOut>;
 };
 type FskuComponentOut = {
   item_id: number;
@@ -204,231 +204,231 @@ type FskuComponentOut = {
 };
 type FskuListOut = {
   items: Array<FskuListItem>;
-  total: number;
   limit: number;
   offset: number;
+  total: number;
 };
 type FskuListItem = {
-  id: number;
   code: string;
+  components_summary: string;
+  components_summary_name: string;
+  id: number;
   name: string;
+  published_at: (string | null) | Array<string | null>;
+  retired_at: (string | null) | Array<string | null>;
   shape: "single" | "bundle";
   status: string;
   updated_at: string;
-  published_at: (string | null) | Array<string | null>;
-  retired_at: (string | null) | Array<string | null>;
-  components_summary: string;
-  components_summary_name: string;
 };
 type FulfillmentDebugOut = {
-  version?: string | undefined;
+  address?: FulfillmentDebugAddress | undefined;
+  ext_order_no?: ((string | null) | Array<string | null>) | undefined;
   order_id: number;
   platform: string;
-  shop_id: string;
-  ext_order_no?: ((string | null) | Array<string | null>) | undefined;
-  address?: FulfillmentDebugAddress | undefined;
   service?: FulfillmentServiceDebug | undefined;
+  shop_id: string;
   summary?: {} | undefined;
+  version?: string | undefined;
 };
 type FulfillmentDebugAddress = Partial<{
-  province: (string | null) | Array<string | null>;
   city: (string | null) | Array<string | null>;
-  district: (string | null) | Array<string | null>;
   detail: (string | null) | Array<string | null>;
+  district: (string | null) | Array<string | null>;
+  province: (string | null) | Array<string | null>;
 }>;
 type FulfillmentServiceDebug = Partial<{
-  province_code: (string | null) | Array<string | null>;
   city_code: (string | null) | Array<string | null>;
   hit: boolean;
-  service_warehouse_id: (number | null) | Array<number | null>;
+  province_code: (string | null) | Array<string | null>;
   reason: (string | null) | Array<string | null>;
+  service_warehouse_id: (number | null) | Array<number | null>;
 }>;
 type FulfillmentScanWarehouseOut = {
-  warehouse_id: number;
-  status: string;
   missing?: Array<FulfillmentMissingLineOut> | undefined;
+  status: string;
+  warehouse_id: number;
 };
 type FulfillmentMissingLineOut = {
+  available: number;
   item_id: number;
   need: number;
-  available: number;
 };
 type HTTPValidationError = Partial<{
   detail: Array<ValidationError>;
 }>;
 type ValidationError = {
+  ctx?: {} | undefined;
+  input?: unknown | undefined;
   loc: Array<(string | number) | Array<string | number>>;
   msg: string;
   type: string;
-  input?: unknown | undefined;
-  ctx?: {} | undefined;
 };
 type InboundReceiptConfirmOut = {
-  receipt: InboundReceiptOut;
-  ledger_written: number;
   ledger_refs?: Array<InboundReceiptConfirmLedgerRef> | undefined;
+  ledger_written: number;
+  receipt: InboundReceiptOut;
+};
+type InboundReceiptConfirmLedgerRef = {
+  applied?: ((boolean | null) | Array<boolean | null>) | undefined;
+  idempotent?: ((boolean | null) | Array<boolean | null>) | undefined;
+  item_id: number;
+  qty_delta: number;
+  ref: string;
+  ref_line: number;
+  source_line_key: string;
 };
 type InboundReceiptOut = {
+  created_at: string;
   id: number;
-  warehouse_id: number;
+  lines?: Array<InboundReceiptLineOut> | undefined;
+  occurred_at: string;
+  ref: string;
+  remark?: ((string | null) | Array<string | null>) | undefined;
+  source_id?: ((number | null) | Array<number | null>) | undefined;
+  source_type: string;
+  status: string;
   supplier_id?: ((number | null) | Array<number | null>) | undefined;
   supplier_name?: ((string | null) | Array<string | null>) | undefined;
-  source_type: string;
-  source_id?: ((number | null) | Array<number | null>) | undefined;
-  ref: string;
   trace_id?: ((string | null) | Array<string | null>) | undefined;
-  status: string;
-  remark?: ((string | null) | Array<string | null>) | undefined;
-  occurred_at: string;
-  created_at: string;
   updated_at: string;
-  lines?: Array<InboundReceiptLineOut> | undefined;
+  warehouse_id: number;
 };
 type InboundReceiptLineOut = {
+  barcode?: ((string | null) | Array<string | null>) | undefined;
+  batch_code: string;
+  created_at: string;
+  expiry_date?: ((string | null) | Array<string | null>) | undefined;
   id: number;
-  receipt_id: number;
-  line_no: number;
-  po_line_id?: ((number | null) | Array<number | null>) | undefined;
   item_id: number;
   item_name?: ((string | null) | Array<string | null>) | undefined;
   item_sku?: ((string | null) | Array<string | null>) | undefined;
-  barcode?: ((string | null) | Array<string | null>) | undefined;
-  batch_code: string;
-  production_date?: ((string | null) | Array<string | null>) | undefined;
-  expiry_date?: ((string | null) | Array<string | null>) | undefined;
-  qty_received: number;
-  units_per_case: number;
-  qty_units: number;
-  unit_cost?: ((string | null) | Array<string | null>) | undefined;
   line_amount?: ((string | null) | Array<string | null>) | undefined;
+  line_no: number;
+  po_line_id?: ((number | null) | Array<number | null>) | undefined;
+  production_date?: ((string | null) | Array<string | null>) | undefined;
+  qty_received: number;
+  qty_units: number;
+  receipt_id: number;
   remark?: ((string | null) | Array<string | null>) | undefined;
-  created_at: string;
+  unit_cost?: ((string | null) | Array<string | null>) | undefined;
+  units_per_case: number;
   updated_at: string;
 };
-type InboundReceiptConfirmLedgerRef = {
-  source_line_key: string;
-  ref: string;
-  ref_line: number;
-  item_id: number;
-  qty_delta: number;
-  idempotent?: ((boolean | null) | Array<boolean | null>) | undefined;
-  applied?: ((boolean | null) | Array<boolean | null>) | undefined;
-};
 type InboundReceiptExplainOut = {
-  receipt_summary: InboundReceiptSummaryOut;
-  confirmable: boolean;
   blocking_errors?: Array<ProblemItem> | undefined;
-  normalized_lines_preview?: Array<NormalizedLinePreviewOut> | undefined;
+  confirmable: boolean;
   ledger_preview?: Array<LedgerPreviewOut> | undefined;
-};
-type InboundReceiptSummaryOut = {
-  id: number;
-  status: string;
-  occurred_at?: ((string | null) | Array<string | null>) | undefined;
-  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
-  source_type?: ((string | null) | Array<string | null>) | undefined;
-  source_id?: ((number | null) | Array<number | null>) | undefined;
-  ref?: ((string | null) | Array<string | null>) | undefined;
-  trace_id?: ((string | null) | Array<string | null>) | undefined;
+  normalized_lines_preview?: Array<NormalizedLinePreviewOut> | undefined;
+  receipt_summary: InboundReceiptSummaryOut;
 };
 type ProblemItem = {
-  scope: "header" | "line";
   field: string;
-  message: string;
   index?: ((number | null) | Array<number | null>) | undefined;
-};
-type NormalizedLinePreviewOut = {
-  line_key: string;
-  qty_total: number;
-  item_id: number;
-  po_line_id?: ((number | null) | Array<number | null>) | undefined;
-  batch_code: string;
-  production_date?: ((string | null) | Array<string | null>) | undefined;
-  source_line_indexes?: Array<number> | undefined;
+  message: string;
+  scope: "header" | "line";
 };
 type LedgerPreviewOut = {
   action: string;
-  warehouse_id: number;
   item_id: number;
   qty_delta: number;
   source_line_key: string;
+  warehouse_id: number;
+};
+type NormalizedLinePreviewOut = {
+  batch_code: string;
+  item_id: number;
+  line_key: string;
+  po_line_id?: ((number | null) | Array<number | null>) | undefined;
+  production_date?: ((string | null) | Array<string | null>) | undefined;
+  qty_total: number;
+  source_line_indexes?: Array<number> | undefined;
+};
+type InboundReceiptSummaryOut = {
+  id: number;
+  occurred_at?: ((string | null) | Array<string | null>) | undefined;
+  ref?: ((string | null) | Array<string | null>) | undefined;
+  source_id?: ((number | null) | Array<number | null>) | undefined;
+  source_type?: ((string | null) | Array<string | null>) | undefined;
+  status: string;
+  trace_id?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
 };
 type InternalOutboundDocOut = {
-  id: number;
-  warehouse_id: number;
+  canceled_at?: ((string | null) | Array<string | null>) | undefined;
+  canceled_by?: ((number | null) | Array<number | null>) | undefined;
+  confirmed_at?: ((string | null) | Array<string | null>) | undefined;
+  confirmed_by?: ((number | null) | Array<number | null>) | undefined;
+  created_at: string;
+  created_by?: ((number | null) | Array<number | null>) | undefined;
   doc_no: string;
   doc_type: string;
-  status: string;
-  recipient_name?: ((string | null) | Array<string | null>) | undefined;
-  recipient_id?: ((number | null) | Array<number | null>) | undefined;
-  recipient_type?: ((string | null) | Array<string | null>) | undefined;
-  recipient_note?: ((string | null) | Array<string | null>) | undefined;
-  note?: ((string | null) | Array<string | null>) | undefined;
-  created_by?: ((number | null) | Array<number | null>) | undefined;
-  created_at: string;
-  confirmed_by?: ((number | null) | Array<number | null>) | undefined;
-  confirmed_at?: ((string | null) | Array<string | null>) | undefined;
-  canceled_by?: ((number | null) | Array<number | null>) | undefined;
-  canceled_at?: ((string | null) | Array<string | null>) | undefined;
-  trace_id?: ((string | null) | Array<string | null>) | undefined;
   extra_meta?: (({} | null) | Array<{} | null>) | undefined;
+  id: number;
   lines?: Array<InternalOutboundLineOut> | undefined;
+  note?: ((string | null) | Array<string | null>) | undefined;
+  recipient_id?: ((number | null) | Array<number | null>) | undefined;
+  recipient_name?: ((string | null) | Array<string | null>) | undefined;
+  recipient_note?: ((string | null) | Array<string | null>) | undefined;
+  recipient_type?: ((string | null) | Array<string | null>) | undefined;
+  status: string;
+  trace_id?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id: number;
 };
 type InternalOutboundLineOut = {
-  id: number;
-  doc_id: number;
-  line_no: number;
-  item_id: number;
   batch_code?: ((string | null) | Array<string | null>) | undefined;
-  requested_qty: number;
   confirmed_qty?: ((number | null) | Array<number | null>) | undefined;
-  uom?: ((string | null) | Array<string | null>) | undefined;
-  note?: ((string | null) | Array<string | null>) | undefined;
+  doc_id: number;
   extra_meta?: (({} | null) | Array<{} | null>) | undefined;
+  id: number;
+  item_id: number;
+  line_no: number;
+  note?: ((string | null) | Array<string | null>) | undefined;
+  requested_qty: number;
+  uom?: ((string | null) | Array<string | null>) | undefined;
 };
 type InventorySnapshotResponse = {
-  total: number;
-  offset: number;
   limit: number;
+  offset: number;
   rows?: Array<InventoryRow> | undefined;
+  total: number;
 };
 type InventoryRow = {
-  item_id: number;
-  item_name: string;
-  item_code?: ((string | null) | Array<string | null>) | undefined;
-  uom?: ((string | null) | Array<string | null>) | undefined;
-  spec?: ((string | null) | Array<string | null>) | undefined;
-  main_barcode?: ((string | null) | Array<string | null>) | undefined;
+  batch_code?: ((string | null) | Array<string | null>) | undefined;
   brand?: ((string | null) | Array<string | null>) | undefined;
   category?: ((string | null) | Array<string | null>) | undefined;
-  warehouse_id: number;
-  batch_code?: ((string | null) | Array<string | null>) | undefined;
-  qty: number;
-  expiry_date?: ((string | null) | Array<string | null>) | undefined;
-  near_expiry?: boolean | undefined;
   days_to_expiry?: ((number | null) | Array<number | null>) | undefined;
+  expiry_date?: ((string | null) | Array<string | null>) | undefined;
+  item_code?: ((string | null) | Array<string | null>) | undefined;
+  item_id: number;
+  item_name: string;
+  main_barcode?: ((string | null) | Array<string | null>) | undefined;
+  near_expiry?: boolean | undefined;
+  qty: number;
+  spec?: ((string | null) | Array<string | null>) | undefined;
+  uom?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id: number;
 };
 type ItemDetailResponse = {
   item_id: number;
   item_name: string;
-  totals: ItemDetailTotals;
   slices: Array<ItemDetailSlice>;
-};
-type ItemDetailTotals = {
-  on_hand_qty: number;
-  available_qty: number;
+  totals: ItemDetailTotals;
 };
 type ItemDetailSlice = {
+  available_qty: number;
+  batch_code: string;
+  expiry_date?: ((string | null) | Array<string | null>) | undefined;
+  is_top?: boolean | undefined;
+  near_expiry?: boolean | undefined;
+  on_hand_qty: number;
+  pool: string;
+  production_date?: ((string | null) | Array<string | null>) | undefined;
   warehouse_id: number;
   warehouse_name: string;
-  pool: string;
-  batch_code: string;
-  production_date?: ((string | null) | Array<string | null>) | undefined;
-  expiry_date?: ((string | null) | Array<string | null>) | undefined;
-  on_hand_qty: number;
+};
+type ItemDetailTotals = {
   available_qty: number;
-  near_expiry?: boolean | undefined;
-  is_top?: boolean | undefined;
+  on_hand_qty: number;
 };
 type LedgerEnums = Partial<{
   reason_canons: Array<ReasonCanon>;
@@ -445,209 +445,209 @@ type SubReason =
 type LedgerExplainOut = {
   anchor: ExplainAnchor;
   ledger: Array<ExplainLedgerRow>;
-  receipt: ExplainReceipt;
-  receipt_lines: Array<ExplainReceiptLine>;
   purchase_order?:
     | ((ExplainPurchaseOrder | null) | Array<ExplainPurchaseOrder | null>)
     | undefined;
+  receipt: ExplainReceipt;
+  receipt_lines: Array<ExplainReceiptLine>;
 };
 type ExplainAnchor = {
   ref: string;
   trace_id?: ((string | null) | Array<string | null>) | undefined;
 };
 type ExplainLedgerRow = {
-  id: number;
-  warehouse_id: number;
-  item_id: number;
+  after_qty: number;
   batch_code: string;
+  created_at: string;
+  delta: number;
+  expiry_date?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
+  item_id: number;
+  occurred_at: string;
+  production_date?: ((string | null) | Array<string | null>) | undefined;
   reason: string;
   reason_canon?: ((string | null) | Array<string | null>) | undefined;
-  sub_reason?: ((string | null) | Array<string | null>) | undefined;
   ref: string;
   ref_line: number;
-  delta: number;
-  after_qty: number;
-  occurred_at: string;
-  created_at: string;
+  sub_reason?: ((string | null) | Array<string | null>) | undefined;
   trace_id?: ((string | null) | Array<string | null>) | undefined;
-  production_date?: ((string | null) | Array<string | null>) | undefined;
-  expiry_date?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id: number;
 };
 type ExplainReceipt = {
+  created_at: string;
   id: number;
-  warehouse_id: number;
+  occurred_at: string;
+  ref: string;
+  remark?: ((string | null) | Array<string | null>) | undefined;
+  source_id?: ((number | null) | Array<number | null>) | undefined;
+  source_type: string;
+  status: string;
   supplier_id?: ((number | null) | Array<number | null>) | undefined;
   supplier_name?: ((string | null) | Array<string | null>) | undefined;
-  source_type: string;
-  source_id?: ((number | null) | Array<number | null>) | undefined;
-  ref: string;
   trace_id?: ((string | null) | Array<string | null>) | undefined;
-  status: string;
-  remark?: ((string | null) | Array<string | null>) | undefined;
-  occurred_at: string;
-  created_at: string;
   updated_at: string;
+  warehouse_id: number;
 };
 type ExplainReceiptLine = {
+  base_uom?: ((string | null) | Array<string | null>) | undefined;
+  batch_code: string;
+  category?: ((string | null) | Array<string | null>) | undefined;
+  created_at: string;
+  expiry_date?: ((string | null) | Array<string | null>) | undefined;
   id: number;
-  receipt_id: number;
-  line_no: number;
-  po_line_id?: ((number | null) | Array<number | null>) | undefined;
   item_id: number;
   item_name?: ((string | null) | Array<string | null>) | undefined;
   item_sku?: ((string | null) | Array<string | null>) | undefined;
-  category?: ((string | null) | Array<string | null>) | undefined;
-  spec_text?: ((string | null) | Array<string | null>) | undefined;
-  base_uom?: ((string | null) | Array<string | null>) | undefined;
-  purchase_uom?: ((string | null) | Array<string | null>) | undefined;
-  batch_code: string;
-  production_date?: ((string | null) | Array<string | null>) | undefined;
-  expiry_date?: ((string | null) | Array<string | null>) | undefined;
-  qty_received: number;
-  units_per_case: number;
-  qty_units: number;
-  unit_cost?: ((string | null) | Array<string | null>) | undefined;
   line_amount?: ((string | null) | Array<string | null>) | undefined;
+  line_no: number;
+  po_line_id?: ((number | null) | Array<number | null>) | undefined;
+  production_date?: ((string | null) | Array<string | null>) | undefined;
+  purchase_uom?: ((string | null) | Array<string | null>) | undefined;
+  qty_received: number;
+  qty_units: number;
+  receipt_id: number;
   remark?: ((string | null) | Array<string | null>) | undefined;
-  created_at: string;
+  spec_text?: ((string | null) | Array<string | null>) | undefined;
+  unit_cost?: ((string | null) | Array<string | null>) | undefined;
+  units_per_case: number;
   updated_at: string;
 };
 type LedgerList = {
-  total: number;
   items?: Array<LedgerRow> | undefined;
+  total: number;
 };
 type LedgerRow = {
-  id: number;
-  delta: number;
   after_qty: number;
-  reason: string;
-  reason_canon?: ((string | null) | Array<string | null>) | undefined;
-  sub_reason?: ((string | null) | Array<string | null>) | undefined;
-  ref?: ((string | null) | Array<string | null>) | undefined;
-  ref_line: number;
-  occurred_at: string;
+  batch_code: string;
   created_at: string;
-  warehouse_id: number;
+  delta: number;
+  id: number;
   item_id: number;
   item_name?: ((string | null) | Array<string | null>) | undefined;
-  batch_code: string;
-  trace_id?: ((string | null) | Array<string | null>) | undefined;
   movement_type?: ((string | null) | Array<string | null>) | undefined;
+  occurred_at: string;
+  reason: string;
+  reason_canon?: ((string | null) | Array<string | null>) | undefined;
+  ref?: ((string | null) | Array<string | null>) | undefined;
+  ref_line: number;
+  sub_reason?: ((string | null) | Array<string | null>) | undefined;
+  trace_id?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id: number;
 };
 type LedgerQuery = Partial<{
+  batch_code: (string | null) | Array<string | null>;
   item_id: (number | null) | Array<number | null>;
   item_keyword: (string | null) | Array<string | null>;
-  warehouse_id: (number | null) | Array<number | null>;
-  batch_code: (string | null) | Array<string | null>;
-  reason: (string | null) | Array<string | null>;
-  reason_canon: (ReasonCanon | null) | Array<ReasonCanon | null>;
-  sub_reason: (SubReason | null) | Array<SubReason | null>;
-  ref: (string | null) | Array<string | null>;
-  trace_id: (string | null) | Array<string | null>;
-  time_from: (string | null) | Array<string | null>;
-  time_to: (string | null) | Array<string | null>;
   limit: number;
   offset: number;
+  reason: (string | null) | Array<string | null>;
+  reason_canon: (ReasonCanon | null) | Array<ReasonCanon | null>;
+  ref: (string | null) | Array<string | null>;
+  sub_reason: (SubReason | null) | Array<SubReason | null>;
+  time_from: (string | null) | Array<string | null>;
+  time_to: (string | null) | Array<string | null>;
+  trace_id: (string | null) | Array<string | null>;
+  warehouse_id: (number | null) | Array<number | null>;
 }>;
 type LedgerReconcileResult = Partial<{
   rows: Array<LedgerReconcileRow>;
 }>;
 type LedgerReconcileRow = {
-  warehouse_id: number;
-  item_id: number;
   batch_code: string;
+  diff: number;
+  item_id: number;
   ledger_sum_delta: number;
   stock_qty: number;
-  diff: number;
+  warehouse_id: number;
 };
 type LedgerSummary = {
-  filters: LedgerQuery;
   by_reason?: Array<LedgerReasonStat> | undefined;
+  filters: LedgerQuery;
   net_delta: number;
 };
 type LedgerReasonStat = {
-  reason: string;
   count: number;
+  reason: string;
   total_delta: number;
 };
 type ManualDecisionOrderOut = {
   batch_id: string;
   created_at: string;
+  ext_order_no: string;
+  manual_decisions?: Array<ManualDecisionLineOut> | undefined;
+  manual_reason?: ((string | null) | Array<string | null>) | undefined;
   order_id: number;
   platform: string;
-  shop_id: string;
-  ext_order_no: string;
   ref: string;
-  store_id: number;
-  manual_reason?: ((string | null) | Array<string | null>) | undefined;
   risk_flags?: Array<string> | undefined;
-  manual_decisions?: Array<ManualDecisionLineOut> | undefined;
+  shop_id: string;
+  store_id: number;
 };
 type ManualDecisionLineOut = Partial<{
+  fact_qty: (number | null) | Array<number | null>;
+  filled_code: (string | null) | Array<string | null>;
+  item_id: (number | null) | Array<number | null>;
   line_key: (string | null) | Array<string | null>;
   line_no: (number | null) | Array<number | null>;
   locator_kind: (string | null) | Array<string | null>;
   locator_value: (string | null) | Array<string | null>;
-  filled_code: (string | null) | Array<string | null>;
-  fact_qty: (number | null) | Array<number | null>;
-  item_id: (number | null) | Array<number | null>;
-  qty: (number | null) | Array<number | null>;
   note: (string | null) | Array<string | null>;
+  qty: (number | null) | Array<number | null>;
 }>;
 type ManualDecisionOrdersOut = {
   items?: Array<ManualDecisionOrderOut> | undefined;
-  total: number;
   limit: number;
   offset: number;
+  total: number;
 };
 type MerchantCodeBindingListDataOut = {
   items: Array<MerchantCodeBindingRowOut>;
-  total: number;
   limit: number;
   offset: number;
+  total: number;
 };
 type MerchantCodeBindingRowOut = {
+  created_at: string;
+  fsku: FskuLiteOut;
+  fsku_id: number;
   id: number;
+  merchant_code: string;
   platform: string;
+  reason: (string | null) | Array<string | null>;
   shop_id: string;
   store: StoreLiteOut;
-  merchant_code: string;
-  fsku_id: number;
-  fsku: FskuLiteOut;
-  reason: (string | null) | Array<string | null>;
-  created_at: string;
   updated_at: string;
+};
+type FskuLiteOut = {
+  code: string;
+  id: number;
+  name: string;
+  status: string;
 };
 type StoreLiteOut = {
   id: number;
   name: string;
 };
-type FskuLiteOut = {
-  id: number;
-  code: string;
-  name: string;
-  status: string;
-};
 type MerchantCodeBindingListOut = {
-  ok?: boolean | undefined;
   data: MerchantCodeBindingListDataOut;
+  ok?: boolean | undefined;
 };
 type MerchantCodeBindingOut = {
-  ok?: boolean | undefined;
   data: MerchantCodeBindingRowOut;
+  ok?: boolean | undefined;
 };
 type MetaPlatformsOut = {
-  ok?: boolean | undefined;
   data: Array<MetaPlatformItem>;
+  ok?: boolean | undefined;
 };
 type MetaPlatformItem = {
-  platform: string;
-  label: string;
   enabled?: boolean | undefined;
+  label: string;
+  platform: string;
 };
 type OpsActiveSchemesOut = Partial<{
-  ok: boolean;
   data: Array<OpsActiveSchemeRow>;
+  ok: boolean;
 }>;
 type OpsActiveSchemeRow = {
   scheme_id: number;
@@ -656,154 +656,149 @@ type OpsActiveSchemeRow = {
   shipping_provider_name: string;
 };
 type OrderCreateIn = {
-  platform: string;
-  shop_id: string;
-  ext_order_no: string;
-  occurred_at?: ((string | null) | Array<string | null>) | undefined;
+  address?: ((OrderAddrIn | null) | Array<OrderAddrIn | null>) | undefined;
   buyer_name?: ((string | null) | Array<string | null>) | undefined;
   buyer_phone?: ((string | null) | Array<string | null>) | undefined;
+  ext_order_no: string;
+  lines?: Array<OrderLineIn> | undefined;
+  occurred_at?: ((string | null) | Array<string | null>) | undefined;
   order_amount?: ((number | null) | Array<number | null>) | undefined;
   pay_amount?: ((number | null) | Array<number | null>) | undefined;
-  lines?: Array<OrderLineIn> | undefined;
-  address?: ((OrderAddrIn | null) | Array<OrderAddrIn | null>) | undefined;
+  platform: string;
+  shop_id: string;
   store_name?: ((string | null) | Array<string | null>) | undefined;
 };
-type OrderLineIn = Partial<{
-  sku_id: (string | null) | Array<string | null>;
-  item_id: (number | null) | Array<number | null>;
-  title: (string | null) | Array<string | null>;
-  qty: number;
-  price: (number | null) | Array<number | null>;
-  discount: (number | null) | Array<number | null>;
-  amount: (number | null) | Array<number | null>;
-}>;
 type OrderAddrIn = Partial<{
+  city: (string | null) | Array<string | null>;
+  detail: (string | null) | Array<string | null>;
+  district: (string | null) | Array<string | null>;
+  province: (string | null) | Array<string | null>;
   receiver_name: (string | null) | Array<string | null>;
   receiver_phone: (string | null) | Array<string | null>;
-  province: (string | null) | Array<string | null>;
-  city: (string | null) | Array<string | null>;
-  district: (string | null) | Array<string | null>;
-  detail: (string | null) | Array<string | null>;
   zipcode: (string | null) | Array<string | null>;
 }>;
+type OrderLineIn = Partial<{
+  amount: (number | null) | Array<number | null>;
+  discount: (number | null) | Array<number | null>;
+  item_id: (number | null) | Array<number | null>;
+  price: (number | null) | Array<number | null>;
+  qty: number;
+  sku_id: (string | null) | Array<string | null>;
+  title: (string | null) | Array<string | null>;
+}>;
 type OrderCreateOut = {
-  status: string;
-  id?: ((number | null) | Array<number | null>) | undefined;
-  ref: string;
   fulfillment?:
     | ((OrderFulfillmentOut | null) | Array<OrderFulfillmentOut | null>)
     | undefined;
+  id?: ((number | null) | Array<number | null>) | undefined;
+  ref: string;
+  status: string;
 };
 type OrderFulfillmentOut = Partial<{
+  auto_assign_status: (string | null) | Array<string | null>;
+  fulfillment_status: (string | null) | Array<string | null>;
+  ingest_state: (string | null) | Array<string | null>;
+  route_status: (string | null) | Array<string | null>;
   service_warehouse_id: (number | null) | Array<number | null>;
   warehouse_id: (number | null) | Array<number | null>;
-  fulfillment_status: (string | null) | Array<string | null>;
-  route_status: (string | null) | Array<string | null>;
-  ingest_state: (string | null) | Array<string | null>;
-  auto_assign_status: (string | null) | Array<string | null>;
 }>;
 type OrderFactsResponse = {
-  ok?: boolean | undefined;
   items: Array<OrderFactItemOut>;
+  ok?: boolean | undefined;
 };
 type OrderFactItemOut = {
   item_id: number;
+  qty_ordered?: number | undefined;
   sku_id?: ((string | null) | Array<string | null>) | undefined;
   title?: ((string | null) | Array<string | null>) | undefined;
-  qty_ordered?: number | undefined;
 };
 type OrderSimCartPutIn = Partial<{
   items: Array<CartLineItemIn>;
 }>;
 type CartLineItemIn = {
-  row_no: number;
   checked?: boolean | undefined;
+  city?: ((string | null) | Array<string | null>) | undefined;
+  detail?: ((string | null) | Array<string | null>) | undefined;
+  district?: ((string | null) | Array<string | null>) | undefined;
+  if_version?: ((number | null) | Array<number | null>) | undefined;
+  province?: ((string | null) | Array<string | null>) | undefined;
   qty?: number | undefined;
   receiver_name?: ((string | null) | Array<string | null>) | undefined;
   receiver_phone?: ((string | null) | Array<string | null>) | undefined;
-  province?: ((string | null) | Array<string | null>) | undefined;
-  city?: ((string | null) | Array<string | null>) | undefined;
-  district?: ((string | null) | Array<string | null>) | undefined;
-  detail?: ((string | null) | Array<string | null>) | undefined;
+  row_no: number;
   zipcode?: ((string | null) | Array<string | null>) | undefined;
-  if_version?: ((number | null) | Array<number | null>) | undefined;
 };
 type OrderSimFilledCodeOptionsData = Partial<{
   items: Array<OrderSimFilledCodeOptionOut>;
 }>;
 type OrderSimFilledCodeOptionOut = {
+  components_summary: string;
   filled_code: string;
   suggested_title: string;
-  components_summary: string;
 };
 type OrderSimFilledCodeOptionsOut = {
-  ok: boolean;
   data: OrderSimFilledCodeOptionsData;
+  ok: boolean;
 };
 type OrderSimMerchantLinesPutIn = Partial<{
   items: Array<MerchantLineItemIn>;
 }>;
 type MerchantLineItemIn = {
-  row_no: number;
   filled_code?: ((string | null) | Array<string | null>) | undefined;
-  title?: ((string | null) | Array<string | null>) | undefined;
-  spec?: ((string | null) | Array<string | null>) | undefined;
   if_version?: ((number | null) | Array<number | null>) | undefined;
+  row_no: number;
+  spec?: ((string | null) | Array<string | null>) | undefined;
+  title?: ((string | null) | Array<string | null>) | undefined;
 };
 type OrderViewResponse = {
   ok?: boolean | undefined;
   order: PlatformOrderOut;
 };
 type PlatformOrderOut = {
-  id: number;
-  platform: string;
-  shop_id: string;
-  ext_order_no: string;
-  status?: ((string | null) | Array<string | null>) | undefined;
-  created_at: string;
-  updated_at?: ((string | null) | Array<string | null>) | undefined;
-  order_amount?: ((number | null) | Array<number | null>) | undefined;
-  pay_amount?: ((number | null) | Array<number | null>) | undefined;
-  buyer_name?: ((string | null) | Array<string | null>) | undefined;
-  buyer_phone?: ((string | null) | Array<string | null>) | undefined;
   address?:
     | ((PlatformOrderAddressOut | null) | Array<PlatformOrderAddressOut | null>)
     | undefined;
+  buyer_name?: ((string | null) | Array<string | null>) | undefined;
+  buyer_phone?: ((string | null) | Array<string | null>) | undefined;
+  created_at: string;
+  ext_order_no: string;
+  id: number;
   items?: Array<PlatformOrderLineOut> | undefined;
+  order_amount?: ((number | null) | Array<number | null>) | undefined;
+  pay_amount?: ((number | null) | Array<number | null>) | undefined;
+  platform: string;
   raw?: (({} | null) | Array<{} | null>) | undefined;
+  shop_id: string;
+  status?: ((string | null) | Array<string | null>) | undefined;
+  updated_at?: ((string | null) | Array<string | null>) | undefined;
 };
 type PlatformOrderAddressOut = Partial<{
+  city: (string | null) | Array<string | null>;
+  detail: (string | null) | Array<string | null>;
+  district: (string | null) | Array<string | null>;
+  province: (string | null) | Array<string | null>;
   receiver_name: (string | null) | Array<string | null>;
   receiver_phone: (string | null) | Array<string | null>;
-  province: (string | null) | Array<string | null>;
-  city: (string | null) | Array<string | null>;
-  district: (string | null) | Array<string | null>;
-  detail: (string | null) | Array<string | null>;
   zipcode: (string | null) | Array<string | null>;
 }>;
 type PlatformOrderLineOut = Partial<{
-  sku: (string | null) | Array<string | null>;
-  title: (string | null) | Array<string | null>;
-  qty: number;
-  item_id: (number | null) | Array<number | null>;
-  spec: (string | null) | Array<string | null>;
-  price: (number | null) | Array<number | null>;
-  discount: (number | null) | Array<number | null>;
   amount: (number | null) | Array<number | null>;
+  discount: (number | null) | Array<number | null>;
   extras: ({} | null) | Array<{} | null>;
+  item_id: (number | null) | Array<number | null>;
+  price: (number | null) | Array<number | null>;
+  qty: number;
+  sku: (string | null) | Array<string | null>;
+  spec: (string | null) | Array<string | null>;
+  title: (string | null) | Array<string | null>;
 }>;
 type OrderWarehouseAvailabilityResponse = {
+  lines: Array<AvailabilityLineOut>;
+  matrix: Array<AvailabilityCellOut>;
   ok?: boolean | undefined;
   order_id: number;
   scope: string;
   warehouses: Array<WarehouseBriefOut>;
-  lines: Array<AvailabilityLineOut>;
-  matrix: Array<AvailabilityCellOut>;
-};
-type WarehouseBriefOut = {
-  id: number;
-  code?: ((string | null) | Array<string | null>) | undefined;
-  name?: ((string | null) | Array<string | null>) | undefined;
 };
 type AvailabilityLineOut = {
   item_id: number;
@@ -812,40 +807,45 @@ type AvailabilityLineOut = {
   title?: ((string | null) | Array<string | null>) | undefined;
 };
 type AvailabilityCellOut = {
-  warehouse_id: number;
-  item_id: number;
   available: number;
+  item_id: number;
   shortage: number;
   status: string;
+  warehouse_id: number;
+};
+type WarehouseBriefOut = {
+  code?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
+  name?: ((string | null) | Array<string | null>) | undefined;
 };
 type OrdersSummaryResponse = {
-  ok?: boolean | undefined;
   data: Array<OrderSummaryOut>;
+  ok?: boolean | undefined;
   warehouses: Array<WarehouseOptionOut>;
 };
 type OrderSummaryOut = {
-  id: number;
-  platform: string;
-  shop_id: string;
-  ext_order_no: string;
-  status?: ((string | null) | Array<string | null>) | undefined;
-  created_at: string;
-  updated_at?: ((string | null) | Array<string | null>) | undefined;
-  store_id?: ((number | null) | Array<number | null>) | undefined;
-  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
-  service_warehouse_id?: ((number | null) | Array<number | null>) | undefined;
-  fulfillment_status?: ((string | null) | Array<string | null>) | undefined;
-  warehouse_assign_mode?: ((string | null) | Array<string | null>) | undefined;
   can_manual_assign_execution_warehouse?: boolean | undefined;
+  created_at: string;
+  ext_order_no: string;
+  fulfillment_status?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
   manual_assign_hint?: ((string | null) | Array<string | null>) | undefined;
   order_amount?: ((number | null) | Array<number | null>) | undefined;
   pay_amount?: ((number | null) | Array<number | null>) | undefined;
+  platform: string;
+  service_warehouse_id?: ((number | null) | Array<number | null>) | undefined;
+  shop_id: string;
+  status?: ((string | null) | Array<string | null>) | undefined;
+  store_id?: ((number | null) | Array<number | null>) | undefined;
+  updated_at?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_assign_mode?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
 };
 type WarehouseOptionOut = {
-  id: number;
-  code?: ((string | null) | Array<string | null>) | undefined;
-  name?: ((string | null) | Array<string | null>) | undefined;
   active?: ((boolean | null) | Array<boolean | null>) | undefined;
+  code?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
+  name?: ((string | null) | Array<string | null>) | undefined;
 };
 type OrdersTrendResponseModel = Partial<{
   days: Array<OrdersDailyTrendItem>;
@@ -853,39 +853,39 @@ type OrdersTrendResponseModel = Partial<{
 type OrdersDailyTrendItem = {
   date: string;
   orders_created: number;
-  orders_shipped: number;
   orders_returned: number;
+  orders_shipped: number;
   return_rate: number;
 };
 type OutboundFailuresMetricsResponse = {
   day: string;
+  details?: Array<OutboundFailureDetail> | undefined;
+  inventory_failures_by_code?: {} | undefined;
+  inventory_insufficient: number;
+  pick_failed: number;
+  pick_failures_by_code?: {} | undefined;
   platform: string;
   routing_failed: number;
-  pick_failed: number;
-  ship_failed: number;
-  inventory_insufficient: number;
   routing_failures_by_code?: {} | undefined;
-  pick_failures_by_code?: {} | undefined;
+  ship_failed: number;
   ship_failures_by_code?: {} | undefined;
-  inventory_failures_by_code?: {} | undefined;
-  details?: Array<OutboundFailureDetail> | undefined;
 };
 type OutboundFailureDetail = {
-  ref: string;
-  trace_id?: ((string | null) | Array<string | null>) | undefined;
   fail_point: string;
   message?: ((string | null) | Array<string | null>) | undefined;
+  ref: string;
+  trace_id?: ((string | null) | Array<string | null>) | undefined;
 };
 type OutboundMetricsV2 = {
   day: string;
+  distribution?: Array<OutboundDistributionPoint> | undefined;
+  fallback_rate: number;
+  fallback_times: number;
+  fefo_hit_rate: number;
   platform: string;
-  total_orders: number;
   success_orders: number;
   success_rate: number;
-  fallback_times: number;
-  fallback_rate: number;
-  fefo_hit_rate: number;
-  distribution?: Array<OutboundDistributionPoint> | undefined;
+  total_orders: number;
 };
 type OutboundDistributionPoint = {
   hour: string;
@@ -893,29 +893,29 @@ type OutboundDistributionPoint = {
   pick_qty: number;
 };
 type OutboundRangeMetricsResponse = {
-  platform: string;
   days: Array<OutboundDaySummary>;
+  platform: string;
 };
 type OutboundDaySummary = {
   day: string;
-  total_orders: number;
-  success_rate: number;
   fallback_rate: number;
   fefo_hit_rate: number;
+  success_rate: number;
+  total_orders: number;
 };
 type OutboundShipIn = {
-  platform: string;
-  shop_id: string;
-  ref: string;
   external_order_ref?: ((string | null) | Array<string | null>) | undefined;
-  occurred_at?: ((string | null) | Array<string | null>) | undefined;
   lines: Array<OutboundLineIn>;
+  occurred_at?: ((string | null) | Array<string | null>) | undefined;
+  platform: string;
+  ref: string;
+  shop_id: string;
 };
 type OutboundLineIn = {
-  warehouse_id: number;
-  item_id: number;
   batch_code?: ((string | null) | Array<string | null>) | undefined;
+  item_id: number;
   qty: number;
+  warehouse_id: number;
 };
 type OutboundShopMetricsResponse = {
   day: string;
@@ -923,12 +923,12 @@ type OutboundShopMetricsResponse = {
   shops: Array<OutboundShopMetric>;
 };
 type OutboundShopMetric = {
+  fallback_rate: number;
+  fallback_times: number;
   shop_id: string;
-  total_orders: number;
   success_orders: number;
   success_rate: number;
-  fallback_times: number;
-  fallback_rate: number;
+  total_orders: number;
 };
 type OutboundWarehouseMetricsResponse = {
   day: string;
@@ -936,585 +936,584 @@ type OutboundWarehouseMetricsResponse = {
   warehouses: Array<OutboundWarehouseMetric>;
 };
 type OutboundWarehouseMetric = {
-  warehouse_id: number;
-  total_orders: number;
+  pick_qty: number;
   success_orders: number;
   success_rate: number;
-  pick_qty: number;
+  total_orders: number;
+  warehouse_id: number;
 };
 type PickRequest = {
-  warehouse_id: number;
   batch_code?: ((string | null) | Array<string | null>) | undefined;
   lines?: Array<PickLineIn> | undefined;
   occurred_at?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id: number;
 };
 type PickLineIn = {
   item_id: number;
   qty: number;
 };
 type PickTaskCommitDiffOut = {
-  task_id: number;
   has_over: boolean;
-  has_under: boolean;
   has_temp_lines: boolean;
-  temp_lines_n: number;
+  has_under: boolean;
   lines: Array<PickTaskCommitDiffLineOut>;
+  task_id: number;
+  temp_lines_n: number;
 };
 type PickTaskCommitDiffLineOut = {
-  item_id: number;
-  req_qty: number;
-  picked_qty: number;
   delta: number;
+  item_id: number;
+  picked_qty: number;
+  req_qty: number;
   status: string;
 };
 type PickTaskCommitResult = {
-  status: string;
-  idempotent?: boolean | undefined;
-  trace_id?: ((string | null) | Array<string | null>) | undefined;
   committed_at?: ((string | null) | Array<string | null>) | undefined;
-  task_id: number;
-  warehouse_id: number;
-  platform: string;
-  shop_id: string;
-  ref: string;
   diff: PickTaskCommitDiffOut;
+  idempotent?: boolean | undefined;
   next_actions?: Array<{}> | undefined;
+  platform: string;
+  ref: string;
+  shop_id: string;
+  status: string;
+  task_id: number;
+  trace_id?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id: number;
 };
 type PickTaskDiffSummaryOut = {
-  task_id: number;
   has_over: boolean;
   has_under: boolean;
   lines: Array<PickTaskDiffLineOut>;
+  task_id: number;
 };
 type PickTaskDiffLineOut = {
-  item_id: number;
-  req_qty: number;
-  picked_qty: number;
   delta: number;
+  item_id: number;
+  picked_qty: number;
+  req_qty: number;
   status: string;
 };
 type PickTaskOut = {
-  id: number;
-  warehouse_id: number;
-  ref: (string | null) | Array<string | null>;
-  source: (string | null) | Array<string | null>;
-  priority: number;
-  status: string;
   assigned_to: (string | null) | Array<string | null>;
-  note: (string | null) | Array<string | null>;
+  commit_gate: GateOut;
   created_at: string;
-  updated_at: string;
-  lines?: Array<PickTaskLineOut> | undefined;
-  print_job?: ((PrintJobOut | null) | Array<PrintJobOut | null>) | undefined;
-  req_total: number;
-  picked_total: number;
-  remain_total: number;
   has_over: boolean;
   has_under: boolean;
-  scan_gate: GateOut;
-  commit_gate: GateOut;
-};
-type PickTaskLineOut = {
   id: number;
-  task_id: number;
-  order_id: (number | null) | Array<number | null>;
-  order_line_id: (number | null) | Array<number | null>;
-  item_id: number;
-  req_qty: number;
-  picked_qty: number;
-  batch_code: (string | null) | Array<string | null>;
-  status: string;
+  lines?: Array<PickTaskLineOut> | undefined;
   note: (string | null) | Array<string | null>;
-  created_at: string;
-  updated_at: string;
-  remain_qty: number;
-  delta: number;
-  diff_status: string;
-};
-type PrintJobOut = {
-  id: number;
-  kind: string;
-  ref_type: string;
-  ref_id: number;
+  picked_total: number;
+  print_job?: ((PrintJobOut | null) | Array<PrintJobOut | null>) | undefined;
+  priority: number;
+  ref: (string | null) | Array<string | null>;
+  remain_total: number;
+  req_total: number;
+  scan_gate: GateOut;
+  source: (string | null) | Array<string | null>;
   status: string;
-  payload: {};
-  requested_at: string;
-  printed_at: (string | null) | Array<string | null>;
-  error: (string | null) | Array<string | null>;
-  created_at: string;
   updated_at: string;
+  warehouse_id: number;
 };
 type GateOut = {
   allowed: boolean;
+  details?: Array<{}> | undefined;
   error_code?: ((string | null) | Array<string | null>) | undefined;
   message?: ((string | null) | Array<string | null>) | undefined;
-  details?: Array<{}> | undefined;
   next_actions?: Array<{}> | undefined;
+};
+type PickTaskLineOut = {
+  batch_code: (string | null) | Array<string | null>;
+  created_at: string;
+  delta: number;
+  diff_status: string;
+  id: number;
+  item_id: number;
+  note: (string | null) | Array<string | null>;
+  order_id: (number | null) | Array<number | null>;
+  order_line_id: (number | null) | Array<number | null>;
+  picked_qty: number;
+  remain_qty: number;
+  req_qty: number;
+  status: string;
+  task_id: number;
+  updated_at: string;
+};
+type PrintJobOut = {
+  created_at: string;
+  error: (string | null) | Array<string | null>;
+  id: number;
+  kind: string;
+  payload: {};
+  printed_at: (string | null) | Array<string | null>;
+  ref_id: number;
+  ref_type: string;
+  requested_at: string;
+  status: string;
+  updated_at: string;
 };
 type PlatformEventListOut = {
   ok?: boolean | undefined;
   rows: Array<PlatformEventRow>;
 };
 type PlatformEventRow = {
-  id: number;
-  platform: string;
-  shop_id: string;
-  event_type: string;
-  status: string;
   dedup_key?: ((string | null) | Array<string | null>) | undefined;
+  event_type: string;
+  id: number;
   occurred_at: string;
   payload: {};
+  platform: string;
+  shop_id: string;
+  status: string;
 };
 type PlatformOrderConfirmCreateIn = {
-  platform: string;
-  store_id: number;
-  ext_order_no: string;
-  reason?: ((string | null) | Array<string | null>) | undefined;
   decisions?: Array<PlatformOrderConfirmCreateDecisionIn> | undefined;
+  ext_order_no: string;
+  platform: string;
+  reason?: ((string | null) | Array<string | null>) | undefined;
+  store_id: number;
 };
 type PlatformOrderConfirmCreateDecisionIn = {
+  filled_code?: ((string | null) | Array<string | null>) | undefined;
+  item_id: number;
   line_key?: ((string | null) | Array<string | null>) | undefined;
   line_no?: ((number | null) | Array<number | null>) | undefined;
   locator_kind?: ((string | null) | Array<string | null>) | undefined;
   locator_value?: ((string | null) | Array<string | null>) | undefined;
-  filled_code?: ((string | null) | Array<string | null>) | undefined;
-  platform_sku_id?: ((string | null) | Array<string | null>) | undefined;
-  item_id: number;
-  qty: number;
   note?: ((string | null) | Array<string | null>) | undefined;
+  platform_sku_id?: ((string | null) | Array<string | null>) | undefined;
+  qty: number;
 };
 type PlatformOrderConfirmCreateOut = {
-  status: string;
-  id: (number | null) | Array<number | null>;
-  ref: string;
-  platform: string;
-  store_id: number;
-  ext_order_no: string;
-  manual_override: boolean;
-  manual_reason?: ((string | null) | Array<string | null>) | undefined;
-  manual_batch_id?: ((string | null) | Array<string | null>) | undefined;
+  blocked_reasons?:
+    | ((Array<string> | null) | Array<Array<string> | null>)
+    | undefined;
   decisions?: Array<PlatformOrderConfirmCreateDecisionOut> | undefined;
-  risk_flags?: Array<string> | undefined;
+  ext_order_no: string;
   facts_n: number;
   fulfillment_status?: ((string | null) | Array<string | null>) | undefined;
-  blocked_reasons?:
-    | ((Array<string> | null) | Array<Array<string> | null>)
-    | undefined;
+  id: (number | null) | Array<number | null>;
+  manual_batch_id?: ((string | null) | Array<string | null>) | undefined;
+  manual_override: boolean;
+  manual_reason?: ((string | null) | Array<string | null>) | undefined;
+  platform: string;
+  ref: string;
+  risk_flags?: Array<string> | undefined;
+  status: string;
+  store_id: number;
 };
 type PlatformOrderConfirmCreateDecisionOut = Partial<{
+  fact_qty: (number | null) | Array<number | null>;
   filled_code: (string | null) | Array<string | null>;
-  locator_kind: (string | null) | Array<string | null>;
-  locator_value: (string | null) | Array<string | null>;
+  item_id: (number | null) | Array<number | null>;
   line_key: (string | null) | Array<string | null>;
   line_no: (number | null) | Array<number | null>;
-  item_id: (number | null) | Array<number | null>;
-  qty: (number | null) | Array<number | null>;
-  fact_qty: (number | null) | Array<number | null>;
+  locator_kind: (string | null) | Array<string | null>;
+  locator_value: (string | null) | Array<string | null>;
   note: (string | null) | Array<string | null>;
+  qty: (number | null) | Array<number | null>;
 }>;
 type PlatformOrderIngestIn = {
-  platform: string;
-  store_id?: ((number | null) | Array<number | null>) | undefined;
-  shop_id?: ((string | null) | Array<string | null>) | undefined;
-  ext_order_no: string;
-  occurred_at?: ((string | null) | Array<string | null>) | undefined;
   buyer_name?: ((string | null) | Array<string | null>) | undefined;
   buyer_phone?: ((string | null) | Array<string | null>) | undefined;
+  city?: ((string | null) | Array<string | null>) | undefined;
+  detail?: ((string | null) | Array<string | null>) | undefined;
+  district?: ((string | null) | Array<string | null>) | undefined;
+  ext_order_no: string;
+  lines?: Array<PlatformOrderLineIn> | undefined;
+  occurred_at?: ((string | null) | Array<string | null>) | undefined;
+  platform: string;
+  province?: ((string | null) | Array<string | null>) | undefined;
+  raw_payload?: (({} | null) | Array<{} | null>) | undefined;
   receiver_name?: ((string | null) | Array<string | null>) | undefined;
   receiver_phone?: ((string | null) | Array<string | null>) | undefined;
-  province?: ((string | null) | Array<string | null>) | undefined;
-  city?: ((string | null) | Array<string | null>) | undefined;
-  district?: ((string | null) | Array<string | null>) | undefined;
-  detail?: ((string | null) | Array<string | null>) | undefined;
-  zipcode?: ((string | null) | Array<string | null>) | undefined;
-  lines?: Array<PlatformOrderLineIn> | undefined;
+  shop_id?: ((string | null) | Array<string | null>) | undefined;
+  store_id?: ((number | null) | Array<number | null>) | undefined;
   store_name?: ((string | null) | Array<string | null>) | undefined;
-  raw_payload?: (({} | null) | Array<{} | null>) | undefined;
+  zipcode?: ((string | null) | Array<string | null>) | undefined;
 };
 type PlatformOrderLineIn = Partial<{
+  extras: ({} | null) | Array<{} | null>;
   filled_code: (string | null) | Array<string | null>;
   qty: number;
-  title: (string | null) | Array<string | null>;
   spec: (string | null) | Array<string | null>;
-  extras: ({} | null) | Array<{} | null>;
+  title: (string | null) | Array<string | null>;
 }>;
 type PlatformOrderIngestOut = {
-  status: string;
-  id: (number | null) | Array<number | null>;
-  ref: string;
-  store_id: (number | null) | Array<number | null>;
-  resolved?: Array<PlatformOrderLineResult> | undefined;
-  unresolved?: Array<PlatformOrderLineResult> | undefined;
-  facts_written: number;
-  fulfillment_status?: ((string | null) | Array<string | null>) | undefined;
+  allow_manual_continue?: boolean | undefined;
   blocked_reasons?:
     | ((Array<string> | null) | Array<Array<string> | null>)
     | undefined;
-  allow_manual_continue?: boolean | undefined;
+  facts_written: number;
+  fulfillment_status?: ((string | null) | Array<string | null>) | undefined;
+  id: (number | null) | Array<number | null>;
+  next_actions?: Array<{}> | undefined;
+  reason_code?: ((string | null) | Array<string | null>) | undefined;
+  ref: string;
+  resolved?: Array<PlatformOrderLineResult> | undefined;
   risk_flags?: Array<string> | undefined;
   risk_level?: ((string | null) | Array<string | null>) | undefined;
   risk_reason?: ((string | null) | Array<string | null>) | undefined;
-  reason_code?: ((string | null) | Array<string | null>) | undefined;
-  next_actions?: Array<{}> | undefined;
+  status: string;
+  store_id: (number | null) | Array<number | null>;
+  unresolved?: Array<PlatformOrderLineResult> | undefined;
 };
 type PlatformOrderLineResult = {
+  expanded_items?: ((Array<{}> | null) | Array<Array<{}> | null>) | undefined;
   filled_code?: ((string | null) | Array<string | null>) | undefined;
+  fsku_id?: ((number | null) | Array<number | null>) | undefined;
+  hint?: ((string | null) | Array<string | null>) | undefined;
+  next_actions?: ((Array<{}> | null) | Array<Array<{}> | null>) | undefined;
   qty: number;
   reason?: ((string | null) | Array<string | null>) | undefined;
-  hint?: ((string | null) | Array<string | null>) | undefined;
-  fsku_id?: ((number | null) | Array<number | null>) | undefined;
-  expanded_items?: ((Array<{}> | null) | Array<Array<{}> | null>) | undefined;
   risk_flags?:
     | ((Array<string> | null) | Array<Array<string> | null>)
     | undefined;
   risk_level?: ((string | null) | Array<string | null>) | undefined;
   risk_reason?: ((string | null) | Array<string | null>) | undefined;
-  next_actions?: ((Array<{}> | null) | Array<Array<{}> | null>) | undefined;
 };
 type PricingIntegrityFixArchiveReleaseOut = {
-  scheme_id: number;
   dry_run: boolean;
   items?: Array<PricingIntegrityFixArchiveReleaseItemOut> | undefined;
+  scheme_id: number;
 };
 type PricingIntegrityFixArchiveReleaseItemOut = {
-  zone_id: number;
-  zone_name: string;
-  ok: boolean;
-  would_release_provinces?: Array<string> | undefined;
-  would_release_n?: number | undefined;
   after_active?: ((boolean | null) | Array<boolean | null>) | undefined;
   after_province_member_n?:
     | ((number | null) | Array<number | null>)
     | undefined;
   error?: ((string | null) | Array<string | null>) | undefined;
-};
-type PricingIntegrityFixDetachZoneBracketsOut = {
-  scheme_id: number;
-  dry_run: boolean;
-  items?: Array<PricingIntegrityFixDetachZoneBracketsItemOut> | undefined;
-};
-type PricingIntegrityFixDetachZoneBracketsItemOut = {
+  ok: boolean;
+  would_release_n?: number | undefined;
+  would_release_provinces?: Array<string> | undefined;
   zone_id: number;
   zone_name: string;
+};
+type PricingIntegrityFixDetachZoneBracketsOut = {
+  dry_run: boolean;
+  items?: Array<PricingIntegrityFixDetachZoneBracketsItemOut> | undefined;
+  scheme_id: number;
+};
+type PricingIntegrityFixDetachZoneBracketsItemOut = {
+  after_brackets_n?: ((number | null) | Array<number | null>) | undefined;
+  error?: ((string | null) | Array<string | null>) | undefined;
   ok: boolean;
   province_member_n?: number | undefined;
   would_delete_brackets_n?: number | undefined;
   would_delete_ranges_preview?: Array<string> | undefined;
-  after_brackets_n?: ((number | null) | Array<number | null>) | undefined;
-  error?: ((string | null) | Array<string | null>) | undefined;
+  zone_id: number;
+  zone_name: string;
 };
 type PricingIntegrityFixUnbindArchivedTemplatesOut = {
-  scheme_id: number;
   dry_run: boolean;
   items?: Array<PricingIntegrityFixUnbindArchivedTemplatesItemOut> | undefined;
+  scheme_id: number;
 };
 type PricingIntegrityFixUnbindArchivedTemplatesItemOut = {
-  template_id: number;
-  template_name: string;
-  ok: boolean;
-  template_status?: ((string | null) | Array<string | null>) | undefined;
-  would_unbind_zone_ids?: Array<number> | undefined;
-  would_unbind_zone_names?: Array<string> | undefined;
-  would_unbind_zone_n?: number | undefined;
   after_unbound_zone_n?: ((number | null) | Array<number | null>) | undefined;
   error?: ((string | null) | Array<string | null>) | undefined;
+  ok: boolean;
+  template_id: number;
+  template_name: string;
+  template_status?: ((string | null) | Array<string | null>) | undefined;
+  would_unbind_zone_ids?: Array<number> | undefined;
+  would_unbind_zone_n?: number | undefined;
+  would_unbind_zone_names?: Array<string> | undefined;
 };
 type PricingIntegrityReportOut = {
-  scheme_id: number;
-  summary: PricingIntegrityReportSummary;
+  archived_templates_still_referenced?:
+    | Array<PricingIntegrityArchivedTemplateStillReferencedIssue>
+    | undefined;
   archived_zones_still_occupying?:
     | Array<PricingIntegrityArchivedZoneIssue>
     | undefined;
   released_zones_still_priced?:
     | Array<PricingIntegrityReleasedZoneStillPricedIssue>
     | undefined;
-  archived_templates_still_referenced?:
-    | Array<PricingIntegrityArchivedTemplateStillReferencedIssue>
-    | undefined;
+  scheme_id: number;
+  summary: PricingIntegrityReportSummary;
+};
+type PricingIntegrityArchivedTemplateStillReferencedIssue = {
+  referencing_zone_ids?: Array<number> | undefined;
+  referencing_zone_n?: number | undefined;
+  referencing_zone_names?: Array<string> | undefined;
+  scheme_id: number;
+  suggested_action?: string | undefined;
+  template_id: number;
+  template_name: string;
+  template_status: string;
+};
+type PricingIntegrityArchivedZoneIssue = {
+  province_member_n?: number | undefined;
+  province_members?: Array<string> | undefined;
+  scheme_id: number;
+  suggested_action?: string | undefined;
+  zone_active: boolean;
+  zone_id: number;
+  zone_name: string;
+};
+type PricingIntegrityReleasedZoneStillPricedIssue = {
+  brackets_n?: number | undefined;
+  province_member_n?: number | undefined;
+  scheme_id: number;
+  segment_template_id?: ((number | null) | Array<number | null>) | undefined;
+  suggested_action?: string | undefined;
+  zone_active: boolean;
+  zone_id: number;
+  zone_name: string;
 };
 type PricingIntegrityReportSummary = Partial<{
   blocking: number;
   warning: number;
 }>;
-type PricingIntegrityArchivedZoneIssue = {
-  scheme_id: number;
-  zone_id: number;
-  zone_name: string;
-  zone_active: boolean;
-  province_members?: Array<string> | undefined;
-  province_member_n?: number | undefined;
-  suggested_action?: string | undefined;
-};
-type PricingIntegrityReleasedZoneStillPricedIssue = {
-  scheme_id: number;
-  zone_id: number;
-  zone_name: string;
-  zone_active: boolean;
-  province_member_n?: number | undefined;
-  brackets_n?: number | undefined;
-  segment_template_id?: ((number | null) | Array<number | null>) | undefined;
-  suggested_action?: string | undefined;
-};
-type PricingIntegrityArchivedTemplateStillReferencedIssue = {
-  scheme_id: number;
-  template_id: number;
-  template_name: string;
-  template_status: string;
-  referencing_zone_ids?: Array<number> | undefined;
-  referencing_zone_names?: Array<string> | undefined;
-  referencing_zone_n?: number | undefined;
-  suggested_action?: string | undefined;
-};
 type ProvinceRouteListOut = {
-  ok?: boolean | undefined;
   data: Array<ProvinceRouteItem>;
+  ok?: boolean | undefined;
 };
 type ProvinceRouteItem = {
+  active?: boolean | undefined;
   id: number;
-  store_id: number;
+  priority?: number | undefined;
   province: string;
+  store_id: number;
+  warehouse_active?: boolean | undefined;
+  warehouse_code?: ((string | null) | Array<string | null>) | undefined;
   warehouse_id: number;
   warehouse_name?: ((string | null) | Array<string | null>) | undefined;
-  warehouse_code?: ((string | null) | Array<string | null>) | undefined;
-  warehouse_active?: boolean | undefined;
-  priority?: number | undefined;
-  active?: boolean | undefined;
 };
 type PurchaseOrderCreateV2 = {
+  lines: Array<PurchaseOrderLineCreate>;
+  purchase_time: string;
+  purchaser: string;
+  remark?: ((string | null) | Array<string | null>) | undefined;
   supplier_id: number;
   warehouse_id: number;
-  purchaser: string;
-  purchase_time: string;
-  remark?: ((string | null) | Array<string | null>) | undefined;
-  lines: Array<PurchaseOrderLineCreate>;
 };
 type PurchaseOrderLineCreate = {
-  line_no: number;
-  item_id: number;
-  supply_price?:
-    | ((number | string | null) | Array<number | string | null>)
-    | undefined;
-  units_per_case?: ((number | null) | Array<number | null>) | undefined;
-  qty_ordered: number;
+  base_uom?: ((string | null) | Array<string | null>) | undefined;
   discount_amount?:
     | ((number | string | null) | Array<number | string | null>)
     | undefined;
   discount_note?: ((string | null) | Array<string | null>) | undefined;
-  remark?: ((string | null) | Array<string | null>) | undefined;
+  item_id: number;
   item_name?: ((string | null) | Array<string | null>) | undefined;
   item_sku?: ((string | null) | Array<string | null>) | undefined;
-  spec_text?: ((string | null) | Array<string | null>) | undefined;
-  base_uom?: ((string | null) | Array<string | null>) | undefined;
+  line_no: number;
   purchase_uom?: ((string | null) | Array<string | null>) | undefined;
+  qty_ordered: number;
+  remark?: ((string | null) | Array<string | null>) | undefined;
+  spec_text?: ((string | null) | Array<string | null>) | undefined;
+  supply_price?:
+    | ((number | string | null) | Array<number | string | null>)
+    | undefined;
+  units_per_case?: ((number | null) | Array<number | null>) | undefined;
 };
 type PurchaseOrderListItemOut = {
+  canceled_at?: ((string | null) | Array<string | null>) | undefined;
+  canceled_by?: ((number | null) | Array<number | null>) | undefined;
+  canceled_reason?: ((string | null) | Array<string | null>) | undefined;
+  close_note?: ((string | null) | Array<string | null>) | undefined;
+  close_reason?: ((string | null) | Array<string | null>) | undefined;
+  closed_at?: ((string | null) | Array<string | null>) | undefined;
+  closed_by?: ((number | null) | Array<number | null>) | undefined;
+  created_at: string;
   id: number;
-  warehouse_id: number;
-  warehouse_name?: ((string | null) | Array<string | null>) | undefined;
+  last_received_at?: ((string | null) | Array<string | null>) | undefined;
+  lines?: Array<PurchaseOrderLineListOut> | undefined;
+  purchase_time: string;
+  purchaser: string;
+  remark: (string | null) | Array<string | null>;
+  status: string;
   supplier_id: number;
   supplier_name: string;
   total_amount: (string | null) | Array<string | null>;
-  purchaser: string;
-  purchase_time: string;
-  remark: (string | null) | Array<string | null>;
-  status: string;
-  created_at: string;
   updated_at: string;
-  last_received_at?: ((string | null) | Array<string | null>) | undefined;
-  closed_at?: ((string | null) | Array<string | null>) | undefined;
-  close_reason?: ((string | null) | Array<string | null>) | undefined;
-  close_note?: ((string | null) | Array<string | null>) | undefined;
-  closed_by?: ((number | null) | Array<number | null>) | undefined;
-  canceled_at?: ((string | null) | Array<string | null>) | undefined;
-  canceled_reason?: ((string | null) | Array<string | null>) | undefined;
-  canceled_by?: ((number | null) | Array<number | null>) | undefined;
-  lines?: Array<PurchaseOrderLineListOut> | undefined;
+  warehouse_id: number;
+  warehouse_name?: ((string | null) | Array<string | null>) | undefined;
 };
 type PurchaseOrderLineListOut = {
+  base_uom?: ((string | null) | Array<string | null>) | undefined;
+  created_at: string;
+  discount_amount?: string | undefined;
+  discount_note?: ((string | null) | Array<string | null>) | undefined;
   id: number;
-  po_id: number;
-  line_no: number;
   item_id: number;
+  line_no: number;
+  po_id: number;
+  purchase_uom?: ((string | null) | Array<string | null>) | undefined;
   qty_ordered: number;
-  units_per_case: number;
   qty_ordered_base: number;
   qty_received_base: number;
   qty_remaining_base: number;
-  base_uom?: ((string | null) | Array<string | null>) | undefined;
-  purchase_uom?: ((string | null) | Array<string | null>) | undefined;
-  supply_price?: ((string | null) | Array<string | null>) | undefined;
-  discount_amount?: string | undefined;
-  discount_note?: ((string | null) | Array<string | null>) | undefined;
   remark?: ((string | null) | Array<string | null>) | undefined;
-  created_at: string;
+  supply_price?: ((string | null) | Array<string | null>) | undefined;
+  units_per_case: number;
   updated_at: string;
 };
 type PurchaseOrderReceiveWorkbenchOut = {
+  caps: WorkbenchCapsOut;
+  explain?:
+    | ((WorkbenchExplainOut | null) | Array<WorkbenchExplainOut | null>)
+    | undefined;
   po_summary: PoSummaryOut;
   receipt?:
     | ((ReceiptSummaryOut | null) | Array<ReceiptSummaryOut | null>)
     | undefined;
   rows: Array<WorkbenchRowOut>;
-  explain?:
-    | ((WorkbenchExplainOut | null) | Array<WorkbenchExplainOut | null>)
-    | undefined;
-  caps: WorkbenchCapsOut;
-};
-type PoSummaryOut = {
-  po_id: number;
-  warehouse_id: number;
-  supplier_id?: ((number | null) | Array<number | null>) | undefined;
-  supplier_name?: ((string | null) | Array<string | null>) | undefined;
-  status?: ((string | null) | Array<string | null>) | undefined;
-  occurred_at?: ((string | null) | Array<string | null>) | undefined;
-};
-type ReceiptSummaryOut = {
-  receipt_id: number;
-  ref: string;
-  status: string;
-  occurred_at: string;
-};
-type WorkbenchRowOut = {
-  po_line_id: number;
-  line_no: number;
-  item_id: number;
-  item_name?: ((string | null) | Array<string | null>) | undefined;
-  item_sku?: ((string | null) | Array<string | null>) | undefined;
-  ordered_qty: number;
-  confirmed_received_qty: number;
-  draft_received_qty: number;
-  remaining_qty: number;
-  batches?: Array<WorkbenchBatchRowOut> | undefined;
-  confirmed_batches?: Array<WorkbenchBatchRowOut> | undefined;
-  all_batches?: Array<WorkbenchBatchRowOut> | undefined;
-};
-type WorkbenchBatchRowOut = {
-  batch_code: string;
-  production_date?: ((string | null) | Array<string | null>) | undefined;
-  expiry_date?: ((string | null) | Array<string | null>) | undefined;
-  qty_received: number;
-};
-type WorkbenchExplainOut = {
-  confirmable: boolean;
-  blocking_errors?: Array<{}> | undefined;
-  normalized_lines_preview?: Array<{}> | undefined;
 };
 type WorkbenchCapsOut = {
   can_confirm: boolean;
   can_start_draft: boolean;
   receipt_id?: ((number | null) | Array<number | null>) | undefined;
 };
-type PurchaseOrderWithLinesOut = {
-  id: number;
+type WorkbenchExplainOut = {
+  blocking_errors?: Array<{}> | undefined;
+  confirmable: boolean;
+  normalized_lines_preview?: Array<{}> | undefined;
+};
+type PoSummaryOut = {
+  occurred_at?: ((string | null) | Array<string | null>) | undefined;
+  po_id: number;
+  status?: ((string | null) | Array<string | null>) | undefined;
+  supplier_id?: ((number | null) | Array<number | null>) | undefined;
+  supplier_name?: ((string | null) | Array<string | null>) | undefined;
   warehouse_id: number;
+};
+type ReceiptSummaryOut = {
+  occurred_at: string;
+  receipt_id: number;
+  ref: string;
+  status: string;
+};
+type WorkbenchRowOut = {
+  all_batches?: Array<WorkbenchBatchRowOut> | undefined;
+  batches?: Array<WorkbenchBatchRowOut> | undefined;
+  confirmed_batches?: Array<WorkbenchBatchRowOut> | undefined;
+  confirmed_received_qty: number;
+  draft_received_qty: number;
+  item_id: number;
+  item_name?: ((string | null) | Array<string | null>) | undefined;
+  item_sku?: ((string | null) | Array<string | null>) | undefined;
+  line_no: number;
+  ordered_qty: number;
+  po_line_id: number;
+  remaining_qty: number;
+};
+type WorkbenchBatchRowOut = {
+  batch_code: string;
+  expiry_date?: ((string | null) | Array<string | null>) | undefined;
+  production_date?: ((string | null) | Array<string | null>) | undefined;
+  qty_received: number;
+};
+type PurchaseOrderWithLinesOut = {
+  canceled_at?: ((string | null) | Array<string | null>) | undefined;
+  canceled_by?: ((number | null) | Array<number | null>) | undefined;
+  canceled_reason?: ((string | null) | Array<string | null>) | undefined;
+  close_note?: ((string | null) | Array<string | null>) | undefined;
+  close_reason?: ((string | null) | Array<string | null>) | undefined;
+  closed_at?: ((string | null) | Array<string | null>) | undefined;
+  closed_by?: ((number | null) | Array<number | null>) | undefined;
+  created_at: string;
+  id: number;
+  last_received_at?: ((string | null) | Array<string | null>) | undefined;
+  lines?: Array<PurchaseOrderLineOut> | undefined;
+  purchase_time: string;
+  purchaser: string;
+  remark: (string | null) | Array<string | null>;
+  status: string;
   supplier_id: number;
   supplier_name: string;
   total_amount: (string | null) | Array<string | null>;
-  purchaser: string;
-  purchase_time: string;
-  remark: (string | null) | Array<string | null>;
-  status: string;
-  created_at: string;
   updated_at: string;
-  last_received_at?: ((string | null) | Array<string | null>) | undefined;
-  closed_at?: ((string | null) | Array<string | null>) | undefined;
-  close_reason?: ((string | null) | Array<string | null>) | undefined;
-  close_note?: ((string | null) | Array<string | null>) | undefined;
-  closed_by?: ((number | null) | Array<number | null>) | undefined;
-  canceled_at?: ((string | null) | Array<string | null>) | undefined;
-  canceled_reason?: ((string | null) | Array<string | null>) | undefined;
-  canceled_by?: ((number | null) | Array<number | null>) | undefined;
-  lines?: Array<PurchaseOrderLineOut> | undefined;
+  warehouse_id: number;
 };
 type PurchaseOrderLineOut = {
+  base_uom: (string | null) | Array<string | null>;
+  brand?: ((string | null) | Array<string | null>) | undefined;
+  category?: ((string | null) | Array<string | null>) | undefined;
+  created_at: string;
+  discount_amount?: string | undefined;
+  discount_note?: ((string | null) | Array<string | null>) | undefined;
+  enabled?: ((boolean | null) | Array<boolean | null>) | undefined;
+  has_shelf_life?: ((boolean | null) | Array<boolean | null>) | undefined;
   id: number;
-  po_id: number;
-  line_no: number;
   item_id: number;
   item_name: (string | null) | Array<string | null>;
   item_sku: (string | null) | Array<string | null>;
-  spec_text: (string | null) | Array<string | null>;
-  base_uom: (string | null) | Array<string | null>;
-  purchase_uom: (string | null) | Array<string | null>;
-  sku?: ((string | null) | Array<string | null>) | undefined;
+  line_no: number;
+  po_id: number;
   primary_barcode?: ((string | null) | Array<string | null>) | undefined;
-  brand?: ((string | null) | Array<string | null>) | undefined;
-  category?: ((string | null) | Array<string | null>) | undefined;
-  supplier_id?: ((number | null) | Array<number | null>) | undefined;
-  supplier_name?: ((string | null) | Array<string | null>) | undefined;
-  weight_kg?: ((string | null) | Array<string | null>) | undefined;
-  uom?: ((string | null) | Array<string | null>) | undefined;
-  has_shelf_life?: ((boolean | null) | Array<boolean | null>) | undefined;
-  shelf_life_value?: ((number | null) | Array<number | null>) | undefined;
-  shelf_life_unit?: ((string | null) | Array<string | null>) | undefined;
-  enabled?: ((boolean | null) | Array<boolean | null>) | undefined;
-  supply_price: (string | null) | Array<string | null>;
-  discount_amount?: string | undefined;
-  discount_note?: ((string | null) | Array<string | null>) | undefined;
-  units_per_case: number;
+  purchase_uom: (string | null) | Array<string | null>;
   qty_ordered: number;
   qty_ordered_base: number;
-  qty_received_base: number;
-  qty_remaining_base: number;
   qty_received: number;
+  qty_received_base: number;
   qty_remaining: number;
+  qty_remaining_base: number;
   remark: (string | null) | Array<string | null>;
-  created_at: string;
+  shelf_life_unit?: ((string | null) | Array<string | null>) | undefined;
+  shelf_life_value?: ((number | null) | Array<number | null>) | undefined;
+  sku?: ((string | null) | Array<string | null>) | undefined;
+  spec_text: (string | null) | Array<string | null>;
+  supplier_id?: ((number | null) | Array<number | null>) | undefined;
+  supplier_name?: ((string | null) | Array<string | null>) | undefined;
+  supply_price: (string | null) | Array<string | null>;
+  units_per_case: number;
+  uom?: ((string | null) | Array<string | null>) | undefined;
   updated_at: string;
+  weight_kg?: ((string | null) | Array<string | null>) | undefined;
 };
 type QuoteCalcIn = {
-  warehouse_id: number;
-  scheme_id: number;
   dest: QuoteDestIn;
-  real_weight_kg: number;
-  length_cm?: ((number | null) | Array<number | null>) | undefined;
-  width_cm?: ((number | null) | Array<number | null>) | undefined;
-  height_cm?: ((number | null) | Array<number | null>) | undefined;
   flags?: Array<string> | undefined;
+  height_cm?: ((number | null) | Array<number | null>) | undefined;
+  length_cm?: ((number | null) | Array<number | null>) | undefined;
+  real_weight_kg: number;
+  scheme_id: number;
+  warehouse_id: number;
+  width_cm?: ((number | null) | Array<number | null>) | undefined;
 };
 type QuoteDestIn = {
-  province?: ((string | null) | Array<string | null>) | undefined;
   city?: ((string | null) | Array<string | null>) | undefined;
-  district?: ((string | null) | Array<string | null>) | undefined;
-  province_code: string;
   city_code?: ((string | null) | Array<string | null>) | undefined;
+  district?: ((string | null) | Array<string | null>) | undefined;
+  province?: ((string | null) | Array<string | null>) | undefined;
+  province_code: string;
 };
 type QuoteRecommendIn = {
-  warehouse_id: number;
-  provider_ids?: Array<number> | undefined;
   dest: QuoteDestIn;
-  real_weight_kg: number;
-  length_cm?: ((number | null) | Array<number | null>) | undefined;
-  width_cm?: ((number | null) | Array<number | null>) | undefined;
-  height_cm?: ((number | null) | Array<number | null>) | undefined;
   flags?: Array<string> | undefined;
+  height_cm?: ((number | null) | Array<number | null>) | undefined;
+  length_cm?: ((number | null) | Array<number | null>) | undefined;
   max_results?: number | undefined;
+  provider_ids?: Array<number> | undefined;
+  real_weight_kg: number;
+  warehouse_id: number;
+  width_cm?: ((number | null) | Array<number | null>) | undefined;
 };
 type QuoteRecommendOut = {
   ok: boolean;
-  recommended_scheme_id?: ((number | null) | Array<number | null>) | undefined;
   quotes: Array<QuoteRecommendItemOut>;
+  recommended_scheme_id?: ((number | null) | Array<number | null>) | undefined;
 };
 type QuoteRecommendItemOut = {
-  provider_id: number;
+  bracket?: (({} | null) | Array<{} | null>) | undefined;
+  breakdown: {};
   carrier_code?: ((string | null) | Array<string | null>) | undefined;
   carrier_name: string;
+  currency?: ((string | null) | Array<string | null>) | undefined;
+  provider_id: number;
+  quote_status: string;
+  reasons?: Array<string> | undefined;
   scheme_id: number;
   scheme_name: string;
   total_amount: number;
-  currency?: ((string | null) | Array<string | null>) | undefined;
-  quote_status: string;
   weight: {};
   zone?: (({} | null) | Array<{} | null>) | undefined;
-  bracket?: (({} | null) | Array<{} | null>) | undefined;
-  breakdown: {};
-  reasons?: Array<string> | undefined;
 };
 type ReturnOrderRefDetailOut = {
+  ext_order_no?: ((string | null) | Array<string | null>) | undefined;
   order_ref: string;
   platform?: ((string | null) | Array<string | null>) | undefined;
-  shop_id?: ((string | null) | Array<string | null>) | undefined;
-  ext_order_no?: ((string | null) | Array<string | null>) | undefined;
   remaining_qty?: ((number | null) | Array<number | null>) | undefined;
   shipping?:
     | (
@@ -1522,312 +1521,313 @@ type ReturnOrderRefDetailOut = {
         | Array<ReturnOrderRefShippingOut | null>
       )
     | undefined;
+  shop_id?: ((string | null) | Array<string | null>) | undefined;
   summary: ReturnOrderRefSummaryOut;
 };
 type ReturnOrderRefShippingOut = Partial<{
-  tracking_no: (string | null) | Array<string | null>;
   carrier_code: (string | null) | Array<string | null>;
   carrier_name: (string | null) | Array<string | null>;
-  status: (string | null) | Array<string | null>;
-  shipped_at: (string | null) | Array<string | null>;
-  gross_weight_kg: (number | null) | Array<number | null>;
   cost_estimated: (number | null) | Array<number | null>;
+  gross_weight_kg: (number | null) | Array<number | null>;
+  meta: ({} | null) | Array<{} | null>;
   receiver:
     | (ReturnOrderRefReceiverOut | null)
     | Array<ReturnOrderRefReceiverOut | null>;
-  meta: ({} | null) | Array<{} | null>;
+  shipped_at: (string | null) | Array<string | null>;
+  status: (string | null) | Array<string | null>;
+  tracking_no: (string | null) | Array<string | null>;
 }>;
 type ReturnOrderRefReceiverOut = Partial<{
+  city: (string | null) | Array<string | null>;
+  detail: (string | null) | Array<string | null>;
+  district: (string | null) | Array<string | null>;
   name: (string | null) | Array<string | null>;
   phone: (string | null) | Array<string | null>;
   province: (string | null) | Array<string | null>;
-  city: (string | null) | Array<string | null>;
-  district: (string | null) | Array<string | null>;
-  detail: (string | null) | Array<string | null>;
 }>;
 type ReturnOrderRefSummaryOut = {
+  lines: Array<ReturnOrderRefSummaryLine>;
   order_ref: string;
   ship_reasons?: Array<string> | undefined;
-  lines: Array<ReturnOrderRefSummaryLine>;
 };
 type ReturnOrderRefSummaryLine = {
-  warehouse_id: number;
+  batch_code: string;
   item_id: number;
   item_name?: ((string | null) | Array<string | null>) | undefined;
-  batch_code: string;
   shipped_qty: number;
+  warehouse_id: number;
 };
 type ReturnTaskOut = {
-  id: number;
-  order_id: string;
-  warehouse_id: number;
-  status: string;
-  remark: (string | null) | Array<string | null>;
   created_at: string;
-  updated_at: string;
+  id: number;
   lines?: Array<ReturnTaskLineOut> | undefined;
+  order_id: string;
+  remark: (string | null) | Array<string | null>;
+  status: string;
+  updated_at: string;
+  warehouse_id: number;
 };
 type ReturnTaskLineOut = {
+  batch_code: string;
+  committed_qty: (number | null) | Array<number | null>;
+  expected_qty: (number | null) | Array<number | null>;
   id: number;
-  task_id: number;
-  order_line_id?: ((number | null) | Array<number | null>) | undefined;
   item_id: number;
   item_name: (string | null) | Array<string | null>;
-  batch_code: string;
-  expected_qty: (number | null) | Array<number | null>;
+  order_line_id?: ((number | null) | Array<number | null>) | undefined;
   picked_qty: number;
-  committed_qty: (number | null) | Array<number | null>;
-  status: string;
   remark: (string | null) | Array<string | null>;
+  status: string;
+  task_id: number;
 };
 type RoleOut = {
+  description?: ((string | null) | Array<string | null>) | undefined;
   id: number;
   name: string;
-  description?: ((string | null) | Array<string | null>) | undefined;
   permissions?: Array<PermissionOut> | undefined;
 };
 type PermissionOut = {
+  description?: ((string | null) | Array<string | null>) | undefined;
   id: number;
   name: string;
-  description?: ((string | null) | Array<string | null>) | undefined;
 };
 type SchemeCreateIn = {
-  name: string;
   active?: boolean | undefined;
+  billable_weight_rule?: (({} | null) | Array<{} | null>) | undefined;
   currency?: string | undefined;
   default_pricing_mode?: string | undefined;
   effective_from?: ((string | null) | Array<string | null>) | undefined;
   effective_to?: ((string | null) | Array<string | null>) | undefined;
-  billable_weight_rule?: (({} | null) | Array<{} | null>) | undefined;
+  name: string;
   segments_json?:
     | ((Array<WeightSegmentIn> | null) | Array<Array<WeightSegmentIn> | null>)
     | undefined;
 };
 type WeightSegmentIn = {
-  min: string;
   max?: string | undefined;
+  min: string;
 };
 type SchemeDetailOut = {
-  ok?: boolean | undefined;
   data: SchemeOut;
+  ok?: boolean | undefined;
 };
 type SchemeOut = {
-  id: number;
-  shipping_provider_id: number;
-  shipping_provider_name: string;
-  name: string;
   active: boolean;
   archived_at?: ((string | null) | Array<string | null>) | undefined;
-  currency: string;
-  effective_from?: ((string | null) | Array<string | null>) | undefined;
-  effective_to?: ((string | null) | Array<string | null>) | undefined;
-  default_pricing_mode: string;
   billable_weight_rule?: (({} | null) | Array<{} | null>) | undefined;
+  currency: string;
+  default_pricing_mode: string;
   default_segment_template_id?:
     | ((number | null) | Array<number | null>)
     | undefined;
+  dest_adjustments?: Array<DestAdjustmentOut> | undefined;
+  effective_from?: ((string | null) | Array<string | null>) | undefined;
+  effective_to?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
+  name: string;
+  segments?: Array<SchemeSegmentOut> | undefined;
   segments_json?:
     | ((Array<WeightSegmentIn> | null) | Array<Array<WeightSegmentIn> | null>)
     | undefined;
   segments_updated_at?: ((string | null) | Array<string | null>) | undefined;
-  segments?: Array<SchemeSegmentOut> | undefined;
-  zones?: Array<ZoneOut> | undefined;
+  shipping_provider_id: number;
+  shipping_provider_name: string;
   surcharges?: Array<SurchargeOut> | undefined;
-  dest_adjustments?: Array<DestAdjustmentOut> | undefined;
+  zones?: Array<ZoneOut> | undefined;
+};
+type DestAdjustmentOut = {
+  active: boolean;
+  amount: number;
+  city?: ((string | null) | Array<string | null>) | undefined;
+  city_code?: ((string | null) | Array<string | null>) | undefined;
+  city_name?: ((string | null) | Array<string | null>) | undefined;
+  created_at: string;
+  id: number;
+  priority: number;
+  province: string;
+  province_code: string;
+  province_name?: ((string | null) | Array<string | null>) | undefined;
+  scheme_id: number;
+  scope: string;
+  updated_at: string;
 };
 type SchemeSegmentOut = {
-  id: number;
-  scheme_id: number;
-  ord: number;
-  min_kg: unknown;
-  max_kg?: unknown | undefined;
   active?: boolean | undefined;
+  id: number;
+  max_kg?: unknown | undefined;
+  min_kg: unknown;
+  ord: number;
+  scheme_id: number;
+};
+type SurchargeOut = {
+  active: boolean;
+  amount_json: {};
+  condition_json: {};
+  id: number;
+  name: string;
+  scheme_id: number;
 };
 type ZoneOut = {
-  id: number;
-  scheme_id: number;
-  name: string;
   active: boolean;
-  segment_template_id?: ((number | null) | Array<number | null>) | undefined;
-  members?: Array<ZoneMemberOut> | undefined;
   brackets?: Array<ZoneBracketOut> | undefined;
+  id: number;
+  members?: Array<ZoneMemberOut> | undefined;
+  name: string;
+  scheme_id: number;
+  segment_template_id?: ((number | null) | Array<number | null>) | undefined;
 };
 type ZoneMemberOut = {
   id: number;
-  zone_id: number;
   level: string;
   value: string;
-};
-type SurchargeOut = {
-  id: number;
-  scheme_id: number;
-  name: string;
-  active: boolean;
-  condition_json: {};
-  amount_json: {};
-};
-type DestAdjustmentOut = {
-  id: number;
-  scheme_id: number;
-  scope: string;
-  province_code: string;
-  city_code?: ((string | null) | Array<string | null>) | undefined;
-  province_name?: ((string | null) | Array<string | null>) | undefined;
-  city_name?: ((string | null) | Array<string | null>) | undefined;
-  province: string;
-  city?: ((string | null) | Array<string | null>) | undefined;
-  amount: number;
-  active: boolean;
-  priority: number;
-  created_at: string;
-  updated_at: string;
+  zone_id: number;
 };
 type SchemeListOut = {
-  ok?: boolean | undefined;
   data: Array<SchemeOut>;
+  ok?: boolean | undefined;
 };
 type SchemeUpdateIn = Partial<{
-  name: (string | null) | Array<string | null>;
   active: (boolean | null) | Array<boolean | null>;
   archived_at: (string | null) | Array<string | null>;
+  billable_weight_rule: ({} | null) | Array<{} | null>;
   currency: (string | null) | Array<string | null>;
   default_pricing_mode: (string | null) | Array<string | null>;
   effective_from: (string | null) | Array<string | null>;
   effective_to: (string | null) | Array<string | null>;
-  billable_weight_rule: ({} | null) | Array<{} | null>;
+  name: (string | null) | Array<string | null>;
   segments_json:
     | (Array<WeightSegmentIn> | null)
     | Array<Array<WeightSegmentIn> | null>;
 }>;
 type SchemeWarehouseBindOut = {
-  ok: boolean;
   data: SchemeWarehouseOut;
+  ok: boolean;
 };
 type SchemeWarehouseOut = {
-  scheme_id: number;
-  warehouse_id: number;
   active: boolean;
+  scheme_id: number;
   warehouse: WarehouseLiteOut;
+  warehouse_id: number;
 };
 type WarehouseLiteOut = {
+  active: boolean;
+  code?: ((string | null) | Array<string | null>) | undefined;
   id: number;
   name: string;
-  code?: ((string | null) | Array<string | null>) | undefined;
-  active: boolean;
 };
 type SchemeWarehousePatchOut = {
-  ok: boolean;
   data: SchemeWarehouseOut;
+  ok: boolean;
 };
 type SchemeWarehousesGetOut = {
-  ok: boolean;
   data: Array<SchemeWarehouseOut>;
+  ok: boolean;
 };
 type SegmentTemplateDetailOut = {
-  ok?: boolean | undefined;
   data: SegmentTemplateOut;
+  ok?: boolean | undefined;
 };
 type SegmentTemplateOut = {
-  id: number;
-  scheme_id: number;
-  name: string;
-  status: string;
-  is_active: boolean;
-  effective_from?: ((string | null) | Array<string | null>) | undefined;
-  published_at?: ((string | null) | Array<string | null>) | undefined;
   created_at?: ((string | null) | Array<string | null>) | undefined;
-  updated_at?: ((string | null) | Array<string | null>) | undefined;
+  effective_from?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
+  is_active: boolean;
   items?: Array<SegmentTemplateItemOut> | undefined;
+  name: string;
+  published_at?: ((string | null) | Array<string | null>) | undefined;
+  scheme_id: number;
+  status: string;
+  updated_at?: ((string | null) | Array<string | null>) | undefined;
 };
 type SegmentTemplateItemOut = {
-  id: number;
-  template_id: number;
-  ord: number;
-  min_kg: unknown;
-  max_kg?: unknown | undefined;
   active?: boolean | undefined;
+  id: number;
+  max_kg?: unknown | undefined;
+  min_kg: unknown;
+  ord: number;
+  template_id: number;
 };
 type SegmentTemplateItemsPutIn = {
   items: Array<SegmentTemplateItemIn>;
 };
 type SegmentTemplateItemIn = {
-  ord: number;
-  min_kg: unknown;
-  max_kg?: unknown | undefined;
   active?: boolean | undefined;
+  max_kg?: unknown | undefined;
+  min_kg: unknown;
+  ord: number;
 };
 type SegmentTemplateListOut = {
-  ok?: boolean | undefined;
   data: Array<SegmentTemplateOut>;
+  ok?: boolean | undefined;
 };
 type ShipCalcResponse = {
-  ok?: boolean | undefined;
-  weight_kg: number;
   dest?: ((string | null) | Array<string | null>) | undefined;
+  ok?: boolean | undefined;
   quotes: Array<ShipQuoteOut>;
   recommended?:
     | ((ShipRecommendedOut | null) | Array<ShipRecommendedOut | null>)
     | undefined;
+  weight_kg: number;
 };
 type ShipQuoteOut = {
-  provider_id: number;
+  breakdown?: (({} | null) | Array<{} | null>) | undefined;
   carrier_code?: ((string | null) | Array<string | null>) | undefined;
   carrier_name: string;
-  scheme_id: number;
-  scheme_name: string;
-  quote_status: string;
   currency?: ((string | null) | Array<string | null>) | undefined;
   est_cost?: ((number | null) | Array<number | null>) | undefined;
-  reasons?: Array<string> | undefined;
-  breakdown?: (({} | null) | Array<{} | null>) | undefined;
   eta?: ((string | null) | Array<string | null>) | undefined;
+  provider_id: number;
+  quote_status: string;
+  reasons?: Array<string> | undefined;
+  scheme_id: number;
+  scheme_name: string;
 };
 type ShipRecommendedOut = {
-  provider_id: number;
   carrier_code?: ((string | null) | Array<string | null>) | undefined;
-  scheme_id: number;
-  est_cost?: ((number | null) | Array<number | null>) | undefined;
   currency?: ((number | null) | Array<number | null>) | undefined;
+  est_cost?: ((number | null) | Array<number | null>) | undefined;
+  provider_id: number;
+  scheme_id: number;
 };
 type ShipPrepareResponse = {
+  address_detail?: ((string | null) | Array<string | null>) | undefined;
+  blocked_reasons?: Array<string> | undefined;
+  candidate_warehouses?: Array<CandidateWarehouseOut> | undefined;
+  city?: ((string | null) | Array<string | null>) | undefined;
+  district?: ((string | null) | Array<string | null>) | undefined;
+  ext_order_no: string;
+  fulfillment_scan?: Array<FulfillmentScanWarehouseOut> | undefined;
+  fulfillment_status?: ((string | null) | Array<string | null>) | undefined;
+  items?: Array<ShipPrepareItem> | undefined;
   ok?: boolean | undefined;
   order_id: number;
   platform: string;
-  shop_id: string;
-  ext_order_no: string;
-  ref: string;
   province?: ((string | null) | Array<string | null>) | undefined;
-  city?: ((string | null) | Array<string | null>) | undefined;
-  district?: ((string | null) | Array<string | null>) | undefined;
   receiver_name?: ((string | null) | Array<string | null>) | undefined;
   receiver_phone?: ((string | null) | Array<string | null>) | undefined;
-  address_detail?: ((string | null) | Array<string | null>) | undefined;
-  items?: Array<ShipPrepareItem> | undefined;
+  ref: string;
+  shop_id: string;
   total_qty?: number | undefined;
-  weight_kg?: ((number | null) | Array<number | null>) | undefined;
   trace_id?: ((string | null) | Array<string | null>) | undefined;
   warehouse_id?: ((number | null) | Array<number | null>) | undefined;
   warehouse_reason?: ((string | null) | Array<string | null>) | undefined;
-  candidate_warehouses?: Array<CandidateWarehouseOut> | undefined;
-  fulfillment_scan?: Array<FulfillmentScanWarehouseOut> | undefined;
-  fulfillment_status?: ((string | null) | Array<string | null>) | undefined;
-  blocked_reasons?: Array<string> | undefined;
+  weight_kg?: ((number | null) | Array<number | null>) | undefined;
+};
+type CandidateWarehouseOut = {
+  priority?: number | undefined;
+  warehouse_active?: boolean | undefined;
+  warehouse_code?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id: number;
+  warehouse_name?: ((string | null) | Array<string | null>) | undefined;
 };
 type ShipPrepareItem = {
   item_id: number;
   qty: number;
 };
-type CandidateWarehouseOut = {
-  warehouse_id: number;
-  warehouse_name?: ((string | null) | Array<string | null>) | undefined;
-  warehouse_code?: ((string | null) | Array<string | null>) | undefined;
-  warehouse_active?: boolean | undefined;
-  priority?: number | undefined;
-};
 type ShipRequest = {
-  warehouse_id: number;
   lines?: Array<ShipLineIn> | undefined;
   occurred_at?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id: number;
 };
 type ShipLineIn = {
   item_id: number;
@@ -1838,52 +1838,52 @@ type ShippingByCarrierResponse = {
   rows: Array<ShippingByCarrierRow>;
 };
 type ShippingByCarrierRow = {
+  avg_cost: number;
   carrier_code?: ((string | null) | Array<string | null>) | undefined;
   carrier_name?: ((string | null) | Array<string | null>) | undefined;
   ship_cnt: number;
   total_cost: number;
-  avg_cost: number;
 };
 type ShippingByProvinceResponse = {
   ok?: boolean | undefined;
   rows: Array<ShippingByProvinceRow>;
 };
 type ShippingByProvinceRow = {
+  avg_cost: number;
   province?: ((string | null) | Array<string | null>) | undefined;
   ship_cnt: number;
   total_cost: number;
-  avg_cost: number;
 };
 type ShippingByShopResponse = {
   ok?: boolean | undefined;
   rows: Array<ShippingByShopRow>;
 };
 type ShippingByShopRow = {
-  platform: string;
-  shop_id: string;
-  ship_cnt: number;
-  total_cost: number;
   avg_cost: number;
+  platform: string;
+  ship_cnt: number;
+  shop_id: string;
+  total_cost: number;
 };
 type ShippingByWarehouseResponse = {
   ok?: boolean | undefined;
   rows: Array<ShippingByWarehouseRow>;
 };
 type ShippingByWarehouseRow = {
-  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
+  avg_cost: number;
   ship_cnt: number;
   total_cost: number;
-  avg_cost: number;
+  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
 };
 type ShippingDailyResponse = {
   ok?: boolean | undefined;
   rows: Array<ShippingDailyRow>;
 };
 type ShippingDailyRow = {
-  stat_date: string;
-  ship_cnt: number;
-  total_cost: number;
   avg_cost: number;
+  ship_cnt: number;
+  stat_date: string;
+  total_cost: number;
 };
 type ShippingListResponse = {
   ok?: boolean | undefined;
@@ -1891,183 +1891,183 @@ type ShippingListResponse = {
   total: number;
 };
 type ShippingListRow = {
-  id: number;
-  order_ref: string;
-  platform: string;
-  shop_id: string;
-  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
-  trace_id?: ((string | null) | Array<string | null>) | undefined;
   carrier_code?: ((string | null) | Array<string | null>) | undefined;
   carrier_name?: ((string | null) | Array<string | null>) | undefined;
-  gross_weight_kg?: ((number | null) | Array<number | null>) | undefined;
-  packaging_weight_kg?: ((number | null) | Array<number | null>) | undefined;
   cost_estimated?: ((number | null) | Array<number | null>) | undefined;
-  status?: ((string | null) | Array<string | null>) | undefined;
+  created_at: string;
+  gross_weight_kg?: ((number | null) | Array<number | null>) | undefined;
+  id: number;
   meta?: (({} | null) | Array<{} | null>) | undefined;
-  created_at: string;
-};
-type ShippingProviderCreateOut = {
-  ok?: boolean | undefined;
-  data: ShippingProviderOut;
-};
-type ShippingProviderOut = {
-  id: number;
-  name: string;
-  code?: ((string | null) | Array<string | null>) | undefined;
-  address?: ((string | null) | Array<string | null>) | undefined;
-  active?: boolean | undefined;
-  warehouse_id: number;
-  priority?: number | undefined;
-  pricing_model?: (({} | null) | Array<{} | null>) | undefined;
-  region_rules?: (({} | null) | Array<{} | null>) | undefined;
-  contacts?: Array<ShippingProviderContactOut> | undefined;
-};
-type ShippingProviderContactOut = {
-  id: number;
-  shipping_provider_id: number;
-  name: string;
-  phone?: ((string | null) | Array<string | null>) | undefined;
-  email?: ((string | null) | Array<string | null>) | undefined;
-  wechat?: ((string | null) | Array<string | null>) | undefined;
-  role: string;
-  is_primary: boolean;
-  active: boolean;
-};
-type ShippingProviderDetailOut = {
-  ok?: boolean | undefined;
-  data: ShippingProviderOut;
-};
-type ShippingProviderListOut = {
-  ok?: boolean | undefined;
-  data: Array<ShippingProviderOut>;
-};
-type ShippingProviderUpdateOut = {
-  ok?: boolean | undefined;
-  data: ShippingProviderOut;
-};
-type ShippingQuoteFailuresMetricsResponse = {
-  day: string;
-  platform?: ((string | null) | Array<string | null>) | undefined;
-  calc_failed_total: number;
-  recommend_failed_total: number;
-  calc_failures_by_code?: {} | undefined;
-  recommend_failures_by_code?: {} | undefined;
-  details?: Array<ShippingQuoteFailureDetail> | undefined;
-};
-type ShippingQuoteFailureDetail = {
-  ref: string;
-  event: string;
-  error_code: string;
-  message?: ((string | null) | Array<string | null>) | undefined;
-  created_at: string;
-};
-type StockBatchQueryOut = {
-  total: number;
-  page: number;
-  page_size: number;
-  items?: Array<StockBatchRow> | undefined;
-};
-type StockBatchRow = {
-  batch_id: number;
-  item_id: number;
-  warehouse_id: number;
-  batch_code: string;
-  qty: number;
-  production_date?: ((string | null) | Array<string | null>) | undefined;
-  expiry_date?: ((string | null) | Array<string | null>) | undefined;
-  days_to_expiry?: ((number | null) | Array<number | null>) | undefined;
-};
-type StoreListOut = {
-  ok?: boolean | undefined;
-  data: Array<StoreListItem>;
-};
-type StoreListItem = {
-  id: number;
+  order_ref: string;
+  packaging_weight_kg?: ((number | null) | Array<number | null>) | undefined;
   platform: string;
   shop_id: string;
-  name: string;
-  active: boolean;
-  route_mode: string;
-  shop_type?: string | undefined;
-  email?: ((string | null) | Array<string | null>) | undefined;
-  contact_name?: ((string | null) | Array<string | null>) | undefined;
-  contact_phone?: ((string | null) | Array<string | null>) | undefined;
-};
-type SupplierOut = {
-  id: number;
-  name: string;
-  code: string;
-  website?: ((string | null) | Array<string | null>) | undefined;
-  active: boolean;
-  contacts: Array<SupplierContactOut>;
-};
-type SupplierContactOut = {
-  id: number;
-  supplier_id: number;
-  name: string;
-  phone?: ((string | null) | Array<string | null>) | undefined;
-  email?: ((string | null) | Array<string | null>) | undefined;
-  wechat?: ((string | null) | Array<string | null>) | undefined;
-  role: string;
-  is_primary: boolean;
-  active: boolean;
-};
-type TraceResponseModel = {
-  trace_id: string;
-  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
-  events: Array<TraceEventModel>;
-};
-type TraceEventModel = {
-  ts?: ((string | null) | Array<string | null>) | undefined;
-  source: string;
-  kind: string;
-  ref?: ((string | null) | Array<string | null>) | undefined;
-  summary: string;
-  raw: {};
+  status?: ((string | null) | Array<string | null>) | undefined;
   trace_id?: ((string | null) | Array<string | null>) | undefined;
   warehouse_id?: ((number | null) | Array<number | null>) | undefined;
-  item_id?: ((number | null) | Array<number | null>) | undefined;
-  batch_code?: ((string | null) | Array<string | null>) | undefined;
-  movement_type?: ((string | null) | Array<string | null>) | undefined;
+};
+type ShippingProviderCreateOut = {
+  data: ShippingProviderOut;
+  ok?: boolean | undefined;
+};
+type ShippingProviderOut = {
+  active?: boolean | undefined;
+  address?: ((string | null) | Array<string | null>) | undefined;
+  code?: ((string | null) | Array<string | null>) | undefined;
+  contacts?: Array<ShippingProviderContactOut> | undefined;
+  id: number;
+  name: string;
+  pricing_model?: (({} | null) | Array<{} | null>) | undefined;
+  priority?: number | undefined;
+  region_rules?: (({} | null) | Array<{} | null>) | undefined;
+  warehouse_id: number;
+};
+type ShippingProviderContactOut = {
+  active: boolean;
+  email?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
+  is_primary: boolean;
+  name: string;
+  phone?: ((string | null) | Array<string | null>) | undefined;
+  role: string;
+  shipping_provider_id: number;
+  wechat?: ((string | null) | Array<string | null>) | undefined;
+};
+type ShippingProviderDetailOut = {
+  data: ShippingProviderOut;
+  ok?: boolean | undefined;
+};
+type ShippingProviderListOut = {
+  data: Array<ShippingProviderOut>;
+  ok?: boolean | undefined;
+};
+type ShippingProviderUpdateOut = {
+  data: ShippingProviderOut;
+  ok?: boolean | undefined;
+};
+type ShippingQuoteFailuresMetricsResponse = {
+  calc_failed_total: number;
+  calc_failures_by_code?: {} | undefined;
+  day: string;
+  details?: Array<ShippingQuoteFailureDetail> | undefined;
+  platform?: ((string | null) | Array<string | null>) | undefined;
+  recommend_failed_total: number;
+  recommend_failures_by_code?: {} | undefined;
+};
+type ShippingQuoteFailureDetail = {
+  created_at: string;
+  error_code: string;
+  event: string;
   message?: ((string | null) | Array<string | null>) | undefined;
+  ref: string;
+};
+type StockBatchQueryOut = {
+  items?: Array<StockBatchRow> | undefined;
+  page: number;
+  page_size: number;
+  total: number;
+};
+type StockBatchRow = {
+  batch_code: string;
+  batch_id: number;
+  days_to_expiry?: ((number | null) | Array<number | null>) | undefined;
+  expiry_date?: ((string | null) | Array<string | null>) | undefined;
+  item_id: number;
+  production_date?: ((string | null) | Array<string | null>) | undefined;
+  qty: number;
+  warehouse_id: number;
+};
+type StoreListOut = {
+  data: Array<StoreListItem>;
+  ok?: boolean | undefined;
+};
+type StoreListItem = {
+  active: boolean;
+  contact_name?: ((string | null) | Array<string | null>) | undefined;
+  contact_phone?: ((string | null) | Array<string | null>) | undefined;
+  email?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
+  name: string;
+  platform: string;
+  route_mode: string;
+  shop_id: string;
+  shop_type?: string | undefined;
+};
+type SupplierOut = {
+  active: boolean;
+  code: string;
+  contacts: Array<SupplierContactOut>;
+  id: number;
+  name: string;
+  website?: ((string | null) | Array<string | null>) | undefined;
+};
+type SupplierContactOut = {
+  active: boolean;
+  email?: ((string | null) | Array<string | null>) | undefined;
+  id: number;
+  is_primary: boolean;
+  name: string;
+  phone?: ((string | null) | Array<string | null>) | undefined;
+  role: string;
+  supplier_id: number;
+  wechat?: ((string | null) | Array<string | null>) | undefined;
+};
+type TraceResponseModel = {
+  events: Array<TraceEventModel>;
+  trace_id: string;
+  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
+};
+type TraceEventModel = {
+  batch_code?: ((string | null) | Array<string | null>) | undefined;
+  item_id?: ((number | null) | Array<number | null>) | undefined;
+  kind: string;
+  message?: ((string | null) | Array<string | null>) | undefined;
+  movement_type?: ((string | null) | Array<string | null>) | undefined;
+  raw: {};
   reason?: ((string | null) | Array<string | null>) | undefined;
+  ref?: ((string | null) | Array<string | null>) | undefined;
+  source: string;
+  summary: string;
+  trace_id?: ((string | null) | Array<string | null>) | undefined;
+  ts?: ((string | null) | Array<string | null>) | undefined;
+  warehouse_id?: ((number | null) | Array<number | null>) | undefined;
 };
 type WarehouseActiveCarriersOut = {
-  warehouse_id: number;
   active_carriers: Array<ActiveCarrierOut>;
   active_carriers_count: number;
+  warehouse_id: number;
 };
 type ActiveCarrierOut = {
-  provider_id: number;
   code?: ((string | null) | Array<string | null>) | undefined;
   name: string;
   priority: number;
+  provider_id: number;
 };
 type WarehouseActiveCarriersSummaryOut = {
-  ok: boolean;
   data: Array<WarehouseActiveCarriersOut>;
+  ok: boolean;
 };
 type WarehouseCreateOut = {
-  ok?: boolean | undefined;
   data: WarehouseOut;
+  ok?: boolean | undefined;
 };
 type WarehouseOut = {
-  id: number;
-  name: string;
-  code?: ((string | null) | Array<string | null>) | undefined;
   active?: boolean | undefined;
   address?: ((string | null) | Array<string | null>) | undefined;
+  area_sqm?: ((number | null) | Array<number | null>) | undefined;
+  code?: ((string | null) | Array<string | null>) | undefined;
   contact_name?: ((string | null) | Array<string | null>) | undefined;
   contact_phone?: ((string | null) | Array<string | null>) | undefined;
-  area_sqm?: ((number | null) | Array<number | null>) | undefined;
+  id: number;
+  name: string;
 };
 type WarehouseDetailOut = {
-  ok?: boolean | undefined;
   data: WarehouseOut;
+  ok?: boolean | undefined;
 };
 type WarehouseListOut = {
-  ok?: boolean | undefined;
   data: Array<WarehouseOut>;
+  ok?: boolean | undefined;
 };
 type WarehouseServiceCityOccupancyOut = Partial<{
   rows: Array<WarehouseServiceCityOccupancyRow>;
@@ -2084,1883 +2084,403 @@ type WarehouseServiceProvinceOccupancyRow = {
   warehouse_id: number;
 };
 type WarehouseShippingProviderBindOut = {
-  ok?: boolean | undefined;
   data: WarehouseShippingProviderOut;
+  ok?: boolean | undefined;
 };
 type WarehouseShippingProviderOut = {
-  warehouse_id: number;
-  shipping_provider_id: number;
   active?: boolean | undefined;
-  priority?: number | undefined;
   pickup_cutoff_time?: ((string | null) | Array<string | null>) | undefined;
-  remark?: ((string | null) | Array<string | null>) | undefined;
+  priority?: number | undefined;
   provider: ShippingProviderLiteOut;
+  remark?: ((string | null) | Array<string | null>) | undefined;
+  shipping_provider_id: number;
+  warehouse_id: number;
 };
 type ShippingProviderLiteOut = {
+  active?: boolean | undefined;
+  code?: ((string | null) | Array<string | null>) | undefined;
   id: number;
   name: string;
-  code?: ((string | null) | Array<string | null>) | undefined;
-  active?: boolean | undefined;
 };
 type WarehouseShippingProviderBulkUpsertIn = Partial<{
-  items: Array<WarehouseShippingProviderUpsertItemIn>;
   disable_missing: boolean;
+  items: Array<WarehouseShippingProviderUpsertItemIn>;
 }>;
 type WarehouseShippingProviderUpsertItemIn = {
-  shipping_provider_id: number;
   active?: boolean | undefined;
-  priority?: number | undefined;
   pickup_cutoff_time?: ((string | null) | Array<string | null>) | undefined;
+  priority?: number | undefined;
   remark?: ((string | null) | Array<string | null>) | undefined;
+  shipping_provider_id: number;
 };
 type WarehouseShippingProviderBulkUpsertOut = {
-  ok?: boolean | undefined;
   data: Array<WarehouseShippingProviderOut>;
+  ok?: boolean | undefined;
 };
 type WarehouseShippingProviderListOut = {
-  ok?: boolean | undefined;
   data: Array<WarehouseShippingProviderOut>;
+  ok?: boolean | undefined;
 };
 type WarehouseShippingProviderUpdateOut = {
-  ok?: boolean | undefined;
   data: WarehouseShippingProviderOut;
+  ok?: boolean | undefined;
 };
 type WarehouseUpdateOut = {
-  ok?: boolean | undefined;
   data: WarehouseOut;
+  ok?: boolean | undefined;
 };
 type ZoneBracketsMatrixGroupOut = {
   segment_template_id: number;
+  segments?: Array<SegmentRangeOut> | undefined;
+  template_is_active: boolean;
   template_name: string;
   template_status: string;
-  template_is_active: boolean;
-  segments?: Array<SegmentRangeOut> | undefined;
   zones?: Array<ZoneOut> | undefined;
 };
 type SegmentRangeOut = {
-  ord: number;
-  min_kg: string;
-  max_kg?: ((string | null) | Array<string | null>) | undefined;
   active?: boolean | undefined;
+  max_kg?: ((string | null) | Array<string | null>) | undefined;
+  min_kg: string;
+  ord: number;
 };
 type ZoneBracketsMatrixOut = {
+  groups?: Array<ZoneBracketsMatrixGroupOut> | undefined;
   ok?: boolean | undefined;
   scheme_id: number;
-  groups?: Array<ZoneBracketsMatrixGroupOut> | undefined;
   unbound_zones?: Array<ZoneOut> | undefined;
 };
 
-const ScanRequest = z
+const CountRequest = z
   .object({
-    mode: z.string(),
-    item_id: z.union([z.number(), z.null()]).optional(),
-    qty: z.union([z.number(), z.null()]).optional().default(1),
-    barcode: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
     batch_code: z.union([z.string(), z.null()]).optional(),
-    production_date: z.union([z.string(), z.null()]).optional(),
     expiry_date: z.union([z.string(), z.null()]).optional(),
-    task_line_id: z.union([z.number(), z.null()]).optional(),
-    probe: z.boolean().optional().default(false),
-    ctx: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    item_id: z.number().int(),
+    location_id: z.number().int(),
+    occurred_at: z.string().datetime({ offset: true }).optional(),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty: z.number().int().gte(0),
+    ref: z.string(),
   })
   .passthrough();
-const ScanResponse = z
+const CountResponse = z
   .object({
+    after: z.number().int(),
+    batch_code: z.union([z.string(), z.null()]),
+    item_id: z.number().int(),
+    location_id: z.number().int(),
+    occurred_at: z.string().datetime({ offset: true }),
     ok: z.boolean().optional().default(true),
-    committed: z.boolean().optional().default(true),
-    scan_ref: z.string(),
-    event_id: z.union([z.number(), z.null()]).optional(),
-    source: z.string(),
-    item_id: z.union([z.number(), z.null()]).optional(),
-    location_id: z.union([z.number(), z.null()]).optional(),
-    qty: z.union([z.number(), z.null()]).optional(),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    actual: z.union([z.number(), z.null()]).optional(),
-    before: z.union([z.number(), z.null()]).optional(),
-    before_qty: z.union([z.number(), z.null()]).optional(),
-    after: z.union([z.number(), z.null()]).optional(),
-    after_qty: z.union([z.number(), z.null()]).optional(),
-    delta: z.union([z.number(), z.null()]).optional(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
-    evidence: z.array(z.object({}).partial().passthrough()).optional(),
-    errors: z.array(z.object({}).partial().passthrough()).optional(),
+    ref: z.string(),
   })
   .passthrough();
 const ValidationError: z.ZodType<ValidationError> = z
   .object({
+    ctx: z.object({}).partial().passthrough().optional(),
+    input: z.unknown().optional(),
     loc: z.array(z.union([z.string(), z.number()])),
     msg: z.string(),
     type: z.string(),
-    input: z.unknown().optional(),
-    ctx: z.object({}).partial().passthrough().optional(),
   })
   .passthrough();
 const HTTPValidationError: z.ZodType<HTTPValidationError> = z
   .object({ detail: z.array(ValidationError) })
   .partial()
   .passthrough();
-const ScanCountCommitRequest = z
+const warehouse_id = z.union([z.number(), z.null()]).optional();
+const TraceEventModel: z.ZodType<TraceEventModel> = z
   .object({
-    item_id: z.number().int(),
-    location_id: z.number().int(),
-    qty: z.number().int().gte(0),
-    ref: z.string(),
     batch_code: z.union([z.string(), z.null()]).optional(),
-    occurred_at: z.string().datetime({ offset: true }).optional(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
+    item_id: z.union([z.number(), z.null()]).optional(),
+    kind: z.string(),
+    message: z.union([z.string(), z.null()]).optional(),
+    movement_type: z.union([z.string(), z.null()]).optional(),
+    raw: z.object({}).partial().passthrough(),
+    reason: z.union([z.string(), z.null()]).optional(),
+    ref: z.union([z.string(), z.null()]).optional(),
+    source: z.string(),
+    summary: z.string(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    ts: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
   })
   .passthrough();
-const CountRequest = z
+const TraceResponseModel: z.ZodType<TraceResponseModel> = z
   .object({
-    item_id: z.number().int(),
-    location_id: z.number().int(),
-    qty: z.number().int().gte(0),
-    ref: z.string(),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-    occurred_at: z.string().datetime({ offset: true }).optional(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
+    events: z.array(TraceEventModel),
+    trace_id: z.string(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
   })
   .passthrough();
-const CountResponse = z
+const DestAdjustmentUpdateIn = z
   .object({
-    ok: z.boolean().optional().default(true),
-    after: z.number().int(),
-    ref: z.string(),
-    item_id: z.number().int(),
-    location_id: z.number().int(),
-    batch_code: z.union([z.string(), z.null()]),
-    occurred_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough();
-const PickIn = z
-  .object({
-    item_id: z.number().int().gte(1),
-    qty: z.number().int().gte(1),
-    warehouse_id: z.number().int().gte(1),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-    ref: z.string().min(1),
-    occurred_at: z.union([z.string(), z.null()]).optional(),
-    task_line_id: z.union([z.number(), z.null()]).optional(),
-    location_id: z.union([z.number(), z.null()]).optional(),
-    device_id: z.union([z.string(), z.null()]).optional(),
-    operator: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const PickOut = z
-  .object({
-    item_id: z.number().int(),
-    warehouse_id: z.number().int(),
-    batch_code: z.union([z.string(), z.null()]),
-    picked: z.number().int(),
-    stock_after: z.union([z.number(), z.null()]).optional(),
-    ref: z.string(),
-    status: z.string(),
-  })
-  .passthrough();
-const PlatformOrderLineIn: z.ZodType<PlatformOrderLineIn> = z
-  .object({
-    filled_code: z.union([z.string(), z.null()]),
-    qty: z.number().int().gt(0).default(1),
-    title: z.union([z.string(), z.null()]),
-    spec: z.union([z.string(), z.null()]),
-    extras: z.union([z.object({}).partial().passthrough(), z.null()]),
+    active: z.union([z.boolean(), z.null()]),
+    amount: z.union([z.number(), z.null()]),
+    city_code: z.union([z.string(), z.null()]),
+    city_name: z.union([z.string(), z.null()]),
+    priority: z.union([z.number(), z.null()]),
+    province_code: z.union([z.string(), z.null()]),
+    province_name: z.union([z.string(), z.null()]),
+    scope: z.union([z.string(), z.null()]),
   })
   .partial()
   .passthrough();
-const PlatformOrderIngestIn: z.ZodType<PlatformOrderIngestIn> = z
+const DestAdjustmentOut: z.ZodType<DestAdjustmentOut> = z
   .object({
-    platform: z.string().min(1).max(32),
-    store_id: z.union([z.number(), z.null()]).optional(),
-    shop_id: z.union([z.string(), z.null()]).optional(),
-    ext_order_no: z.string().min(1),
-    occurred_at: z.union([z.string(), z.null()]).optional(),
-    buyer_name: z.union([z.string(), z.null()]).optional(),
-    buyer_phone: z.union([z.string(), z.null()]).optional(),
-    receiver_name: z.union([z.string(), z.null()]).optional(),
-    receiver_phone: z.union([z.string(), z.null()]).optional(),
-    province: z.union([z.string(), z.null()]).optional(),
+    active: z.boolean(),
+    amount: z.number(),
     city: z.union([z.string(), z.null()]).optional(),
-    district: z.union([z.string(), z.null()]).optional(),
-    detail: z.union([z.string(), z.null()]).optional(),
-    zipcode: z.union([z.string(), z.null()]).optional(),
-    lines: z.array(PlatformOrderLineIn).optional(),
-    store_name: z.union([z.string(), z.null()]).optional(),
-    raw_payload: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-  })
-  .passthrough();
-const PlatformOrderLineResult: z.ZodType<PlatformOrderLineResult> = z
-  .object({
-    filled_code: z.union([z.string(), z.null()]).optional(),
-    qty: z.number().int(),
-    reason: z.union([z.string(), z.null()]).optional(),
-    hint: z.union([z.string(), z.null()]).optional(),
-    fsku_id: z.union([z.number(), z.null()]).optional(),
-    expanded_items: z
-      .union([z.array(z.object({}).partial().passthrough()), z.null()])
-      .optional(),
-    risk_flags: z.union([z.array(z.string()), z.null()]).optional(),
-    risk_level: z.union([z.string(), z.null()]).optional(),
-    risk_reason: z.union([z.string(), z.null()]).optional(),
-    next_actions: z
-      .union([z.array(z.object({}).partial().passthrough()), z.null()])
-      .optional(),
-  })
-  .passthrough();
-const PlatformOrderIngestOut: z.ZodType<PlatformOrderIngestOut> = z
-  .object({
-    status: z.string(),
-    id: z.union([z.number(), z.null()]),
-    ref: z.string(),
-    store_id: z.union([z.number(), z.null()]),
-    resolved: z.array(PlatformOrderLineResult).optional(),
-    unresolved: z.array(PlatformOrderLineResult).optional(),
-    facts_written: z.number().int(),
-    fulfillment_status: z.union([z.string(), z.null()]).optional(),
-    blocked_reasons: z.union([z.array(z.string()), z.null()]).optional(),
-    allow_manual_continue: z.boolean().optional().default(false),
-    risk_flags: z.array(z.string()).optional(),
-    risk_level: z.union([z.string(), z.null()]).optional(),
-    risk_reason: z.union([z.string(), z.null()]).optional(),
-    reason_code: z.union([z.string(), z.null()]).optional(),
-    next_actions: z.array(z.object({}).partial().passthrough()).optional(),
-  })
-  .passthrough();
-const PlatformOrderReplayIn = z
-  .object({
-    platform: z.string().min(1).max(32),
-    store_id: z.number().int().gte(1),
-    ext_order_no: z.string().min(1),
-  })
-  .passthrough();
-const PlatformOrderReplayOut = z
-  .object({
-    status: z.string(),
-    id: z.union([z.number(), z.null()]).optional(),
-    ref: z.string(),
-    platform: z.string(),
-    store_id: z.number().int(),
-    ext_order_no: z.string(),
-    facts_n: z.number().int().optional().default(0),
-    resolved: z.array(z.object({}).partial().passthrough()).optional(),
-    unresolved: z.array(z.object({}).partial().passthrough()).optional(),
-    fulfillment_status: z.union([z.string(), z.null()]).optional(),
-    blocked_reasons: z.union([z.array(z.string()), z.null()]).optional(),
-  })
-  .passthrough();
-const PlatformOrderConfirmCreateDecisionIn: z.ZodType<PlatformOrderConfirmCreateDecisionIn> =
-  z
-    .object({
-      line_key: z.union([z.string(), z.null()]).optional(),
-      line_no: z.union([z.number(), z.null()]).optional(),
-      locator_kind: z.union([z.string(), z.null()]).optional(),
-      locator_value: z.union([z.string(), z.null()]).optional(),
-      filled_code: z.union([z.string(), z.null()]).optional(),
-      platform_sku_id: z.union([z.string(), z.null()]).optional(),
-      item_id: z.number().int(),
-      qty: z.number().int(),
-      note: z.union([z.string(), z.null()]).optional(),
-    })
-    .passthrough();
-const PlatformOrderConfirmCreateIn: z.ZodType<PlatformOrderConfirmCreateIn> = z
-  .object({
-    platform: z.string(),
-    store_id: z.number().int(),
-    ext_order_no: z.string(),
-    reason: z.union([z.string(), z.null()]).optional(),
-    decisions: z.array(PlatformOrderConfirmCreateDecisionIn).optional(),
-  })
-  .passthrough();
-const PlatformOrderConfirmCreateDecisionOut: z.ZodType<PlatformOrderConfirmCreateDecisionOut> =
-  z
-    .object({
-      filled_code: z.union([z.string(), z.null()]),
-      locator_kind: z.union([z.string(), z.null()]),
-      locator_value: z.union([z.string(), z.null()]),
-      line_key: z.union([z.string(), z.null()]),
-      line_no: z.union([z.number(), z.null()]),
-      item_id: z.union([z.number(), z.null()]),
-      qty: z.union([z.number(), z.null()]),
-      fact_qty: z.union([z.number(), z.null()]),
-      note: z.union([z.string(), z.null()]),
-    })
-    .partial()
-    .passthrough();
-const PlatformOrderConfirmCreateOut: z.ZodType<PlatformOrderConfirmCreateOut> =
-  z
-    .object({
-      status: z.string(),
-      id: z.union([z.number(), z.null()]),
-      ref: z.string(),
-      platform: z.string(),
-      store_id: z.number().int(),
-      ext_order_no: z.string(),
-      manual_override: z.boolean(),
-      manual_reason: z.union([z.string(), z.null()]).optional(),
-      manual_batch_id: z.union([z.string(), z.null()]).optional(),
-      decisions: z.array(PlatformOrderConfirmCreateDecisionOut).optional(),
-      risk_flags: z.array(z.string()).optional(),
-      facts_n: z.number().int(),
-      fulfillment_status: z.union([z.string(), z.null()]).optional(),
-      blocked_reasons: z.union([z.array(z.string()), z.null()]).optional(),
-    })
-    .passthrough();
-const ManualDecisionLineOut: z.ZodType<ManualDecisionLineOut> = z
-  .object({
-    line_key: z.union([z.string(), z.null()]),
-    line_no: z.union([z.number(), z.null()]),
-    locator_kind: z.union([z.string(), z.null()]),
-    locator_value: z.union([z.string(), z.null()]),
-    filled_code: z.union([z.string(), z.null()]),
-    fact_qty: z.union([z.number(), z.null()]),
-    item_id: z.union([z.number(), z.null()]),
-    qty: z.union([z.number(), z.null()]),
-    note: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const ManualDecisionOrderOut: z.ZodType<ManualDecisionOrderOut> = z
-  .object({
-    batch_id: z.string(),
+    city_code: z.union([z.string(), z.null()]).optional(),
+    city_name: z.union([z.string(), z.null()]).optional(),
     created_at: z.string().datetime({ offset: true }),
-    order_id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    ext_order_no: z.string(),
-    ref: z.string(),
-    store_id: z.number().int(),
-    manual_reason: z.union([z.string(), z.null()]).optional(),
-    risk_flags: z.array(z.string()).optional(),
-    manual_decisions: z.array(ManualDecisionLineOut).optional(),
-  })
-  .passthrough();
-const ManualDecisionOrdersOut: z.ZodType<ManualDecisionOrdersOut> = z
-  .object({
-    items: z.array(ManualDecisionOrderOut).optional(),
-    total: z.number().int(),
-    limit: z.number().int(),
-    offset: z.number().int(),
-  })
-  .passthrough();
-const ManualBindMerchantCodeIn = z
-  .object({
-    platform: z.string().min(1).max(32),
-    store_id: z.number().int().gte(1),
-    filled_code: z.string().min(1).max(128),
-    fsku_id: z.number().int().gte(1),
-    reason: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const platform = z.union([z.string(), z.null()]).optional();
-const fsku_id = z.union([z.number(), z.null()]).optional();
-const StoreLiteOut: z.ZodType<StoreLiteOut> = z
-  .object({ id: z.number().int(), name: z.string() })
-  .passthrough();
-const FskuLiteOut: z.ZodType<FskuLiteOut> = z
-  .object({
     id: z.number().int(),
-    code: z.string(),
-    name: z.string(),
-    status: z.string(),
-  })
-  .passthrough();
-const MerchantCodeBindingRowOut: z.ZodType<MerchantCodeBindingRowOut> = z
-  .object({
-    id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    store: StoreLiteOut,
-    merchant_code: z.string(),
-    fsku_id: z.number().int(),
-    fsku: FskuLiteOut,
-    reason: z.union([z.string(), z.null()]),
-    created_at: z.string().datetime({ offset: true }),
+    priority: z.number().int(),
+    province: z.string(),
+    province_code: z.string(),
+    province_name: z.union([z.string(), z.null()]).optional(),
+    scheme_id: z.number().int(),
+    scope: z.string(),
     updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough();
-const MerchantCodeBindingListDataOut: z.ZodType<MerchantCodeBindingListDataOut> =
-  z
-    .object({
-      items: z.array(MerchantCodeBindingRowOut),
-      total: z.number().int(),
-      limit: z.number().int(),
-      offset: z.number().int(),
-    })
-    .passthrough();
-const MerchantCodeBindingListOut: z.ZodType<MerchantCodeBindingListOut> = z
+const FakeGenerateParams: z.ZodType<FakeGenerateParams> = z
   .object({
-    ok: z.boolean().optional().default(true),
-    data: MerchantCodeBindingListDataOut,
-  })
-  .passthrough();
-const MerchantCodeBindingBindIn = z
-  .object({
-    platform: z.string().min(1).max(32),
-    shop_id: z.string().min(1).max(64),
-    merchant_code: z.string().min(1).max(128),
-    fsku_id: z.number().int().gte(1),
-    reason: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const MerchantCodeBindingOut: z.ZodType<MerchantCodeBindingOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: MerchantCodeBindingRowOut,
-  })
-  .passthrough();
-const MerchantCodeBindingCloseIn = z
-  .object({
-    platform: z.string().min(1).max(32),
-    shop_id: z.string().min(1).max(64),
-    merchant_code: z.string().min(1).max(128),
-  })
-  .passthrough();
-const OrderLineIn: z.ZodType<OrderLineIn> = z
-  .object({
-    sku_id: z.union([z.string(), z.null()]),
-    item_id: z.union([z.number(), z.null()]),
-    title: z.union([z.string(), z.null()]),
-    qty: z.number().int().gt(0).default(1),
-    price: z.union([z.number(), z.null()]).default(0),
-    discount: z.union([z.number(), z.null()]).default(0),
-    amount: z.union([z.number(), z.null()]).default(0),
+    count: z.number().int().gte(1).lte(200).default(10),
+    lines_max: z.number().int().gte(1).lte(10).default(3),
+    lines_min: z.number().int().gte(1).lte(10).default(1),
+    qty_max: z.number().int().gte(1).lte(100).default(3),
+    qty_min: z.number().int().gte(1).lte(100).default(1),
+    rng_seed: z.number().int().gte(0).lte(10000000).default(42),
   })
   .partial()
   .passthrough();
-const OrderAddrIn: z.ZodType<OrderAddrIn> = z
+const DevFakeOrdersGenerateIn: z.ZodType<DevFakeOrdersGenerateIn> = z
   .object({
-    receiver_name: z.union([z.string(), z.null()]),
-    receiver_phone: z.union([z.string(), z.null()]),
-    province: z.union([z.string(), z.null()]),
-    city: z.union([z.string(), z.null()]),
-    district: z.union([z.string(), z.null()]),
-    detail: z.union([z.string(), z.null()]),
-    zipcode: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const OrderCreateIn: z.ZodType<OrderCreateIn> = z
-  .object({
-    platform: z.string().min(1).max(32),
-    shop_id: z.string().min(1),
-    ext_order_no: z.string().min(1),
-    occurred_at: z.union([z.string(), z.null()]).optional(),
-    buyer_name: z.union([z.string(), z.null()]).optional(),
-    buyer_phone: z.union([z.string(), z.null()]).optional(),
-    order_amount: z.union([z.number(), z.null()]).optional().default(0),
-    pay_amount: z.union([z.number(), z.null()]).optional().default(0),
-    lines: z.array(OrderLineIn).optional(),
-    address: z.union([OrderAddrIn, z.null()]).optional(),
-    store_name: z.union([z.string(), z.null()]).optional(),
+    generate: FakeGenerateParams.optional(),
+    seed: z.object({}).partial().passthrough(),
   })
   .passthrough();
-const OrderFulfillmentOut: z.ZodType<OrderFulfillmentOut> = z
+const DevFakeOrdersGenerateOut = z
   .object({
-    service_warehouse_id: z.union([z.number(), z.null()]),
-    warehouse_id: z.union([z.number(), z.null()]),
-    fulfillment_status: z.union([z.string(), z.null()]),
-    route_status: z.union([z.string(), z.null()]),
-    ingest_state: z.union([z.string(), z.null()]),
-    auto_assign_status: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const OrderCreateOut: z.ZodType<OrderCreateOut> = z
-  .object({
-    status: z.string(),
-    id: z.union([z.number(), z.null()]).optional(),
-    ref: z.string(),
-    fulfillment: z.union([OrderFulfillmentOut, z.null()]).optional(),
+    batch_id: z.string(),
+    gen_stats: z.object({}).partial().passthrough(),
+    orders: z.array(z.object({}).partial().passthrough()),
   })
   .passthrough();
-const OrderSummaryOut: z.ZodType<OrderSummaryOut> = z
+const DevFakeOrdersRunIn: z.ZodType<DevFakeOrdersRunIn> = z
   .object({
+    generate: FakeGenerateParams.optional(),
+    seed: z.object({}).partial().passthrough(),
+    watch_filled_codes: z.array(z.string()).optional(),
+    with_replay: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const DevFakeOrdersRunOut = z
+  .object({
+    gen_stats: z.object({}).partial().passthrough(),
+    report: z.object({}).partial().passthrough(),
+  })
+  .passthrough();
+const platform = z.union([z.string(), z.null()]).optional();
+const time_from = z.union([z.unknown(), z.null()]).optional();
+const DevOrderSummary = z
+  .object({
+    created_at: z.string().datetime({ offset: true }),
+    ext_order_no: z.string(),
     id: z.number().int(),
+    order_amount: z.union([z.number(), z.null()]).optional(),
+    pay_amount: z.union([z.number(), z.null()]).optional(),
     platform: z.string(),
     shop_id: z.string(),
-    ext_order_no: z.string(),
     status: z.union([z.string(), z.null()]).optional(),
-    created_at: z.string().datetime({ offset: true }),
     updated_at: z.union([z.string(), z.null()]).optional(),
-    store_id: z.union([z.number(), z.null()]).optional(),
     warehouse_id: z.union([z.number(), z.null()]).optional(),
-    service_warehouse_id: z.union([z.number(), z.null()]).optional(),
-    fulfillment_status: z.union([z.string(), z.null()]).optional(),
-    warehouse_assign_mode: z.union([z.string(), z.null()]).optional(),
-    can_manual_assign_execution_warehouse: z
-      .boolean()
-      .optional()
-      .default(false),
-    manual_assign_hint: z.union([z.string(), z.null()]).optional(),
-    order_amount: z.union([z.number(), z.null()]).optional(),
-    pay_amount: z.union([z.number(), z.null()]).optional(),
   })
   .passthrough();
-const WarehouseOptionOut: z.ZodType<WarehouseOptionOut> = z
-  .object({
-    id: z.number().int(),
-    code: z.union([z.string(), z.null()]).optional(),
-    name: z.union([z.string(), z.null()]).optional(),
-    active: z.union([z.boolean(), z.null()]).optional(),
-  })
-  .passthrough();
-const OrdersSummaryResponse: z.ZodType<OrdersSummaryResponse> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.array(OrderSummaryOut),
-    warehouses: z.array(WarehouseOptionOut),
-  })
-  .passthrough();
-const PlatformOrderAddressOut: z.ZodType<PlatformOrderAddressOut> = z
-  .object({
-    receiver_name: z.union([z.string(), z.null()]),
-    receiver_phone: z.union([z.string(), z.null()]),
-    province: z.union([z.string(), z.null()]),
-    city: z.union([z.string(), z.null()]),
-    district: z.union([z.string(), z.null()]),
-    detail: z.union([z.string(), z.null()]),
-    zipcode: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const PlatformOrderLineOut: z.ZodType<PlatformOrderLineOut> = z
-  .object({
-    sku: z.union([z.string(), z.null()]),
-    title: z.union([z.string(), z.null()]),
-    qty: z.number().int().default(0),
-    item_id: z.union([z.number(), z.null()]),
-    spec: z.union([z.string(), z.null()]),
-    price: z.union([z.number(), z.null()]),
-    discount: z.union([z.number(), z.null()]),
-    amount: z.union([z.number(), z.null()]),
-    extras: z.union([z.object({}).partial().passthrough(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const PlatformOrderOut: z.ZodType<PlatformOrderOut> = z
-  .object({
-    id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    ext_order_no: z.string(),
-    status: z.union([z.string(), z.null()]).optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.union([z.string(), z.null()]).optional(),
-    order_amount: z.union([z.number(), z.null()]).optional(),
-    pay_amount: z.union([z.number(), z.null()]).optional(),
-    buyer_name: z.union([z.string(), z.null()]).optional(),
-    buyer_phone: z.union([z.string(), z.null()]).optional(),
-    address: z.union([PlatformOrderAddressOut, z.null()]).optional(),
-    items: z.array(PlatformOrderLineOut).optional().default([]),
-    raw: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
-  })
-  .passthrough();
-const OrderViewResponse: z.ZodType<OrderViewResponse> = z
-  .object({ ok: z.boolean().optional().default(true), order: PlatformOrderOut })
-  .passthrough();
-const WarehouseBriefOut: z.ZodType<WarehouseBriefOut> = z
-  .object({
-    id: z.number().int(),
-    code: z.union([z.string(), z.null()]).optional(),
-    name: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const AvailabilityLineOut: z.ZodType<AvailabilityLineOut> = z
+const DevOrderReconcileLine: z.ZodType<DevOrderReconcileLine> = z
   .object({
     item_id: z.number().int(),
-    req_qty: z.number().int(),
+    qty_ordered: z.number().int(),
+    qty_returned: z.number().int(),
+    qty_shipped: z.number().int(),
+    remaining_refundable: z.number().int(),
     sku_id: z.union([z.string(), z.null()]).optional(),
     title: z.union([z.string(), z.null()]).optional(),
   })
   .passthrough();
-const AvailabilityCellOut: z.ZodType<AvailabilityCellOut> = z
+const DevOrderReconcileResultModel: z.ZodType<DevOrderReconcileResultModel> = z
   .object({
-    warehouse_id: z.number().int(),
-    item_id: z.number().int(),
-    available: z.number().int(),
-    shortage: z.number().int(),
-    status: z.string(),
-  })
-  .passthrough();
-const OrderWarehouseAvailabilityResponse: z.ZodType<OrderWarehouseAvailabilityResponse> =
-  z
-    .object({
-      ok: z.boolean().optional().default(true),
-      order_id: z.number().int(),
-      scope: z.string(),
-      warehouses: z.array(WarehouseBriefOut),
-      lines: z.array(AvailabilityLineOut),
-      matrix: z.array(AvailabilityCellOut),
-    })
-    .passthrough();
-const ManualAssignRequest = z
-  .object({
-    warehouse_id: z.number().int().gte(1),
-    reason: z.string().min(1).max(500),
-    note: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const ManualAssignResponse = z
-  .object({
-    status: z.string(),
-    ref: z.string(),
-    from_warehouse_id: z.union([z.number(), z.null()]).optional(),
-    to_warehouse_id: z.number().int(),
-    fulfillment_status: z.string(),
-  })
-  .passthrough();
-const PickLineIn: z.ZodType<PickLineIn> = z
-  .object({ item_id: z.number().int().gt(0), qty: z.number().int().gt(0) })
-  .passthrough();
-const PickRequest: z.ZodType<PickRequest> = z
-  .object({
-    warehouse_id: z.number().int().gt(0),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-    lines: z.array(PickLineIn).optional(),
-    occurred_at: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const PickResponse = z
-  .object({
-    item_id: z.number().int(),
-    warehouse_id: z.number().int(),
-    batch_code: z.union([z.string(), z.null()]),
-    picked: z.number().int(),
-    stock_after: z.union([z.number(), z.null()]).optional(),
-    ref: z.string(),
-    status: z.string(),
-  })
-  .passthrough();
-const ShipLineIn: z.ZodType<ShipLineIn> = z
-  .object({ item_id: z.number().int().gt(0), qty: z.number().int().gt(0) })
-  .passthrough();
-const ShipRequest: z.ZodType<ShipRequest> = z
-  .object({
-    warehouse_id: z.number().int().gt(0),
-    lines: z.array(ShipLineIn).optional(),
-    occurred_at: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const ShipResponse = z
-  .object({
-    status: z.string(),
-    ref: z.string(),
-    event: z.string().optional().default("SHIP_COMMIT"),
-  })
-  .passthrough();
-const ShipWithWaybillRequest = z
-  .object({
-    warehouse_id: z.number().int().gt(0),
-    carrier_code: z.string().min(1),
-    carrier_name: z.union([z.string(), z.null()]).optional(),
-    weight_kg: z.number().gt(0),
-    receiver_name: z.union([z.string(), z.null()]).optional(),
-    receiver_phone: z.union([z.string(), z.null()]).optional(),
-    province: z.union([z.string(), z.null()]).optional(),
-    city: z.union([z.string(), z.null()]).optional(),
-    district: z.union([z.string(), z.null()]).optional(),
-    address_detail: z.union([z.string(), z.null()]).optional(),
-    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
-  })
-  .passthrough();
-const ShipWithWaybillResponse = z
-  .object({
-    ok: z.boolean(),
-    ref: z.string(),
-    tracking_no: z.string(),
-    carrier_code: z.string(),
-    carrier_name: z.union([z.string(), z.null()]).optional(),
-    status: z.string().optional().default("IN_TRANSIT"),
-    label_base64: z.union([z.string(), z.null()]).optional(),
-    label_format: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const FulfillmentDebugAddress: z.ZodType<FulfillmentDebugAddress> = z
-  .object({
-    province: z.union([z.string(), z.null()]),
-    city: z.union([z.string(), z.null()]),
-    district: z.union([z.string(), z.null()]),
-    detail: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const FulfillmentServiceDebug: z.ZodType<FulfillmentServiceDebug> = z
-  .object({
-    province_code: z.union([z.string(), z.null()]),
-    city_code: z.union([z.string(), z.null()]),
-    hit: z.boolean().default(false),
-    service_warehouse_id: z.union([z.number(), z.null()]),
-    reason: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const FulfillmentDebugOut: z.ZodType<FulfillmentDebugOut> = z
-  .object({
-    version: z.string().optional().default("v4-min"),
+    ext_order_no: z.string(),
+    issues: z.array(z.string()).optional(),
+    lines: z.array(DevOrderReconcileLine).optional(),
     order_id: z.number().int(),
     platform: z.string(),
     shop_id: z.string(),
-    ext_order_no: z.union([z.string(), z.null()]).optional(),
-    address: FulfillmentDebugAddress.optional(),
-    service: FulfillmentServiceDebug.optional(),
-    summary: z.object({}).partial().passthrough().optional(),
   })
   .passthrough();
-const OutboundLineIn: z.ZodType<OutboundLineIn> = z
+const DevDemoOrderOut = z
   .object({
-    warehouse_id: z.number().int(),
-    item_id: z.number().int(),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-    qty: z.number().int().gt(0),
-  })
-  .passthrough();
-const OutboundShipIn: z.ZodType<OutboundShipIn> = z
-  .object({
-    platform: z.string().min(1).max(32),
-    shop_id: z.string().min(1),
-    ref: z.string().min(1),
-    external_order_ref: z.union([z.string(), z.null()]).optional(),
-    occurred_at: z.union([z.string(), z.null()]).optional(),
-    lines: z.array(OutboundLineIn),
-  })
-  .passthrough();
-const OutboundShipOut = z
-  .object({
-    status: z.string(),
-    total_qty: z.number().int(),
-    trace_id: z.string(),
-    idempotent: z.boolean().optional().default(false),
-  })
-  .passthrough();
-const ShipCalcRequest = z
-  .object({
-    warehouse_id: z.number().int().gte(1),
-    weight_kg: z.number().gt(0),
-    province: z.union([z.string(), z.null()]).optional(),
-    city: z.union([z.string(), z.null()]).optional(),
-    district: z.union([z.string(), z.null()]).optional(),
-    debug_ref: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const ShipQuoteOut: z.ZodType<ShipQuoteOut> = z
-  .object({
-    provider_id: z.number().int(),
-    carrier_code: z.union([z.string(), z.null()]).optional(),
-    carrier_name: z.string(),
-    scheme_id: z.number().int(),
-    scheme_name: z.string(),
-    quote_status: z.string(),
-    currency: z.union([z.string(), z.null()]).optional(),
-    est_cost: z.union([z.number(), z.null()]).optional(),
-    reasons: z.array(z.string()).optional(),
-    breakdown: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-    eta: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const ShipRecommendedOut: z.ZodType<ShipRecommendedOut> = z
-  .object({
-    provider_id: z.number().int(),
-    carrier_code: z.union([z.string(), z.null()]).optional(),
-    scheme_id: z.number().int(),
-    est_cost: z.union([z.number(), z.null()]).optional(),
-    currency: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const ShipCalcResponse: z.ZodType<ShipCalcResponse> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    weight_kg: z.number(),
-    dest: z.union([z.string(), z.null()]).optional(),
-    quotes: z.array(ShipQuoteOut),
-    recommended: z.union([ShipRecommendedOut, z.null()]).optional(),
-  })
-  .passthrough();
-const ShipPrepareRequest = z
-  .object({
-    platform: z.string(),
-    shop_id: z.string(),
     ext_order_no: z.string(),
-  })
-  .passthrough();
-const ShipPrepareItem: z.ZodType<ShipPrepareItem> = z
-  .object({ item_id: z.number().int(), qty: z.number().int() })
-  .passthrough();
-const CandidateWarehouseOut: z.ZodType<CandidateWarehouseOut> = z
-  .object({
-    warehouse_id: z.number().int(),
-    warehouse_name: z.union([z.string(), z.null()]).optional(),
-    warehouse_code: z.union([z.string(), z.null()]).optional(),
-    warehouse_active: z.boolean().optional().default(true),
-    priority: z.number().int().optional().default(100),
-  })
-  .passthrough();
-const FulfillmentMissingLineOut: z.ZodType<FulfillmentMissingLineOut> = z
-  .object({
-    item_id: z.number().int(),
-    need: z.number().int(),
-    available: z.number().int(),
-  })
-  .passthrough();
-const FulfillmentScanWarehouseOut: z.ZodType<FulfillmentScanWarehouseOut> = z
-  .object({
-    warehouse_id: z.number().int(),
-    status: z.string(),
-    missing: z.array(FulfillmentMissingLineOut).optional(),
-  })
-  .passthrough();
-const ShipPrepareResponse: z.ZodType<ShipPrepareResponse> = z
-  .object({
-    ok: z.boolean().optional().default(true),
     order_id: z.number().int(),
     platform: z.string(),
     shop_id: z.string(),
-    ext_order_no: z.string(),
-    ref: z.string(),
-    province: z.union([z.string(), z.null()]).optional(),
-    city: z.union([z.string(), z.null()]).optional(),
-    district: z.union([z.string(), z.null()]).optional(),
-    receiver_name: z.union([z.string(), z.null()]).optional(),
-    receiver_phone: z.union([z.string(), z.null()]).optional(),
-    address_detail: z.union([z.string(), z.null()]).optional(),
-    items: z.array(ShipPrepareItem).optional(),
-    total_qty: z.number().int().optional().default(0),
-    weight_kg: z.union([z.number(), z.null()]).optional(),
     trace_id: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    warehouse_reason: z.union([z.string(), z.null()]).optional(),
-    candidate_warehouses: z.array(CandidateWarehouseOut).optional(),
-    fulfillment_scan: z.array(FulfillmentScanWarehouseOut).optional(),
-    fulfillment_status: z.union([z.string(), z.null()]).optional(),
-    blocked_reasons: z.array(z.string()).optional(),
   })
   .passthrough();
-const ShipConfirmRequest = z
+const DevReconcileRangeResult = z
   .object({
-    ref: z.string().min(1),
+    count: z.number().int(),
+    order_ids: z.array(z.number().int()).optional(),
+  })
+  .passthrough();
+const DevOrderInfo: z.ZodType<DevOrderInfo> = z
+  .object({
+    created_at: z.string().datetime({ offset: true }),
+    ext_order_no: z.string(),
+    id: z.number().int(),
+    order_amount: z.union([z.number(), z.null()]).optional(),
+    pay_amount: z.union([z.number(), z.null()]).optional(),
     platform: z.string(),
     shop_id: z.string(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    carrier: z.union([z.string(), z.null()]).optional(),
-    carrier_name: z.union([z.string(), z.null()]).optional(),
-    scheme_id: z.union([z.number(), z.null()]).optional(),
-    tracking_no: z.union([z.string(), z.null()]).optional(),
-    gross_weight_kg: z.union([z.number(), z.null()]).optional(),
-    packaging_weight_kg: z.union([z.number(), z.null()]).optional(),
-    cost_estimated: z.union([z.number(), z.null()]).optional(),
-    cost_real: z.union([z.number(), z.null()]).optional(),
-    delivery_time: z.union([z.string(), z.null()]).optional(),
     status: z.union([z.string(), z.null()]).optional(),
-    error_code: z.union([z.string(), z.null()]).optional(),
-    error_message: z.union([z.string(), z.null()]).optional(),
-    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    updated_at: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
   })
   .passthrough();
-const ShipConfirmResponse = z
+const DevOrderView: z.ZodType<DevOrderView> = z
   .object({
-    ok: z.boolean().optional().default(true),
-    ref: z.string(),
+    order: DevOrderInfo,
     trace_id: z.union([z.string(), z.null()]).optional(),
   })
   .passthrough();
-const InternalOutboundCreateDocIn = z
+const DevEnsureWarehouseOut = z
   .object({
-    warehouse_id: z.number().int(),
-    doc_type: z.string(),
-    recipient_name: z.string(),
-    recipient_type: z.union([z.string(), z.null()]).optional(),
-    recipient_note: z.union([z.string(), z.null()]).optional(),
-    note: z.union([z.string(), z.null()]).optional(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
+    ext_order_no: z.string(),
+    message: z.union([z.string(), z.null()]).optional(),
+    ok: z.boolean(),
+    order_id: z.number().int(),
+    platform: z.string(),
+    shop_id: z.string(),
+    source: z.string(),
+    store_id: z.union([z.number(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
   })
   .passthrough();
-const InternalOutboundLineOut: z.ZodType<InternalOutboundLineOut> = z
+const DevOrderItemFact: z.ZodType<DevOrderItemFact> = z
   .object({
-    id: z.number().int(),
-    doc_id: z.number().int(),
-    line_no: z.number().int(),
-    item_id: z.number().int(),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-    requested_qty: z.number().int(),
-    confirmed_qty: z.union([z.number(), z.null()]).optional(),
-    uom: z.union([z.string(), z.null()]).optional(),
-    note: z.union([z.string(), z.null()]).optional(),
-    extra_meta: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-  })
-  .passthrough();
-const InternalOutboundDocOut: z.ZodType<InternalOutboundDocOut> = z
-  .object({
-    id: z.number().int(),
-    warehouse_id: z.number().int(),
-    doc_no: z.string(),
-    doc_type: z.string(),
-    status: z.string(),
-    recipient_name: z.union([z.string(), z.null()]).optional(),
-    recipient_id: z.union([z.number(), z.null()]).optional(),
-    recipient_type: z.union([z.string(), z.null()]).optional(),
-    recipient_note: z.union([z.string(), z.null()]).optional(),
-    note: z.union([z.string(), z.null()]).optional(),
-    created_by: z.union([z.number(), z.null()]).optional(),
-    created_at: z.string().datetime({ offset: true }),
-    confirmed_by: z.union([z.number(), z.null()]).optional(),
-    confirmed_at: z.union([z.string(), z.null()]).optional(),
-    canceled_by: z.union([z.number(), z.null()]).optional(),
-    canceled_at: z.union([z.string(), z.null()]).optional(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    extra_meta: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-    lines: z.array(InternalOutboundLineOut).optional().default([]),
-  })
-  .passthrough();
-const InternalOutboundUpsertLineIn = z
-  .object({
-    item_id: z.number().int(),
-    qty: z.number().int(),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-    uom: z.union([z.string(), z.null()]).optional(),
-    note: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const InternalOutboundConfirmIn = z
-  .object({ trace_id: z.union([z.string(), z.null()]) })
-  .partial()
-  .passthrough();
-const PurchaseOrderLineCreate: z.ZodType<PurchaseOrderLineCreate> = z
-  .object({
-    line_no: z.number().int().gt(0),
-    item_id: z.number().int(),
-    supply_price: z.union([z.number(), z.string(), z.null()]).optional(),
-    units_per_case: z.union([z.number(), z.null()]).optional(),
-    qty_ordered: z.number().int().gt(0),
-    discount_amount: z.union([z.number(), z.string(), z.null()]).optional(),
-    discount_note: z.union([z.string(), z.null()]).optional(),
-    remark: z.union([z.string(), z.null()]).optional(),
-    item_name: z.union([z.string(), z.null()]).optional(),
-    item_sku: z.union([z.string(), z.null()]).optional(),
-    spec_text: z.union([z.string(), z.null()]).optional(),
-    base_uom: z.union([z.string(), z.null()]).optional(),
-    purchase_uom: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const PurchaseOrderCreateV2: z.ZodType<PurchaseOrderCreateV2> = z
-  .object({
-    supplier_id: z.number().int(),
-    warehouse_id: z.number().int(),
-    purchaser: z.string(),
-    purchase_time: z.string().datetime({ offset: true }),
-    remark: z.union([z.string(), z.null()]).optional(),
-    lines: z.array(PurchaseOrderLineCreate).min(1),
-  })
-  .passthrough();
-const PurchaseOrderLineOut: z.ZodType<PurchaseOrderLineOut> = z
-  .object({
-    id: z.number().int(),
-    po_id: z.number().int(),
-    line_no: z.number().int(),
-    item_id: z.number().int(),
-    item_name: z.union([z.string(), z.null()]),
-    item_sku: z.union([z.string(), z.null()]),
-    spec_text: z.union([z.string(), z.null()]),
-    base_uom: z.union([z.string(), z.null()]),
-    purchase_uom: z.union([z.string(), z.null()]),
-    sku: z.union([z.string(), z.null()]).optional(),
-    primary_barcode: z.union([z.string(), z.null()]).optional(),
-    brand: z.union([z.string(), z.null()]).optional(),
-    category: z.union([z.string(), z.null()]).optional(),
-    supplier_id: z.union([z.number(), z.null()]).optional(),
-    supplier_name: z.union([z.string(), z.null()]).optional(),
-    weight_kg: z.union([z.string(), z.null()]).optional(),
-    uom: z.union([z.string(), z.null()]).optional(),
-    has_shelf_life: z.union([z.boolean(), z.null()]).optional(),
-    shelf_life_value: z.union([z.number(), z.null()]).optional(),
-    shelf_life_unit: z.union([z.string(), z.null()]).optional(),
-    enabled: z.union([z.boolean(), z.null()]).optional(),
-    supply_price: z.union([z.string(), z.null()]),
-    discount_amount: z
-      .string()
-      .regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/)
-      .optional()
-      .default("0"),
-    discount_note: z.union([z.string(), z.null()]).optional(),
-    units_per_case: z.number().int().gte(1),
-    qty_ordered: z.number().int().gt(0),
-    qty_ordered_base: z.number().int().gte(0),
-    qty_received_base: z.number().int().gte(0),
-    qty_remaining_base: z.number().int().gte(0),
-    qty_received: z.number().int().gte(0),
-    qty_remaining: z.number().int().gte(0),
-    remark: z.union([z.string(), z.null()]),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough();
-const PurchaseOrderWithLinesOut: z.ZodType<PurchaseOrderWithLinesOut> = z
-  .object({
-    id: z.number().int(),
-    warehouse_id: z.number().int(),
-    supplier_id: z.number().int(),
-    supplier_name: z.string(),
-    total_amount: z.union([z.string(), z.null()]),
-    purchaser: z.string(),
-    purchase_time: z.string().datetime({ offset: true }),
-    remark: z.union([z.string(), z.null()]),
-    status: z.string(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    last_received_at: z.union([z.string(), z.null()]).optional(),
-    closed_at: z.union([z.string(), z.null()]).optional(),
-    close_reason: z.union([z.string(), z.null()]).optional(),
-    close_note: z.union([z.string(), z.null()]).optional(),
-    closed_by: z.union([z.number(), z.null()]).optional(),
-    canceled_at: z.union([z.string(), z.null()]).optional(),
-    canceled_reason: z.union([z.string(), z.null()]).optional(),
-    canceled_by: z.union([z.number(), z.null()]).optional(),
-    lines: z.array(PurchaseOrderLineOut).optional().default([]),
-  })
-  .passthrough();
-const PurchaseOrderLineListOut: z.ZodType<PurchaseOrderLineListOut> = z
-  .object({
-    id: z.number().int(),
-    po_id: z.number().int(),
-    line_no: z.number().int(),
     item_id: z.number().int(),
     qty_ordered: z.number().int(),
-    units_per_case: z.number().int().gte(1),
-    qty_ordered_base: z.number().int().gte(0),
-    qty_received_base: z.number().int().gte(0),
-    qty_remaining_base: z.number().int().gte(0),
-    base_uom: z.union([z.string(), z.null()]).optional(),
-    purchase_uom: z.union([z.string(), z.null()]).optional(),
-    supply_price: z.union([z.string(), z.null()]).optional(),
-    discount_amount: z
-      .string()
-      .regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/)
-      .optional()
-      .default("0"),
-    discount_note: z.union([z.string(), z.null()]).optional(),
-    remark: z.union([z.string(), z.null()]).optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
+    qty_remaining_refundable: z.number().int(),
+    qty_returned: z.number().int(),
+    qty_shipped: z.number().int(),
+    sku_id: z.union([z.string(), z.null()]).optional(),
+    title: z.union([z.string(), z.null()]).optional(),
   })
   .passthrough();
-const PurchaseOrderListItemOut: z.ZodType<PurchaseOrderListItemOut> = z
+const DevOrderFacts: z.ZodType<DevOrderFacts> = z
+  .object({ items: z.array(DevOrderItemFact).optional(), order: DevOrderInfo })
+  .passthrough();
+const PlatformEventRow: z.ZodType<PlatformEventRow> = z
   .object({
+    dedup_key: z.union([z.string(), z.null()]).optional(),
+    event_type: z.string(),
     id: z.number().int(),
-    warehouse_id: z.number().int(),
-    warehouse_name: z.union([z.string(), z.null()]).optional(),
-    supplier_id: z.number().int(),
-    supplier_name: z.string(),
-    total_amount: z.union([z.string(), z.null()]),
-    purchaser: z.string(),
-    purchase_time: z.string().datetime({ offset: true }),
-    remark: z.union([z.string(), z.null()]),
-    status: z.string(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    last_received_at: z.union([z.string(), z.null()]).optional(),
-    closed_at: z.union([z.string(), z.null()]).optional(),
-    close_reason: z.union([z.string(), z.null()]).optional(),
-    close_note: z.union([z.string(), z.null()]).optional(),
-    closed_by: z.union([z.number(), z.null()]).optional(),
-    canceled_at: z.union([z.string(), z.null()]).optional(),
-    canceled_reason: z.union([z.string(), z.null()]).optional(),
-    canceled_by: z.union([z.number(), z.null()]).optional(),
-    lines: z.array(PurchaseOrderLineListOut).optional().default([]),
-  })
-  .passthrough();
-const PurchaseOrderCloseIn = z
-  .object({ note: z.union([z.string(), z.null()]) })
-  .partial()
-  .passthrough();
-const PurchaseOrderReceiptEventOut = z
-  .object({
-    ref: z.string(),
-    ref_line: z.number().int().gt(0),
-    warehouse_id: z.number().int().gt(0),
-    item_id: z.number().int().gt(0),
-    line_no: z.union([z.number(), z.null()]).optional(),
-    batch_code: z.string(),
-    qty: z.number().int(),
-    after_qty: z.number().int(),
     occurred_at: z.string().datetime({ offset: true }),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const PurchaseOrderReceiveLineIn = z
-  .object({
-    line_id: z.union([z.number(), z.null()]).optional(),
-    line_no: z.union([z.number(), z.null()]).optional(),
-    qty: z.number().int().gt(0),
-    barcode: z.union([z.string(), z.null()]).optional(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const PoSummaryOut: z.ZodType<PoSummaryOut> = z
-  .object({
-    po_id: z.number().int(),
-    warehouse_id: z.number().int(),
-    supplier_id: z.union([z.number(), z.null()]).optional(),
-    supplier_name: z.union([z.string(), z.null()]).optional(),
-    status: z.union([z.string(), z.null()]).optional(),
-    occurred_at: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const ReceiptSummaryOut: z.ZodType<ReceiptSummaryOut> = z
-  .object({
-    receipt_id: z.number().int(),
-    ref: z.string(),
+    payload: z.object({}).partial().passthrough(),
+    platform: z.string(),
+    shop_id: z.string(),
     status: z.string(),
+  })
+  .passthrough();
+const PlatformEventListOut: z.ZodType<PlatformEventListOut> = z
+  .object({
+    ok: z.boolean().optional().default(true),
+    rows: z.array(PlatformEventRow),
+  })
+  .passthrough();
+const FakeOrderStatusIn = z
+  .object({
+    delivered_at: z.union([z.string(), z.null()]).optional(),
+    ext_order_no: z.string().min(1),
+    extras: z.object({}).partial().passthrough().optional(),
+    platform: z.string().min(1).max(32),
+    platform_status: z.string(),
+    shop_id: z.string().min(1),
+  })
+  .passthrough();
+const FakeOrderStatusOut = z
+  .object({
+    dedup_key: z.union([z.string(), z.null()]).optional(),
+    ext_order_no: z.string(),
+    id: z.number().int(),
     occurred_at: z.string().datetime({ offset: true }),
+    ok: z.boolean().optional().default(true),
+    platform: z.string(),
+    platform_status: z.string(),
+    shop_id: z.string(),
   })
   .passthrough();
-const WorkbenchBatchRowOut: z.ZodType<WorkbenchBatchRowOut> = z
-  .object({
-    batch_code: z.string(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
-    qty_received: z.number().int(),
-  })
-  .passthrough();
-const WorkbenchRowOut: z.ZodType<WorkbenchRowOut> = z
-  .object({
-    po_line_id: z.number().int(),
-    line_no: z.number().int(),
-    item_id: z.number().int(),
-    item_name: z.union([z.string(), z.null()]).optional(),
-    item_sku: z.union([z.string(), z.null()]).optional(),
-    ordered_qty: z.number().int(),
-    confirmed_received_qty: z.number().int(),
-    draft_received_qty: z.number().int(),
-    remaining_qty: z.number().int(),
-    batches: z.array(WorkbenchBatchRowOut).optional(),
-    confirmed_batches: z.array(WorkbenchBatchRowOut).optional(),
-    all_batches: z.array(WorkbenchBatchRowOut).optional(),
-  })
-  .passthrough();
-const WorkbenchExplainOut: z.ZodType<WorkbenchExplainOut> = z
-  .object({
-    confirmable: z.boolean(),
-    blocking_errors: z.array(z.object({}).partial().passthrough()).optional(),
-    normalized_lines_preview: z
-      .array(z.object({}).partial().passthrough())
-      .optional(),
-  })
-  .passthrough();
-const WorkbenchCapsOut: z.ZodType<WorkbenchCapsOut> = z
-  .object({
-    can_confirm: z.boolean(),
-    can_start_draft: z.boolean(),
-    receipt_id: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const PurchaseOrderReceiveWorkbenchOut: z.ZodType<PurchaseOrderReceiveWorkbenchOut> =
-  z
-    .object({
-      po_summary: PoSummaryOut,
-      receipt: z.union([ReceiptSummaryOut, z.null()]).optional(),
-      rows: z.array(WorkbenchRowOut),
-      explain: z.union([WorkbenchExplainOut, z.null()]).optional(),
-      caps: WorkbenchCapsOut,
-    })
-    .passthrough();
-const SupplierPurchaseReportItem = z
-  .object({
-    supplier_id: z.union([z.number(), z.null()]),
-    supplier_name: z.string(),
-    order_count: z.number().int(),
-    total_qty_cases: z.number().int(),
-    total_units: z.number().int(),
-    total_amount: z.union([z.string(), z.null()]).optional(),
-    avg_unit_price: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const ItemPurchaseReportItem = z
-  .object({
-    item_id: z.number().int(),
-    item_sku: z.union([z.string(), z.null()]).optional(),
-    item_name: z.union([z.string(), z.null()]).optional(),
-    barcode: z.union([z.string(), z.null()]).optional(),
-    brand: z.union([z.string(), z.null()]).optional(),
-    category: z.union([z.string(), z.null()]).optional(),
-    spec_text: z.union([z.string(), z.null()]).optional(),
-    supplier_id: z.union([z.number(), z.null()]).optional(),
-    supplier_name: z.union([z.string(), z.null()]).optional(),
-    order_count: z.number().int(),
-    total_qty_cases: z.number().int(),
-    total_units: z.number().int(),
-    total_amount: z.union([z.string(), z.null()]).optional(),
-    avg_unit_price: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const DailyPurchaseReportItem = z
+const FinanceDailyRow = z
   .object({
     day: z.string(),
-    order_count: z.number().int(),
-    total_qty_cases: z.number().int(),
-    total_units: z.number().int(),
-    total_amount: z.union([z.string(), z.null()]).optional(),
+    fulfillment_ratio: z.union([z.string(), z.null()]).optional(),
+    gross_margin: z.union([z.string(), z.null()]).optional(),
+    gross_profit: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
+    purchase_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
+    revenue: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
+    shipping_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
   })
   .passthrough();
-const InboundReceiptCreateIn = z
+const FinanceShopRow = z
   .object({
-    source_type: z.string(),
-    source_id: z.number().int(),
-    occurred_at: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    remark: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const InboundReceiptLineOut: z.ZodType<InboundReceiptLineOut> = z
-  .object({
-    id: z.number().int(),
-    receipt_id: z.number().int(),
-    line_no: z.number().int(),
-    po_line_id: z.union([z.number(), z.null()]).optional(),
-    item_id: z.number().int(),
-    item_name: z.union([z.string(), z.null()]).optional(),
-    item_sku: z.union([z.string(), z.null()]).optional(),
-    barcode: z.union([z.string(), z.null()]).optional(),
-    batch_code: z.string(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
-    qty_received: z.number().int(),
-    units_per_case: z.number().int(),
-    qty_units: z.number().int(),
-    unit_cost: z.union([z.string(), z.null()]).optional(),
-    line_amount: z.union([z.string(), z.null()]).optional(),
-    remark: z.union([z.string(), z.null()]).optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough();
-const InboundReceiptOut: z.ZodType<InboundReceiptOut> = z
-  .object({
-    id: z.number().int(),
-    warehouse_id: z.number().int(),
-    supplier_id: z.union([z.number(), z.null()]).optional(),
-    supplier_name: z.union([z.string(), z.null()]).optional(),
-    source_type: z.string(),
-    source_id: z.union([z.number(), z.null()]).optional(),
-    ref: z.string(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    status: z.string(),
-    remark: z.union([z.string(), z.null()]).optional(),
-    occurred_at: z.string().datetime({ offset: true }),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    lines: z.array(InboundReceiptLineOut).optional().default([]),
-  })
-  .passthrough();
-const InboundReceiptSummaryOut: z.ZodType<InboundReceiptSummaryOut> = z
-  .object({
-    id: z.number().int(),
-    status: z.string(),
-    occurred_at: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    source_type: z.union([z.string(), z.null()]).optional(),
-    source_id: z.union([z.number(), z.null()]).optional(),
-    ref: z.union([z.string(), z.null()]).optional(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const ProblemItem: z.ZodType<ProblemItem> = z
-  .object({
-    scope: z.enum(["header", "line"]),
-    field: z.string(),
-    message: z.string(),
-    index: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const NormalizedLinePreviewOut: z.ZodType<NormalizedLinePreviewOut> = z
-  .object({
-    line_key: z.string(),
-    qty_total: z.number().int(),
-    item_id: z.number().int(),
-    po_line_id: z.union([z.number(), z.null()]).optional(),
-    batch_code: z.string(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    source_line_indexes: z.array(z.number().int()).optional(),
-  })
-  .passthrough();
-const LedgerPreviewOut: z.ZodType<LedgerPreviewOut> = z
-  .object({
-    action: z.string(),
-    warehouse_id: z.number().int(),
-    item_id: z.number().int(),
-    qty_delta: z.number().int(),
-    source_line_key: z.string(),
-  })
-  .passthrough();
-const InboundReceiptExplainOut: z.ZodType<InboundReceiptExplainOut> = z
-  .object({
-    receipt_summary: InboundReceiptSummaryOut,
-    confirmable: z.boolean(),
-    blocking_errors: z.array(ProblemItem).optional(),
-    normalized_lines_preview: z.array(NormalizedLinePreviewOut).optional(),
-    ledger_preview: z.array(LedgerPreviewOut).optional(),
-  })
-  .passthrough();
-const InboundReceiptConfirmLedgerRef: z.ZodType<InboundReceiptConfirmLedgerRef> =
-  z
-    .object({
-      source_line_key: z.string(),
-      ref: z.string(),
-      ref_line: z.number().int(),
-      item_id: z.number().int(),
-      qty_delta: z.number().int(),
-      idempotent: z.union([z.boolean(), z.null()]).optional(),
-      applied: z.union([z.boolean(), z.null()]).optional(),
-    })
-    .passthrough();
-const InboundReceiptConfirmOut: z.ZodType<InboundReceiptConfirmOut> = z
-  .object({
-    receipt: InboundReceiptOut,
-    ledger_written: z.number().int(),
-    ledger_refs: z.array(InboundReceiptConfirmLedgerRef).optional(),
-  })
-  .passthrough();
-const ReturnOrderRefItem = z
-  .object({
-    order_ref: z.string(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    last_ship_at: z.string().datetime({ offset: true }),
-    total_lines: z.number().int(),
-    remaining_qty: z.number().int(),
-  })
-  .passthrough();
-const ReturnOrderRefSummaryLine: z.ZodType<ReturnOrderRefSummaryLine> = z
-  .object({
-    warehouse_id: z.number().int(),
-    item_id: z.number().int(),
-    item_name: z.union([z.string(), z.null()]).optional(),
-    batch_code: z.string(),
-    shipped_qty: z.number().int(),
-  })
-  .passthrough();
-const ReturnOrderRefSummaryOut: z.ZodType<ReturnOrderRefSummaryOut> = z
-  .object({
-    order_ref: z.string(),
-    ship_reasons: z.array(z.string()).optional(),
-    lines: z.array(ReturnOrderRefSummaryLine),
-  })
-  .passthrough();
-const ReturnOrderRefReceiverOut: z.ZodType<ReturnOrderRefReceiverOut> = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    phone: z.union([z.string(), z.null()]),
-    province: z.union([z.string(), z.null()]),
-    city: z.union([z.string(), z.null()]),
-    district: z.union([z.string(), z.null()]),
-    detail: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const ReturnOrderRefShippingOut: z.ZodType<ReturnOrderRefShippingOut> = z
-  .object({
-    tracking_no: z.union([z.string(), z.null()]),
-    carrier_code: z.union([z.string(), z.null()]),
-    carrier_name: z.union([z.string(), z.null()]),
-    status: z.union([z.string(), z.null()]),
-    shipped_at: z.union([z.string(), z.null()]),
-    gross_weight_kg: z.union([z.number(), z.null()]),
-    cost_estimated: z.union([z.number(), z.null()]),
-    receiver: z.union([ReturnOrderRefReceiverOut, z.null()]),
-    meta: z.union([z.object({}).partial().passthrough(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const ReturnOrderRefDetailOut: z.ZodType<ReturnOrderRefDetailOut> = z
-  .object({
-    order_ref: z.string(),
-    platform: z.union([z.string(), z.null()]).optional(),
-    shop_id: z.union([z.string(), z.null()]).optional(),
-    ext_order_no: z.union([z.string(), z.null()]).optional(),
-    remaining_qty: z.union([z.number(), z.null()]).optional(),
-    shipping: z.union([ReturnOrderRefShippingOut, z.null()]).optional(),
-    summary: ReturnOrderRefSummaryOut,
-  })
-  .passthrough();
-const ReturnTaskCreateFromOrder = z
-  .object({
-    warehouse_id: z.union([z.number(), z.null()]),
-    include_zero_shipped: z.boolean().default(false),
-  })
-  .partial()
-  .passthrough();
-const ReturnTaskLineOut: z.ZodType<ReturnTaskLineOut> = z
-  .object({
-    id: z.number().int(),
-    task_id: z.number().int(),
-    order_line_id: z.union([z.number(), z.null()]).optional(),
-    item_id: z.number().int(),
-    item_name: z.union([z.string(), z.null()]),
-    batch_code: z.string(),
-    expected_qty: z.union([z.number(), z.null()]),
-    picked_qty: z.number().int(),
-    committed_qty: z.union([z.number(), z.null()]),
-    status: z.string(),
-    remark: z.union([z.string(), z.null()]),
-  })
-  .passthrough();
-const ReturnTaskOut: z.ZodType<ReturnTaskOut> = z
-  .object({
-    id: z.number().int(),
-    order_id: z.string(),
-    warehouse_id: z.number().int(),
-    status: z.string(),
-    remark: z.union([z.string(), z.null()]),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    lines: z.array(ReturnTaskLineOut).optional().default([]),
-  })
-  .passthrough();
-const ReturnTaskReceiveIn = z
-  .object({ item_id: z.number().int(), qty: z.number().int() })
-  .passthrough();
-const ReturnTaskCommitIn = z
-  .object({ trace_id: z.union([z.string(), z.null()]) })
-  .partial()
-  .passthrough();
-const PickTaskCreateFromOrder = z
-  .object({
-    warehouse_id: z.union([z.number(), z.null()]),
-    source: z.string().default("ORDER"),
-    priority: z.number().int().gte(0).default(100),
-  })
-  .partial()
-  .passthrough();
-const PickTaskLineOut: z.ZodType<PickTaskLineOut> = z
-  .object({
-    id: z.number().int(),
-    task_id: z.number().int(),
-    order_id: z.union([z.number(), z.null()]),
-    order_line_id: z.union([z.number(), z.null()]),
-    item_id: z.number().int(),
-    req_qty: z.number().int(),
-    picked_qty: z.number().int(),
-    batch_code: z.union([z.string(), z.null()]),
-    status: z.string(),
-    note: z.union([z.string(), z.null()]),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    remain_qty: z.number().int(),
-    delta: z.number().int(),
-    diff_status: z.string(),
-  })
-  .passthrough();
-const PrintJobOut: z.ZodType<PrintJobOut> = z
-  .object({
-    id: z.number().int(),
-    kind: z.string(),
-    ref_type: z.string(),
-    ref_id: z.number().int(),
-    status: z.string(),
-    payload: z.object({}).partial().passthrough(),
-    requested_at: z.string().datetime({ offset: true }),
-    printed_at: z.union([z.string(), z.null()]),
-    error: z.union([z.string(), z.null()]),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough();
-const GateOut: z.ZodType<GateOut> = z
-  .object({
-    allowed: z.boolean(),
-    error_code: z.union([z.string(), z.null()]).optional(),
-    message: z.union([z.string(), z.null()]).optional(),
-    details: z.array(z.object({}).partial().passthrough()).optional(),
-    next_actions: z.array(z.object({}).partial().passthrough()).optional(),
-  })
-  .passthrough();
-const PickTaskOut: z.ZodType<PickTaskOut> = z
-  .object({
-    id: z.number().int(),
-    warehouse_id: z.number().int(),
-    ref: z.union([z.string(), z.null()]),
-    source: z.union([z.string(), z.null()]),
-    priority: z.number().int(),
-    status: z.string(),
-    assigned_to: z.union([z.string(), z.null()]),
-    note: z.union([z.string(), z.null()]),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    lines: z.array(PickTaskLineOut).optional(),
-    print_job: z.union([PrintJobOut, z.null()]).optional(),
-    req_total: z.number().int(),
-    picked_total: z.number().int(),
-    remain_total: z.number().int(),
-    has_over: z.boolean(),
-    has_under: z.boolean(),
-    scan_gate: GateOut,
-    commit_gate: GateOut,
-  })
-  .passthrough();
-const PickTaskPrintPickListIn = z
-  .object({
-    order_id: z.number().int().gte(1),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const PickTaskScanIn = z
-  .object({
-    item_id: z.number().int(),
-    qty: z.number().int().gt(0),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const PickTaskDiffLineOut: z.ZodType<PickTaskDiffLineOut> = z
-  .object({
-    item_id: z.number().int(),
-    req_qty: z.number().int(),
-    picked_qty: z.number().int(),
-    delta: z.number().int(),
-    status: z.string(),
-  })
-  .passthrough();
-const PickTaskDiffSummaryOut: z.ZodType<PickTaskDiffSummaryOut> = z
-  .object({
-    task_id: z.number().int(),
-    has_over: z.boolean(),
-    has_under: z.boolean(),
-    lines: z.array(PickTaskDiffLineOut),
-  })
-  .passthrough();
-const PickTaskCommitCheckOut = z
-  .object({
-    allowed: z.boolean(),
-    error_code: z.union([z.string(), z.null()]).optional(),
-    message: z.union([z.string(), z.null()]).optional(),
-    context: z.object({}).partial().passthrough().optional(),
-    details: z.array(z.object({}).partial().passthrough()).optional(),
-    next_actions: z.array(z.object({}).partial().passthrough()).optional(),
-  })
-  .passthrough();
-const PickTaskCommitIn = z
-  .object({
+    fulfillment_ratio: z.union([z.string(), z.null()]).optional(),
+    gross_margin: z.union([z.string(), z.null()]).optional(),
+    gross_profit: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
     platform: z.string(),
+    purchase_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
+    revenue: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
+    shipping_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
     shop_id: z.string(),
-    handoff_code: z.union([z.string(), z.null()]).optional(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    allow_diff: z.boolean().optional().default(true),
   })
   .passthrough();
-const PickTaskCommitDiffLineOut: z.ZodType<PickTaskCommitDiffLineOut> = z
+const FinanceSkuRow = z
   .object({
+    gross_margin: z.union([z.string(), z.null()]).optional(),
+    gross_profit: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
     item_id: z.number().int(),
-    req_qty: z.number().int(),
-    picked_qty: z.number().int(),
-    delta: z.number().int(),
-    status: z.string(),
-  })
-  .passthrough();
-const PickTaskCommitDiffOut: z.ZodType<PickTaskCommitDiffOut> = z
-  .object({
-    task_id: z.number().int(),
-    has_over: z.boolean(),
-    has_under: z.boolean(),
-    has_temp_lines: z.boolean(),
-    temp_lines_n: z.number().int(),
-    lines: z.array(PickTaskCommitDiffLineOut),
-  })
-  .passthrough();
-const PickTaskCommitResult: z.ZodType<PickTaskCommitResult> = z
-  .object({
-    status: z.string(),
-    idempotent: z.boolean().optional().default(false),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    committed_at: z.union([z.string(), z.null()]).optional(),
-    task_id: z.number().int(),
-    warehouse_id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    ref: z.string(),
-    diff: PickTaskCommitDiffOut,
-    next_actions: z.array(z.object({}).partial().passthrough()).optional(),
-  })
-  .passthrough();
-const MarkPrintedIn = z
-  .object({ printed_at: z.union([z.string(), z.null()]) })
-  .partial()
-  .passthrough();
-const MarkFailedIn = z
-  .object({ error: z.string().min(1).max(2000) })
-  .passthrough();
-const MetaPlatformItem: z.ZodType<MetaPlatformItem> = z
-  .object({
-    platform: z.string().min(1).max(32),
-    label: z.string().min(1).max(64),
-    enabled: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const MetaPlatformsOut: z.ZodType<MetaPlatformsOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.array(MetaPlatformItem),
-  })
-  .passthrough();
-const StoreListItem: z.ZodType<StoreListItem> = z
-  .object({
-    id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    name: z.string(),
-    active: z.boolean(),
-    route_mode: z.string(),
-    shop_type: z.string().optional().default("PROD"),
-    email: z.union([z.string(), z.null()]).optional(),
-    contact_name: z.union([z.string(), z.null()]).optional(),
-    contact_phone: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const StoreListOut: z.ZodType<StoreListOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.array(StoreListItem),
-  })
-  .passthrough();
-const StoreCreateIn = z
-  .object({
-    platform: z.string().min(2).max(32),
-    shop_id: z.string().min(1).max(128),
-    name: z.union([z.string(), z.null()]).optional(),
-    shop_type: z.enum(["TEST", "PROD"]).optional().default("PROD"),
-  })
-  .passthrough();
-const StoreCreateOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const StoreUpdateIn = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-    route_mode: z.union([z.string(), z.null()]),
-    email: z.union([z.string(), z.null()]),
-    contact_name: z.union([z.string(), z.null()]),
-    contact_phone: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const StoreUpdateOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const StoreDetailOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const DefaultWarehouseOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.record(z.string(), z.union([z.number(), z.null()])),
-  })
-  .passthrough();
-const BindWarehouseIn = z
-  .object({
-    warehouse_id: z.number().int().gte(1),
-    is_default: z.boolean().optional().default(false),
-    priority: z.number().int().gte(0).lte(100000).optional().default(100),
-    is_top: z.union([z.boolean(), z.null()]).optional(),
-  })
-  .passthrough();
-const BindWarehouseOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const BindingUpdateIn = z
-  .object({
-    is_default: z.union([z.boolean(), z.null()]),
-    priority: z.union([z.number(), z.null()]),
-    is_top: z.union([z.boolean(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const BindingUpdateOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const BindingDeleteOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const StorePlatformAuthOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const ProvinceRouteItem: z.ZodType<ProvinceRouteItem> = z
-  .object({
-    id: z.number().int(),
-    store_id: z.number().int(),
-    province: z.string(),
-    warehouse_id: z.number().int(),
-    warehouse_name: z.union([z.string(), z.null()]).optional(),
-    warehouse_code: z.union([z.string(), z.null()]).optional(),
-    warehouse_active: z.boolean().optional().default(true),
-    priority: z.number().int().optional().default(100),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const ProvinceRouteListOut: z.ZodType<ProvinceRouteListOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.array(ProvinceRouteItem),
-  })
-  .passthrough();
-const ProvinceRouteCreateIn = z
-  .object({
-    province: z.string().min(1).max(32),
-    warehouse_id: z.number().int().gte(1),
-    priority: z.number().int().gte(0).lte(100000).optional().default(100),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const ProvinceRouteWriteOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const ProvinceRouteUpdateIn = z
-  .object({
-    province: z.union([z.string(), z.null()]),
-    warehouse_id: z.union([z.number(), z.null()]),
-    priority: z.union([z.number(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const RoutingHealthOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const OrderSimMerchantLinesGetOut = z
-  .object({ ok: z.boolean(), data: z.object({}).partial().passthrough() })
-  .passthrough();
-const MerchantLineItemIn: z.ZodType<MerchantLineItemIn> = z
-  .object({
-    row_no: z.number().int().gte(1).lte(6),
-    filled_code: z.union([z.string(), z.null()]).optional(),
+    purchase_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
+    qty_sold: z.number().int(),
+    revenue: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
+    sku_id: z.union([z.string(), z.null()]).optional(),
     title: z.union([z.string(), z.null()]).optional(),
-    spec: z.union([z.string(), z.null()]).optional(),
-    if_version: z.union([z.number(), z.null()]).optional(),
   })
-  .passthrough();
-const OrderSimMerchantLinesPutIn: z.ZodType<OrderSimMerchantLinesPutIn> = z
-  .object({ items: z.array(MerchantLineItemIn) })
-  .partial()
-  .passthrough();
-const OrderSimMerchantLinesPutOut = z
-  .object({ ok: z.boolean(), data: z.object({}).partial().passthrough() })
-  .passthrough();
-const OrderSimFilledCodeOptionOut: z.ZodType<OrderSimFilledCodeOptionOut> = z
-  .object({
-    filled_code: z.string().min(1).max(128),
-    suggested_title: z.string(),
-    components_summary: z.string(),
-  })
-  .passthrough();
-const OrderSimFilledCodeOptionsData: z.ZodType<OrderSimFilledCodeOptionsData> =
-  z
-    .object({ items: z.array(OrderSimFilledCodeOptionOut) })
-    .partial()
-    .passthrough();
-const OrderSimFilledCodeOptionsOut: z.ZodType<OrderSimFilledCodeOptionsOut> = z
-  .object({ ok: z.boolean(), data: OrderSimFilledCodeOptionsData })
-  .passthrough();
-const OrderSimCartGetOut = z
-  .object({ ok: z.boolean(), data: z.object({}).partial().passthrough() })
-  .passthrough();
-const CartLineItemIn: z.ZodType<CartLineItemIn> = z
-  .object({
-    row_no: z.number().int().gte(1).lte(6),
-    checked: z.boolean().optional().default(false),
-    qty: z.number().int().optional().default(0),
-    receiver_name: z.union([z.string(), z.null()]).optional(),
-    receiver_phone: z.union([z.string(), z.null()]).optional(),
-    province: z.union([z.string(), z.null()]).optional(),
-    city: z.union([z.string(), z.null()]).optional(),
-    district: z.union([z.string(), z.null()]).optional(),
-    detail: z.union([z.string(), z.null()]).optional(),
-    zipcode: z.union([z.string(), z.null()]).optional(),
-    if_version: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const OrderSimCartPutIn: z.ZodType<OrderSimCartPutIn> = z
-  .object({ items: z.array(CartLineItemIn) })
-  .partial()
-  .passthrough();
-const OrderSimCartPutOut = z
-  .object({ ok: z.boolean(), data: z.object({}).partial().passthrough() })
-  .passthrough();
-const OrderSimPreviewOrderIn = z
-  .object({ idempotency_key: z.union([z.string(), z.null()]) })
-  .partial()
-  .passthrough();
-const OrderSimPreviewOrderOut = z
-  .object({ ok: z.boolean(), data: z.object({}).partial().passthrough() })
-  .passthrough();
-const OrderSimGenerateOrderIn = z
-  .object({ idempotency_key: z.union([z.string(), z.null()]) })
-  .partial()
-  .passthrough();
-const OrderSimGenerateOrderOut = z
-  .object({ ok: z.boolean(), data: z.object({}).partial().passthrough() })
   .passthrough();
 const FskuListItem: z.ZodType<FskuListItem> = z
   .object({
-    id: z.number().int(),
     code: z.string(),
+    components_summary: z.string(),
+    components_summary_name: z.string(),
+    id: z.number().int(),
     name: z.string(),
+    published_at: z.union([z.string(), z.null()]),
+    retired_at: z.union([z.string(), z.null()]),
     shape: z.enum(["single", "bundle"]),
     status: z.string(),
     updated_at: z.string().datetime({ offset: true }),
-    published_at: z.union([z.string(), z.null()]),
-    retired_at: z.union([z.string(), z.null()]),
-    components_summary: z.string(),
-    components_summary_name: z.string(),
   })
   .passthrough();
 const FskuListOut: z.ZodType<FskuListOut> = z
   .object({
     items: z.array(FskuListItem),
-    total: z.number().int(),
     limit: z.number().int(),
     offset: z.number().int(),
+    total: z.number().int(),
   })
   .passthrough();
 const FskuCreateIn = z
   .object({
-    name: z.string().min(1).max(200),
     code: z.union([z.string(), z.null()]).optional(),
+    name: z.string().min(1).max(200),
     shape: z.enum(["single", "bundle"]).optional().default("bundle"),
   })
   .passthrough();
@@ -3973,16 +2493,16 @@ const FskuComponentOut: z.ZodType<FskuComponentOut> = z
   .passthrough();
 const FskuDetailOut: z.ZodType<FskuDetailOut> = z
   .object({
-    id: z.number().int(),
     code: z.string(),
+    components: z.array(FskuComponentOut),
+    created_at: z.string().datetime({ offset: true }),
+    id: z.number().int(),
     name: z.string(),
-    shape: z.enum(["single", "bundle"]),
-    status: z.string(),
     published_at: z.union([z.string(), z.null()]),
     retired_at: z.union([z.string(), z.null()]),
-    created_at: z.string().datetime({ offset: true }),
+    shape: z.enum(["single", "bundle"]),
+    status: z.string(),
     updated_at: z.string().datetime({ offset: true }),
-    components: z.array(FskuComponentOut),
   })
   .passthrough();
 const FskuNameUpdateIn = z
@@ -3998,1372 +2518,387 @@ const FskuComponentIn: z.ZodType<FskuComponentIn> = z
 const FskuComponentsReplaceIn: z.ZodType<FskuComponentsReplaceIn> = z
   .object({ components: z.array(FskuComponentIn) })
   .passthrough();
-const active = z.union([z.boolean(), z.null()]).optional();
-const WarehouseOut: z.ZodType<WarehouseOut> = z
+const GeoItemOut = z
+  .object({ code: z.string(), name: z.string() })
+  .passthrough();
+const InboundReceiptLineOut: z.ZodType<InboundReceiptLineOut> = z
   .object({
-    id: z.number().int(),
-    name: z.string(),
-    code: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean().optional().default(true),
-    address: z.union([z.string(), z.null()]).optional(),
-    contact_name: z.union([z.string(), z.null()]).optional(),
-    contact_phone: z.union([z.string(), z.null()]).optional(),
-    area_sqm: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const WarehouseListOut: z.ZodType<WarehouseListOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.array(WarehouseOut),
-  })
-  .passthrough();
-const WarehouseCreateIn = z
-  .object({
-    name: z.string().min(1).max(100),
-    code: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean().optional().default(true),
-    address: z.union([z.string(), z.null()]).optional(),
-    contact_name: z.union([z.string(), z.null()]).optional(),
-    contact_phone: z.union([z.string(), z.null()]).optional(),
-    area_sqm: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const WarehouseCreateOut: z.ZodType<WarehouseCreateOut> = z
-  .object({ ok: z.boolean().optional().default(true), data: WarehouseOut })
-  .passthrough();
-const WarehouseDetailOut: z.ZodType<WarehouseDetailOut> = z
-  .object({ ok: z.boolean().optional().default(true), data: WarehouseOut })
-  .passthrough();
-const WarehouseUpdateIn = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    code: z.union([z.string(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-    address: z.union([z.string(), z.null()]),
-    contact_name: z.union([z.string(), z.null()]),
-    contact_phone: z.union([z.string(), z.null()]),
-    area_sqm: z.union([z.number(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const WarehouseUpdateOut: z.ZodType<WarehouseUpdateOut> = z
-  .object({ ok: z.boolean().optional().default(true), data: WarehouseOut })
-  .passthrough();
-const WarehouseServiceProvinceOccupancyRow: z.ZodType<WarehouseServiceProvinceOccupancyRow> =
-  z
-    .object({ province_code: z.string(), warehouse_id: z.number().int() })
-    .passthrough();
-const WarehouseServiceProvinceOccupancyOut: z.ZodType<WarehouseServiceProvinceOccupancyOut> =
-  z
-    .object({ rows: z.array(WarehouseServiceProvinceOccupancyRow) })
-    .partial()
-    .passthrough();
-const WarehouseServiceProvincesOut = z
-  .object({
-    warehouse_id: z.number().int(),
-    provinces: z.array(z.string()).optional(),
-  })
-  .passthrough();
-const WarehouseServiceProvincesPutIn = z
-  .object({ provinces: z.array(z.string()) })
-  .partial()
-  .passthrough();
-const WarehouseServiceCityOccupancyRow: z.ZodType<WarehouseServiceCityOccupancyRow> =
-  z
-    .object({ city_code: z.string(), warehouse_id: z.number().int() })
-    .passthrough();
-const WarehouseServiceCityOccupancyOut: z.ZodType<WarehouseServiceCityOccupancyOut> =
-  z
-    .object({ rows: z.array(WarehouseServiceCityOccupancyRow) })
-    .partial()
-    .passthrough();
-const WarehouseServiceCitiesOut = z
-  .object({
-    warehouse_id: z.number().int(),
-    cities: z.array(z.string()).optional(),
-  })
-  .passthrough();
-const WarehouseServiceCitiesPutIn = z
-  .object({ cities: z.array(z.string()) })
-  .partial()
-  .passthrough();
-const WarehouseServiceCitySplitProvincesOut = z
-  .object({ provinces: z.array(z.string()) })
-  .partial()
-  .passthrough();
-const WarehouseServiceCitySplitProvincesPutIn = z
-  .object({ provinces: z.array(z.string()) })
-  .partial()
-  .passthrough();
-const ActiveCarrierOut: z.ZodType<ActiveCarrierOut> = z
-  .object({
-    provider_id: z.number().int(),
-    code: z.union([z.string(), z.null()]).optional(),
-    name: z.string(),
-    priority: z.number().int(),
-  })
-  .passthrough();
-const WarehouseActiveCarriersOut: z.ZodType<WarehouseActiveCarriersOut> = z
-  .object({
-    warehouse_id: z.number().int(),
-    active_carriers: z.array(ActiveCarrierOut),
-    active_carriers_count: z.number().int(),
-  })
-  .passthrough();
-const WarehouseActiveCarriersSummaryOut: z.ZodType<WarehouseActiveCarriersSummaryOut> =
-  z
-    .object({ ok: z.boolean(), data: z.array(WarehouseActiveCarriersOut) })
-    .passthrough();
-const ShippingProviderLiteOut: z.ZodType<ShippingProviderLiteOut> = z
-  .object({
-    id: z.number().int(),
-    name: z.string(),
-    code: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const WarehouseShippingProviderOut: z.ZodType<WarehouseShippingProviderOut> = z
-  .object({
-    warehouse_id: z.number().int(),
-    shipping_provider_id: z.number().int(),
-    active: z.boolean().optional().default(true),
-    priority: z.number().int().optional().default(0),
-    pickup_cutoff_time: z.union([z.string(), z.null()]).optional(),
-    remark: z.union([z.string(), z.null()]).optional(),
-    provider: ShippingProviderLiteOut,
-  })
-  .passthrough();
-const WarehouseShippingProviderListOut: z.ZodType<WarehouseShippingProviderListOut> =
-  z
-    .object({
-      ok: z.boolean().optional().default(true),
-      data: z.array(WarehouseShippingProviderOut),
-    })
-    .passthrough();
-const WarehouseShippingProviderUpsertItemIn: z.ZodType<WarehouseShippingProviderUpsertItemIn> =
-  z
-    .object({
-      shipping_provider_id: z.number().int().gte(1),
-      active: z.boolean().optional().default(true),
-      priority: z.number().int().gte(0).optional().default(0),
-      pickup_cutoff_time: z.union([z.string(), z.null()]).optional(),
-      remark: z.union([z.string(), z.null()]).optional(),
-    })
-    .passthrough();
-const WarehouseShippingProviderBulkUpsertIn: z.ZodType<WarehouseShippingProviderBulkUpsertIn> =
-  z
-    .object({
-      items: z.array(WarehouseShippingProviderUpsertItemIn),
-      disable_missing: z.boolean().default(true),
-    })
-    .partial()
-    .passthrough();
-const WarehouseShippingProviderBulkUpsertOut: z.ZodType<WarehouseShippingProviderBulkUpsertOut> =
-  z
-    .object({
-      ok: z.boolean().optional().default(true),
-      data: z.array(WarehouseShippingProviderOut),
-    })
-    .passthrough();
-const WarehouseShippingProviderBindIn = z
-  .object({
-    shipping_provider_id: z.number().int().gte(1),
-    active: z.boolean().optional().default(true),
-    priority: z.number().int().gte(0).optional().default(0),
-    pickup_cutoff_time: z.union([z.string(), z.null()]).optional(),
-    remark: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const WarehouseShippingProviderBindOut: z.ZodType<WarehouseShippingProviderBindOut> =
-  z
-    .object({
-      ok: z.boolean().optional().default(true),
-      data: WarehouseShippingProviderOut,
-    })
-    .passthrough();
-const WarehouseShippingProviderUpdateIn = z
-  .object({
-    active: z.union([z.boolean(), z.null()]),
-    priority: z.union([z.number(), z.null()]),
-    pickup_cutoff_time: z.union([z.string(), z.null()]),
-    remark: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const WarehouseShippingProviderUpdateOut: z.ZodType<WarehouseShippingProviderUpdateOut> =
-  z
-    .object({
-      ok: z.boolean().optional().default(true),
-      data: WarehouseShippingProviderOut,
-    })
-    .passthrough();
-const WarehouseShippingProviderDeleteOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const PlatformShopCredentialsIn = z
-  .object({
-    platform: z.string().min(1).max(16),
-    shop_id: z.string().min(1).max(64),
-    access_token: z.string().min(1),
-    token_expires_at: z.union([z.string(), z.null()]).optional(),
-    status: z.union([z.string(), z.null()]).optional().default("ACTIVE"),
-    store_name: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const SimpleOut = z
-  .object({
-    ok: z.boolean(),
-    data: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
-  })
-  .passthrough();
-const OAuthStartOut = z
-  .object({ ok: z.boolean(), data: z.object({}).partial().passthrough() })
-  .passthrough();
-const NextSkuOut = z.object({ sku: z.string() }).passthrough();
-const ItemCreate = z
-  .object({
-    name: z.string().min(1).max(128),
-    spec: z.union([z.string(), z.null()]).optional(),
-    uom: z.union([z.string(), z.null()]).optional(),
     barcode: z.union([z.string(), z.null()]).optional(),
-    brand: z.union([z.string(), z.null()]).optional(),
-    category: z.union([z.string(), z.null()]).optional(),
-    enabled: z.boolean().optional().default(true),
-    supplier_id: z.union([z.number(), z.null()]).optional(),
-    has_shelf_life: z.union([z.boolean(), z.null()]).optional(),
-    shelf_life_value: z.union([z.number(), z.null()]).optional(),
-    shelf_life_unit: z.union([z.enum(["DAY", "MONTH"]), z.null()]).optional(),
-    weight_kg: z.union([z.number(), z.null()]).optional(),
+    batch_code: z.string(),
+    created_at: z.string().datetime({ offset: true }),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    item_id: z.number().int(),
+    item_name: z.union([z.string(), z.null()]).optional(),
+    item_sku: z.union([z.string(), z.null()]).optional(),
+    line_amount: z.union([z.string(), z.null()]).optional(),
+    line_no: z.number().int(),
+    po_line_id: z.union([z.number(), z.null()]).optional(),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty_received: z.number().int(),
+    qty_units: z.number().int(),
+    receipt_id: z.number().int(),
+    remark: z.union([z.string(), z.null()]).optional(),
+    unit_cost: z.union([z.string(), z.null()]).optional(),
+    units_per_case: z.number().int(),
+    updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough();
-const ItemOut = z
+const InboundReceiptOut: z.ZodType<InboundReceiptOut> = z
   .object({
-    sku: z.string().min(1).max(128),
-    name: z.string().min(1).max(128),
-    spec: z.union([z.string(), z.null()]).optional(),
-    uom: z.union([z.string(), z.null()]).optional(),
-    barcode: z.union([z.string(), z.null()]).optional(),
-    primary_barcode: z.union([z.string(), z.null()]).optional(),
-    brand: z.union([z.string(), z.null()]).optional(),
-    category: z.union([z.string(), z.null()]).optional(),
-    enabled: z.boolean().optional().default(true),
-    supplier_id: z.union([z.number(), z.null()]).optional(),
-    has_shelf_life: z.union([z.boolean(), z.null()]).optional(),
-    shelf_life_value: z.union([z.number(), z.null()]).optional(),
-    shelf_life_unit: z.union([z.enum(["DAY", "MONTH"]), z.null()]).optional(),
-    weight_kg: z.union([z.number(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
     id: z.number().int(),
+    lines: z.array(InboundReceiptLineOut).optional().default([]),
+    occurred_at: z.string().datetime({ offset: true }),
+    ref: z.string(),
+    remark: z.union([z.string(), z.null()]).optional(),
+    source_id: z.union([z.number(), z.null()]).optional(),
+    source_type: z.string(),
+    status: z.string(),
+    supplier_id: z.union([z.number(), z.null()]).optional(),
     supplier_name: z.union([z.string(), z.null()]).optional(),
-    created_at: z.union([z.string(), z.null()]).optional(),
-    updated_at: z.union([z.string(), z.null()]).optional(),
-    requires_batch: z.boolean().optional().default(true),
-    requires_dates: z.boolean().optional().default(true),
-    default_batch_code: z.union([z.string(), z.null()]).optional(),
-    is_test: z.boolean().optional().default(false),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    updated_at: z.string().datetime({ offset: true }),
+    warehouse_id: z.number().int(),
   })
   .passthrough();
-const ItemUpdate = z
+const InboundReceiptCreateIn = z
   .object({
-    sku: z.union([z.string(), z.null()]),
-    name: z.union([z.string(), z.null()]),
-    spec: z.union([z.string(), z.null()]),
-    uom: z.union([z.string(), z.null()]),
-    barcode: z.union([z.string(), z.null()]),
-    brand: z.union([z.string(), z.null()]),
-    category: z.union([z.string(), z.null()]),
-    enabled: z.union([z.boolean(), z.null()]),
-    supplier_id: z.union([z.number(), z.null()]),
-    has_shelf_life: z.union([z.boolean(), z.null()]),
-    shelf_life_value: z.union([z.number(), z.null()]),
-    shelf_life_unit: z.union([z.enum(["DAY", "MONTH"]), z.null()]),
-    weight_kg: z.union([z.number(), z.null()]),
+    occurred_at: z.union([z.string(), z.null()]).optional(),
+    remark: z.union([z.string(), z.null()]).optional(),
+    source_id: z.number().int(),
+    source_type: z.string(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
   })
+  .passthrough();
+const InboundReceiptConfirmLedgerRef: z.ZodType<InboundReceiptConfirmLedgerRef> =
+  z
+    .object({
+      applied: z.union([z.boolean(), z.null()]).optional(),
+      idempotent: z.union([z.boolean(), z.null()]).optional(),
+      item_id: z.number().int(),
+      qty_delta: z.number().int(),
+      ref: z.string(),
+      ref_line: z.number().int(),
+      source_line_key: z.string(),
+    })
+    .passthrough();
+const InboundReceiptConfirmOut: z.ZodType<InboundReceiptConfirmOut> = z
+  .object({
+    ledger_refs: z.array(InboundReceiptConfirmLedgerRef).optional(),
+    ledger_written: z.number().int(),
+    receipt: InboundReceiptOut,
+  })
+  .passthrough();
+const ProblemItem: z.ZodType<ProblemItem> = z
+  .object({
+    field: z.string(),
+    index: z.union([z.number(), z.null()]).optional(),
+    message: z.string(),
+    scope: z.enum(["header", "line"]),
+  })
+  .passthrough();
+const LedgerPreviewOut: z.ZodType<LedgerPreviewOut> = z
+  .object({
+    action: z.string(),
+    item_id: z.number().int(),
+    qty_delta: z.number().int(),
+    source_line_key: z.string(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const NormalizedLinePreviewOut: z.ZodType<NormalizedLinePreviewOut> = z
+  .object({
+    batch_code: z.string(),
+    item_id: z.number().int(),
+    line_key: z.string(),
+    po_line_id: z.union([z.number(), z.null()]).optional(),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty_total: z.number().int(),
+    source_line_indexes: z.array(z.number().int()).optional(),
+  })
+  .passthrough();
+const InboundReceiptSummaryOut: z.ZodType<InboundReceiptSummaryOut> = z
+  .object({
+    id: z.number().int(),
+    occurred_at: z.union([z.string(), z.null()]).optional(),
+    ref: z.union([z.string(), z.null()]).optional(),
+    source_id: z.union([z.number(), z.null()]).optional(),
+    source_type: z.union([z.string(), z.null()]).optional(),
+    status: z.string(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const InboundReceiptExplainOut: z.ZodType<InboundReceiptExplainOut> = z
+  .object({
+    blocking_errors: z.array(ProblemItem).optional(),
+    confirmable: z.boolean(),
+    ledger_preview: z.array(LedgerPreviewOut).optional(),
+    normalized_lines_preview: z.array(NormalizedLinePreviewOut).optional(),
+    receipt_summary: InboundReceiptSummaryOut,
+  })
+  .passthrough();
+const InternalOutboundLineOut: z.ZodType<InternalOutboundLineOut> = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]).optional(),
+    confirmed_qty: z.union([z.number(), z.null()]).optional(),
+    doc_id: z.number().int(),
+    extra_meta: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    id: z.number().int(),
+    item_id: z.number().int(),
+    line_no: z.number().int(),
+    note: z.union([z.string(), z.null()]).optional(),
+    requested_qty: z.number().int(),
+    uom: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const InternalOutboundDocOut: z.ZodType<InternalOutboundDocOut> = z
+  .object({
+    canceled_at: z.union([z.string(), z.null()]).optional(),
+    canceled_by: z.union([z.number(), z.null()]).optional(),
+    confirmed_at: z.union([z.string(), z.null()]).optional(),
+    confirmed_by: z.union([z.number(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
+    created_by: z.union([z.number(), z.null()]).optional(),
+    doc_no: z.string(),
+    doc_type: z.string(),
+    extra_meta: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    id: z.number().int(),
+    lines: z.array(InternalOutboundLineOut).optional().default([]),
+    note: z.union([z.string(), z.null()]).optional(),
+    recipient_id: z.union([z.number(), z.null()]).optional(),
+    recipient_name: z.union([z.string(), z.null()]).optional(),
+    recipient_note: z.union([z.string(), z.null()]).optional(),
+    recipient_type: z.union([z.string(), z.null()]).optional(),
+    status: z.string(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const InternalOutboundCreateDocIn = z
+  .object({
+    doc_type: z.string(),
+    note: z.union([z.string(), z.null()]).optional(),
+    recipient_name: z.string(),
+    recipient_note: z.union([z.string(), z.null()]).optional(),
+    recipient_type: z.union([z.string(), z.null()]).optional(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const InternalOutboundConfirmIn = z
+  .object({ trace_id: z.union([z.string(), z.null()]) })
   .partial()
+  .passthrough();
+const InternalOutboundUpsertLineIn = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int(),
+    note: z.union([z.string(), z.null()]).optional(),
+    qty: z.number().int(),
+    uom: z.union([z.string(), z.null()]).optional(),
+  })
   .passthrough();
 const ItemBarcodeCreate = z
   .object({
-    item_id: z.number().int(),
-    barcode: z.string(),
-    kind: z.string().optional().default("CUSTOM"),
     active: z.boolean().optional().default(true),
+    barcode: z.string(),
+    item_id: z.number().int(),
+    kind: z.string().optional().default("CUSTOM"),
   })
   .passthrough();
 const ItemBarcodeOut = z
   .object({
-    id: z.number().int(),
-    item_id: z.number().int(),
-    barcode: z.string(),
-    kind: z.string(),
     active: z.boolean(),
+    barcode: z.string(),
+    id: z.number().int(),
     is_primary: z.boolean(),
+    item_id: z.number().int(),
+    kind: z.string(),
   })
   .passthrough();
 const ItemBarcodeUpdate = z
   .object({
+    active: z.union([z.boolean(), z.null()]),
     barcode: z.union([z.string(), z.null()]),
+    is_primary: z.union([z.boolean(), z.null()]),
     kind: z.union([z.string(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-    is_primary: z.union([z.boolean(), z.null()]),
   })
   .partial()
   .passthrough();
-const SupplierContactOut: z.ZodType<SupplierContactOut> = z
+const enabled = z.union([z.boolean(), z.null()]).optional();
+const ItemOut = z
   .object({
+    barcode: z.union([z.string(), z.null()]).optional(),
+    brand: z.union([z.string(), z.null()]).optional(),
+    category: z.union([z.string(), z.null()]).optional(),
+    created_at: z.union([z.string(), z.null()]).optional(),
+    default_batch_code: z.union([z.string(), z.null()]).optional(),
+    enabled: z.boolean().optional().default(true),
+    has_shelf_life: z.union([z.boolean(), z.null()]).optional(),
     id: z.number().int(),
-    supplier_id: z.number().int(),
-    name: z.string(),
-    phone: z.union([z.string(), z.null()]).optional(),
-    email: z.union([z.string(), z.null()]).optional(),
-    wechat: z.union([z.string(), z.null()]).optional(),
-    role: z.string(),
-    is_primary: z.boolean(),
-    active: z.boolean(),
+    is_test: z.boolean().optional().default(false),
+    name: z.string().min(1).max(128),
+    primary_barcode: z.union([z.string(), z.null()]).optional(),
+    requires_batch: z.boolean().optional().default(true),
+    requires_dates: z.boolean().optional().default(true),
+    shelf_life_unit: z.union([z.enum(["DAY", "MONTH"]), z.null()]).optional(),
+    shelf_life_value: z.union([z.number(), z.null()]).optional(),
+    sku: z.string().min(1).max(128),
+    spec: z.union([z.string(), z.null()]).optional(),
+    supplier_id: z.union([z.number(), z.null()]).optional(),
+    supplier_name: z.union([z.string(), z.null()]).optional(),
+    uom: z.union([z.string(), z.null()]).optional(),
+    updated_at: z.union([z.string(), z.null()]).optional(),
+    weight_kg: z.union([z.number(), z.null()]).optional(),
   })
   .passthrough();
-const SupplierOut: z.ZodType<SupplierOut> = z
+const ItemCreate = z
   .object({
-    id: z.number().int(),
-    name: z.string(),
+    barcode: z.union([z.string(), z.null()]).optional(),
+    brand: z.union([z.string(), z.null()]).optional(),
+    category: z.union([z.string(), z.null()]).optional(),
+    enabled: z.boolean().optional().default(true),
+    has_shelf_life: z.union([z.boolean(), z.null()]).optional(),
+    name: z.string().min(1).max(128),
+    shelf_life_unit: z.union([z.enum(["DAY", "MONTH"]), z.null()]).optional(),
+    shelf_life_value: z.union([z.number(), z.null()]).optional(),
+    spec: z.union([z.string(), z.null()]).optional(),
+    supplier_id: z.union([z.number(), z.null()]).optional(),
+    uom: z.union([z.string(), z.null()]).optional(),
+    weight_kg: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const NextSkuOut = z.object({ sku: z.string() }).passthrough();
+const ItemUpdate = z
+  .object({
+    barcode: z.union([z.string(), z.null()]),
+    brand: z.union([z.string(), z.null()]),
+    category: z.union([z.string(), z.null()]),
+    enabled: z.union([z.boolean(), z.null()]),
+    has_shelf_life: z.union([z.boolean(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+    shelf_life_unit: z.union([z.enum(["DAY", "MONTH"]), z.null()]),
+    shelf_life_value: z.union([z.number(), z.null()]),
+    sku: z.union([z.string(), z.null()]),
+    spec: z.union([z.string(), z.null()]),
+    supplier_id: z.union([z.number(), z.null()]),
+    uom: z.union([z.string(), z.null()]),
+    weight_kg: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const FskuLiteOut: z.ZodType<FskuLiteOut> = z
+  .object({
     code: z.string(),
-    website: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean(),
-    contacts: z.array(SupplierContactOut),
-  })
-  .passthrough();
-const SupplierCreateIn = z
-  .object({
-    name: z.string().min(1),
-    code: z.string().min(1),
-    website: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const active__2 = z.union([z.boolean(), z.null()]).optional().default(true);
-const SupplierBasicOut = z
-  .object({
     id: z.number().int(),
     name: z.string(),
-    code: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean(),
+    status: z.string(),
   })
   .passthrough();
-const SupplierUpdateIn = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    code: z.union([z.string(), z.null()]),
-    website: z.union([z.string(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-  })
-  .partial()
+const StoreLiteOut: z.ZodType<StoreLiteOut> = z
+  .object({ id: z.number().int(), name: z.string() })
   .passthrough();
-const SupplierContactCreateIn = z
+const MerchantCodeBindingRowOut: z.ZodType<MerchantCodeBindingRowOut> = z
   .object({
-    name: z.string().min(1).max(100),
-    phone: z.union([z.string(), z.null()]).optional(),
-    email: z.union([z.string(), z.null()]).optional(),
-    wechat: z.union([z.string(), z.null()]).optional(),
-    role: z.string().max(32).optional().default("other"),
-    is_primary: z.boolean().optional().default(false),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const SupplierContactUpdateIn = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    phone: z.union([z.string(), z.null()]),
-    email: z.union([z.string(), z.null()]),
-    wechat: z.union([z.string(), z.null()]),
-    role: z.union([z.string(), z.null()]),
-    is_primary: z.union([z.boolean(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const ShippingProviderContactOut: z.ZodType<ShippingProviderContactOut> = z
-  .object({
-    id: z.number().int(),
-    shipping_provider_id: z.number().int(),
-    name: z.string(),
-    phone: z.union([z.string(), z.null()]).optional(),
-    email: z.union([z.string(), z.null()]).optional(),
-    wechat: z.union([z.string(), z.null()]).optional(),
-    role: z.string(),
-    is_primary: z.boolean(),
-    active: z.boolean(),
-  })
-  .passthrough();
-const ShippingProviderOut: z.ZodType<ShippingProviderOut> = z
-  .object({
-    id: z.number().int(),
-    name: z.string(),
-    code: z.union([z.string(), z.null()]).optional(),
-    address: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean().optional().default(true),
-    warehouse_id: z.number().int(),
-    priority: z.number().int().optional().default(100),
-    pricing_model: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-    region_rules: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-    contacts: z.array(ShippingProviderContactOut).optional(),
-  })
-  .passthrough();
-const ShippingProviderListOut: z.ZodType<ShippingProviderListOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.array(ShippingProviderOut),
-  })
-  .passthrough();
-const ShippingProviderCreateIn = z
-  .object({
-    name: z.string().min(1).max(255),
-    code: z.union([z.string(), z.null()]).optional(),
-    address: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean().optional().default(true),
-    warehouse_id: z.number().int().gte(1),
-    priority: z.union([z.number(), z.null()]).optional().default(100),
-    pricing_model: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-    region_rules: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-  })
-  .passthrough();
-const ShippingProviderCreateOut: z.ZodType<ShippingProviderCreateOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: ShippingProviderOut,
-  })
-  .passthrough();
-const ShippingProviderDetailOut: z.ZodType<ShippingProviderDetailOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: ShippingProviderOut,
-  })
-  .passthrough();
-const ShippingProviderUpdateIn = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    code: z.union([z.string(), z.null()]),
-    address: z.union([z.string(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-    warehouse_id: z.union([z.number(), z.null()]),
-    priority: z.union([z.number(), z.null()]),
-    pricing_model: z.union([z.object({}).partial().passthrough(), z.null()]),
-    region_rules: z.union([z.object({}).partial().passthrough(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const ShippingProviderUpdateOut: z.ZodType<ShippingProviderUpdateOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: ShippingProviderOut,
-  })
-  .passthrough();
-const ShippingProviderContactCreateIn = z
-  .object({
-    name: z.string().min(1).max(100),
-    phone: z.union([z.string(), z.null()]).optional(),
-    email: z.union([z.string(), z.null()]).optional(),
-    wechat: z.union([z.string(), z.null()]).optional(),
-    role: z.string().max(32).optional().default("other"),
-    is_primary: z.boolean().optional().default(false),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const ShippingProviderContactUpdateIn = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    phone: z.union([z.string(), z.null()]),
-    email: z.union([z.string(), z.null()]),
-    wechat: z.union([z.union([z.string(), z.string()]), z.null()]),
-    role: z.union([z.string(), z.null()]),
-    is_primary: z.union([z.boolean(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const WeightSegmentIn: z.ZodType<WeightSegmentIn> = z
-  .object({
-    min: z.string().min(1).max(32),
-    max: z.string().max(32).optional().default(""),
-  })
-  .passthrough();
-const SchemeSegmentOut: z.ZodType<SchemeSegmentOut> = z
-  .object({
-    id: z.number().int(),
-    scheme_id: z.number().int(),
-    ord: z.number().int(),
-    min_kg: z.unknown(),
-    max_kg: z.unknown().optional(),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const ZoneMemberOut: z.ZodType<ZoneMemberOut> = z
-  .object({
-    id: z.number().int(),
-    zone_id: z.number().int(),
-    level: z.string(),
-    value: z.string(),
-  })
-  .passthrough();
-const ZoneBracketOut: z.ZodType<ZoneBracketOut> = z
-  .object({
-    id: z.number().int(),
-    zone_id: z.number().int(),
-    min_kg: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    max_kg: z.union([z.string(), z.null()]).optional(),
-    pricing_mode: z.string(),
-    flat_amount: z.union([z.string(), z.null()]).optional(),
-    base_amount: z.union([z.string(), z.null()]).optional(),
-    rate_per_kg: z.union([z.string(), z.null()]).optional(),
-    base_kg: z.union([z.string(), z.null()]).optional(),
-    price_json: z.object({}).partial().passthrough().optional(),
-    active: z.boolean(),
-  })
-  .passthrough();
-const ZoneOut: z.ZodType<ZoneOut> = z
-  .object({
-    id: z.number().int(),
-    scheme_id: z.number().int(),
-    name: z.string(),
-    active: z.boolean(),
-    segment_template_id: z.union([z.number(), z.null()]).optional(),
-    members: z.array(ZoneMemberOut).optional(),
-    brackets: z.array(ZoneBracketOut).optional(),
-  })
-  .passthrough();
-const SurchargeOut: z.ZodType<SurchargeOut> = z
-  .object({
-    id: z.number().int(),
-    scheme_id: z.number().int(),
-    name: z.string(),
-    active: z.boolean(),
-    condition_json: z.object({}).partial().passthrough(),
-    amount_json: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const DestAdjustmentOut: z.ZodType<DestAdjustmentOut> = z
-  .object({
-    id: z.number().int(),
-    scheme_id: z.number().int(),
-    scope: z.string(),
-    province_code: z.string(),
-    city_code: z.union([z.string(), z.null()]).optional(),
-    province_name: z.union([z.string(), z.null()]).optional(),
-    city_name: z.union([z.string(), z.null()]).optional(),
-    province: z.string(),
-    city: z.union([z.string(), z.null()]).optional(),
-    amount: z.number(),
-    active: z.boolean(),
-    priority: z.number().int(),
     created_at: z.string().datetime({ offset: true }),
+    fsku: FskuLiteOut,
+    fsku_id: z.number().int(),
+    id: z.number().int(),
+    merchant_code: z.string(),
+    platform: z.string(),
+    reason: z.union([z.string(), z.null()]),
+    shop_id: z.string(),
+    store: StoreLiteOut,
     updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough();
-const SchemeOut: z.ZodType<SchemeOut> = z
-  .object({
-    id: z.number().int(),
-    shipping_provider_id: z.number().int(),
-    shipping_provider_name: z.string(),
-    name: z.string(),
-    active: z.boolean(),
-    archived_at: z.union([z.string(), z.null()]).optional(),
-    currency: z.string(),
-    effective_from: z.union([z.string(), z.null()]).optional(),
-    effective_to: z.union([z.string(), z.null()]).optional(),
-    default_pricing_mode: z.string(),
-    billable_weight_rule: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-    default_segment_template_id: z.union([z.number(), z.null()]).optional(),
-    segments_json: z.union([z.array(WeightSegmentIn), z.null()]).optional(),
-    segments_updated_at: z.union([z.string(), z.null()]).optional(),
-    segments: z.array(SchemeSegmentOut).optional(),
-    zones: z.array(ZoneOut).optional(),
-    surcharges: z.array(SurchargeOut).optional(),
-    dest_adjustments: z.array(DestAdjustmentOut).optional(),
-  })
-  .passthrough();
-const SchemeListOut: z.ZodType<SchemeListOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.array(SchemeOut),
-  })
-  .passthrough();
-const SchemeCreateIn: z.ZodType<SchemeCreateIn> = z
-  .object({
-    name: z.string().min(1).max(128),
-    active: z.boolean().optional().default(true),
-    currency: z.string().min(1).max(8).optional().default("CNY"),
-    default_pricing_mode: z
-      .string()
-      .min(1)
-      .max(32)
-      .optional()
-      .default("linear_total"),
-    effective_from: z.union([z.string(), z.null()]).optional(),
-    effective_to: z.union([z.string(), z.null()]).optional(),
-    billable_weight_rule: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-    segments_json: z.union([z.array(WeightSegmentIn), z.null()]).optional(),
-  })
-  .passthrough();
-const SchemeDetailOut: z.ZodType<SchemeDetailOut> = z
-  .object({ ok: z.boolean().optional().default(true), data: SchemeOut })
-  .passthrough();
-const SchemeUpdateIn: z.ZodType<SchemeUpdateIn> = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-    archived_at: z.union([z.string(), z.null()]),
-    currency: z.union([z.string(), z.null()]),
-    default_pricing_mode: z.union([z.string(), z.null()]),
-    effective_from: z.union([z.string(), z.null()]),
-    effective_to: z.union([z.string(), z.null()]),
-    billable_weight_rule: z.union([
-      z.object({}).partial().passthrough(),
-      z.null(),
-    ]),
-    segments_json: z.union([z.array(WeightSegmentIn), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const SegmentRangeOut: z.ZodType<SegmentRangeOut> = z
-  .object({
-    ord: z.number().int(),
-    min_kg: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    max_kg: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const ZoneBracketsMatrixGroupOut: z.ZodType<ZoneBracketsMatrixGroupOut> = z
-  .object({
-    segment_template_id: z.number().int(),
-    template_name: z.string(),
-    template_status: z.string(),
-    template_is_active: z.boolean(),
-    segments: z.array(SegmentRangeOut).optional(),
-    zones: z.array(ZoneOut).optional(),
-  })
-  .passthrough();
-const ZoneBracketsMatrixOut: z.ZodType<ZoneBracketsMatrixOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    scheme_id: z.number().int(),
-    groups: z.array(ZoneBracketsMatrixGroupOut).optional(),
-    unbound_zones: z.array(ZoneOut).optional(),
-  })
-  .passthrough();
-const SchemeDefaultSegmentTemplateIn = z
-  .object({ template_id: z.union([z.number(), z.null()]) })
-  .partial()
-  .passthrough();
-const SchemeSegmentActivePatchIn = z
-  .object({ active: z.boolean() })
-  .passthrough();
-const WarehouseLiteOut: z.ZodType<WarehouseLiteOut> = z
-  .object({
-    id: z.number().int(),
-    name: z.string(),
-    code: z.union([z.string(), z.null()]).optional(),
-    active: z.boolean(),
-  })
-  .passthrough();
-const SchemeWarehouseOut: z.ZodType<SchemeWarehouseOut> = z
-  .object({
-    scheme_id: z.number().int(),
-    warehouse_id: z.number().int(),
-    active: z.boolean(),
-    warehouse: WarehouseLiteOut,
-  })
-  .passthrough();
-const SchemeWarehousesGetOut: z.ZodType<SchemeWarehousesGetOut> = z
-  .object({ ok: z.boolean(), data: z.array(SchemeWarehouseOut) })
-  .passthrough();
-const SchemeWarehouseBindIn = z
-  .object({
-    warehouse_id: z.number().int().gte(1),
-    active: z.boolean().optional().default(false),
-  })
-  .passthrough();
-const SchemeWarehouseBindOut: z.ZodType<SchemeWarehouseBindOut> = z
-  .object({ ok: z.boolean(), data: SchemeWarehouseOut })
-  .passthrough();
-const SchemeWarehousePatchIn = z
-  .object({ active: z.union([z.boolean(), z.null()]) })
-  .partial()
-  .passthrough();
-const SchemeWarehousePatchOut: z.ZodType<SchemeWarehousePatchOut> = z
-  .object({ ok: z.boolean(), data: SchemeWarehouseOut })
-  .passthrough();
-const SchemeWarehouseDeleteOut = z
-  .object({ ok: z.boolean(), data: z.object({}).partial().passthrough() })
-  .passthrough();
-const SegmentTemplateItemOut: z.ZodType<SegmentTemplateItemOut> = z
-  .object({
-    id: z.number().int(),
-    template_id: z.number().int(),
-    ord: z.number().int(),
-    min_kg: z.unknown(),
-    max_kg: z.unknown().optional(),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const SegmentTemplateOut: z.ZodType<SegmentTemplateOut> = z
-  .object({
-    id: z.number().int(),
-    scheme_id: z.number().int(),
-    name: z.string(),
-    status: z.string(),
-    is_active: z.boolean(),
-    effective_from: z.union([z.string(), z.null()]).optional(),
-    published_at: z.union([z.string(), z.null()]).optional(),
-    created_at: z.union([z.string(), z.null()]).optional(),
-    updated_at: z.union([z.string(), z.null()]).optional(),
-    items: z.array(SegmentTemplateItemOut).optional(),
-  })
-  .passthrough();
-const SegmentTemplateListOut: z.ZodType<SegmentTemplateListOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: z.array(SegmentTemplateOut),
-  })
-  .passthrough();
-const SegmentTemplateCreateIn = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    effective_from: z.union([z.string(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const SegmentTemplateDetailOut: z.ZodType<SegmentTemplateDetailOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    data: SegmentTemplateOut,
-  })
-  .passthrough();
-const SegmentTemplateItemIn: z.ZodType<SegmentTemplateItemIn> = z
-  .object({
-    ord: z.number().int().gte(0),
-    min_kg: z.unknown(),
-    max_kg: z.unknown().optional(),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const SegmentTemplateItemsPutIn: z.ZodType<SegmentTemplateItemsPutIn> = z
-  .object({ items: z.array(SegmentTemplateItemIn) })
-  .passthrough();
-const SegmentTemplateItemActivePatchIn = z
-  .object({ active: z.boolean() })
-  .passthrough();
-const SegmentTemplateRenameIn = z
-  .object({ name: z.string().min(1).max(80) })
-  .passthrough();
-const ZoneCreateIn = z
-  .object({
-    name: z.string().min(1).max(128),
-    active: z.boolean().optional().default(true),
-    segment_template_id: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const ZoneCreateAtomicIn = z
-  .object({
-    name: z.string().min(1).max(128),
-    active: z.boolean().optional().default(true),
-    provinces: z.array(z.string()).optional(),
-    segment_template_id: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const ZoneUpdateIn = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-    segment_template_id: z.union([z.number(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const ZoneProvinceMembersReplaceIn = z
-  .object({ provinces: z.array(z.string()) })
-  .partial()
-  .passthrough();
-const ZoneMemberCreateIn = z
-  .object({
-    level: z.string().min(1).max(16),
-    value: z.string().min(1).max(64),
-  })
-  .passthrough();
-const ZoneBracketCreateIn = z
-  .object({
-    min_kg: z.union([z.number(), z.string()]),
-    max_kg: z.union([z.number(), z.string(), z.null()]).optional(),
-    pricing_mode: z.string().min(1).max(32),
-    flat_amount: z.union([z.number(), z.string(), z.null()]).optional(),
-    base_amount: z.union([z.number(), z.string(), z.null()]).optional(),
-    rate_per_kg: z.union([z.number(), z.string(), z.null()]).optional(),
-    base_kg: z.union([z.number(), z.string(), z.null()]).optional(),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const ZoneBracketUpdateIn = z
-  .object({
-    min_kg: z.union([z.number(), z.string(), z.null()]),
-    max_kg: z.union([z.number(), z.string(), z.null()]),
-    pricing_mode: z.union([z.string(), z.null()]),
-    flat_amount: z.union([z.number(), z.string(), z.null()]),
-    base_amount: z.union([z.number(), z.string(), z.null()]),
-    rate_per_kg: z.union([z.number(), z.string(), z.null()]),
-    base_kg: z.union([z.number(), z.string(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const CopyZoneBracketsIn = z
-  .object({
-    source_zone_id: z.number().int().gte(1),
-    conflict_policy: z.string().optional().default("skip"),
-    active_policy: z.string().optional().default("preserve"),
-    pricing_modes: z.array(z.string()).optional(),
-    include_inactive: z.boolean().optional().default(false),
-  })
-  .passthrough();
-const CopyZoneBracketsSummary: z.ZodType<CopyZoneBracketsSummary> = z
-  .object({
-    source_count: z.number().int(),
-    created_count: z.number().int(),
-    updated_count: z.number().int(),
-    skipped_count: z.number().int(),
-    failed_count: z.number().int(),
-  })
-  .passthrough();
-const CopyZoneBracketsOut: z.ZodType<CopyZoneBracketsOut> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    target_zone_id: z.number().int(),
-    source_zone_id: z.number().int(),
-    conflict_policy: z.string(),
-    active_policy: z.string(),
-    summary: CopyZoneBracketsSummary,
-    created: z.array(ZoneBracketOut).optional(),
-    updated: z.array(ZoneBracketOut).optional(),
-    skipped: z.array(ZoneBracketOut).optional(),
-    failed: z.array(z.object({}).partial().passthrough()).optional(),
-  })
-  .passthrough();
-const SurchargeCreateIn = z
-  .object({
-    name: z.string().min(1).max(128),
-    active: z.boolean().optional().default(true),
-    condition_json: z.object({}).partial().passthrough(),
-    amount_json: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const SurchargeUpsertIn = z
-  .object({
-    scope: z.enum(["province", "city"]),
-    province: z.string().min(1).max(64),
-    city: z.union([z.string(), z.null()]).optional(),
-    name: z.union([z.string(), z.null()]).optional(),
-    amount: z.number().gte(0),
-    active: z.boolean().optional().default(true),
-  })
-  .passthrough();
-const SurchargeUpdateIn = z
-  .object({
-    name: z.union([z.string(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-    condition_json: z.union([z.object({}).partial().passthrough(), z.null()]),
-    amount_json: z.union([z.object({}).partial().passthrough(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const DestAdjustmentUpsertIn = z
-  .object({
-    scope: z.string(),
-    province_code: z.string(),
-    city_code: z.union([z.string(), z.null()]).optional(),
-    province_name: z.union([z.string(), z.null()]).optional(),
-    city_name: z.union([z.string(), z.null()]).optional(),
-    amount: z.number(),
-    active: z.boolean().optional().default(true),
-    priority: z.number().int().optional().default(100),
-  })
-  .passthrough();
-const DestAdjustmentUpdateIn = z
-  .object({
-    scope: z.union([z.string(), z.null()]),
-    province_code: z.union([z.string(), z.null()]),
-    city_code: z.union([z.string(), z.null()]),
-    province_name: z.union([z.string(), z.null()]),
-    city_name: z.union([z.string(), z.null()]),
-    amount: z.union([z.number(), z.null()]),
-    active: z.union([z.boolean(), z.null()]),
-    priority: z.union([z.number(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const GeoItemOut = z
-  .object({ code: z.string(), name: z.string() })
-  .passthrough();
-const OpsActiveSchemeRow: z.ZodType<OpsActiveSchemeRow> = z
-  .object({
-    scheme_id: z.number().int(),
-    scheme_name: z.string(),
-    shipping_provider_id: z.number().int(),
-    shipping_provider_name: z.string(),
-  })
-  .passthrough();
-const OpsActiveSchemesOut: z.ZodType<OpsActiveSchemesOut> = z
-  .object({ ok: z.boolean().default(true), data: z.array(OpsActiveSchemeRow) })
-  .partial()
-  .passthrough();
-const PricingIntegrityReportSummary: z.ZodType<PricingIntegrityReportSummary> =
+const MerchantCodeBindingListDataOut: z.ZodType<MerchantCodeBindingListDataOut> =
   z
     .object({
-      blocking: z.number().int().default(0),
-      warning: z.number().int().default(0),
-    })
-    .partial()
-    .passthrough();
-const PricingIntegrityArchivedZoneIssue: z.ZodType<PricingIntegrityArchivedZoneIssue> =
-  z
-    .object({
-      scheme_id: z.number().int(),
-      zone_id: z.number().int(),
-      zone_name: z.string(),
-      zone_active: z.boolean(),
-      province_members: z.array(z.string()).optional(),
-      province_member_n: z.number().int().optional().default(0),
-      suggested_action: z
-        .string()
-        .optional()
-        .default("ARCHIVE_RELEASE_PROVINCES"),
+      items: z.array(MerchantCodeBindingRowOut),
+      limit: z.number().int(),
+      offset: z.number().int(),
+      total: z.number().int(),
     })
     .passthrough();
-const PricingIntegrityReleasedZoneStillPricedIssue: z.ZodType<PricingIntegrityReleasedZoneStillPricedIssue> =
-  z
-    .object({
-      scheme_id: z.number().int(),
-      zone_id: z.number().int(),
-      zone_name: z.string(),
-      zone_active: z.boolean(),
-      province_member_n: z.number().int().optional().default(0),
-      brackets_n: z.number().int().optional().default(0),
-      segment_template_id: z.union([z.number(), z.null()]).optional(),
-      suggested_action: z.string().optional().default("DETACH_ZONE_BRACKETS"),
-    })
-    .passthrough();
-const PricingIntegrityArchivedTemplateStillReferencedIssue: z.ZodType<PricingIntegrityArchivedTemplateStillReferencedIssue> =
-  z
-    .object({
-      scheme_id: z.number().int(),
-      template_id: z.number().int(),
-      template_name: z.string(),
-      template_status: z.string(),
-      referencing_zone_ids: z.array(z.number().int()).optional(),
-      referencing_zone_names: z.array(z.string()).optional(),
-      referencing_zone_n: z.number().int().optional().default(0),
-      suggested_action: z
-        .string()
-        .optional()
-        .default("UNBIND_ARCHIVED_TEMPLATE"),
-    })
-    .passthrough();
-const PricingIntegrityReportOut: z.ZodType<PricingIntegrityReportOut> = z
+const MerchantCodeBindingListOut: z.ZodType<MerchantCodeBindingListOut> = z
   .object({
-    scheme_id: z.number().int(),
-    summary: PricingIntegrityReportSummary,
-    archived_zones_still_occupying: z
-      .array(PricingIntegrityArchivedZoneIssue)
-      .optional(),
-    released_zones_still_priced: z
-      .array(PricingIntegrityReleasedZoneStillPricedIssue)
-      .optional(),
-    archived_templates_still_referenced: z
-      .array(PricingIntegrityArchivedTemplateStillReferencedIssue)
-      .optional(),
-  })
-  .passthrough();
-const PricingIntegrityFixArchiveReleaseIn = z
-  .object({
-    scheme_id: z.number().int().gte(1),
-    zone_ids: z.array(z.number().int()).min(1),
-    dry_run: z.boolean().optional().default(false),
-  })
-  .passthrough();
-const PricingIntegrityFixArchiveReleaseItemOut: z.ZodType<PricingIntegrityFixArchiveReleaseItemOut> =
-  z
-    .object({
-      zone_id: z.number().int(),
-      zone_name: z.string(),
-      ok: z.boolean(),
-      would_release_provinces: z.array(z.string()).optional(),
-      would_release_n: z.number().int().optional().default(0),
-      after_active: z.union([z.boolean(), z.null()]).optional(),
-      after_province_member_n: z.union([z.number(), z.null()]).optional(),
-      error: z.union([z.string(), z.null()]).optional(),
-    })
-    .passthrough();
-const PricingIntegrityFixArchiveReleaseOut: z.ZodType<PricingIntegrityFixArchiveReleaseOut> =
-  z
-    .object({
-      scheme_id: z.number().int(),
-      dry_run: z.boolean(),
-      items: z.array(PricingIntegrityFixArchiveReleaseItemOut).optional(),
-    })
-    .passthrough();
-const PricingIntegrityFixDetachZoneBracketsIn = z
-  .object({
-    scheme_id: z.number().int().gte(1),
-    zone_ids: z.array(z.number().int()).min(1),
-    dry_run: z.boolean().optional().default(false),
-  })
-  .passthrough();
-const PricingIntegrityFixDetachZoneBracketsItemOut: z.ZodType<PricingIntegrityFixDetachZoneBracketsItemOut> =
-  z
-    .object({
-      zone_id: z.number().int(),
-      zone_name: z.string(),
-      ok: z.boolean(),
-      province_member_n: z.number().int().optional().default(0),
-      would_delete_brackets_n: z.number().int().optional().default(0),
-      would_delete_ranges_preview: z.array(z.string()).optional(),
-      after_brackets_n: z.union([z.number(), z.null()]).optional(),
-      error: z.union([z.string(), z.null()]).optional(),
-    })
-    .passthrough();
-const PricingIntegrityFixDetachZoneBracketsOut: z.ZodType<PricingIntegrityFixDetachZoneBracketsOut> =
-  z
-    .object({
-      scheme_id: z.number().int(),
-      dry_run: z.boolean(),
-      items: z.array(PricingIntegrityFixDetachZoneBracketsItemOut).optional(),
-    })
-    .passthrough();
-const PricingIntegrityFixUnbindArchivedTemplatesIn = z
-  .object({
-    scheme_id: z.number().int().gte(1),
-    template_ids: z.array(z.number().int()).min(1),
-    dry_run: z.boolean().optional().default(false),
-  })
-  .passthrough();
-const PricingIntegrityFixUnbindArchivedTemplatesItemOut: z.ZodType<PricingIntegrityFixUnbindArchivedTemplatesItemOut> =
-  z
-    .object({
-      template_id: z.number().int(),
-      template_name: z.string(),
-      ok: z.boolean(),
-      template_status: z.union([z.string(), z.null()]).optional(),
-      would_unbind_zone_ids: z.array(z.number().int()).optional(),
-      would_unbind_zone_names: z.array(z.string()).optional(),
-      would_unbind_zone_n: z.number().int().optional().default(0),
-      after_unbound_zone_n: z.union([z.number(), z.null()]).optional(),
-      error: z.union([z.string(), z.null()]).optional(),
-    })
-    .passthrough();
-const PricingIntegrityFixUnbindArchivedTemplatesOut: z.ZodType<PricingIntegrityFixUnbindArchivedTemplatesOut> =
-  z
-    .object({
-      scheme_id: z.number().int(),
-      dry_run: z.boolean(),
-      items: z
-        .array(PricingIntegrityFixUnbindArchivedTemplatesItemOut)
-        .optional(),
-    })
-    .passthrough();
-const ShellSchemeRow: z.ZodType<ShellSchemeRow> = z
-  .object({
-    scheme_id: z.number().int(),
-    name: z.string(),
-    active: z.boolean(),
-    tpl_n: z.number().int().optional().default(0),
-    surcharge_n: z.number().int().optional().default(0),
-    seg_n: z.number().int().optional().default(0),
-    wh_n: z.number().int().optional().default(0),
-    zone_n: z.number().int().optional().default(0),
-  })
-  .passthrough();
-const CleanupShellSchemesOut: z.ZodType<CleanupShellSchemesOut> = z
-  .object({
+    data: MerchantCodeBindingListDataOut,
     ok: z.boolean().optional().default(true),
-    dry_run: z.boolean(),
-    include_surcharge_only: z.boolean(),
-    limit: z.number().int(),
-    candidates_n: z.number().int(),
-    deleted_n: z.number().int().optional().default(0),
-    candidates: z.array(ShellSchemeRow).optional(),
   })
   .passthrough();
-const QuoteDestIn: z.ZodType<QuoteDestIn> = z
+const MerchantCodeBindingBindIn = z
   .object({
-    province: z.union([z.string(), z.null()]).optional(),
-    city: z.union([z.string(), z.null()]).optional(),
-    district: z.union([z.string(), z.null()]).optional(),
-    province_code: z.string().min(1),
-    city_code: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const QuoteCalcIn: z.ZodType<QuoteCalcIn> = z
-  .object({
-    warehouse_id: z.number().int().gte(1),
-    scheme_id: z.number().int().gte(1),
-    dest: QuoteDestIn,
-    real_weight_kg: z.number().gte(0),
-    length_cm: z.union([z.number(), z.null()]).optional(),
-    width_cm: z.union([z.number(), z.null()]).optional(),
-    height_cm: z.union([z.number(), z.null()]).optional(),
-    flags: z.array(z.string()).optional(),
-  })
-  .passthrough();
-const QuoteCalcOut = z
-  .object({
-    ok: z.boolean(),
-    quote_status: z.string(),
-    currency: z.union([z.string(), z.null()]).optional(),
-    total_amount: z.union([z.number(), z.null()]).optional(),
-    weight: z.object({}).partial().passthrough(),
-    zone: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
-    bracket: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-    breakdown: z.object({}).partial().passthrough(),
-    reasons: z.array(z.string()).optional(),
-  })
-  .passthrough();
-const QuoteRecommendIn: z.ZodType<QuoteRecommendIn> = z
-  .object({
-    warehouse_id: z.number().int().gte(1),
-    provider_ids: z.array(z.number().int()).optional(),
-    dest: QuoteDestIn,
-    real_weight_kg: z.number().gte(0),
-    length_cm: z.union([z.number(), z.null()]).optional(),
-    width_cm: z.union([z.number(), z.null()]).optional(),
-    height_cm: z.union([z.number(), z.null()]).optional(),
-    flags: z.array(z.string()).optional(),
-    max_results: z.number().int().gte(1).lte(50).optional().default(10),
-  })
-  .passthrough();
-const QuoteRecommendItemOut: z.ZodType<QuoteRecommendItemOut> = z
-  .object({
-    provider_id: z.number().int(),
-    carrier_code: z.union([z.string(), z.null()]).optional(),
-    carrier_name: z.string(),
-    scheme_id: z.number().int(),
-    scheme_name: z.string(),
-    total_amount: z.number(),
-    currency: z.union([z.string(), z.null()]).optional(),
-    quote_status: z.string(),
-    weight: z.object({}).partial().passthrough(),
-    zone: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
-    bracket: z
-      .union([z.object({}).partial().passthrough(), z.null()])
-      .optional(),
-    breakdown: z.object({}).partial().passthrough(),
-    reasons: z.array(z.string()).optional(),
-  })
-  .passthrough();
-const QuoteRecommendOut: z.ZodType<QuoteRecommendOut> = z
-  .object({
-    ok: z.boolean(),
-    recommended_scheme_id: z.union([z.number(), z.null()]).optional(),
-    quotes: z.array(QuoteRecommendItemOut),
-  })
-  .passthrough();
-const ShippingByCarrierRow: z.ZodType<ShippingByCarrierRow> = z
-  .object({
-    carrier_code: z.union([z.string(), z.null()]).optional(),
-    carrier_name: z.union([z.string(), z.null()]).optional(),
-    ship_cnt: z.number().int(),
-    total_cost: z.number(),
-    avg_cost: z.number(),
-  })
-  .passthrough();
-const ShippingByCarrierResponse: z.ZodType<ShippingByCarrierResponse> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    rows: z.array(ShippingByCarrierRow),
-  })
-  .passthrough();
-const ShippingByProvinceRow: z.ZodType<ShippingByProvinceRow> = z
-  .object({
-    province: z.union([z.string(), z.null()]).optional(),
-    ship_cnt: z.number().int(),
-    total_cost: z.number(),
-    avg_cost: z.number(),
-  })
-  .passthrough();
-const ShippingByProvinceResponse: z.ZodType<ShippingByProvinceResponse> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    rows: z.array(ShippingByProvinceRow),
-  })
-  .passthrough();
-const ShippingByShopRow: z.ZodType<ShippingByShopRow> = z
-  .object({
-    platform: z.string(),
-    shop_id: z.string(),
-    ship_cnt: z.number().int(),
-    total_cost: z.number(),
-    avg_cost: z.number(),
-  })
-  .passthrough();
-const ShippingByShopResponse: z.ZodType<ShippingByShopResponse> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    rows: z.array(ShippingByShopRow),
-  })
-  .passthrough();
-const ShippingByWarehouseRow: z.ZodType<ShippingByWarehouseRow> = z
-  .object({
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    ship_cnt: z.number().int(),
-    total_cost: z.number(),
-    avg_cost: z.number(),
-  })
-  .passthrough();
-const ShippingByWarehouseResponse: z.ZodType<ShippingByWarehouseResponse> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    rows: z.array(ShippingByWarehouseRow),
-  })
-  .passthrough();
-const ShippingDailyRow: z.ZodType<ShippingDailyRow> = z
-  .object({
-    stat_date: z.string(),
-    ship_cnt: z.number().int(),
-    total_cost: z.number(),
-    avg_cost: z.number(),
-  })
-  .passthrough();
-const ShippingDailyResponse: z.ZodType<ShippingDailyResponse> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    rows: z.array(ShippingDailyRow),
-  })
-  .passthrough();
-const ShippingListRow: z.ZodType<ShippingListRow> = z
-  .object({
-    id: z.number().int(),
-    order_ref: z.string(),
-    platform: z.string(),
-    shop_id: z.string(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    carrier_code: z.union([z.string(), z.null()]).optional(),
-    carrier_name: z.union([z.string(), z.null()]).optional(),
-    gross_weight_kg: z.union([z.number(), z.null()]).optional(),
-    packaging_weight_kg: z.union([z.number(), z.null()]).optional(),
-    cost_estimated: z.union([z.number(), z.null()]).optional(),
-    status: z.union([z.string(), z.null()]).optional(),
-    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
-    created_at: z.string(),
-  })
-  .passthrough();
-const ShippingListResponse: z.ZodType<ShippingListResponse> = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    rows: z.array(ShippingListRow),
-    total: z.number().int(),
-  })
-  .passthrough();
-const ShippingReportFilterOptions = z
-  .object({
-    platforms: z.array(z.string()),
-    shop_ids: z.array(z.string()),
-    provinces: z.array(z.string()),
-    cities: z.array(z.string()),
-  })
-  .passthrough();
-const ShippingRecordOut = z
-  .object({
-    id: z.number().int(),
-    order_ref: z.string(),
-    platform: z.string(),
-    shop_id: z.string(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    carrier_code: z.union([z.string(), z.null()]).optional(),
-    carrier_name: z.union([z.string(), z.null()]).optional(),
-    tracking_no: z.union([z.string(), z.null()]).optional(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    weight_kg: z.union([z.number(), z.null()]).optional(),
-    gross_weight_kg: z.union([z.number(), z.null()]).optional(),
-    packaging_weight_kg: z.union([z.number(), z.null()]).optional(),
-    cost_estimated: z.union([z.number(), z.null()]).optional(),
-    cost_real: z.union([z.number(), z.null()]).optional(),
-    delivery_time: z.union([z.string(), z.null()]).optional(),
-    status: z.union([z.string(), z.null()]).optional(),
-    error_code: z.union([z.string(), z.null()]).optional(),
-    error_message: z.union([z.string(), z.null()]).optional(),
-    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
-    created_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough();
-const ShippingStatusUpdateIn = z
-  .object({
-    status: z.enum(["IN_TRANSIT", "DELIVERED", "LOST", "RETURNED"]),
-    delivery_time: z.union([z.string(), z.null()]).optional(),
-    error_code: z.union([z.string(), z.null()]).optional(),
-    error_message: z.union([z.string(), z.null()]).optional(),
-    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
-  })
-  .passthrough();
-const ShippingStatusUpdateOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
-    id: z.number().int(),
-    status: z.string(),
-    delivery_time: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const TraceEventModel: z.ZodType<TraceEventModel> = z
-  .object({
-    ts: z.union([z.string(), z.null()]).optional(),
-    source: z.string(),
-    kind: z.string(),
-    ref: z.union([z.string(), z.null()]).optional(),
-    summary: z.string(),
-    raw: z.object({}).partial().passthrough(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    item_id: z.union([z.number(), z.null()]).optional(),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-    movement_type: z.union([z.string(), z.null()]).optional(),
-    message: z.union([z.string(), z.null()]).optional(),
+    fsku_id: z.number().int().gte(1),
+    merchant_code: z.string().min(1).max(128),
+    platform: z.string().min(1).max(32),
     reason: z.union([z.string(), z.null()]).optional(),
+    shop_id: z.string().min(1).max(64),
   })
   .passthrough();
-const TraceResponseModel: z.ZodType<TraceResponseModel> = z
+const MerchantCodeBindingOut: z.ZodType<MerchantCodeBindingOut> = z
   .object({
-    trace_id: z.string(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    events: z.array(TraceEventModel),
+    data: MerchantCodeBindingRowOut,
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const MerchantCodeBindingCloseIn = z
+  .object({
+    merchant_code: z.string().min(1).max(128),
+    platform: z.string().min(1).max(32),
+    shop_id: z.string().min(1).max(64),
+  })
+  .passthrough();
+const MetaPlatformItem: z.ZodType<MetaPlatformItem> = z
+  .object({
+    enabled: z.boolean().optional().default(true),
+    label: z.string().min(1).max(64),
+    platform: z.string().min(1).max(32),
+  })
+  .passthrough();
+const MetaPlatformsOut: z.ZodType<MetaPlatformsOut> = z
+  .object({
+    data: z.array(MetaPlatformItem),
+    ok: z.boolean().optional().default(true),
   })
   .passthrough();
 const AlertItem: z.ZodType<AlertItem> = z
   .object({
-    severity: z.string(),
-    domain: z.string(),
     code: z.string(),
-    title: z.string(),
-    message: z.string(),
     count: z.number().int(),
-    threshold: z.union([z.number(), z.null()]).optional(),
+    domain: z.string(),
+    message: z.string(),
     meta: z.object({}).partial().passthrough().optional().default({}),
+    severity: z.string(),
+    threshold: z.union([z.number(), z.null()]).optional(),
+    title: z.string(),
   })
   .passthrough();
 const AlertsResponse: z.ZodType<AlertsResponse> = z
   .object({
+    alerts: z.array(AlertItem).optional().default([]),
     day: z.string(),
     platform: z.union([z.string(), z.null()]).optional(),
-    alerts: z.array(AlertItem).optional().default([]),
   })
+  .passthrough();
+const FefoItemRisk: z.ZodType<FefoItemRisk> = z
+  .object({
+    fefo_hit_rate_7d: z.number(),
+    item_id: z.number().int(),
+    name: z.string(),
+    near_expiry_batches: z.number().int(),
+    risk_score: z.number(),
+    sku: z.string(),
+  })
+  .passthrough();
+const FefoRiskMetricsResponse: z.ZodType<FefoRiskMetricsResponse> = z
+  .object({ as_of: z.string(), items: z.array(FefoItemRisk) })
   .passthrough();
 const OutboundDistributionPoint: z.ZodType<OutboundDistributionPoint> = z
   .object({
@@ -5375,35 +2910,40 @@ const OutboundDistributionPoint: z.ZodType<OutboundDistributionPoint> = z
 const OutboundMetricsV2: z.ZodType<OutboundMetricsV2> = z
   .object({
     day: z.string(),
+    distribution: z.array(OutboundDistributionPoint).optional().default([]),
+    fallback_rate: z.number(),
+    fallback_times: z.number().int(),
+    fefo_hit_rate: z.number(),
     platform: z.string(),
-    total_orders: z.number().int(),
     success_orders: z.number().int(),
     success_rate: z.number(),
-    fallback_times: z.number().int(),
-    fallback_rate: z.number(),
-    fefo_hit_rate: z.number(),
-    distribution: z.array(OutboundDistributionPoint).optional().default([]),
+    total_orders: z.number().int(),
   })
   .passthrough();
-const OutboundDaySummary: z.ZodType<OutboundDaySummary> = z
+const OutboundShopMetric: z.ZodType<OutboundShopMetric> = z
+  .object({
+    fallback_rate: z.number(),
+    fallback_times: z.number().int(),
+    shop_id: z.string(),
+    success_orders: z.number().int(),
+    success_rate: z.number(),
+    total_orders: z.number().int(),
+  })
+  .passthrough();
+const OutboundShopMetricsResponse: z.ZodType<OutboundShopMetricsResponse> = z
   .object({
     day: z.string(),
-    total_orders: z.number().int(),
-    success_rate: z.number(),
-    fallback_rate: z.number(),
-    fefo_hit_rate: z.number(),
+    platform: z.string(),
+    shops: z.array(OutboundShopMetric),
   })
-  .passthrough();
-const OutboundRangeMetricsResponse: z.ZodType<OutboundRangeMetricsResponse> = z
-  .object({ platform: z.string(), days: z.array(OutboundDaySummary) })
   .passthrough();
 const OutboundWarehouseMetric: z.ZodType<OutboundWarehouseMetric> = z
   .object({
-    warehouse_id: z.number().int(),
-    total_orders: z.number().int(),
+    pick_qty: z.number().int(),
     success_orders: z.number().int(),
     success_rate: z.number(),
-    pick_qty: z.number().int(),
+    total_orders: z.number().int(),
+    warehouse_id: z.number().int(),
   })
   .passthrough();
 const OutboundWarehouseMetricsResponse: z.ZodType<OutboundWarehouseMetricsResponse> =
@@ -5416,171 +2956,2321 @@ const OutboundWarehouseMetricsResponse: z.ZodType<OutboundWarehouseMetricsRespon
     .passthrough();
 const OutboundFailureDetail: z.ZodType<OutboundFailureDetail> = z
   .object({
-    ref: z.string(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
     fail_point: z.string(),
     message: z.union([z.string(), z.null()]).optional(),
+    ref: z.string(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
   })
   .passthrough();
 const OutboundFailuresMetricsResponse: z.ZodType<OutboundFailuresMetricsResponse> =
   z
     .object({
       day: z.string(),
-      platform: z.string(),
-      routing_failed: z.number().int(),
-      pick_failed: z.number().int(),
-      ship_failed: z.number().int(),
-      inventory_insufficient: z.number().int(),
-      routing_failures_by_code: z
-        .record(z.string(), z.number().int())
-        .optional()
-        .default({}),
-      pick_failures_by_code: z.record(z.string(), z.number().int()).optional().default({}),
-      ship_failures_by_code: z.record(z.string(), z.number().int()).optional().default({}),
+      details: z.array(OutboundFailureDetail).optional().default([]),
       inventory_failures_by_code: z
         .record(z.string(), z.number().int())
         .optional()
         .default({}),
-      details: z.array(OutboundFailureDetail).optional().default([]),
+      inventory_insufficient: z.number().int(),
+      pick_failed: z.number().int(),
+      pick_failures_by_code: z.record(z.string(), z.number().int()).optional().default({}),
+      platform: z.string(),
+      routing_failed: z.number().int(),
+      routing_failures_by_code: z
+        .record(z.string(), z.number().int())
+        .optional()
+        .default({}),
+      ship_failed: z.number().int(),
+      ship_failures_by_code: z.record(z.string(), z.number().int()).optional().default({}),
     })
     .passthrough();
+const OutboundDaySummary: z.ZodType<OutboundDaySummary> = z
+  .object({
+    day: z.string(),
+    fallback_rate: z.number(),
+    fefo_hit_rate: z.number(),
+    success_rate: z.number(),
+    total_orders: z.number().int(),
+  })
+  .passthrough();
+const OutboundRangeMetricsResponse: z.ZodType<OutboundRangeMetricsResponse> = z
+  .object({ days: z.array(OutboundDaySummary), platform: z.string() })
+  .passthrough();
 const ShippingQuoteFailureDetail: z.ZodType<ShippingQuoteFailureDetail> = z
   .object({
-    ref: z.string(),
-    event: z.string(),
-    error_code: z.string(),
-    message: z.union([z.string(), z.null()]).optional(),
     created_at: z.string(),
+    error_code: z.string(),
+    event: z.string(),
+    message: z.union([z.string(), z.null()]).optional(),
+    ref: z.string(),
   })
   .passthrough();
 const ShippingQuoteFailuresMetricsResponse: z.ZodType<ShippingQuoteFailuresMetricsResponse> =
   z
     .object({
-      day: z.string(),
-      platform: z.union([z.string(), z.null()]).optional(),
       calc_failed_total: z.number().int(),
-      recommend_failed_total: z.number().int(),
       calc_failures_by_code: z.record(z.string(), z.number().int()).optional().default({}),
+      day: z.string(),
+      details: z.array(ShippingQuoteFailureDetail).optional().default([]),
+      platform: z.union([z.string(), z.null()]).optional(),
+      recommend_failed_total: z.number().int(),
       recommend_failures_by_code: z
         .record(z.string(), z.number().int())
         .optional()
         .default({}),
-      details: z.array(ShippingQuoteFailureDetail).optional().default([]),
     })
     .passthrough();
-const FefoItemRisk: z.ZodType<FefoItemRisk> = z
+const OAuthStartOut = z
+  .object({ data: z.object({}).partial().passthrough(), ok: z.boolean() })
+  .passthrough();
+const OpsActiveSchemeRow: z.ZodType<OpsActiveSchemeRow> = z
+  .object({
+    scheme_id: z.number().int(),
+    scheme_name: z.string(),
+    shipping_provider_id: z.number().int(),
+    shipping_provider_name: z.string(),
+  })
+  .passthrough();
+const OpsActiveSchemesOut: z.ZodType<OpsActiveSchemesOut> = z
+  .object({ data: z.array(OpsActiveSchemeRow), ok: z.boolean().default(true) })
+  .partial()
+  .passthrough();
+const ShellSchemeRow: z.ZodType<ShellSchemeRow> = z
+  .object({
+    active: z.boolean(),
+    name: z.string(),
+    scheme_id: z.number().int(),
+    seg_n: z.number().int().optional().default(0),
+    surcharge_n: z.number().int().optional().default(0),
+    tpl_n: z.number().int().optional().default(0),
+    wh_n: z.number().int().optional().default(0),
+    zone_n: z.number().int().optional().default(0),
+  })
+  .passthrough();
+const CleanupShellSchemesOut: z.ZodType<CleanupShellSchemesOut> = z
+  .object({
+    candidates: z.array(ShellSchemeRow).optional(),
+    candidates_n: z.number().int(),
+    deleted_n: z.number().int().optional().default(0),
+    dry_run: z.boolean(),
+    include_surcharge_only: z.boolean(),
+    limit: z.number().int(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const PricingIntegrityFixArchiveReleaseIn = z
+  .object({
+    dry_run: z.boolean().optional().default(false),
+    scheme_id: z.number().int().gte(1),
+    zone_ids: z.array(z.number().int()).min(1),
+  })
+  .passthrough();
+const PricingIntegrityFixArchiveReleaseItemOut: z.ZodType<PricingIntegrityFixArchiveReleaseItemOut> =
+  z
+    .object({
+      after_active: z.union([z.boolean(), z.null()]).optional(),
+      after_province_member_n: z.union([z.number(), z.null()]).optional(),
+      error: z.union([z.string(), z.null()]).optional(),
+      ok: z.boolean(),
+      would_release_n: z.number().int().optional().default(0),
+      would_release_provinces: z.array(z.string()).optional(),
+      zone_id: z.number().int(),
+      zone_name: z.string(),
+    })
+    .passthrough();
+const PricingIntegrityFixArchiveReleaseOut: z.ZodType<PricingIntegrityFixArchiveReleaseOut> =
+  z
+    .object({
+      dry_run: z.boolean(),
+      items: z.array(PricingIntegrityFixArchiveReleaseItemOut).optional(),
+      scheme_id: z.number().int(),
+    })
+    .passthrough();
+const PricingIntegrityFixDetachZoneBracketsIn = z
+  .object({
+    dry_run: z.boolean().optional().default(false),
+    scheme_id: z.number().int().gte(1),
+    zone_ids: z.array(z.number().int()).min(1),
+  })
+  .passthrough();
+const PricingIntegrityFixDetachZoneBracketsItemOut: z.ZodType<PricingIntegrityFixDetachZoneBracketsItemOut> =
+  z
+    .object({
+      after_brackets_n: z.union([z.number(), z.null()]).optional(),
+      error: z.union([z.string(), z.null()]).optional(),
+      ok: z.boolean(),
+      province_member_n: z.number().int().optional().default(0),
+      would_delete_brackets_n: z.number().int().optional().default(0),
+      would_delete_ranges_preview: z.array(z.string()).optional(),
+      zone_id: z.number().int(),
+      zone_name: z.string(),
+    })
+    .passthrough();
+const PricingIntegrityFixDetachZoneBracketsOut: z.ZodType<PricingIntegrityFixDetachZoneBracketsOut> =
+  z
+    .object({
+      dry_run: z.boolean(),
+      items: z.array(PricingIntegrityFixDetachZoneBracketsItemOut).optional(),
+      scheme_id: z.number().int(),
+    })
+    .passthrough();
+const PricingIntegrityFixUnbindArchivedTemplatesIn = z
+  .object({
+    dry_run: z.boolean().optional().default(false),
+    scheme_id: z.number().int().gte(1),
+    template_ids: z.array(z.number().int()).min(1),
+  })
+  .passthrough();
+const PricingIntegrityFixUnbindArchivedTemplatesItemOut: z.ZodType<PricingIntegrityFixUnbindArchivedTemplatesItemOut> =
+  z
+    .object({
+      after_unbound_zone_n: z.union([z.number(), z.null()]).optional(),
+      error: z.union([z.string(), z.null()]).optional(),
+      ok: z.boolean(),
+      template_id: z.number().int(),
+      template_name: z.string(),
+      template_status: z.union([z.string(), z.null()]).optional(),
+      would_unbind_zone_ids: z.array(z.number().int()).optional(),
+      would_unbind_zone_n: z.number().int().optional().default(0),
+      would_unbind_zone_names: z.array(z.string()).optional(),
+    })
+    .passthrough();
+const PricingIntegrityFixUnbindArchivedTemplatesOut: z.ZodType<PricingIntegrityFixUnbindArchivedTemplatesOut> =
+  z
+    .object({
+      dry_run: z.boolean(),
+      items: z
+        .array(PricingIntegrityFixUnbindArchivedTemplatesItemOut)
+        .optional(),
+      scheme_id: z.number().int(),
+    })
+    .passthrough();
+const PricingIntegrityArchivedTemplateStillReferencedIssue: z.ZodType<PricingIntegrityArchivedTemplateStillReferencedIssue> =
+  z
+    .object({
+      referencing_zone_ids: z.array(z.number().int()).optional(),
+      referencing_zone_n: z.number().int().optional().default(0),
+      referencing_zone_names: z.array(z.string()).optional(),
+      scheme_id: z.number().int(),
+      suggested_action: z
+        .string()
+        .optional()
+        .default("UNBIND_ARCHIVED_TEMPLATE"),
+      template_id: z.number().int(),
+      template_name: z.string(),
+      template_status: z.string(),
+    })
+    .passthrough();
+const PricingIntegrityArchivedZoneIssue: z.ZodType<PricingIntegrityArchivedZoneIssue> =
+  z
+    .object({
+      province_member_n: z.number().int().optional().default(0),
+      province_members: z.array(z.string()).optional(),
+      scheme_id: z.number().int(),
+      suggested_action: z
+        .string()
+        .optional()
+        .default("ARCHIVE_RELEASE_PROVINCES"),
+      zone_active: z.boolean(),
+      zone_id: z.number().int(),
+      zone_name: z.string(),
+    })
+    .passthrough();
+const PricingIntegrityReleasedZoneStillPricedIssue: z.ZodType<PricingIntegrityReleasedZoneStillPricedIssue> =
+  z
+    .object({
+      brackets_n: z.number().int().optional().default(0),
+      province_member_n: z.number().int().optional().default(0),
+      scheme_id: z.number().int(),
+      segment_template_id: z.union([z.number(), z.null()]).optional(),
+      suggested_action: z.string().optional().default("DETACH_ZONE_BRACKETS"),
+      zone_active: z.boolean(),
+      zone_id: z.number().int(),
+      zone_name: z.string(),
+    })
+    .passthrough();
+const PricingIntegrityReportSummary: z.ZodType<PricingIntegrityReportSummary> =
+  z
+    .object({
+      blocking: z.number().int().default(0),
+      warning: z.number().int().default(0),
+    })
+    .partial()
+    .passthrough();
+const PricingIntegrityReportOut: z.ZodType<PricingIntegrityReportOut> = z
+  .object({
+    archived_templates_still_referenced: z
+      .array(PricingIntegrityArchivedTemplateStillReferencedIssue)
+      .optional(),
+    archived_zones_still_occupying: z
+      .array(PricingIntegrityArchivedZoneIssue)
+      .optional(),
+    released_zones_still_priced: z
+      .array(PricingIntegrityReleasedZoneStillPricedIssue)
+      .optional(),
+    scheme_id: z.number().int(),
+    summary: PricingIntegrityReportSummary,
+  })
+  .passthrough();
+const OrderAddrIn: z.ZodType<OrderAddrIn> = z
+  .object({
+    city: z.union([z.string(), z.null()]),
+    detail: z.union([z.string(), z.null()]),
+    district: z.union([z.string(), z.null()]),
+    province: z.union([z.string(), z.null()]),
+    receiver_name: z.union([z.string(), z.null()]),
+    receiver_phone: z.union([z.string(), z.null()]),
+    zipcode: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const OrderLineIn: z.ZodType<OrderLineIn> = z
+  .object({
+    amount: z.union([z.number(), z.null()]).default(0),
+    discount: z.union([z.number(), z.null()]).default(0),
+    item_id: z.union([z.number(), z.null()]),
+    price: z.union([z.number(), z.null()]).default(0),
+    qty: z.number().int().gt(0).default(1),
+    sku_id: z.union([z.string(), z.null()]),
+    title: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const OrderCreateIn: z.ZodType<OrderCreateIn> = z
+  .object({
+    address: z.union([OrderAddrIn, z.null()]).optional(),
+    buyer_name: z.union([z.string(), z.null()]).optional(),
+    buyer_phone: z.union([z.string(), z.null()]).optional(),
+    ext_order_no: z.string().min(1),
+    lines: z.array(OrderLineIn).optional(),
+    occurred_at: z.union([z.string(), z.null()]).optional(),
+    order_amount: z.union([z.number(), z.null()]).optional().default(0),
+    pay_amount: z.union([z.number(), z.null()]).optional().default(0),
+    platform: z.string().min(1).max(32),
+    shop_id: z.string().min(1),
+    store_name: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const OrderFulfillmentOut: z.ZodType<OrderFulfillmentOut> = z
+  .object({
+    auto_assign_status: z.union([z.string(), z.null()]),
+    fulfillment_status: z.union([z.string(), z.null()]),
+    ingest_state: z.union([z.string(), z.null()]),
+    route_status: z.union([z.string(), z.null()]),
+    service_warehouse_id: z.union([z.number(), z.null()]),
+    warehouse_id: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const OrderCreateOut: z.ZodType<OrderCreateOut> = z
+  .object({
+    fulfillment: z.union([OrderFulfillmentOut, z.null()]).optional(),
+    id: z.union([z.number(), z.null()]).optional(),
+    ref: z.string(),
+    status: z.string(),
+  })
+  .passthrough();
+const OrdersDailyStatsModel = z
+  .object({
+    date: z.string(),
+    orders_created: z.number().int(),
+    orders_returned: z.number().int(),
+    orders_shipped: z.number().int(),
+    platform: z.union([z.string(), z.null()]).optional(),
+    shop_id: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const OrdersDailyTrendItem: z.ZodType<OrdersDailyTrendItem> = z
+  .object({
+    date: z.string(),
+    orders_created: z.number().int(),
+    orders_returned: z.number().int(),
+    orders_shipped: z.number().int(),
+    return_rate: z.number(),
+  })
+  .passthrough();
+const OrdersTrendResponseModel: z.ZodType<OrdersTrendResponseModel> = z
+  .object({ days: z.array(OrdersDailyTrendItem) })
+  .partial()
+  .passthrough();
+const OrdersSlaStatsModel = z
+  .object({
+    avg_ship_hours: z.union([z.number(), z.null()]).optional(),
+    on_time_orders: z.number().int(),
+    on_time_rate: z.number(),
+    p95_ship_hours: z.union([z.number(), z.null()]).optional(),
+    total_orders: z.number().int(),
+  })
+  .passthrough();
+const OrderSummaryOut: z.ZodType<OrderSummaryOut> = z
+  .object({
+    can_manual_assign_execution_warehouse: z
+      .boolean()
+      .optional()
+      .default(false),
+    created_at: z.string().datetime({ offset: true }),
+    ext_order_no: z.string(),
+    fulfillment_status: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    manual_assign_hint: z.union([z.string(), z.null()]).optional(),
+    order_amount: z.union([z.number(), z.null()]).optional(),
+    pay_amount: z.union([z.number(), z.null()]).optional(),
+    platform: z.string(),
+    service_warehouse_id: z.union([z.number(), z.null()]).optional(),
+    shop_id: z.string(),
+    status: z.union([z.string(), z.null()]).optional(),
+    store_id: z.union([z.number(), z.null()]).optional(),
+    updated_at: z.union([z.string(), z.null()]).optional(),
+    warehouse_assign_mode: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const WarehouseOptionOut: z.ZodType<WarehouseOptionOut> = z
+  .object({
+    active: z.union([z.boolean(), z.null()]).optional(),
+    code: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    name: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const OrdersSummaryResponse: z.ZodType<OrdersSummaryResponse> = z
+  .object({
+    data: z.array(OrderSummaryOut),
+    ok: z.boolean().optional().default(true),
+    warehouses: z.array(WarehouseOptionOut),
+  })
+  .passthrough();
+const FulfillmentDebugAddress: z.ZodType<FulfillmentDebugAddress> = z
+  .object({
+    city: z.union([z.string(), z.null()]),
+    detail: z.union([z.string(), z.null()]),
+    district: z.union([z.string(), z.null()]),
+    province: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const FulfillmentServiceDebug: z.ZodType<FulfillmentServiceDebug> = z
+  .object({
+    city_code: z.union([z.string(), z.null()]),
+    hit: z.boolean().default(false),
+    province_code: z.union([z.string(), z.null()]),
+    reason: z.union([z.string(), z.null()]),
+    service_warehouse_id: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const FulfillmentDebugOut: z.ZodType<FulfillmentDebugOut> = z
+  .object({
+    address: FulfillmentDebugAddress.optional(),
+    ext_order_no: z.union([z.string(), z.null()]).optional(),
+    order_id: z.number().int(),
+    platform: z.string(),
+    service: FulfillmentServiceDebug.optional(),
+    shop_id: z.string(),
+    summary: z.object({}).partial().passthrough().optional(),
+    version: z.string().optional().default("v4-min"),
+  })
+  .passthrough();
+const AvailabilityLineOut: z.ZodType<AvailabilityLineOut> = z
   .object({
     item_id: z.number().int(),
-    sku: z.string(),
-    name: z.string(),
-    near_expiry_batches: z.number().int(),
-    fefo_hit_rate_7d: z.number(),
-    risk_score: z.number(),
+    req_qty: z.number().int(),
+    sku_id: z.union([z.string(), z.null()]).optional(),
+    title: z.union([z.string(), z.null()]).optional(),
   })
   .passthrough();
-const FefoRiskMetricsResponse: z.ZodType<FefoRiskMetricsResponse> = z
-  .object({ as_of: z.string(), items: z.array(FefoItemRisk) })
-  .passthrough();
-const OutboundShopMetric: z.ZodType<OutboundShopMetric> = z
+const AvailabilityCellOut: z.ZodType<AvailabilityCellOut> = z
   .object({
-    shop_id: z.string(),
-    total_orders: z.number().int(),
-    success_orders: z.number().int(),
-    success_rate: z.number(),
-    fallback_times: z.number().int(),
-    fallback_rate: z.number(),
+    available: z.number().int(),
+    item_id: z.number().int(),
+    shortage: z.number().int(),
+    status: z.string(),
+    warehouse_id: z.number().int(),
   })
   .passthrough();
-const OutboundShopMetricsResponse: z.ZodType<OutboundShopMetricsResponse> = z
+const WarehouseBriefOut: z.ZodType<WarehouseBriefOut> = z
+  .object({
+    code: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    name: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const OrderWarehouseAvailabilityResponse: z.ZodType<OrderWarehouseAvailabilityResponse> =
+  z
+    .object({
+      lines: z.array(AvailabilityLineOut),
+      matrix: z.array(AvailabilityCellOut),
+      ok: z.boolean().optional().default(true),
+      order_id: z.number().int(),
+      scope: z.string(),
+      warehouses: z.array(WarehouseBriefOut),
+    })
+    .passthrough();
+const ManualAssignRequest = z
+  .object({
+    note: z.union([z.string(), z.null()]).optional(),
+    reason: z.string().min(1).max(500),
+    warehouse_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const ManualAssignResponse = z
+  .object({
+    from_warehouse_id: z.union([z.number(), z.null()]).optional(),
+    fulfillment_status: z.string(),
+    ref: z.string(),
+    status: z.string(),
+    to_warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const PickLineIn: z.ZodType<PickLineIn> = z
+  .object({ item_id: z.number().int().gt(0), qty: z.number().int().gt(0) })
+  .passthrough();
+const PickRequest: z.ZodType<PickRequest> = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]).optional(),
+    lines: z.array(PickLineIn).optional(),
+    occurred_at: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int().gt(0),
+  })
+  .passthrough();
+const PickResponse = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]),
+    item_id: z.number().int(),
+    picked: z.number().int(),
+    ref: z.string(),
+    status: z.string(),
+    stock_after: z.union([z.number(), z.null()]).optional(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const ShipLineIn: z.ZodType<ShipLineIn> = z
+  .object({ item_id: z.number().int().gt(0), qty: z.number().int().gt(0) })
+  .passthrough();
+const ShipRequest: z.ZodType<ShipRequest> = z
+  .object({
+    lines: z.array(ShipLineIn).optional(),
+    occurred_at: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int().gt(0),
+  })
+  .passthrough();
+const ShipResponse = z
+  .object({
+    event: z.string().optional().default("SHIP_COMMIT"),
+    ref: z.string(),
+    status: z.string(),
+  })
+  .passthrough();
+const ShipWithWaybillRequest = z
+  .object({
+    address_detail: z.union([z.string(), z.null()]).optional(),
+    carrier_code: z.string().min(1),
+    carrier_name: z.union([z.string(), z.null()]).optional(),
+    city: z.union([z.string(), z.null()]).optional(),
+    district: z.union([z.string(), z.null()]).optional(),
+    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    province: z.union([z.string(), z.null()]).optional(),
+    receiver_name: z.union([z.string(), z.null()]).optional(),
+    receiver_phone: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int().gt(0),
+    weight_kg: z.number().gt(0),
+  })
+  .passthrough();
+const ShipWithWaybillResponse = z
+  .object({
+    carrier_code: z.string(),
+    carrier_name: z.union([z.string(), z.null()]).optional(),
+    label_base64: z.union([z.string(), z.null()]).optional(),
+    label_format: z.union([z.string(), z.null()]).optional(),
+    ok: z.boolean(),
+    ref: z.string(),
+    status: z.string().optional().default("IN_TRANSIT"),
+    tracking_no: z.string(),
+  })
+  .passthrough();
+const PlatformOrderAddressOut: z.ZodType<PlatformOrderAddressOut> = z
+  .object({
+    city: z.union([z.string(), z.null()]),
+    detail: z.union([z.string(), z.null()]),
+    district: z.union([z.string(), z.null()]),
+    province: z.union([z.string(), z.null()]),
+    receiver_name: z.union([z.string(), z.null()]),
+    receiver_phone: z.union([z.string(), z.null()]),
+    zipcode: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const PlatformOrderLineOut: z.ZodType<PlatformOrderLineOut> = z
+  .object({
+    amount: z.union([z.number(), z.null()]),
+    discount: z.union([z.number(), z.null()]),
+    extras: z.union([z.object({}).partial().passthrough(), z.null()]),
+    item_id: z.union([z.number(), z.null()]),
+    price: z.union([z.number(), z.null()]),
+    qty: z.number().int().default(0),
+    sku: z.union([z.string(), z.null()]),
+    spec: z.union([z.string(), z.null()]),
+    title: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const PlatformOrderOut: z.ZodType<PlatformOrderOut> = z
+  .object({
+    address: z.union([PlatformOrderAddressOut, z.null()]).optional(),
+    buyer_name: z.union([z.string(), z.null()]).optional(),
+    buyer_phone: z.union([z.string(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
+    ext_order_no: z.string(),
+    id: z.number().int(),
+    items: z.array(PlatformOrderLineOut).optional().default([]),
+    order_amount: z.union([z.number(), z.null()]).optional(),
+    pay_amount: z.union([z.number(), z.null()]).optional(),
+    platform: z.string(),
+    raw: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    shop_id: z.string(),
+    status: z.union([z.string(), z.null()]).optional(),
+    updated_at: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const OrderViewResponse: z.ZodType<OrderViewResponse> = z
+  .object({ ok: z.boolean().optional().default(true), order: PlatformOrderOut })
+  .passthrough();
+const OutboundLineIn: z.ZodType<OutboundLineIn> = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int(),
+    qty: z.number().int().gt(0),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const OutboundShipIn: z.ZodType<OutboundShipIn> = z
+  .object({
+    external_order_ref: z.union([z.string(), z.null()]).optional(),
+    lines: z.array(OutboundLineIn),
+    occurred_at: z.union([z.string(), z.null()]).optional(),
+    platform: z.string().min(1).max(32),
+    ref: z.string().min(1),
+    shop_id: z.string().min(1),
+  })
+  .passthrough();
+const OutboundShipOut = z
+  .object({
+    idempotent: z.boolean().optional().default(false),
+    status: z.string(),
+    total_qty: z.number().int(),
+    trace_id: z.string(),
+  })
+  .passthrough();
+const PermissionOut: z.ZodType<PermissionOut> = z
+  .object({
+    description: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    name: z.string().min(1).max(64),
+  })
+  .passthrough();
+const PermissionCreate = z
+  .object({
+    description: z.union([z.string(), z.null()]).optional(),
+    name: z.string().min(1).max(64),
+  })
+  .passthrough();
+const PickIn = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]).optional(),
+    device_id: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int().gte(1),
+    location_id: z.union([z.number(), z.null()]).optional(),
+    occurred_at: z.union([z.string(), z.null()]).optional(),
+    operator: z.union([z.string(), z.null()]).optional(),
+    qty: z.number().int().gte(1),
+    ref: z.string().min(1),
+    task_line_id: z.union([z.number(), z.null()]).optional(),
+    warehouse_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const PickOut = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]),
+    item_id: z.number().int(),
+    picked: z.number().int(),
+    ref: z.string(),
+    status: z.string(),
+    stock_after: z.union([z.number(), z.null()]).optional(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const GateOut: z.ZodType<GateOut> = z
+  .object({
+    allowed: z.boolean(),
+    details: z.array(z.object({}).partial().passthrough()).optional(),
+    error_code: z.union([z.string(), z.null()]).optional(),
+    message: z.union([z.string(), z.null()]).optional(),
+    next_actions: z.array(z.object({}).partial().passthrough()).optional(),
+  })
+  .passthrough();
+const PickTaskLineOut: z.ZodType<PickTaskLineOut> = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]),
+    created_at: z.string().datetime({ offset: true }),
+    delta: z.number().int(),
+    diff_status: z.string(),
+    id: z.number().int(),
+    item_id: z.number().int(),
+    note: z.union([z.string(), z.null()]),
+    order_id: z.union([z.number(), z.null()]),
+    order_line_id: z.union([z.number(), z.null()]),
+    picked_qty: z.number().int(),
+    remain_qty: z.number().int(),
+    req_qty: z.number().int(),
+    status: z.string(),
+    task_id: z.number().int(),
+    updated_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const PrintJobOut: z.ZodType<PrintJobOut> = z
+  .object({
+    created_at: z.string().datetime({ offset: true }),
+    error: z.union([z.string(), z.null()]),
+    id: z.number().int(),
+    kind: z.string(),
+    payload: z.object({}).partial().passthrough(),
+    printed_at: z.union([z.string(), z.null()]),
+    ref_id: z.number().int(),
+    ref_type: z.string(),
+    requested_at: z.string().datetime({ offset: true }),
+    status: z.string(),
+    updated_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const PickTaskOut: z.ZodType<PickTaskOut> = z
+  .object({
+    assigned_to: z.union([z.string(), z.null()]),
+    commit_gate: GateOut,
+    created_at: z.string().datetime({ offset: true }),
+    has_over: z.boolean(),
+    has_under: z.boolean(),
+    id: z.number().int(),
+    lines: z.array(PickTaskLineOut).optional(),
+    note: z.union([z.string(), z.null()]),
+    picked_total: z.number().int(),
+    print_job: z.union([PrintJobOut, z.null()]).optional(),
+    priority: z.number().int(),
+    ref: z.union([z.string(), z.null()]),
+    remain_total: z.number().int(),
+    req_total: z.number().int(),
+    scan_gate: GateOut,
+    source: z.union([z.string(), z.null()]),
+    status: z.string(),
+    updated_at: z.string().datetime({ offset: true }),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const PickTaskCreateFromOrder = z
+  .object({
+    priority: z.number().int().gte(0).default(100),
+    source: z.string().default("ORDER"),
+    warehouse_id: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const PickTaskCommitIn = z
+  .object({
+    allow_diff: z.boolean().optional().default(true),
+    handoff_code: z.union([z.string(), z.null()]).optional(),
+    platform: z.string(),
+    shop_id: z.string(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const PickTaskCommitDiffLineOut: z.ZodType<PickTaskCommitDiffLineOut> = z
+  .object({
+    delta: z.number().int(),
+    item_id: z.number().int(),
+    picked_qty: z.number().int(),
+    req_qty: z.number().int(),
+    status: z.string(),
+  })
+  .passthrough();
+const PickTaskCommitDiffOut: z.ZodType<PickTaskCommitDiffOut> = z
+  .object({
+    has_over: z.boolean(),
+    has_temp_lines: z.boolean(),
+    has_under: z.boolean(),
+    lines: z.array(PickTaskCommitDiffLineOut),
+    task_id: z.number().int(),
+    temp_lines_n: z.number().int(),
+  })
+  .passthrough();
+const PickTaskCommitResult: z.ZodType<PickTaskCommitResult> = z
+  .object({
+    committed_at: z.union([z.string(), z.null()]).optional(),
+    diff: PickTaskCommitDiffOut,
+    idempotent: z.boolean().optional().default(false),
+    next_actions: z.array(z.object({}).partial().passthrough()).optional(),
+    platform: z.string(),
+    ref: z.string(),
+    shop_id: z.string(),
+    status: z.string(),
+    task_id: z.number().int(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const PickTaskCommitCheckOut = z
+  .object({
+    allowed: z.boolean(),
+    context: z.object({}).partial().passthrough().optional(),
+    details: z.array(z.object({}).partial().passthrough()).optional(),
+    error_code: z.union([z.string(), z.null()]).optional(),
+    message: z.union([z.string(), z.null()]).optional(),
+    next_actions: z.array(z.object({}).partial().passthrough()).optional(),
+  })
+  .passthrough();
+const PickTaskDiffLineOut: z.ZodType<PickTaskDiffLineOut> = z
+  .object({
+    delta: z.number().int(),
+    item_id: z.number().int(),
+    picked_qty: z.number().int(),
+    req_qty: z.number().int(),
+    status: z.string(),
+  })
+  .passthrough();
+const PickTaskDiffSummaryOut: z.ZodType<PickTaskDiffSummaryOut> = z
+  .object({
+    has_over: z.boolean(),
+    has_under: z.boolean(),
+    lines: z.array(PickTaskDiffLineOut),
+    task_id: z.number().int(),
+  })
+  .passthrough();
+const PickTaskPrintPickListIn = z
+  .object({
+    order_id: z.number().int().gte(1),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const PickTaskScanIn = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int(),
+    qty: z.number().int().gt(0),
+  })
+  .passthrough();
+const PlatformOrderConfirmCreateDecisionIn: z.ZodType<PlatformOrderConfirmCreateDecisionIn> =
+  z
+    .object({
+      filled_code: z.union([z.string(), z.null()]).optional(),
+      item_id: z.number().int(),
+      line_key: z.union([z.string(), z.null()]).optional(),
+      line_no: z.union([z.number(), z.null()]).optional(),
+      locator_kind: z.union([z.string(), z.null()]).optional(),
+      locator_value: z.union([z.string(), z.null()]).optional(),
+      note: z.union([z.string(), z.null()]).optional(),
+      platform_sku_id: z.union([z.string(), z.null()]).optional(),
+      qty: z.number().int(),
+    })
+    .passthrough();
+const PlatformOrderConfirmCreateIn: z.ZodType<PlatformOrderConfirmCreateIn> = z
+  .object({
+    decisions: z.array(PlatformOrderConfirmCreateDecisionIn).optional(),
+    ext_order_no: z.string(),
+    platform: z.string(),
+    reason: z.union([z.string(), z.null()]).optional(),
+    store_id: z.number().int(),
+  })
+  .passthrough();
+const PlatformOrderConfirmCreateDecisionOut: z.ZodType<PlatformOrderConfirmCreateDecisionOut> =
+  z
+    .object({
+      fact_qty: z.union([z.number(), z.null()]),
+      filled_code: z.union([z.string(), z.null()]),
+      item_id: z.union([z.number(), z.null()]),
+      line_key: z.union([z.string(), z.null()]),
+      line_no: z.union([z.number(), z.null()]),
+      locator_kind: z.union([z.string(), z.null()]),
+      locator_value: z.union([z.string(), z.null()]),
+      note: z.union([z.string(), z.null()]),
+      qty: z.union([z.number(), z.null()]),
+    })
+    .partial()
+    .passthrough();
+const PlatformOrderConfirmCreateOut: z.ZodType<PlatformOrderConfirmCreateOut> =
+  z
+    .object({
+      blocked_reasons: z.union([z.array(z.string()), z.null()]).optional(),
+      decisions: z.array(PlatformOrderConfirmCreateDecisionOut).optional(),
+      ext_order_no: z.string(),
+      facts_n: z.number().int(),
+      fulfillment_status: z.union([z.string(), z.null()]).optional(),
+      id: z.union([z.number(), z.null()]),
+      manual_batch_id: z.union([z.string(), z.null()]).optional(),
+      manual_override: z.boolean(),
+      manual_reason: z.union([z.string(), z.null()]).optional(),
+      platform: z.string(),
+      ref: z.string(),
+      risk_flags: z.array(z.string()).optional(),
+      status: z.string(),
+      store_id: z.number().int(),
+    })
+    .passthrough();
+const PlatformOrderLineIn: z.ZodType<PlatformOrderLineIn> = z
+  .object({
+    extras: z.union([z.object({}).partial().passthrough(), z.null()]),
+    filled_code: z.union([z.string(), z.null()]),
+    qty: z.number().int().gt(0).default(1),
+    spec: z.union([z.string(), z.null()]),
+    title: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const PlatformOrderIngestIn: z.ZodType<PlatformOrderIngestIn> = z
+  .object({
+    buyer_name: z.union([z.string(), z.null()]).optional(),
+    buyer_phone: z.union([z.string(), z.null()]).optional(),
+    city: z.union([z.string(), z.null()]).optional(),
+    detail: z.union([z.string(), z.null()]).optional(),
+    district: z.union([z.string(), z.null()]).optional(),
+    ext_order_no: z.string().min(1),
+    lines: z.array(PlatformOrderLineIn).optional(),
+    occurred_at: z.union([z.string(), z.null()]).optional(),
+    platform: z.string().min(1).max(32),
+    province: z.union([z.string(), z.null()]).optional(),
+    raw_payload: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    receiver_name: z.union([z.string(), z.null()]).optional(),
+    receiver_phone: z.union([z.string(), z.null()]).optional(),
+    shop_id: z.union([z.string(), z.null()]).optional(),
+    store_id: z.union([z.number(), z.null()]).optional(),
+    store_name: z.union([z.string(), z.null()]).optional(),
+    zipcode: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const PlatformOrderLineResult: z.ZodType<PlatformOrderLineResult> = z
+  .object({
+    expanded_items: z
+      .union([z.array(z.object({}).partial().passthrough()), z.null()])
+      .optional(),
+    filled_code: z.union([z.string(), z.null()]).optional(),
+    fsku_id: z.union([z.number(), z.null()]).optional(),
+    hint: z.union([z.string(), z.null()]).optional(),
+    next_actions: z
+      .union([z.array(z.object({}).partial().passthrough()), z.null()])
+      .optional(),
+    qty: z.number().int(),
+    reason: z.union([z.string(), z.null()]).optional(),
+    risk_flags: z.union([z.array(z.string()), z.null()]).optional(),
+    risk_level: z.union([z.string(), z.null()]).optional(),
+    risk_reason: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const PlatformOrderIngestOut: z.ZodType<PlatformOrderIngestOut> = z
+  .object({
+    allow_manual_continue: z.boolean().optional().default(false),
+    blocked_reasons: z.union([z.array(z.string()), z.null()]).optional(),
+    facts_written: z.number().int(),
+    fulfillment_status: z.union([z.string(), z.null()]).optional(),
+    id: z.union([z.number(), z.null()]),
+    next_actions: z.array(z.object({}).partial().passthrough()).optional(),
+    reason_code: z.union([z.string(), z.null()]).optional(),
+    ref: z.string(),
+    resolved: z.array(PlatformOrderLineResult).optional(),
+    risk_flags: z.array(z.string()).optional(),
+    risk_level: z.union([z.string(), z.null()]).optional(),
+    risk_reason: z.union([z.string(), z.null()]).optional(),
+    status: z.string(),
+    store_id: z.union([z.number(), z.null()]),
+    unresolved: z.array(PlatformOrderLineResult).optional(),
+  })
+  .passthrough();
+const ManualBindMerchantCodeIn = z
+  .object({
+    filled_code: z.string().min(1).max(128),
+    fsku_id: z.number().int().gte(1),
+    platform: z.string().min(1).max(32),
+    reason: z.union([z.string(), z.null()]).optional(),
+    store_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const ManualDecisionLineOut: z.ZodType<ManualDecisionLineOut> = z
+  .object({
+    fact_qty: z.union([z.number(), z.null()]),
+    filled_code: z.union([z.string(), z.null()]),
+    item_id: z.union([z.number(), z.null()]),
+    line_key: z.union([z.string(), z.null()]),
+    line_no: z.union([z.number(), z.null()]),
+    locator_kind: z.union([z.string(), z.null()]),
+    locator_value: z.union([z.string(), z.null()]),
+    note: z.union([z.string(), z.null()]),
+    qty: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const ManualDecisionOrderOut: z.ZodType<ManualDecisionOrderOut> = z
+  .object({
+    batch_id: z.string(),
+    created_at: z.string().datetime({ offset: true }),
+    ext_order_no: z.string(),
+    manual_decisions: z.array(ManualDecisionLineOut).optional(),
+    manual_reason: z.union([z.string(), z.null()]).optional(),
+    order_id: z.number().int(),
+    platform: z.string(),
+    ref: z.string(),
+    risk_flags: z.array(z.string()).optional(),
+    shop_id: z.string(),
+    store_id: z.number().int(),
+  })
+  .passthrough();
+const ManualDecisionOrdersOut: z.ZodType<ManualDecisionOrdersOut> = z
+  .object({
+    items: z.array(ManualDecisionOrderOut).optional(),
+    limit: z.number().int(),
+    offset: z.number().int(),
+    total: z.number().int(),
+  })
+  .passthrough();
+const PlatformOrderReplayIn = z
+  .object({
+    ext_order_no: z.string().min(1),
+    platform: z.string().min(1).max(32),
+    store_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const PlatformOrderReplayOut = z
+  .object({
+    blocked_reasons: z.union([z.array(z.string()), z.null()]).optional(),
+    ext_order_no: z.string(),
+    facts_n: z.number().int().optional().default(0),
+    fulfillment_status: z.union([z.string(), z.null()]).optional(),
+    id: z.union([z.number(), z.null()]).optional(),
+    platform: z.string(),
+    ref: z.string(),
+    resolved: z.array(z.object({}).partial().passthrough()).optional(),
+    status: z.string(),
+    store_id: z.number().int(),
+    unresolved: z.array(z.object({}).partial().passthrough()).optional(),
+  })
+  .passthrough();
+const PlatformShopCredentialsIn = z
+  .object({
+    access_token: z.string().min(1),
+    platform: z.string().min(1).max(16),
+    shop_id: z.string().min(1).max(64),
+    status: z.union([z.string(), z.null()]).optional().default("ACTIVE"),
+    store_name: z.union([z.string(), z.null()]).optional(),
+    token_expires_at: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const SimpleOut = z
+  .object({
+    data: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    ok: z.boolean(),
+  })
+  .passthrough();
+const SchemeSegmentOut: z.ZodType<SchemeSegmentOut> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    id: z.number().int(),
+    max_kg: z.unknown().optional(),
+    min_kg: z.unknown(),
+    ord: z.number().int(),
+    scheme_id: z.number().int(),
+  })
+  .passthrough();
+const WeightSegmentIn: z.ZodType<WeightSegmentIn> = z
+  .object({
+    max: z.string().max(32).optional().default(""),
+    min: z.string().min(1).max(32),
+  })
+  .passthrough();
+const SurchargeOut: z.ZodType<SurchargeOut> = z
+  .object({
+    active: z.boolean(),
+    amount_json: z.object({}).partial().passthrough(),
+    condition_json: z.object({}).partial().passthrough(),
+    id: z.number().int(),
+    name: z.string(),
+    scheme_id: z.number().int(),
+  })
+  .passthrough();
+const ZoneBracketOut: z.ZodType<ZoneBracketOut> = z
+  .object({
+    active: z.boolean(),
+    base_amount: z.union([z.string(), z.null()]).optional(),
+    base_kg: z.union([z.string(), z.null()]).optional(),
+    flat_amount: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    max_kg: z.union([z.string(), z.null()]).optional(),
+    min_kg: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
+    price_json: z.object({}).partial().passthrough().optional(),
+    pricing_mode: z.string(),
+    rate_per_kg: z.union([z.string(), z.null()]).optional(),
+    zone_id: z.number().int(),
+  })
+  .passthrough();
+const ZoneMemberOut: z.ZodType<ZoneMemberOut> = z
+  .object({
+    id: z.number().int(),
+    level: z.string(),
+    value: z.string(),
+    zone_id: z.number().int(),
+  })
+  .passthrough();
+const ZoneOut: z.ZodType<ZoneOut> = z
+  .object({
+    active: z.boolean(),
+    brackets: z.array(ZoneBracketOut).optional(),
+    id: z.number().int(),
+    members: z.array(ZoneMemberOut).optional(),
+    name: z.string(),
+    scheme_id: z.number().int(),
+    segment_template_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const SchemeOut: z.ZodType<SchemeOut> = z
+  .object({
+    active: z.boolean(),
+    archived_at: z.union([z.string(), z.null()]).optional(),
+    billable_weight_rule: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    currency: z.string(),
+    default_pricing_mode: z.string(),
+    default_segment_template_id: z.union([z.number(), z.null()]).optional(),
+    dest_adjustments: z.array(DestAdjustmentOut).optional(),
+    effective_from: z.union([z.string(), z.null()]).optional(),
+    effective_to: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    name: z.string(),
+    segments: z.array(SchemeSegmentOut).optional(),
+    segments_json: z.union([z.array(WeightSegmentIn), z.null()]).optional(),
+    segments_updated_at: z.union([z.string(), z.null()]).optional(),
+    shipping_provider_id: z.number().int(),
+    shipping_provider_name: z.string(),
+    surcharges: z.array(SurchargeOut).optional(),
+    zones: z.array(ZoneOut).optional(),
+  })
+  .passthrough();
+const SchemeDetailOut: z.ZodType<SchemeDetailOut> = z
+  .object({ data: SchemeOut, ok: z.boolean().optional().default(true) })
+  .passthrough();
+const SchemeUpdateIn: z.ZodType<SchemeUpdateIn> = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    archived_at: z.union([z.string(), z.null()]),
+    billable_weight_rule: z.union([
+      z.object({}).partial().passthrough(),
+      z.null(),
+    ]),
+    currency: z.union([z.string(), z.null()]),
+    default_pricing_mode: z.union([z.string(), z.null()]),
+    effective_from: z.union([z.string(), z.null()]),
+    effective_to: z.union([z.string(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+    segments_json: z.union([z.array(WeightSegmentIn), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const DestAdjustmentUpsertIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    amount: z.number(),
+    city_code: z.union([z.string(), z.null()]).optional(),
+    city_name: z.union([z.string(), z.null()]).optional(),
+    priority: z.number().int().optional().default(100),
+    province_code: z.string(),
+    province_name: z.union([z.string(), z.null()]).optional(),
+    scope: z.string(),
+  })
+  .passthrough();
+const SegmentTemplateItemOut: z.ZodType<SegmentTemplateItemOut> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    id: z.number().int(),
+    max_kg: z.unknown().optional(),
+    min_kg: z.unknown(),
+    ord: z.number().int(),
+    template_id: z.number().int(),
+  })
+  .passthrough();
+const SegmentTemplateOut: z.ZodType<SegmentTemplateOut> = z
+  .object({
+    created_at: z.union([z.string(), z.null()]).optional(),
+    effective_from: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    is_active: z.boolean(),
+    items: z.array(SegmentTemplateItemOut).optional(),
+    name: z.string(),
+    published_at: z.union([z.string(), z.null()]).optional(),
+    scheme_id: z.number().int(),
+    status: z.string(),
+    updated_at: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const SegmentTemplateListOut: z.ZodType<SegmentTemplateListOut> = z
+  .object({
+    data: z.array(SegmentTemplateOut),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const SegmentTemplateCreateIn = z
+  .object({
+    effective_from: z.union([z.string(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const SegmentTemplateDetailOut: z.ZodType<SegmentTemplateDetailOut> = z
+  .object({
+    data: SegmentTemplateOut,
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const SchemeSegmentActivePatchIn = z
+  .object({ active: z.boolean() })
+  .passthrough();
+const SurchargeCreateIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    amount_json: z.object({}).partial().passthrough(),
+    condition_json: z.object({}).partial().passthrough(),
+    name: z.string().min(1).max(128),
+  })
+  .passthrough();
+const SurchargeUpsertIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    amount: z.number().gte(0),
+    city: z.union([z.string(), z.null()]).optional(),
+    name: z.union([z.string(), z.null()]).optional(),
+    province: z.string().min(1).max(64),
+    scope: z.enum(["province", "city"]),
+  })
+  .passthrough();
+const WarehouseLiteOut: z.ZodType<WarehouseLiteOut> = z
+  .object({
+    active: z.boolean(),
+    code: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    name: z.string(),
+  })
+  .passthrough();
+const SchemeWarehouseOut: z.ZodType<SchemeWarehouseOut> = z
+  .object({
+    active: z.boolean(),
+    scheme_id: z.number().int(),
+    warehouse: WarehouseLiteOut,
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const SchemeWarehousesGetOut: z.ZodType<SchemeWarehousesGetOut> = z
+  .object({ data: z.array(SchemeWarehouseOut), ok: z.boolean() })
+  .passthrough();
+const SchemeWarehouseBindIn = z
+  .object({
+    active: z.boolean().optional().default(false),
+    warehouse_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const SchemeWarehouseBindOut: z.ZodType<SchemeWarehouseBindOut> = z
+  .object({ data: SchemeWarehouseOut, ok: z.boolean() })
+  .passthrough();
+const SchemeWarehouseDeleteOut = z
+  .object({ data: z.object({}).partial().passthrough(), ok: z.boolean() })
+  .passthrough();
+const SchemeWarehousePatchIn = z
+  .object({ active: z.union([z.boolean(), z.null()]) })
+  .partial()
+  .passthrough();
+const SchemeWarehousePatchOut: z.ZodType<SchemeWarehousePatchOut> = z
+  .object({ data: SchemeWarehouseOut, ok: z.boolean() })
+  .passthrough();
+const SegmentRangeOut: z.ZodType<SegmentRangeOut> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    max_kg: z.union([z.string(), z.null()]).optional(),
+    min_kg: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
+    ord: z.number().int(),
+  })
+  .passthrough();
+const ZoneBracketsMatrixGroupOut: z.ZodType<ZoneBracketsMatrixGroupOut> = z
+  .object({
+    segment_template_id: z.number().int(),
+    segments: z.array(SegmentRangeOut).optional(),
+    template_is_active: z.boolean(),
+    template_name: z.string(),
+    template_status: z.string(),
+    zones: z.array(ZoneOut).optional(),
+  })
+  .passthrough();
+const ZoneBracketsMatrixOut: z.ZodType<ZoneBracketsMatrixOut> = z
+  .object({
+    groups: z.array(ZoneBracketsMatrixGroupOut).optional(),
+    ok: z.boolean().optional().default(true),
+    scheme_id: z.number().int(),
+    unbound_zones: z.array(ZoneOut).optional(),
+  })
+  .passthrough();
+const ZoneCreateIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    name: z.string().min(1).max(128),
+    segment_template_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ZoneCreateAtomicIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    name: z.string().min(1).max(128),
+    provinces: z.array(z.string()).optional(),
+    segment_template_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const SchemeDefaultSegmentTemplateIn = z
+  .object({ template_id: z.union([z.number(), z.null()]) })
+  .partial()
+  .passthrough();
+const MarkFailedIn = z
+  .object({ error: z.string().min(1).max(2000) })
+  .passthrough();
+const MarkPrintedIn = z
+  .object({ printed_at: z.union([z.string(), z.null()]) })
+  .partial()
+  .passthrough();
+const PurchaseOrderLineListOut: z.ZodType<PurchaseOrderLineListOut> = z
+  .object({
+    base_uom: z.union([z.string(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
+    discount_amount: z
+      .string()
+      .regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/)
+      .optional()
+      .default("0"),
+    discount_note: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    item_id: z.number().int(),
+    line_no: z.number().int(),
+    po_id: z.number().int(),
+    purchase_uom: z.union([z.string(), z.null()]).optional(),
+    qty_ordered: z.number().int(),
+    qty_ordered_base: z.number().int().gte(0),
+    qty_received_base: z.number().int().gte(0),
+    qty_remaining_base: z.number().int().gte(0),
+    remark: z.union([z.string(), z.null()]).optional(),
+    supply_price: z.union([z.string(), z.null()]).optional(),
+    units_per_case: z.number().int().gte(1),
+    updated_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const PurchaseOrderListItemOut: z.ZodType<PurchaseOrderListItemOut> = z
+  .object({
+    canceled_at: z.union([z.string(), z.null()]).optional(),
+    canceled_by: z.union([z.number(), z.null()]).optional(),
+    canceled_reason: z.union([z.string(), z.null()]).optional(),
+    close_note: z.union([z.string(), z.null()]).optional(),
+    close_reason: z.union([z.string(), z.null()]).optional(),
+    closed_at: z.union([z.string(), z.null()]).optional(),
+    closed_by: z.union([z.number(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
+    id: z.number().int(),
+    last_received_at: z.union([z.string(), z.null()]).optional(),
+    lines: z.array(PurchaseOrderLineListOut).optional().default([]),
+    purchase_time: z.string().datetime({ offset: true }),
+    purchaser: z.string(),
+    remark: z.union([z.string(), z.null()]),
+    status: z.string(),
+    supplier_id: z.number().int(),
+    supplier_name: z.string(),
+    total_amount: z.union([z.string(), z.null()]),
+    updated_at: z.string().datetime({ offset: true }),
+    warehouse_id: z.number().int(),
+    warehouse_name: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const PurchaseOrderLineCreate: z.ZodType<PurchaseOrderLineCreate> = z
+  .object({
+    base_uom: z.union([z.string(), z.null()]).optional(),
+    discount_amount: z.union([z.number(), z.string(), z.null()]).optional(),
+    discount_note: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int(),
+    item_name: z.union([z.string(), z.null()]).optional(),
+    item_sku: z.union([z.string(), z.null()]).optional(),
+    line_no: z.number().int().gt(0),
+    purchase_uom: z.union([z.string(), z.null()]).optional(),
+    qty_ordered: z.number().int().gt(0),
+    remark: z.union([z.string(), z.null()]).optional(),
+    spec_text: z.union([z.string(), z.null()]).optional(),
+    supply_price: z.union([z.number(), z.string(), z.null()]).optional(),
+    units_per_case: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const PurchaseOrderCreateV2: z.ZodType<PurchaseOrderCreateV2> = z
+  .object({
+    lines: z.array(PurchaseOrderLineCreate).min(1),
+    purchase_time: z.string().datetime({ offset: true }),
+    purchaser: z.string(),
+    remark: z.union([z.string(), z.null()]).optional(),
+    supplier_id: z.number().int(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const PurchaseOrderLineOut: z.ZodType<PurchaseOrderLineOut> = z
+  .object({
+    base_uom: z.union([z.string(), z.null()]),
+    brand: z.union([z.string(), z.null()]).optional(),
+    category: z.union([z.string(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
+    discount_amount: z
+      .string()
+      .regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/)
+      .optional()
+      .default("0"),
+    discount_note: z.union([z.string(), z.null()]).optional(),
+    enabled: z.union([z.boolean(), z.null()]).optional(),
+    has_shelf_life: z.union([z.boolean(), z.null()]).optional(),
+    id: z.number().int(),
+    item_id: z.number().int(),
+    item_name: z.union([z.string(), z.null()]),
+    item_sku: z.union([z.string(), z.null()]),
+    line_no: z.number().int(),
+    po_id: z.number().int(),
+    primary_barcode: z.union([z.string(), z.null()]).optional(),
+    purchase_uom: z.union([z.string(), z.null()]),
+    qty_ordered: z.number().int().gt(0),
+    qty_ordered_base: z.number().int().gte(0),
+    qty_received: z.number().int().gte(0),
+    qty_received_base: z.number().int().gte(0),
+    qty_remaining: z.number().int().gte(0),
+    qty_remaining_base: z.number().int().gte(0),
+    remark: z.union([z.string(), z.null()]),
+    shelf_life_unit: z.union([z.string(), z.null()]).optional(),
+    shelf_life_value: z.union([z.number(), z.null()]).optional(),
+    sku: z.union([z.string(), z.null()]).optional(),
+    spec_text: z.union([z.string(), z.null()]),
+    supplier_id: z.union([z.number(), z.null()]).optional(),
+    supplier_name: z.union([z.string(), z.null()]).optional(),
+    supply_price: z.union([z.string(), z.null()]),
+    units_per_case: z.number().int().gte(1),
+    uom: z.union([z.string(), z.null()]).optional(),
+    updated_at: z.string().datetime({ offset: true }),
+    weight_kg: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const PurchaseOrderWithLinesOut: z.ZodType<PurchaseOrderWithLinesOut> = z
+  .object({
+    canceled_at: z.union([z.string(), z.null()]).optional(),
+    canceled_by: z.union([z.number(), z.null()]).optional(),
+    canceled_reason: z.union([z.string(), z.null()]).optional(),
+    close_note: z.union([z.string(), z.null()]).optional(),
+    close_reason: z.union([z.string(), z.null()]).optional(),
+    closed_at: z.union([z.string(), z.null()]).optional(),
+    closed_by: z.union([z.number(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
+    id: z.number().int(),
+    last_received_at: z.union([z.string(), z.null()]).optional(),
+    lines: z.array(PurchaseOrderLineOut).optional().default([]),
+    purchase_time: z.string().datetime({ offset: true }),
+    purchaser: z.string(),
+    remark: z.union([z.string(), z.null()]),
+    status: z.string(),
+    supplier_id: z.number().int(),
+    supplier_name: z.string(),
+    total_amount: z.union([z.string(), z.null()]),
+    updated_at: z.string().datetime({ offset: true }),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const PurchaseOrderCloseIn = z
+  .object({ note: z.union([z.string(), z.null()]) })
+  .partial()
+  .passthrough();
+const PurchaseOrderReceiptEventOut = z
+  .object({
+    after_qty: z.number().int(),
+    batch_code: z.string(),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int().gt(0),
+    line_no: z.union([z.number(), z.null()]).optional(),
+    occurred_at: z.string().datetime({ offset: true }),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty: z.number().int(),
+    ref: z.string(),
+    ref_line: z.number().int().gt(0),
+    warehouse_id: z.number().int().gt(0),
+  })
+  .passthrough();
+const PurchaseOrderReceiveLineIn = z
+  .object({
+    barcode: z.union([z.string(), z.null()]).optional(),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    line_id: z.union([z.number(), z.null()]).optional(),
+    line_no: z.union([z.number(), z.null()]).optional(),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty: z.number().int().gt(0),
+  })
+  .passthrough();
+const WorkbenchCapsOut: z.ZodType<WorkbenchCapsOut> = z
+  .object({
+    can_confirm: z.boolean(),
+    can_start_draft: z.boolean(),
+    receipt_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const WorkbenchExplainOut: z.ZodType<WorkbenchExplainOut> = z
+  .object({
+    blocking_errors: z.array(z.object({}).partial().passthrough()).optional(),
+    confirmable: z.boolean(),
+    normalized_lines_preview: z
+      .array(z.object({}).partial().passthrough())
+      .optional(),
+  })
+  .passthrough();
+const PoSummaryOut: z.ZodType<PoSummaryOut> = z
+  .object({
+    occurred_at: z.union([z.string(), z.null()]).optional(),
+    po_id: z.number().int(),
+    status: z.union([z.string(), z.null()]).optional(),
+    supplier_id: z.union([z.number(), z.null()]).optional(),
+    supplier_name: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const ReceiptSummaryOut: z.ZodType<ReceiptSummaryOut> = z
+  .object({
+    occurred_at: z.string().datetime({ offset: true }),
+    receipt_id: z.number().int(),
+    ref: z.string(),
+    status: z.string(),
+  })
+  .passthrough();
+const WorkbenchBatchRowOut: z.ZodType<WorkbenchBatchRowOut> = z
+  .object({
+    batch_code: z.string(),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty_received: z.number().int(),
+  })
+  .passthrough();
+const WorkbenchRowOut: z.ZodType<WorkbenchRowOut> = z
+  .object({
+    all_batches: z.array(WorkbenchBatchRowOut).optional(),
+    batches: z.array(WorkbenchBatchRowOut).optional(),
+    confirmed_batches: z.array(WorkbenchBatchRowOut).optional(),
+    confirmed_received_qty: z.number().int(),
+    draft_received_qty: z.number().int(),
+    item_id: z.number().int(),
+    item_name: z.union([z.string(), z.null()]).optional(),
+    item_sku: z.union([z.string(), z.null()]).optional(),
+    line_no: z.number().int(),
+    ordered_qty: z.number().int(),
+    po_line_id: z.number().int(),
+    remaining_qty: z.number().int(),
+  })
+  .passthrough();
+const PurchaseOrderReceiveWorkbenchOut: z.ZodType<PurchaseOrderReceiveWorkbenchOut> =
+  z
+    .object({
+      caps: WorkbenchCapsOut,
+      explain: z.union([WorkbenchExplainOut, z.null()]).optional(),
+      po_summary: PoSummaryOut,
+      receipt: z.union([ReceiptSummaryOut, z.null()]).optional(),
+      rows: z.array(WorkbenchRowOut),
+    })
+    .passthrough();
+const DailyPurchaseReportItem = z
   .object({
     day: z.string(),
+    order_count: z.number().int(),
+    total_amount: z.union([z.string(), z.null()]).optional(),
+    total_qty_cases: z.number().int(),
+    total_units: z.number().int(),
+  })
+  .passthrough();
+const ItemPurchaseReportItem = z
+  .object({
+    avg_unit_price: z.union([z.string(), z.null()]).optional(),
+    barcode: z.union([z.string(), z.null()]).optional(),
+    brand: z.union([z.string(), z.null()]).optional(),
+    category: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int(),
+    item_name: z.union([z.string(), z.null()]).optional(),
+    item_sku: z.union([z.string(), z.null()]).optional(),
+    order_count: z.number().int(),
+    spec_text: z.union([z.string(), z.null()]).optional(),
+    supplier_id: z.union([z.number(), z.null()]).optional(),
+    supplier_name: z.union([z.string(), z.null()]).optional(),
+    total_amount: z.union([z.string(), z.null()]).optional(),
+    total_qty_cases: z.number().int(),
+    total_units: z.number().int(),
+  })
+  .passthrough();
+const SupplierPurchaseReportItem = z
+  .object({
+    avg_unit_price: z.union([z.string(), z.null()]).optional(),
+    order_count: z.number().int(),
+    supplier_id: z.union([z.number(), z.null()]),
+    supplier_name: z.string(),
+    total_amount: z.union([z.string(), z.null()]).optional(),
+    total_qty_cases: z.number().int(),
+    total_units: z.number().int(),
+  })
+  .passthrough();
+const ReturnTaskLineOut: z.ZodType<ReturnTaskLineOut> = z
+  .object({
+    batch_code: z.string(),
+    committed_qty: z.union([z.number(), z.null()]),
+    expected_qty: z.union([z.number(), z.null()]),
+    id: z.number().int(),
+    item_id: z.number().int(),
+    item_name: z.union([z.string(), z.null()]),
+    order_line_id: z.union([z.number(), z.null()]).optional(),
+    picked_qty: z.number().int(),
+    remark: z.union([z.string(), z.null()]),
+    status: z.string(),
+    task_id: z.number().int(),
+  })
+  .passthrough();
+const ReturnTaskOut: z.ZodType<ReturnTaskOut> = z
+  .object({
+    created_at: z.string().datetime({ offset: true }),
+    id: z.number().int(),
+    lines: z.array(ReturnTaskLineOut).optional().default([]),
+    order_id: z.string(),
+    remark: z.union([z.string(), z.null()]),
+    status: z.string(),
+    updated_at: z.string().datetime({ offset: true }),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const ReturnTaskCreateFromOrder = z
+  .object({
+    include_zero_shipped: z.boolean().default(false),
+    warehouse_id: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const ReturnOrderRefItem = z
+  .object({
+    last_ship_at: z.string().datetime({ offset: true }),
+    order_ref: z.string(),
+    remaining_qty: z.number().int(),
+    total_lines: z.number().int(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ReturnOrderRefReceiverOut: z.ZodType<ReturnOrderRefReceiverOut> = z
+  .object({
+    city: z.union([z.string(), z.null()]),
+    detail: z.union([z.string(), z.null()]),
+    district: z.union([z.string(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+    phone: z.union([z.string(), z.null()]),
+    province: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const ReturnOrderRefShippingOut: z.ZodType<ReturnOrderRefShippingOut> = z
+  .object({
+    carrier_code: z.union([z.string(), z.null()]),
+    carrier_name: z.union([z.string(), z.null()]),
+    cost_estimated: z.union([z.number(), z.null()]),
+    gross_weight_kg: z.union([z.number(), z.null()]),
+    meta: z.union([z.object({}).partial().passthrough(), z.null()]),
+    receiver: z.union([ReturnOrderRefReceiverOut, z.null()]),
+    shipped_at: z.union([z.string(), z.null()]),
+    status: z.union([z.string(), z.null()]),
+    tracking_no: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const ReturnOrderRefSummaryLine: z.ZodType<ReturnOrderRefSummaryLine> = z
+  .object({
+    batch_code: z.string(),
+    item_id: z.number().int(),
+    item_name: z.union([z.string(), z.null()]).optional(),
+    shipped_qty: z.number().int(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const ReturnOrderRefSummaryOut: z.ZodType<ReturnOrderRefSummaryOut> = z
+  .object({
+    lines: z.array(ReturnOrderRefSummaryLine),
+    order_ref: z.string(),
+    ship_reasons: z.array(z.string()).optional(),
+  })
+  .passthrough();
+const ReturnOrderRefDetailOut: z.ZodType<ReturnOrderRefDetailOut> = z
+  .object({
+    ext_order_no: z.union([z.string(), z.null()]).optional(),
+    order_ref: z.string(),
+    platform: z.union([z.string(), z.null()]).optional(),
+    remaining_qty: z.union([z.number(), z.null()]).optional(),
+    shipping: z.union([ReturnOrderRefShippingOut, z.null()]).optional(),
+    shop_id: z.union([z.string(), z.null()]).optional(),
+    summary: ReturnOrderRefSummaryOut,
+  })
+  .passthrough();
+const ReturnTaskCommitIn = z
+  .object({ trace_id: z.union([z.string(), z.null()]) })
+  .partial()
+  .passthrough();
+const ReturnTaskReceiveIn = z
+  .object({ item_id: z.number().int(), qty: z.number().int() })
+  .passthrough();
+const RoleOut: z.ZodType<RoleOut> = z
+  .object({
+    description: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    name: z.string().min(1).max(64),
+    permissions: z.array(PermissionOut).optional(),
+  })
+  .passthrough();
+const RoleCreate = z
+  .object({
+    description: z.union([z.string(), z.null()]).optional(),
+    name: z.string().min(1).max(64),
+  })
+  .passthrough();
+const RolePermissionsBody = z
+  .object({ permission_ids: z.array(z.string()) })
+  .passthrough();
+const ScanRequest = z
+  .object({
+    barcode: z.union([z.string(), z.null()]).optional(),
+    batch_code: z.union([z.string(), z.null()]).optional(),
+    ctx: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    item_id: z.union([z.number(), z.null()]).optional(),
+    mode: z.string(),
+    probe: z.boolean().optional().default(false),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty: z.union([z.number(), z.null()]).optional().default(1),
+    task_line_id: z.union([z.number(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ScanResponse = z
+  .object({
+    actual: z.union([z.number(), z.null()]).optional(),
+    after: z.union([z.number(), z.null()]).optional(),
+    after_qty: z.union([z.number(), z.null()]).optional(),
+    batch_code: z.union([z.string(), z.null()]).optional(),
+    before: z.union([z.number(), z.null()]).optional(),
+    before_qty: z.union([z.number(), z.null()]).optional(),
+    committed: z.boolean().optional().default(true),
+    delta: z.union([z.number(), z.null()]).optional(),
+    errors: z.array(z.object({}).partial().passthrough()).optional(),
+    event_id: z.union([z.number(), z.null()]).optional(),
+    evidence: z.array(z.object({}).partial().passthrough()).optional(),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    item_id: z.union([z.number(), z.null()]).optional(),
+    location_id: z.union([z.number(), z.null()]).optional(),
+    ok: z.boolean().optional().default(true),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty: z.union([z.number(), z.null()]).optional(),
+    scan_ref: z.string(),
+    source: z.string(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ScanCountCommitRequest = z
+  .object({
+    batch_code: z.union([z.string(), z.null()]).optional(),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int(),
+    location_id: z.number().int(),
+    occurred_at: z.string().datetime({ offset: true }).optional(),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty: z.number().int().gte(0),
+    ref: z.string(),
+  })
+  .passthrough();
+const SegmentTemplateItemActivePatchIn = z
+  .object({ active: z.boolean() })
+  .passthrough();
+const SegmentTemplateItemIn: z.ZodType<SegmentTemplateItemIn> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    max_kg: z.unknown().optional(),
+    min_kg: z.unknown(),
+    ord: z.number().int().gte(0),
+  })
+  .passthrough();
+const SegmentTemplateItemsPutIn: z.ZodType<SegmentTemplateItemsPutIn> = z
+  .object({ items: z.array(SegmentTemplateItemIn) })
+  .passthrough();
+const SegmentTemplateRenameIn = z
+  .object({ name: z.string().min(1).max(80) })
+  .passthrough();
+const ShipCalcRequest = z
+  .object({
+    city: z.union([z.string(), z.null()]).optional(),
+    debug_ref: z.union([z.string(), z.null()]).optional(),
+    district: z.union([z.string(), z.null()]).optional(),
+    province: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int().gte(1),
+    weight_kg: z.number().gt(0),
+  })
+  .passthrough();
+const ShipQuoteOut: z.ZodType<ShipQuoteOut> = z
+  .object({
+    breakdown: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    carrier_code: z.union([z.string(), z.null()]).optional(),
+    carrier_name: z.string(),
+    currency: z.union([z.string(), z.null()]).optional(),
+    est_cost: z.union([z.number(), z.null()]).optional(),
+    eta: z.union([z.string(), z.null()]).optional(),
+    provider_id: z.number().int(),
+    quote_status: z.string(),
+    reasons: z.array(z.string()).optional(),
+    scheme_id: z.number().int(),
+    scheme_name: z.string(),
+  })
+  .passthrough();
+const ShipRecommendedOut: z.ZodType<ShipRecommendedOut> = z
+  .object({
+    carrier_code: z.union([z.string(), z.null()]).optional(),
+    currency: z.union([z.number(), z.null()]).optional(),
+    est_cost: z.union([z.number(), z.null()]).optional(),
+    provider_id: z.number().int(),
+    scheme_id: z.number().int(),
+  })
+  .passthrough();
+const ShipCalcResponse: z.ZodType<ShipCalcResponse> = z
+  .object({
+    dest: z.union([z.string(), z.null()]).optional(),
+    ok: z.boolean().optional().default(true),
+    quotes: z.array(ShipQuoteOut),
+    recommended: z.union([ShipRecommendedOut, z.null()]).optional(),
+    weight_kg: z.number(),
+  })
+  .passthrough();
+const ShipConfirmRequest = z
+  .object({
+    carrier: z.union([z.string(), z.null()]).optional(),
+    carrier_name: z.union([z.string(), z.null()]).optional(),
+    cost_estimated: z.union([z.number(), z.null()]).optional(),
+    cost_real: z.union([z.number(), z.null()]).optional(),
+    delivery_time: z.union([z.string(), z.null()]).optional(),
+    error_code: z.union([z.string(), z.null()]).optional(),
+    error_message: z.union([z.string(), z.null()]).optional(),
+    gross_weight_kg: z.union([z.number(), z.null()]).optional(),
+    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    packaging_weight_kg: z.union([z.number(), z.null()]).optional(),
     platform: z.string(),
-    shops: z.array(OutboundShopMetric),
+    ref: z.string().min(1),
+    scheme_id: z.union([z.number(), z.null()]).optional(),
+    shop_id: z.string(),
+    status: z.union([z.string(), z.null()]).optional(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    tracking_no: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ShipConfirmResponse = z
+  .object({
+    ok: z.boolean().optional().default(true),
+    ref: z.string(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const ShipPrepareRequest = z
+  .object({
+    ext_order_no: z.string(),
+    platform: z.string(),
+    shop_id: z.string(),
+  })
+  .passthrough();
+const CandidateWarehouseOut: z.ZodType<CandidateWarehouseOut> = z
+  .object({
+    priority: z.number().int().optional().default(100),
+    warehouse_active: z.boolean().optional().default(true),
+    warehouse_code: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int(),
+    warehouse_name: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const FulfillmentMissingLineOut: z.ZodType<FulfillmentMissingLineOut> = z
+  .object({
+    available: z.number().int(),
+    item_id: z.number().int(),
+    need: z.number().int(),
+  })
+  .passthrough();
+const FulfillmentScanWarehouseOut: z.ZodType<FulfillmentScanWarehouseOut> = z
+  .object({
+    missing: z.array(FulfillmentMissingLineOut).optional(),
+    status: z.string(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const ShipPrepareItem: z.ZodType<ShipPrepareItem> = z
+  .object({ item_id: z.number().int(), qty: z.number().int() })
+  .passthrough();
+const ShipPrepareResponse: z.ZodType<ShipPrepareResponse> = z
+  .object({
+    address_detail: z.union([z.string(), z.null()]).optional(),
+    blocked_reasons: z.array(z.string()).optional(),
+    candidate_warehouses: z.array(CandidateWarehouseOut).optional(),
+    city: z.union([z.string(), z.null()]).optional(),
+    district: z.union([z.string(), z.null()]).optional(),
+    ext_order_no: z.string(),
+    fulfillment_scan: z.array(FulfillmentScanWarehouseOut).optional(),
+    fulfillment_status: z.union([z.string(), z.null()]).optional(),
+    items: z.array(ShipPrepareItem).optional(),
+    ok: z.boolean().optional().default(true),
+    order_id: z.number().int(),
+    platform: z.string(),
+    province: z.union([z.string(), z.null()]).optional(),
+    receiver_name: z.union([z.string(), z.null()]).optional(),
+    receiver_phone: z.union([z.string(), z.null()]).optional(),
+    ref: z.string(),
+    shop_id: z.string(),
+    total_qty: z.number().int().optional().default(0),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+    warehouse_reason: z.union([z.string(), z.null()]).optional(),
+    weight_kg: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ShippingProviderContactUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    email: z.union([z.string(), z.null()]),
+    is_primary: z.union([z.boolean(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+    phone: z.union([z.string(), z.null()]),
+    role: z.union([z.string(), z.null()]),
+    wechat: z.union([z.union([z.string(), z.string()]), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const ShippingProviderContactOut: z.ZodType<ShippingProviderContactOut> = z
+  .object({
+    active: z.boolean(),
+    email: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    is_primary: z.boolean(),
+    name: z.string(),
+    phone: z.union([z.string(), z.null()]).optional(),
+    role: z.string(),
+    shipping_provider_id: z.number().int(),
+    wechat: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const ShippingProviderOut: z.ZodType<ShippingProviderOut> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    address: z.union([z.string(), z.null()]).optional(),
+    code: z.union([z.string(), z.null()]).optional(),
+    contacts: z.array(ShippingProviderContactOut).optional(),
+    id: z.number().int(),
+    name: z.string(),
+    pricing_model: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    priority: z.number().int().optional().default(100),
+    region_rules: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const ShippingProviderListOut: z.ZodType<ShippingProviderListOut> = z
+  .object({
+    data: z.array(ShippingProviderOut),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const ShippingProviderCreateIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    address: z.union([z.string(), z.null()]).optional(),
+    code: z.union([z.string(), z.null()]).optional(),
+    name: z.string().min(1).max(255),
+    pricing_model: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    priority: z.union([z.number(), z.null()]).optional().default(100),
+    region_rules: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    warehouse_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const ShippingProviderCreateOut: z.ZodType<ShippingProviderCreateOut> = z
+  .object({
+    data: ShippingProviderOut,
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const ShippingProviderDetailOut: z.ZodType<ShippingProviderDetailOut> = z
+  .object({
+    data: ShippingProviderOut,
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const ShippingProviderUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    address: z.union([z.string(), z.null()]),
+    code: z.union([z.string(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+    pricing_model: z.union([z.object({}).partial().passthrough(), z.null()]),
+    priority: z.union([z.number(), z.null()]),
+    region_rules: z.union([z.object({}).partial().passthrough(), z.null()]),
+    warehouse_id: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const ShippingProviderUpdateOut: z.ZodType<ShippingProviderUpdateOut> = z
+  .object({
+    data: ShippingProviderOut,
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const ShippingProviderContactCreateIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    email: z.union([z.string(), z.null()]).optional(),
+    is_primary: z.boolean().optional().default(false),
+    name: z.string().min(1).max(100),
+    phone: z.union([z.string(), z.null()]).optional(),
+    role: z.string().max(32).optional().default("other"),
+    wechat: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const SchemeListOut: z.ZodType<SchemeListOut> = z
+  .object({
+    data: z.array(SchemeOut),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const SchemeCreateIn: z.ZodType<SchemeCreateIn> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    billable_weight_rule: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    currency: z.string().min(1).max(8).optional().default("CNY"),
+    default_pricing_mode: z
+      .string()
+      .min(1)
+      .max(32)
+      .optional()
+      .default("linear_total"),
+    effective_from: z.union([z.string(), z.null()]).optional(),
+    effective_to: z.union([z.string(), z.null()]).optional(),
+    name: z.string().min(1).max(128),
+    segments_json: z.union([z.array(WeightSegmentIn), z.null()]).optional(),
+  })
+  .passthrough();
+const QuoteDestIn: z.ZodType<QuoteDestIn> = z
+  .object({
+    city: z.union([z.string(), z.null()]).optional(),
+    city_code: z.union([z.string(), z.null()]).optional(),
+    district: z.union([z.string(), z.null()]).optional(),
+    province: z.union([z.string(), z.null()]).optional(),
+    province_code: z.string().min(1),
+  })
+  .passthrough();
+const QuoteCalcIn: z.ZodType<QuoteCalcIn> = z
+  .object({
+    dest: QuoteDestIn,
+    flags: z.array(z.string()).optional(),
+    height_cm: z.union([z.number(), z.null()]).optional(),
+    length_cm: z.union([z.number(), z.null()]).optional(),
+    real_weight_kg: z.number().gte(0),
+    scheme_id: z.number().int().gte(1),
+    warehouse_id: z.number().int().gte(1),
+    width_cm: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const QuoteCalcOut = z
+  .object({
+    bracket: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    breakdown: z.object({}).partial().passthrough(),
+    currency: z.union([z.string(), z.null()]).optional(),
+    ok: z.boolean(),
+    quote_status: z.string(),
+    reasons: z.array(z.string()).optional(),
+    total_amount: z.union([z.number(), z.null()]).optional(),
+    weight: z.object({}).partial().passthrough(),
+    zone: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+  })
+  .passthrough();
+const QuoteRecommendIn: z.ZodType<QuoteRecommendIn> = z
+  .object({
+    dest: QuoteDestIn,
+    flags: z.array(z.string()).optional(),
+    height_cm: z.union([z.number(), z.null()]).optional(),
+    length_cm: z.union([z.number(), z.null()]).optional(),
+    max_results: z.number().int().gte(1).lte(50).optional().default(10),
+    provider_ids: z.array(z.number().int()).optional(),
+    real_weight_kg: z.number().gte(0),
+    warehouse_id: z.number().int().gte(1),
+    width_cm: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const QuoteRecommendItemOut: z.ZodType<QuoteRecommendItemOut> = z
+  .object({
+    bracket: z
+      .union([z.object({}).partial().passthrough(), z.null()])
+      .optional(),
+    breakdown: z.object({}).partial().passthrough(),
+    carrier_code: z.union([z.string(), z.null()]).optional(),
+    carrier_name: z.string(),
+    currency: z.union([z.string(), z.null()]).optional(),
+    provider_id: z.number().int(),
+    quote_status: z.string(),
+    reasons: z.array(z.string()).optional(),
+    scheme_id: z.number().int(),
+    scheme_name: z.string(),
+    total_amount: z.number(),
+    weight: z.object({}).partial().passthrough(),
+    zone: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+  })
+  .passthrough();
+const QuoteRecommendOut: z.ZodType<QuoteRecommendOut> = z
+  .object({
+    ok: z.boolean(),
+    quotes: z.array(QuoteRecommendItemOut),
+    recommended_scheme_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ShippingRecordOut = z
+  .object({
+    carrier_code: z.union([z.string(), z.null()]).optional(),
+    carrier_name: z.union([z.string(), z.null()]).optional(),
+    cost_estimated: z.union([z.number(), z.null()]).optional(),
+    cost_real: z.union([z.number(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
+    delivery_time: z.union([z.string(), z.null()]).optional(),
+    error_code: z.union([z.string(), z.null()]).optional(),
+    error_message: z.union([z.string(), z.null()]).optional(),
+    gross_weight_kg: z.union([z.number(), z.null()]).optional(),
+    id: z.number().int(),
+    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    order_ref: z.string(),
+    packaging_weight_kg: z.union([z.number(), z.null()]).optional(),
+    platform: z.string(),
+    shop_id: z.string(),
+    status: z.union([z.string(), z.null()]).optional(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    tracking_no: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+    weight_kg: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ShippingStatusUpdateIn = z
+  .object({
+    delivery_time: z.union([z.string(), z.null()]).optional(),
+    error_code: z.union([z.string(), z.null()]).optional(),
+    error_message: z.union([z.string(), z.null()]).optional(),
+    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    status: z.enum(["IN_TRANSIT", "DELIVERED", "LOST", "RETURNED"]),
+  })
+  .passthrough();
+const ShippingStatusUpdateOut = z
+  .object({
+    delivery_time: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    ok: z.boolean().optional().default(true),
+    status: z.string(),
+  })
+  .passthrough();
+const ShippingByCarrierRow: z.ZodType<ShippingByCarrierRow> = z
+  .object({
+    avg_cost: z.number(),
+    carrier_code: z.union([z.string(), z.null()]).optional(),
+    carrier_name: z.union([z.string(), z.null()]).optional(),
+    ship_cnt: z.number().int(),
+    total_cost: z.number(),
+  })
+  .passthrough();
+const ShippingByCarrierResponse: z.ZodType<ShippingByCarrierResponse> = z
+  .object({
+    ok: z.boolean().optional().default(true),
+    rows: z.array(ShippingByCarrierRow),
+  })
+  .passthrough();
+const ShippingByProvinceRow: z.ZodType<ShippingByProvinceRow> = z
+  .object({
+    avg_cost: z.number(),
+    province: z.union([z.string(), z.null()]).optional(),
+    ship_cnt: z.number().int(),
+    total_cost: z.number(),
+  })
+  .passthrough();
+const ShippingByProvinceResponse: z.ZodType<ShippingByProvinceResponse> = z
+  .object({
+    ok: z.boolean().optional().default(true),
+    rows: z.array(ShippingByProvinceRow),
+  })
+  .passthrough();
+const ShippingByShopRow: z.ZodType<ShippingByShopRow> = z
+  .object({
+    avg_cost: z.number(),
+    platform: z.string(),
+    ship_cnt: z.number().int(),
+    shop_id: z.string(),
+    total_cost: z.number(),
+  })
+  .passthrough();
+const ShippingByShopResponse: z.ZodType<ShippingByShopResponse> = z
+  .object({
+    ok: z.boolean().optional().default(true),
+    rows: z.array(ShippingByShopRow),
+  })
+  .passthrough();
+const ShippingByWarehouseRow: z.ZodType<ShippingByWarehouseRow> = z
+  .object({
+    avg_cost: z.number(),
+    ship_cnt: z.number().int(),
+    total_cost: z.number(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ShippingByWarehouseResponse: z.ZodType<ShippingByWarehouseResponse> = z
+  .object({
+    ok: z.boolean().optional().default(true),
+    rows: z.array(ShippingByWarehouseRow),
+  })
+  .passthrough();
+const ShippingDailyRow: z.ZodType<ShippingDailyRow> = z
+  .object({
+    avg_cost: z.number(),
+    ship_cnt: z.number().int(),
+    stat_date: z.string(),
+    total_cost: z.number(),
+  })
+  .passthrough();
+const ShippingDailyResponse: z.ZodType<ShippingDailyResponse> = z
+  .object({
+    ok: z.boolean().optional().default(true),
+    rows: z.array(ShippingDailyRow),
+  })
+  .passthrough();
+const ShippingListRow: z.ZodType<ShippingListRow> = z
+  .object({
+    carrier_code: z.union([z.string(), z.null()]).optional(),
+    carrier_name: z.union([z.string(), z.null()]).optional(),
+    cost_estimated: z.union([z.number(), z.null()]).optional(),
+    created_at: z.string(),
+    gross_weight_kg: z.union([z.number(), z.null()]).optional(),
+    id: z.number().int(),
+    meta: z.union([z.object({}).partial().passthrough(), z.null()]).optional(),
+    order_ref: z.string(),
+    packaging_weight_kg: z.union([z.number(), z.null()]).optional(),
+    platform: z.string(),
+    shop_id: z.string(),
+    status: z.union([z.string(), z.null()]).optional(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const ShippingListResponse: z.ZodType<ShippingListResponse> = z
+  .object({
+    ok: z.boolean().optional().default(true),
+    rows: z.array(ShippingListRow),
+    total: z.number().int(),
+  })
+  .passthrough();
+const ShippingReportFilterOptions = z
+  .object({
+    cities: z.array(z.string()),
+    platforms: z.array(z.string()),
+    provinces: z.array(z.string()),
+    shop_ids: z.array(z.string()),
   })
   .passthrough();
 const InventoryRow: z.ZodType<InventoryRow> = z
   .object({
-    item_id: z.number().int().gte(1),
-    item_name: z.string().min(0).max(128),
-    item_code: z.union([z.string(), z.null()]).optional(),
-    uom: z.union([z.string(), z.null()]).optional(),
-    spec: z.union([z.string(), z.null()]).optional(),
-    main_barcode: z.union([z.string(), z.null()]).optional(),
+    batch_code: z.union([z.string(), z.null()]).optional(),
     brand: z.union([z.string(), z.null()]).optional(),
     category: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.number().int().gte(1),
-    batch_code: z.union([z.string(), z.null()]).optional(),
-    qty: z.number().int(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
-    near_expiry: z.boolean().optional().default(false),
     days_to_expiry: z.union([z.number(), z.null()]).optional(),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    item_code: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int().gte(1),
+    item_name: z.string().min(0).max(128),
+    main_barcode: z.union([z.string(), z.null()]).optional(),
+    near_expiry: z.boolean().optional().default(false),
+    qty: z.number().int(),
+    spec: z.union([z.string(), z.null()]).optional(),
+    uom: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int().gte(1),
   })
   .passthrough();
 const InventorySnapshotResponse: z.ZodType<InventorySnapshotResponse> = z
   .object({
-    total: z.number().int().gte(0),
-    offset: z.number().int().gte(0),
     limit: z.number().int().gte(1).lte(100),
+    offset: z.number().int().gte(0),
     rows: z.array(InventoryRow).optional(),
-  })
-  .passthrough();
-const ItemDetailTotals: z.ZodType<ItemDetailTotals> = z
-  .object({
-    on_hand_qty: z.number().int().gte(0),
-    available_qty: z.number().int().gte(0),
+    total: z.number().int().gte(0),
   })
   .passthrough();
 const ItemDetailSlice: z.ZodType<ItemDetailSlice> = z
   .object({
+    available_qty: z.number().int().gte(0),
+    batch_code: z.string().min(1).max(64),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    is_top: z.boolean().optional().default(false),
+    near_expiry: z.boolean().optional().default(false),
+    on_hand_qty: z.number().int().gte(0),
+    pool: z.string().min(1).max(32),
+    production_date: z.union([z.string(), z.null()]).optional(),
     warehouse_id: z.number().int().gte(1),
     warehouse_name: z.string().min(1).max(100),
-    pool: z.string().min(1).max(32),
-    batch_code: z.string().min(1).max(64),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
-    on_hand_qty: z.number().int().gte(0),
+  })
+  .passthrough();
+const ItemDetailTotals: z.ZodType<ItemDetailTotals> = z
+  .object({
     available_qty: z.number().int().gte(0),
-    near_expiry: z.boolean().optional().default(false),
-    is_top: z.boolean().optional().default(false),
+    on_hand_qty: z.number().int().gte(0),
   })
   .passthrough();
 const ItemDetailResponse: z.ZodType<ItemDetailResponse> = z
   .object({
     item_id: z.number().int().gte(1),
     item_name: z.string().min(0).max(128),
-    totals: ItemDetailTotals,
     slices: z.array(ItemDetailSlice),
+    totals: ItemDetailTotals,
   })
   .passthrough();
 const StockBatchQueryIn = z
   .object({
-    item_id: z.union([z.number(), z.null()]),
-    warehouse_id: z.union([z.number(), z.null()]),
     expiry_date_from: z.union([z.string(), z.null()]),
     expiry_date_to: z.union([z.string(), z.null()]),
+    item_id: z.union([z.number(), z.null()]),
     page: z.number().int().gte(1).default(1),
     page_size: z.number().int().gte(1).lte(500).default(50),
+    warehouse_id: z.union([z.number(), z.null()]),
   })
   .partial()
   .passthrough();
 const StockBatchRow: z.ZodType<StockBatchRow> = z
   .object({
-    batch_id: z.number().int(),
-    item_id: z.number().int(),
-    warehouse_id: z.number().int(),
     batch_code: z.string(),
-    qty: z.number().int(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
+    batch_id: z.number().int(),
     days_to_expiry: z.union([z.number(), z.null()]).optional(),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    item_id: z.number().int(),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    qty: z.number().int(),
+    warehouse_id: z.number().int(),
   })
   .passthrough();
 const StockBatchQueryOut: z.ZodType<StockBatchQueryOut> = z
   .object({
-    total: z.number().int(),
+    items: z.array(StockBatchRow).optional(),
     page: z.number().int(),
     page_size: z.number().int(),
-    items: z.array(StockBatchRow).optional(),
+    total: z.number().int(),
   })
   .passthrough();
 const ReasonCanon = z.enum(["RECEIPT", "SHIPMENT", "ADJUSTMENT"]);
@@ -5599,47 +5289,6 @@ const LedgerEnums: z.ZodType<LedgerEnums> = z
   })
   .partial()
   .passthrough();
-const LedgerQuery: z.ZodType<LedgerQuery> = z
-  .object({
-    item_id: z.union([z.number(), z.null()]),
-    item_keyword: z.union([z.string(), z.null()]),
-    warehouse_id: z.union([z.number(), z.null()]),
-    batch_code: z.union([z.string(), z.null()]),
-    reason: z.union([z.string(), z.null()]),
-    reason_canon: z.union([ReasonCanon, z.null()]),
-    sub_reason: z.union([SubReason, z.null()]),
-    ref: z.union([z.string(), z.null()]),
-    trace_id: z.union([z.string(), z.null()]),
-    time_from: z.union([z.string(), z.null()]),
-    time_to: z.union([z.string(), z.null()]),
-    limit: z.number().int().gte(1).lte(1000).default(100),
-    offset: z.number().int().gte(0).default(0),
-  })
-  .partial()
-  .passthrough();
-const LedgerRow: z.ZodType<LedgerRow> = z
-  .object({
-    id: z.number().int(),
-    delta: z.number().int(),
-    after_qty: z.number().int(),
-    reason: z.string(),
-    reason_canon: z.union([z.string(), z.null()]).optional(),
-    sub_reason: z.union([z.string(), z.null()]).optional(),
-    ref: z.union([z.string(), z.null()]).optional(),
-    ref_line: z.number().int(),
-    occurred_at: z.string().datetime({ offset: true }),
-    created_at: z.string().datetime({ offset: true }),
-    warehouse_id: z.number().int(),
-    item_id: z.number().int(),
-    item_name: z.union([z.string(), z.null()]).optional(),
-    batch_code: z.string(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    movement_type: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const LedgerList: z.ZodType<LedgerList> = z
-  .object({ total: z.number().int(), items: z.array(LedgerRow).optional() })
-  .passthrough();
 const ExplainAnchor: z.ZodType<ExplainAnchor> = z
   .object({
     ref: z.string(),
@@ -5648,248 +5297,166 @@ const ExplainAnchor: z.ZodType<ExplainAnchor> = z
   .passthrough();
 const ExplainLedgerRow: z.ZodType<ExplainLedgerRow> = z
   .object({
-    id: z.number().int(),
-    warehouse_id: z.number().int(),
-    item_id: z.number().int(),
+    after_qty: z.number().int(),
     batch_code: z.string(),
+    created_at: z.string().datetime({ offset: true }),
+    delta: z.number().int(),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    item_id: z.number().int(),
+    occurred_at: z.string().datetime({ offset: true }),
+    production_date: z.union([z.string(), z.null()]).optional(),
     reason: z.string(),
     reason_canon: z.union([z.string(), z.null()]).optional(),
-    sub_reason: z.union([z.string(), z.null()]).optional(),
     ref: z.string(),
     ref_line: z.number().int(),
-    delta: z.number().int(),
-    after_qty: z.number().int(),
-    occurred_at: z.string().datetime({ offset: true }),
-    created_at: z.string().datetime({ offset: true }),
+    sub_reason: z.union([z.string(), z.null()]).optional(),
     trace_id: z.union([z.string(), z.null()]).optional(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const ExplainReceipt: z.ZodType<ExplainReceipt> = z
-  .object({
-    id: z.number().int(),
     warehouse_id: z.number().int(),
-    supplier_id: z.union([z.number(), z.null()]).optional(),
-    supplier_name: z.union([z.string(), z.null()]).optional(),
-    source_type: z.string(),
-    source_id: z.union([z.number(), z.null()]).optional(),
-    ref: z.string(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    status: z.string(),
-    remark: z.union([z.string(), z.null()]).optional(),
-    occurred_at: z.string().datetime({ offset: true }),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough();
-const ExplainReceiptLine: z.ZodType<ExplainReceiptLine> = z
-  .object({
-    id: z.number().int(),
-    receipt_id: z.number().int(),
-    line_no: z.number().int(),
-    po_line_id: z.union([z.number(), z.null()]).optional(),
-    item_id: z.number().int(),
-    item_name: z.union([z.string(), z.null()]).optional(),
-    item_sku: z.union([z.string(), z.null()]).optional(),
-    category: z.union([z.string(), z.null()]).optional(),
-    spec_text: z.union([z.string(), z.null()]).optional(),
-    base_uom: z.union([z.string(), z.null()]).optional(),
-    purchase_uom: z.union([z.string(), z.null()]).optional(),
-    batch_code: z.string(),
-    production_date: z.union([z.string(), z.null()]).optional(),
-    expiry_date: z.union([z.string(), z.null()]).optional(),
-    qty_received: z.number().int(),
-    units_per_case: z.number().int(),
-    qty_units: z.number().int(),
-    unit_cost: z.union([z.string(), z.null()]).optional(),
-    line_amount: z.union([z.string(), z.null()]).optional(),
-    remark: z.union([z.string(), z.null()]).optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough();
 const ExplainPurchaseOrderLine: z.ZodType<ExplainPurchaseOrderLine> = z
   .object({
+    base_uom: z.union([z.string(), z.null()]).optional(),
+    category: z.union([z.string(), z.null()]).optional(),
     id: z.number().int(),
-    po_id: z.number().int(),
-    line_no: z.number().int(),
     item_id: z.number().int(),
     item_name: z.union([z.string(), z.null()]).optional(),
     item_sku: z.union([z.string(), z.null()]).optional(),
-    category: z.union([z.string(), z.null()]).optional(),
-    spec_text: z.union([z.string(), z.null()]).optional(),
-    base_uom: z.union([z.string(), z.null()]).optional(),
+    line_no: z.number().int(),
+    po_id: z.number().int(),
     purchase_uom: z.union([z.string(), z.null()]).optional(),
-    units_per_case: z.union([z.number(), z.null()]).optional(),
     qty_ordered: z.number().int(),
     qty_received: z.number().int(),
-    status: z.string(),
     remark: z.union([z.string(), z.null()]).optional(),
+    spec_text: z.union([z.string(), z.null()]).optional(),
+    status: z.string(),
+    units_per_case: z.union([z.number(), z.null()]).optional(),
   })
   .passthrough();
 const ExplainPurchaseOrder: z.ZodType<ExplainPurchaseOrder> = z
   .object({
+    closed_at: z.union([z.string(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
     id: z.number().int(),
-    supplier_id: z.union([z.number(), z.null()]).optional(),
-    supplier_name: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.number().int(),
-    purchaser: z.string(),
+    last_received_at: z.union([z.string(), z.null()]).optional(),
+    lines: z.array(ExplainPurchaseOrderLine).optional().default([]),
     purchase_time: z.string().datetime({ offset: true }),
+    purchaser: z.string(),
     remark: z.union([z.string(), z.null()]).optional(),
     status: z.string(),
-    created_at: z.string().datetime({ offset: true }),
+    supplier_id: z.union([z.number(), z.null()]).optional(),
+    supplier_name: z.union([z.string(), z.null()]).optional(),
     updated_at: z.string().datetime({ offset: true }),
-    last_received_at: z.union([z.string(), z.null()]).optional(),
-    closed_at: z.union([z.string(), z.null()]).optional(),
-    lines: z.array(ExplainPurchaseOrderLine).optional().default([]),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const ExplainReceipt: z.ZodType<ExplainReceipt> = z
+  .object({
+    created_at: z.string().datetime({ offset: true }),
+    id: z.number().int(),
+    occurred_at: z.string().datetime({ offset: true }),
+    ref: z.string(),
+    remark: z.union([z.string(), z.null()]).optional(),
+    source_id: z.union([z.number(), z.null()]).optional(),
+    source_type: z.string(),
+    status: z.string(),
+    supplier_id: z.union([z.number(), z.null()]).optional(),
+    supplier_name: z.union([z.string(), z.null()]).optional(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    updated_at: z.string().datetime({ offset: true }),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const ExplainReceiptLine: z.ZodType<ExplainReceiptLine> = z
+  .object({
+    base_uom: z.union([z.string(), z.null()]).optional(),
+    batch_code: z.string(),
+    category: z.union([z.string(), z.null()]).optional(),
+    created_at: z.string().datetime({ offset: true }),
+    expiry_date: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    item_id: z.number().int(),
+    item_name: z.union([z.string(), z.null()]).optional(),
+    item_sku: z.union([z.string(), z.null()]).optional(),
+    line_amount: z.union([z.string(), z.null()]).optional(),
+    line_no: z.number().int(),
+    po_line_id: z.union([z.number(), z.null()]).optional(),
+    production_date: z.union([z.string(), z.null()]).optional(),
+    purchase_uom: z.union([z.string(), z.null()]).optional(),
+    qty_received: z.number().int(),
+    qty_units: z.number().int(),
+    receipt_id: z.number().int(),
+    remark: z.union([z.string(), z.null()]).optional(),
+    spec_text: z.union([z.string(), z.null()]).optional(),
+    unit_cost: z.union([z.string(), z.null()]).optional(),
+    units_per_case: z.number().int(),
+    updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough();
 const LedgerExplainOut: z.ZodType<LedgerExplainOut> = z
   .object({
     anchor: ExplainAnchor,
     ledger: z.array(ExplainLedgerRow),
+    purchase_order: z.union([ExplainPurchaseOrder, z.null()]).optional(),
     receipt: ExplainReceipt,
     receipt_lines: z.array(ExplainReceiptLine),
-    purchase_order: z.union([ExplainPurchaseOrder, z.null()]).optional(),
   })
   .passthrough();
-const LedgerReasonStat: z.ZodType<LedgerReasonStat> = z
+const LedgerQuery: z.ZodType<LedgerQuery> = z
   .object({
+    batch_code: z.union([z.string(), z.null()]),
+    item_id: z.union([z.number(), z.null()]),
+    item_keyword: z.union([z.string(), z.null()]),
+    limit: z.number().int().gte(1).lte(1000).default(100),
+    offset: z.number().int().gte(0).default(0),
+    reason: z.union([z.string(), z.null()]),
+    reason_canon: z.union([ReasonCanon, z.null()]),
+    ref: z.union([z.string(), z.null()]),
+    sub_reason: z.union([SubReason, z.null()]),
+    time_from: z.union([z.string(), z.null()]),
+    time_to: z.union([z.string(), z.null()]),
+    trace_id: z.union([z.string(), z.null()]),
+    warehouse_id: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const LedgerRow: z.ZodType<LedgerRow> = z
+  .object({
+    after_qty: z.number().int(),
+    batch_code: z.string(),
+    created_at: z.string().datetime({ offset: true }),
+    delta: z.number().int(),
+    id: z.number().int(),
+    item_id: z.number().int(),
+    item_name: z.union([z.string(), z.null()]).optional(),
+    movement_type: z.union([z.string(), z.null()]).optional(),
+    occurred_at: z.string().datetime({ offset: true }),
     reason: z.string(),
-    count: z.number().int(),
-    total_delta: z.number().int(),
+    reason_canon: z.union([z.string(), z.null()]).optional(),
+    ref: z.union([z.string(), z.null()]).optional(),
+    ref_line: z.number().int(),
+    sub_reason: z.union([z.string(), z.null()]).optional(),
+    trace_id: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int(),
   })
   .passthrough();
-const LedgerSummary: z.ZodType<LedgerSummary> = z
-  .object({
-    filters: LedgerQuery,
-    by_reason: z.array(LedgerReasonStat).optional(),
-    net_delta: z.number().int(),
-  })
+const LedgerList: z.ZodType<LedgerList> = z
+  .object({ items: z.array(LedgerRow).optional(), total: z.number().int() })
   .passthrough();
 const LedgerReconcileRow: z.ZodType<LedgerReconcileRow> = z
   .object({
-    warehouse_id: z.number().int(),
-    item_id: z.number().int(),
     batch_code: z.string(),
+    diff: z.number().int(),
+    item_id: z.number().int(),
     ledger_sum_delta: z.number().int(),
     stock_qty: z.number().int(),
-    diff: z.number().int(),
+    warehouse_id: z.number().int(),
   })
   .passthrough();
 const LedgerReconcileResult: z.ZodType<LedgerReconcileResult> = z
   .object({ rows: z.array(LedgerReconcileRow) })
   .partial()
-  .passthrough();
-const OrdersDailyStatsModel = z
-  .object({
-    date: z.string(),
-    platform: z.union([z.string(), z.null()]).optional(),
-    shop_id: z.union([z.string(), z.null()]).optional(),
-    orders_created: z.number().int(),
-    orders_shipped: z.number().int(),
-    orders_returned: z.number().int(),
-  })
-  .passthrough();
-const OrdersDailyTrendItem: z.ZodType<OrdersDailyTrendItem> = z
-  .object({
-    date: z.string(),
-    orders_created: z.number().int(),
-    orders_shipped: z.number().int(),
-    orders_returned: z.number().int(),
-    return_rate: z.number(),
-  })
-  .passthrough();
-const OrdersTrendResponseModel: z.ZodType<OrdersTrendResponseModel> = z
-  .object({ days: z.array(OrdersDailyTrendItem) })
-  .partial()
-  .passthrough();
-const OrdersSlaStatsModel = z
-  .object({
-    total_orders: z.number().int(),
-    avg_ship_hours: z.union([z.number(), z.null()]).optional(),
-    p95_ship_hours: z.union([z.number(), z.null()]).optional(),
-    on_time_orders: z.number().int(),
-    on_time_rate: z.number(),
-  })
-  .passthrough();
-const UserLogin = z
-  .object({ username: z.string().min(3).max(64), password: z.string().min(1) })
-  .passthrough();
-const Token = z
-  .object({
-    access_token: z.string(),
-    token_type: z.string().optional().default("bearer"),
-    expires_in: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const UserCreateMulti = z
-  .object({
-    username: z.string(),
-    password: z.string(),
-    primary_role_id: z.number().int(),
-    extra_role_ids: z.array(z.number().int()).optional().default([]),
-    full_name: z.union([z.string(), z.null()]).optional(),
-    phone: z.union([z.string(), z.null()]).optional(),
-    email: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const UserOut = z
-  .object({
-    id: z.number().int(),
-    username: z.string(),
-    role_id: z.union([z.number(), z.null()]).optional(),
-    is_active: z.boolean().optional().default(true),
-    full_name: z.union([z.string(), z.null()]).optional(),
-    phone: z.union([z.string(), z.null()]).optional(),
-    email: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const UserUpdateMulti = z
-  .object({
-    primary_role_id: z.union([z.number(), z.null()]),
-    extra_role_ids: z.union([z.array(z.number().int()), z.null()]),
-    full_name: z.union([z.string(), z.null()]),
-    phone: z.union([z.string(), z.null()]),
-    email: z.union([z.string(), z.null()]),
-    is_active: z.union([z.boolean(), z.null()]),
-  })
-  .partial()
-  .passthrough();
-const PasswordResetIn = z.object({}).partial().passthrough();
-const PasswordChangeIn = z
-  .object({ old_password: z.string(), new_password: z.string() })
-  .passthrough();
-const PermissionOut: z.ZodType<PermissionOut> = z
-  .object({
-    id: z.number().int(),
-    name: z.string().min(1).max(64),
-    description: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const RoleOut: z.ZodType<RoleOut> = z
-  .object({
-    id: z.number().int(),
-    name: z.string().min(1).max(64),
-    description: z.union([z.string(), z.null()]).optional(),
-    permissions: z.array(PermissionOut).optional(),
-  })
-  .passthrough();
-const RoleCreate = z
-  .object({
-    name: z.string().min(1).max(64),
-    description: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const RolePermissionsBody = z
-  .object({ permission_ids: z.array(z.string()) })
-  .passthrough();
-const PermissionCreate = z
-  .object({
-    name: z.string().min(1).max(64),
-    description: z.union([z.string(), z.null()]).optional(),
-  })
   .passthrough();
 const ReconcileSummaryPayload = z
   .object({
@@ -5901,282 +5468,795 @@ const ReconcileSummaryPayload = z
 const ThreeBooksPayload = z
   .object({ cut: z.string().datetime({ offset: true }) })
   .passthrough();
-const FinanceDailyRow = z
-  .object({
-    day: z.string(),
-    revenue: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    purchase_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    shipping_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    gross_profit: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    gross_margin: z.union([z.string(), z.null()]).optional(),
-    fulfillment_ratio: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const FinanceShopRow = z
-  .object({
-    platform: z.string(),
-    shop_id: z.string(),
-    revenue: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    purchase_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    shipping_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    gross_profit: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    gross_margin: z.union([z.string(), z.null()]).optional(),
-    fulfillment_ratio: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const FinanceSkuRow = z
-  .object({
-    item_id: z.number().int(),
-    sku_id: z.union([z.string(), z.null()]).optional(),
-    title: z.union([z.string(), z.null()]).optional(),
-    qty_sold: z.number().int(),
-    revenue: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    purchase_cost: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    gross_profit: z.string().regex(/^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$/),
-    gross_margin: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const DevDemoOrderOut = z
-  .object({
-    order_id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    ext_order_no: z.string(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const DevOrderInfo: z.ZodType<DevOrderInfo> = z
-  .object({
-    id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    ext_order_no: z.string(),
-    status: z.union([z.string(), z.null()]).optional(),
-    trace_id: z.union([z.string(), z.null()]).optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    order_amount: z.union([z.number(), z.null()]).optional(),
-    pay_amount: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const DevOrderView: z.ZodType<DevOrderView> = z
-  .object({
-    order: DevOrderInfo,
-    trace_id: z.union([z.string(), z.null()]).optional(),
-  })
-  .passthrough();
-const DevOrderItemFact: z.ZodType<DevOrderItemFact> = z
-  .object({
-    item_id: z.number().int(),
-    sku_id: z.union([z.string(), z.null()]).optional(),
-    title: z.union([z.string(), z.null()]).optional(),
-    qty_ordered: z.number().int(),
-    qty_shipped: z.number().int(),
-    qty_returned: z.number().int(),
-    qty_remaining_refundable: z.number().int(),
-  })
-  .passthrough();
-const DevOrderFacts: z.ZodType<DevOrderFacts> = z
-  .object({ order: DevOrderInfo, items: z.array(DevOrderItemFact).optional() })
-  .passthrough();
-const time_from = z.union([z.unknown(), z.null()]).optional();
-const DevOrderSummary = z
-  .object({
-    id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    ext_order_no: z.string(),
-    status: z.union([z.string(), z.null()]).optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.union([z.string(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    order_amount: z.union([z.number(), z.null()]).optional(),
-    pay_amount: z.union([z.number(), z.null()]).optional(),
-  })
-  .passthrough();
-const DevOrderReconcileLine: z.ZodType<DevOrderReconcileLine> = z
-  .object({
-    item_id: z.number().int(),
-    sku_id: z.union([z.string(), z.null()]).optional(),
-    title: z.union([z.string(), z.null()]).optional(),
-    qty_ordered: z.number().int(),
-    qty_shipped: z.number().int(),
-    qty_returned: z.number().int(),
-    remaining_refundable: z.number().int(),
-  })
-  .passthrough();
-const DevOrderReconcileResultModel: z.ZodType<DevOrderReconcileResultModel> = z
-  .object({
-    order_id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    ext_order_no: z.string(),
-    issues: z.array(z.string()).optional(),
-    lines: z.array(DevOrderReconcileLine).optional(),
-  })
-  .passthrough();
-const DevReconcileRangeResult = z
+const LedgerReasonStat: z.ZodType<LedgerReasonStat> = z
   .object({
     count: z.number().int(),
-    order_ids: z.array(z.number().int()).optional(),
+    reason: z.string(),
+    total_delta: z.number().int(),
   })
   .passthrough();
-const DevEnsureWarehouseOut = z
+const LedgerSummary: z.ZodType<LedgerSummary> = z
   .object({
-    ok: z.boolean(),
-    order_id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    ext_order_no: z.string(),
-    store_id: z.union([z.number(), z.null()]).optional(),
-    warehouse_id: z.union([z.number(), z.null()]).optional(),
-    source: z.string(),
-    message: z.union([z.string(), z.null()]).optional(),
+    by_reason: z.array(LedgerReasonStat).optional(),
+    filters: LedgerQuery,
+    net_delta: z.number().int(),
   })
   .passthrough();
-const FakeOrderStatusIn = z
+const StoreListItem: z.ZodType<StoreListItem> = z
   .object({
-    platform: z.string().min(1).max(32),
-    shop_id: z.string().min(1),
-    ext_order_no: z.string().min(1),
-    platform_status: z.string(),
-    delivered_at: z.union([z.string(), z.null()]).optional(),
-    extras: z.object({}).partial().passthrough().optional(),
-  })
-  .passthrough();
-const FakeOrderStatusOut = z
-  .object({
-    ok: z.boolean().optional().default(true),
+    active: z.boolean(),
+    contact_name: z.union([z.string(), z.null()]).optional(),
+    contact_phone: z.union([z.string(), z.null()]).optional(),
+    email: z.union([z.string(), z.null()]).optional(),
     id: z.number().int(),
+    name: z.string(),
     platform: z.string(),
+    route_mode: z.string(),
     shop_id: z.string(),
-    ext_order_no: z.string(),
-    platform_status: z.string(),
-    dedup_key: z.union([z.string(), z.null()]).optional(),
-    occurred_at: z.string().datetime({ offset: true }),
+    shop_type: z.string().optional().default("PROD"),
   })
   .passthrough();
-const PlatformEventRow: z.ZodType<PlatformEventRow> = z
+const StoreListOut: z.ZodType<StoreListOut> = z
   .object({
-    id: z.number().int(),
-    platform: z.string(),
-    shop_id: z.string(),
-    event_type: z.string(),
-    status: z.string(),
-    dedup_key: z.union([z.string(), z.null()]).optional(),
-    occurred_at: z.string().datetime({ offset: true }),
-    payload: z.object({}).partial().passthrough(),
-  })
-  .passthrough();
-const PlatformEventListOut: z.ZodType<PlatformEventListOut> = z
-  .object({
+    data: z.array(StoreListItem),
     ok: z.boolean().optional().default(true),
-    rows: z.array(PlatformEventRow),
   })
   .passthrough();
-const FakeGenerateParams: z.ZodType<FakeGenerateParams> = z
+const StoreCreateIn = z
   .object({
-    count: z.number().int().gte(1).lte(200).default(10),
-    lines_min: z.number().int().gte(1).lte(10).default(1),
-    lines_max: z.number().int().gte(1).lte(10).default(3),
-    qty_min: z.number().int().gte(1).lte(100).default(1),
-    qty_max: z.number().int().gte(1).lte(100).default(3),
-    rng_seed: z.number().int().gte(0).lte(10000000).default(42),
+    name: z.union([z.string(), z.null()]).optional(),
+    platform: z.string().min(2).max(32),
+    shop_id: z.string().min(1).max(128),
+    shop_type: z.enum(["TEST", "PROD"]).optional().default("PROD"),
+  })
+  .passthrough();
+const StoreCreateOut = z
+  .object({
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const StoreDetailOut = z
+  .object({
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const StoreUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    contact_name: z.union([z.string(), z.null()]),
+    contact_phone: z.union([z.string(), z.null()]),
+    email: z.union([z.string(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+    route_mode: z.union([z.string(), z.null()]),
   })
   .partial()
   .passthrough();
-const DevFakeOrdersGenerateIn: z.ZodType<DevFakeOrdersGenerateIn> = z
+const StoreUpdateOut = z
   .object({
-    seed: z.object({}).partial().passthrough(),
-    generate: FakeGenerateParams.optional(),
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
   })
   .passthrough();
-const DevFakeOrdersGenerateOut = z
+const DefaultWarehouseOut = z
   .object({
-    batch_id: z.string(),
-    orders: z.array(z.object({}).partial().passthrough()),
-    gen_stats: z.object({}).partial().passthrough(),
+    data: z.record(z.string(), z.union([z.number(), z.null()])),
+    ok: z.boolean().optional().default(true),
   })
   .passthrough();
-const DevFakeOrdersRunIn: z.ZodType<DevFakeOrdersRunIn> = z
+const OrderSimCartGetOut = z
+  .object({ data: z.object({}).partial().passthrough(), ok: z.boolean() })
+  .passthrough();
+const CartLineItemIn: z.ZodType<CartLineItemIn> = z
   .object({
-    seed: z.object({}).partial().passthrough(),
-    generate: FakeGenerateParams.optional(),
-    watch_filled_codes: z.array(z.string()).optional(),
-    with_replay: z.boolean().optional().default(true),
+    checked: z.boolean().optional().default(false),
+    city: z.union([z.string(), z.null()]).optional(),
+    detail: z.union([z.string(), z.null()]).optional(),
+    district: z.union([z.string(), z.null()]).optional(),
+    if_version: z.union([z.number(), z.null()]).optional(),
+    province: z.union([z.string(), z.null()]).optional(),
+    qty: z.number().int().optional().default(0),
+    receiver_name: z.union([z.string(), z.null()]).optional(),
+    receiver_phone: z.union([z.string(), z.null()]).optional(),
+    row_no: z.number().int().gte(1).lte(6),
+    zipcode: z.union([z.string(), z.null()]).optional(),
   })
   .passthrough();
-const DevFakeOrdersRunOut = z
+const OrderSimCartPutIn: z.ZodType<OrderSimCartPutIn> = z
+  .object({ items: z.array(CartLineItemIn) })
+  .partial()
+  .passthrough();
+const OrderSimCartPutOut = z
+  .object({ data: z.object({}).partial().passthrough(), ok: z.boolean() })
+  .passthrough();
+const OrderSimFilledCodeOptionOut: z.ZodType<OrderSimFilledCodeOptionOut> = z
   .object({
-    report: z.object({}).partial().passthrough(),
-    gen_stats: z.object({}).partial().passthrough(),
+    components_summary: z.string(),
+    filled_code: z.string().min(1).max(128),
+    suggested_title: z.string(),
   })
+  .passthrough();
+const OrderSimFilledCodeOptionsData: z.ZodType<OrderSimFilledCodeOptionsData> =
+  z
+    .object({ items: z.array(OrderSimFilledCodeOptionOut) })
+    .partial()
+    .passthrough();
+const OrderSimFilledCodeOptionsOut: z.ZodType<OrderSimFilledCodeOptionsOut> = z
+  .object({ data: OrderSimFilledCodeOptionsData, ok: z.boolean() })
+  .passthrough();
+const OrderSimGenerateOrderIn = z
+  .object({ idempotency_key: z.union([z.string(), z.null()]) })
+  .partial()
+  .passthrough();
+const OrderSimGenerateOrderOut = z
+  .object({ data: z.object({}).partial().passthrough(), ok: z.boolean() })
+  .passthrough();
+const OrderSimMerchantLinesGetOut = z
+  .object({ data: z.object({}).partial().passthrough(), ok: z.boolean() })
+  .passthrough();
+const MerchantLineItemIn: z.ZodType<MerchantLineItemIn> = z
+  .object({
+    filled_code: z.union([z.string(), z.null()]).optional(),
+    if_version: z.union([z.number(), z.null()]).optional(),
+    row_no: z.number().int().gte(1).lte(6),
+    spec: z.union([z.string(), z.null()]).optional(),
+    title: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const OrderSimMerchantLinesPutIn: z.ZodType<OrderSimMerchantLinesPutIn> = z
+  .object({ items: z.array(MerchantLineItemIn) })
+  .partial()
+  .passthrough();
+const OrderSimMerchantLinesPutOut = z
+  .object({ data: z.object({}).partial().passthrough(), ok: z.boolean() })
+  .passthrough();
+const OrderSimPreviewOrderIn = z
+  .object({ idempotency_key: z.union([z.string(), z.null()]) })
+  .partial()
+  .passthrough();
+const OrderSimPreviewOrderOut = z
+  .object({ data: z.object({}).partial().passthrough(), ok: z.boolean() })
+  .passthrough();
+const StorePlatformAuthOut = z
+  .object({
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const ProvinceRouteItem: z.ZodType<ProvinceRouteItem> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    id: z.number().int(),
+    priority: z.number().int().optional().default(100),
+    province: z.string(),
+    store_id: z.number().int(),
+    warehouse_active: z.boolean().optional().default(true),
+    warehouse_code: z.union([z.string(), z.null()]).optional(),
+    warehouse_id: z.number().int(),
+    warehouse_name: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const ProvinceRouteListOut: z.ZodType<ProvinceRouteListOut> = z
+  .object({
+    data: z.array(ProvinceRouteItem),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const ProvinceRouteCreateIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    priority: z.number().int().gte(0).lte(100000).optional().default(100),
+    province: z.string().min(1).max(32),
+    warehouse_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const ProvinceRouteWriteOut = z
+  .object({
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const ProvinceRouteUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    priority: z.union([z.number(), z.null()]),
+    province: z.union([z.string(), z.null()]),
+    warehouse_id: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const RoutingHealthOut = z
+  .object({
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const BindWarehouseIn = z
+  .object({
+    is_default: z.boolean().optional().default(false),
+    is_top: z.union([z.boolean(), z.null()]).optional(),
+    priority: z.number().int().gte(0).lte(100000).optional().default(100),
+    warehouse_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const BindWarehouseOut = z
+  .object({
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const BindingDeleteOut = z
+  .object({
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const BindingUpdateIn = z
+  .object({
+    is_default: z.union([z.boolean(), z.null()]),
+    is_top: z.union([z.boolean(), z.null()]),
+    priority: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const BindingUpdateOut = z
+  .object({
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const SupplierContactUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    email: z.union([z.string(), z.null()]),
+    is_primary: z.union([z.boolean(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+    phone: z.union([z.string(), z.null()]),
+    role: z.union([z.string(), z.null()]),
+    wechat: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const SupplierContactOut: z.ZodType<SupplierContactOut> = z
+  .object({
+    active: z.boolean(),
+    email: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    is_primary: z.boolean(),
+    name: z.string(),
+    phone: z.union([z.string(), z.null()]).optional(),
+    role: z.string(),
+    supplier_id: z.number().int(),
+    wechat: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const SupplierOut: z.ZodType<SupplierOut> = z
+  .object({
+    active: z.boolean(),
+    code: z.string(),
+    contacts: z.array(SupplierContactOut),
+    id: z.number().int(),
+    name: z.string(),
+    website: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const SupplierCreateIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    code: z.string().min(1),
+    name: z.string().min(1),
+    website: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const active = z.union([z.boolean(), z.null()]).optional().default(true);
+const SupplierBasicOut = z
+  .object({
+    active: z.boolean(),
+    code: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    name: z.string(),
+  })
+  .passthrough();
+const SupplierUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    code: z.union([z.string(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+    website: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const SupplierContactCreateIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    email: z.union([z.string(), z.null()]).optional(),
+    is_primary: z.boolean().optional().default(false),
+    name: z.string().min(1).max(100),
+    phone: z.union([z.string(), z.null()]).optional(),
+    role: z.string().max(32).optional().default("other"),
+    wechat: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const SurchargeUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    amount_json: z.union([z.object({}).partial().passthrough(), z.null()]),
+    condition_json: z.union([z.object({}).partial().passthrough(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const UserOut = z
+  .object({
+    email: z.union([z.string(), z.null()]).optional(),
+    full_name: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    is_active: z.boolean().optional().default(true),
+    phone: z.union([z.string(), z.null()]).optional(),
+    role_id: z.union([z.number(), z.null()]).optional(),
+    username: z.string(),
+  })
+  .passthrough();
+const PasswordChangeIn = z
+  .object({ new_password: z.string(), old_password: z.string() })
+  .passthrough();
+const UserLogin = z
+  .object({ password: z.string().min(1), username: z.string().min(3).max(64) })
+  .passthrough();
+const Token = z
+  .object({
+    access_token: z.string(),
+    expires_in: z.union([z.number(), z.null()]).optional(),
+    token_type: z.string().optional().default("bearer"),
+  })
+  .passthrough();
+const UserCreateMulti = z
+  .object({
+    email: z.union([z.string(), z.null()]).optional(),
+    extra_role_ids: z.array(z.number().int()).optional().default([]),
+    full_name: z.union([z.string(), z.null()]).optional(),
+    password: z.string(),
+    phone: z.union([z.string(), z.null()]).optional(),
+    primary_role_id: z.number().int(),
+    username: z.string(),
+  })
+  .passthrough();
+const UserUpdateMulti = z
+  .object({
+    email: z.union([z.string(), z.null()]),
+    extra_role_ids: z.union([z.array(z.number().int()), z.null()]),
+    full_name: z.union([z.string(), z.null()]),
+    is_active: z.union([z.boolean(), z.null()]),
+    phone: z.union([z.string(), z.null()]),
+    primary_role_id: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const PasswordResetIn = z.object({}).partial().passthrough();
+const WarehouseOut: z.ZodType<WarehouseOut> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    address: z.union([z.string(), z.null()]).optional(),
+    area_sqm: z.union([z.number(), z.null()]).optional(),
+    code: z.union([z.string(), z.null()]).optional(),
+    contact_name: z.union([z.string(), z.null()]).optional(),
+    contact_phone: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    name: z.string(),
+  })
+  .passthrough();
+const WarehouseListOut: z.ZodType<WarehouseListOut> = z
+  .object({
+    data: z.array(WarehouseOut),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const WarehouseCreateIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    address: z.union([z.string(), z.null()]).optional(),
+    area_sqm: z.union([z.number(), z.null()]).optional(),
+    code: z.union([z.string(), z.null()]).optional(),
+    contact_name: z.union([z.string(), z.null()]).optional(),
+    contact_phone: z.union([z.string(), z.null()]).optional(),
+    name: z.string().min(1).max(100),
+  })
+  .passthrough();
+const WarehouseCreateOut: z.ZodType<WarehouseCreateOut> = z
+  .object({ data: WarehouseOut, ok: z.boolean().optional().default(true) })
+  .passthrough();
+const ActiveCarrierOut: z.ZodType<ActiveCarrierOut> = z
+  .object({
+    code: z.union([z.string(), z.null()]).optional(),
+    name: z.string(),
+    priority: z.number().int(),
+    provider_id: z.number().int(),
+  })
+  .passthrough();
+const WarehouseActiveCarriersOut: z.ZodType<WarehouseActiveCarriersOut> = z
+  .object({
+    active_carriers: z.array(ActiveCarrierOut),
+    active_carriers_count: z.number().int(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const WarehouseActiveCarriersSummaryOut: z.ZodType<WarehouseActiveCarriersSummaryOut> =
+  z
+    .object({ data: z.array(WarehouseActiveCarriersOut), ok: z.boolean() })
+    .passthrough();
+const WarehouseServiceCityOccupancyRow: z.ZodType<WarehouseServiceCityOccupancyRow> =
+  z
+    .object({ city_code: z.string(), warehouse_id: z.number().int() })
+    .passthrough();
+const WarehouseServiceCityOccupancyOut: z.ZodType<WarehouseServiceCityOccupancyOut> =
+  z
+    .object({ rows: z.array(WarehouseServiceCityOccupancyRow) })
+    .partial()
+    .passthrough();
+const WarehouseServiceCitySplitProvincesOut = z
+  .object({ provinces: z.array(z.string()) })
+  .partial()
+  .passthrough();
+const WarehouseServiceCitySplitProvincesPutIn = z
+  .object({ provinces: z.array(z.string()) })
+  .partial()
+  .passthrough();
+const WarehouseServiceProvinceOccupancyRow: z.ZodType<WarehouseServiceProvinceOccupancyRow> =
+  z
+    .object({ province_code: z.string(), warehouse_id: z.number().int() })
+    .passthrough();
+const WarehouseServiceProvinceOccupancyOut: z.ZodType<WarehouseServiceProvinceOccupancyOut> =
+  z
+    .object({ rows: z.array(WarehouseServiceProvinceOccupancyRow) })
+    .partial()
+    .passthrough();
+const WarehouseDetailOut: z.ZodType<WarehouseDetailOut> = z
+  .object({ data: WarehouseOut, ok: z.boolean().optional().default(true) })
+  .passthrough();
+const WarehouseUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    address: z.union([z.string(), z.null()]),
+    area_sqm: z.union([z.number(), z.null()]),
+    code: z.union([z.string(), z.null()]),
+    contact_name: z.union([z.string(), z.null()]),
+    contact_phone: z.union([z.string(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const WarehouseUpdateOut: z.ZodType<WarehouseUpdateOut> = z
+  .object({ data: WarehouseOut, ok: z.boolean().optional().default(true) })
+  .passthrough();
+const WarehouseServiceCitiesOut = z
+  .object({
+    cities: z.array(z.string()).optional(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const WarehouseServiceCitiesPutIn = z
+  .object({ cities: z.array(z.string()) })
+  .partial()
+  .passthrough();
+const WarehouseServiceProvincesOut = z
+  .object({
+    provinces: z.array(z.string()).optional(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const WarehouseServiceProvincesPutIn = z
+  .object({ provinces: z.array(z.string()) })
+  .partial()
+  .passthrough();
+const ShippingProviderLiteOut: z.ZodType<ShippingProviderLiteOut> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    code: z.union([z.string(), z.null()]).optional(),
+    id: z.number().int(),
+    name: z.string(),
+  })
+  .passthrough();
+const WarehouseShippingProviderOut: z.ZodType<WarehouseShippingProviderOut> = z
+  .object({
+    active: z.boolean().optional().default(true),
+    pickup_cutoff_time: z.union([z.string(), z.null()]).optional(),
+    priority: z.number().int().optional().default(0),
+    provider: ShippingProviderLiteOut,
+    remark: z.union([z.string(), z.null()]).optional(),
+    shipping_provider_id: z.number().int(),
+    warehouse_id: z.number().int(),
+  })
+  .passthrough();
+const WarehouseShippingProviderListOut: z.ZodType<WarehouseShippingProviderListOut> =
+  z
+    .object({
+      data: z.array(WarehouseShippingProviderOut),
+      ok: z.boolean().optional().default(true),
+    })
+    .passthrough();
+const WarehouseShippingProviderUpsertItemIn: z.ZodType<WarehouseShippingProviderUpsertItemIn> =
+  z
+    .object({
+      active: z.boolean().optional().default(true),
+      pickup_cutoff_time: z.union([z.string(), z.null()]).optional(),
+      priority: z.number().int().gte(0).optional().default(0),
+      remark: z.union([z.string(), z.null()]).optional(),
+      shipping_provider_id: z.number().int().gte(1),
+    })
+    .passthrough();
+const WarehouseShippingProviderBulkUpsertIn: z.ZodType<WarehouseShippingProviderBulkUpsertIn> =
+  z
+    .object({
+      disable_missing: z.boolean().default(true),
+      items: z.array(WarehouseShippingProviderUpsertItemIn),
+    })
+    .partial()
+    .passthrough();
+const WarehouseShippingProviderBulkUpsertOut: z.ZodType<WarehouseShippingProviderBulkUpsertOut> =
+  z
+    .object({
+      data: z.array(WarehouseShippingProviderOut),
+      ok: z.boolean().optional().default(true),
+    })
+    .passthrough();
+const WarehouseShippingProviderBindIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    pickup_cutoff_time: z.union([z.string(), z.null()]).optional(),
+    priority: z.number().int().gte(0).optional().default(0),
+    remark: z.union([z.string(), z.null()]).optional(),
+    shipping_provider_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const WarehouseShippingProviderBindOut: z.ZodType<WarehouseShippingProviderBindOut> =
+  z
+    .object({
+      data: WarehouseShippingProviderOut,
+      ok: z.boolean().optional().default(true),
+    })
+    .passthrough();
+const WarehouseShippingProviderDeleteOut = z
+  .object({
+    data: z.object({}).partial().passthrough(),
+    ok: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const WarehouseShippingProviderUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    pickup_cutoff_time: z.union([z.string(), z.null()]),
+    priority: z.union([z.number(), z.null()]),
+    remark: z.union([z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const WarehouseShippingProviderUpdateOut: z.ZodType<WarehouseShippingProviderUpdateOut> =
+  z
+    .object({
+      data: WarehouseShippingProviderOut,
+      ok: z.boolean().optional().default(true),
+    })
+    .passthrough();
+const ZoneBracketUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    base_amount: z.union([z.number(), z.string(), z.null()]),
+    base_kg: z.union([z.number(), z.string(), z.null()]),
+    flat_amount: z.union([z.number(), z.string(), z.null()]),
+    max_kg: z.union([z.number(), z.string(), z.null()]),
+    min_kg: z.union([z.number(), z.string(), z.null()]),
+    pricing_mode: z.union([z.string(), z.null()]),
+    rate_per_kg: z.union([z.number(), z.string(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const CopyZoneBracketsIn = z
+  .object({
+    active_policy: z.string().optional().default("preserve"),
+    conflict_policy: z.string().optional().default("skip"),
+    include_inactive: z.boolean().optional().default(false),
+    pricing_modes: z.array(z.string()).optional(),
+    source_zone_id: z.number().int().gte(1),
+  })
+  .passthrough();
+const CopyZoneBracketsSummary: z.ZodType<CopyZoneBracketsSummary> = z
+  .object({
+    created_count: z.number().int(),
+    failed_count: z.number().int(),
+    skipped_count: z.number().int(),
+    source_count: z.number().int(),
+    updated_count: z.number().int(),
+  })
+  .passthrough();
+const CopyZoneBracketsOut: z.ZodType<CopyZoneBracketsOut> = z
+  .object({
+    active_policy: z.string(),
+    conflict_policy: z.string(),
+    created: z.array(ZoneBracketOut).optional(),
+    failed: z.array(z.object({}).partial().passthrough()).optional(),
+    ok: z.boolean().optional().default(true),
+    skipped: z.array(ZoneBracketOut).optional(),
+    source_zone_id: z.number().int(),
+    summary: CopyZoneBracketsSummary,
+    target_zone_id: z.number().int(),
+    updated: z.array(ZoneBracketOut).optional(),
+  })
+  .passthrough();
+const ZoneUpdateIn = z
+  .object({
+    active: z.union([z.boolean(), z.null()]),
+    name: z.union([z.string(), z.null()]),
+    segment_template_id: z.union([z.number(), z.null()]),
+  })
+  .partial()
+  .passthrough();
+const ZoneBracketCreateIn = z
+  .object({
+    active: z.boolean().optional().default(true),
+    base_amount: z.union([z.number(), z.string(), z.null()]).optional(),
+    base_kg: z.union([z.number(), z.string(), z.null()]).optional(),
+    flat_amount: z.union([z.number(), z.string(), z.null()]).optional(),
+    max_kg: z.union([z.number(), z.string(), z.null()]).optional(),
+    min_kg: z.union([z.number(), z.string()]),
+    pricing_mode: z.string().min(1).max(32),
+    rate_per_kg: z.union([z.number(), z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const ZoneMemberCreateIn = z
+  .object({
+    level: z.string().min(1).max(16),
+    value: z.string().min(1).max(64),
+  })
+  .passthrough();
+const ZoneProvinceMembersReplaceIn = z
+  .object({ provinces: z.array(z.string()) })
+  .partial()
   .passthrough();
 const OrderFactItemOut: z.ZodType<OrderFactItemOut> = z
   .object({
     item_id: z.number().int(),
+    qty_ordered: z.number().int().optional().default(0),
     sku_id: z.union([z.string(), z.null()]).optional(),
     title: z.union([z.string(), z.null()]).optional(),
-    qty_ordered: z.number().int().optional().default(0),
   })
   .passthrough();
 const OrderFactsResponse: z.ZodType<OrderFactsResponse> = z
   .object({
-    ok: z.boolean().optional().default(true),
     items: z.array(OrderFactItemOut),
+    ok: z.boolean().optional().default(true),
   })
   .passthrough();
 
 export const schemas = {
-  ScanRequest,
-  ScanResponse,
-  ValidationError,
-  HTTPValidationError,
-  ScanCountCommitRequest,
   CountRequest,
   CountResponse,
-  PickIn,
-  PickOut,
-  PlatformOrderLineIn,
-  PlatformOrderIngestIn,
-  PlatformOrderLineResult,
-  PlatformOrderIngestOut,
-  PlatformOrderReplayIn,
-  PlatformOrderReplayOut,
-  PlatformOrderConfirmCreateDecisionIn,
-  PlatformOrderConfirmCreateIn,
-  PlatformOrderConfirmCreateDecisionOut,
-  PlatformOrderConfirmCreateOut,
-  ManualDecisionLineOut,
-  ManualDecisionOrderOut,
-  ManualDecisionOrdersOut,
-  ManualBindMerchantCodeIn,
+  ValidationError,
+  HTTPValidationError,
+  warehouse_id,
+  TraceEventModel,
+  TraceResponseModel,
+  DestAdjustmentUpdateIn,
+  DestAdjustmentOut,
+  FakeGenerateParams,
+  DevFakeOrdersGenerateIn,
+  DevFakeOrdersGenerateOut,
+  DevFakeOrdersRunIn,
+  DevFakeOrdersRunOut,
   platform,
-  fsku_id,
-  StoreLiteOut,
+  time_from,
+  DevOrderSummary,
+  DevOrderReconcileLine,
+  DevOrderReconcileResultModel,
+  DevDemoOrderOut,
+  DevReconcileRangeResult,
+  DevOrderInfo,
+  DevOrderView,
+  DevEnsureWarehouseOut,
+  DevOrderItemFact,
+  DevOrderFacts,
+  PlatformEventRow,
+  PlatformEventListOut,
+  FakeOrderStatusIn,
+  FakeOrderStatusOut,
+  FinanceDailyRow,
+  FinanceShopRow,
+  FinanceSkuRow,
+  FskuListItem,
+  FskuListOut,
+  FskuCreateIn,
+  FskuComponentOut,
+  FskuDetailOut,
+  FskuNameUpdateIn,
+  FskuComponentIn,
+  FskuComponentsReplaceIn,
+  GeoItemOut,
+  InboundReceiptLineOut,
+  InboundReceiptOut,
+  InboundReceiptCreateIn,
+  InboundReceiptConfirmLedgerRef,
+  InboundReceiptConfirmOut,
+  ProblemItem,
+  LedgerPreviewOut,
+  NormalizedLinePreviewOut,
+  InboundReceiptSummaryOut,
+  InboundReceiptExplainOut,
+  InternalOutboundLineOut,
+  InternalOutboundDocOut,
+  InternalOutboundCreateDocIn,
+  InternalOutboundConfirmIn,
+  InternalOutboundUpsertLineIn,
+  ItemBarcodeCreate,
+  ItemBarcodeOut,
+  ItemBarcodeUpdate,
+  enabled,
+  ItemOut,
+  ItemCreate,
+  NextSkuOut,
+  ItemUpdate,
   FskuLiteOut,
+  StoreLiteOut,
   MerchantCodeBindingRowOut,
   MerchantCodeBindingListDataOut,
   MerchantCodeBindingListOut,
   MerchantCodeBindingBindIn,
   MerchantCodeBindingOut,
   MerchantCodeBindingCloseIn,
-  OrderLineIn,
+  MetaPlatformItem,
+  MetaPlatformsOut,
+  AlertItem,
+  AlertsResponse,
+  FefoItemRisk,
+  FefoRiskMetricsResponse,
+  OutboundDistributionPoint,
+  OutboundMetricsV2,
+  OutboundShopMetric,
+  OutboundShopMetricsResponse,
+  OutboundWarehouseMetric,
+  OutboundWarehouseMetricsResponse,
+  OutboundFailureDetail,
+  OutboundFailuresMetricsResponse,
+  OutboundDaySummary,
+  OutboundRangeMetricsResponse,
+  ShippingQuoteFailureDetail,
+  ShippingQuoteFailuresMetricsResponse,
+  OAuthStartOut,
+  OpsActiveSchemeRow,
+  OpsActiveSchemesOut,
+  ShellSchemeRow,
+  CleanupShellSchemesOut,
+  PricingIntegrityFixArchiveReleaseIn,
+  PricingIntegrityFixArchiveReleaseItemOut,
+  PricingIntegrityFixArchiveReleaseOut,
+  PricingIntegrityFixDetachZoneBracketsIn,
+  PricingIntegrityFixDetachZoneBracketsItemOut,
+  PricingIntegrityFixDetachZoneBracketsOut,
+  PricingIntegrityFixUnbindArchivedTemplatesIn,
+  PricingIntegrityFixUnbindArchivedTemplatesItemOut,
+  PricingIntegrityFixUnbindArchivedTemplatesOut,
+  PricingIntegrityArchivedTemplateStillReferencedIssue,
+  PricingIntegrityArchivedZoneIssue,
+  PricingIntegrityReleasedZoneStillPricedIssue,
+  PricingIntegrityReportSummary,
+  PricingIntegrityReportOut,
   OrderAddrIn,
+  OrderLineIn,
   OrderCreateIn,
   OrderFulfillmentOut,
   OrderCreateOut,
+  OrdersDailyStatsModel,
+  OrdersDailyTrendItem,
+  OrdersTrendResponseModel,
+  OrdersSlaStatsModel,
   OrderSummaryOut,
   WarehouseOptionOut,
   OrdersSummaryResponse,
-  PlatformOrderAddressOut,
-  PlatformOrderLineOut,
-  PlatformOrderOut,
-  OrderViewResponse,
-  WarehouseBriefOut,
+  FulfillmentDebugAddress,
+  FulfillmentServiceDebug,
+  FulfillmentDebugOut,
   AvailabilityLineOut,
   AvailabilityCellOut,
+  WarehouseBriefOut,
   OrderWarehouseAvailabilityResponse,
   ManualAssignRequest,
   ManualAssignResponse,
@@ -6188,180 +6268,134 @@ export const schemas = {
   ShipResponse,
   ShipWithWaybillRequest,
   ShipWithWaybillResponse,
-  FulfillmentDebugAddress,
-  FulfillmentServiceDebug,
-  FulfillmentDebugOut,
+  PlatformOrderAddressOut,
+  PlatformOrderLineOut,
+  PlatformOrderOut,
+  OrderViewResponse,
   OutboundLineIn,
   OutboundShipIn,
   OutboundShipOut,
-  ShipCalcRequest,
-  ShipQuoteOut,
-  ShipRecommendedOut,
-  ShipCalcResponse,
-  ShipPrepareRequest,
-  ShipPrepareItem,
-  CandidateWarehouseOut,
-  FulfillmentMissingLineOut,
-  FulfillmentScanWarehouseOut,
-  ShipPrepareResponse,
-  ShipConfirmRequest,
-  ShipConfirmResponse,
-  InternalOutboundCreateDocIn,
-  InternalOutboundLineOut,
-  InternalOutboundDocOut,
-  InternalOutboundUpsertLineIn,
-  InternalOutboundConfirmIn,
-  PurchaseOrderLineCreate,
-  PurchaseOrderCreateV2,
-  PurchaseOrderLineOut,
-  PurchaseOrderWithLinesOut,
-  PurchaseOrderLineListOut,
-  PurchaseOrderListItemOut,
-  PurchaseOrderCloseIn,
-  PurchaseOrderReceiptEventOut,
-  PurchaseOrderReceiveLineIn,
-  PoSummaryOut,
-  ReceiptSummaryOut,
-  WorkbenchBatchRowOut,
-  WorkbenchRowOut,
-  WorkbenchExplainOut,
-  WorkbenchCapsOut,
-  PurchaseOrderReceiveWorkbenchOut,
-  SupplierPurchaseReportItem,
-  ItemPurchaseReportItem,
-  DailyPurchaseReportItem,
-  InboundReceiptCreateIn,
-  InboundReceiptLineOut,
-  InboundReceiptOut,
-  InboundReceiptSummaryOut,
-  ProblemItem,
-  NormalizedLinePreviewOut,
-  LedgerPreviewOut,
-  InboundReceiptExplainOut,
-  InboundReceiptConfirmLedgerRef,
-  InboundReceiptConfirmOut,
-  ReturnOrderRefItem,
-  ReturnOrderRefSummaryLine,
-  ReturnOrderRefSummaryOut,
-  ReturnOrderRefReceiverOut,
-  ReturnOrderRefShippingOut,
-  ReturnOrderRefDetailOut,
-  ReturnTaskCreateFromOrder,
-  ReturnTaskLineOut,
-  ReturnTaskOut,
-  ReturnTaskReceiveIn,
-  ReturnTaskCommitIn,
-  PickTaskCreateFromOrder,
+  PermissionOut,
+  PermissionCreate,
+  PickIn,
+  PickOut,
+  GateOut,
   PickTaskLineOut,
   PrintJobOut,
-  GateOut,
   PickTaskOut,
-  PickTaskPrintPickListIn,
-  PickTaskScanIn,
-  PickTaskDiffLineOut,
-  PickTaskDiffSummaryOut,
-  PickTaskCommitCheckOut,
+  PickTaskCreateFromOrder,
   PickTaskCommitIn,
   PickTaskCommitDiffLineOut,
   PickTaskCommitDiffOut,
   PickTaskCommitResult,
-  MarkPrintedIn,
-  MarkFailedIn,
-  MetaPlatformItem,
-  MetaPlatformsOut,
-  StoreListItem,
-  StoreListOut,
-  StoreCreateIn,
-  StoreCreateOut,
-  StoreUpdateIn,
-  StoreUpdateOut,
-  StoreDetailOut,
-  DefaultWarehouseOut,
-  BindWarehouseIn,
-  BindWarehouseOut,
-  BindingUpdateIn,
-  BindingUpdateOut,
-  BindingDeleteOut,
-  StorePlatformAuthOut,
-  ProvinceRouteItem,
-  ProvinceRouteListOut,
-  ProvinceRouteCreateIn,
-  ProvinceRouteWriteOut,
-  ProvinceRouteUpdateIn,
-  RoutingHealthOut,
-  OrderSimMerchantLinesGetOut,
-  MerchantLineItemIn,
-  OrderSimMerchantLinesPutIn,
-  OrderSimMerchantLinesPutOut,
-  OrderSimFilledCodeOptionOut,
-  OrderSimFilledCodeOptionsData,
-  OrderSimFilledCodeOptionsOut,
-  OrderSimCartGetOut,
-  CartLineItemIn,
-  OrderSimCartPutIn,
-  OrderSimCartPutOut,
-  OrderSimPreviewOrderIn,
-  OrderSimPreviewOrderOut,
-  OrderSimGenerateOrderIn,
-  OrderSimGenerateOrderOut,
-  FskuListItem,
-  FskuListOut,
-  FskuCreateIn,
-  FskuComponentOut,
-  FskuDetailOut,
-  FskuNameUpdateIn,
-  FskuComponentIn,
-  FskuComponentsReplaceIn,
-  active,
-  WarehouseOut,
-  WarehouseListOut,
-  WarehouseCreateIn,
-  WarehouseCreateOut,
-  WarehouseDetailOut,
-  WarehouseUpdateIn,
-  WarehouseUpdateOut,
-  WarehouseServiceProvinceOccupancyRow,
-  WarehouseServiceProvinceOccupancyOut,
-  WarehouseServiceProvincesOut,
-  WarehouseServiceProvincesPutIn,
-  WarehouseServiceCityOccupancyRow,
-  WarehouseServiceCityOccupancyOut,
-  WarehouseServiceCitiesOut,
-  WarehouseServiceCitiesPutIn,
-  WarehouseServiceCitySplitProvincesOut,
-  WarehouseServiceCitySplitProvincesPutIn,
-  ActiveCarrierOut,
-  WarehouseActiveCarriersOut,
-  WarehouseActiveCarriersSummaryOut,
-  ShippingProviderLiteOut,
-  WarehouseShippingProviderOut,
-  WarehouseShippingProviderListOut,
-  WarehouseShippingProviderUpsertItemIn,
-  WarehouseShippingProviderBulkUpsertIn,
-  WarehouseShippingProviderBulkUpsertOut,
-  WarehouseShippingProviderBindIn,
-  WarehouseShippingProviderBindOut,
-  WarehouseShippingProviderUpdateIn,
-  WarehouseShippingProviderUpdateOut,
-  WarehouseShippingProviderDeleteOut,
+  PickTaskCommitCheckOut,
+  PickTaskDiffLineOut,
+  PickTaskDiffSummaryOut,
+  PickTaskPrintPickListIn,
+  PickTaskScanIn,
+  PlatformOrderConfirmCreateDecisionIn,
+  PlatformOrderConfirmCreateIn,
+  PlatformOrderConfirmCreateDecisionOut,
+  PlatformOrderConfirmCreateOut,
+  PlatformOrderLineIn,
+  PlatformOrderIngestIn,
+  PlatformOrderLineResult,
+  PlatformOrderIngestOut,
+  ManualBindMerchantCodeIn,
+  ManualDecisionLineOut,
+  ManualDecisionOrderOut,
+  ManualDecisionOrdersOut,
+  PlatformOrderReplayIn,
+  PlatformOrderReplayOut,
   PlatformShopCredentialsIn,
   SimpleOut,
-  OAuthStartOut,
-  NextSkuOut,
-  ItemCreate,
-  ItemOut,
-  ItemUpdate,
-  ItemBarcodeCreate,
-  ItemBarcodeOut,
-  ItemBarcodeUpdate,
-  SupplierContactOut,
-  SupplierOut,
-  SupplierCreateIn,
-  active__2,
-  SupplierBasicOut,
-  SupplierUpdateIn,
-  SupplierContactCreateIn,
-  SupplierContactUpdateIn,
+  SchemeSegmentOut,
+  WeightSegmentIn,
+  SurchargeOut,
+  ZoneBracketOut,
+  ZoneMemberOut,
+  ZoneOut,
+  SchemeOut,
+  SchemeDetailOut,
+  SchemeUpdateIn,
+  DestAdjustmentUpsertIn,
+  SegmentTemplateItemOut,
+  SegmentTemplateOut,
+  SegmentTemplateListOut,
+  SegmentTemplateCreateIn,
+  SegmentTemplateDetailOut,
+  SchemeSegmentActivePatchIn,
+  SurchargeCreateIn,
+  SurchargeUpsertIn,
+  WarehouseLiteOut,
+  SchemeWarehouseOut,
+  SchemeWarehousesGetOut,
+  SchemeWarehouseBindIn,
+  SchemeWarehouseBindOut,
+  SchemeWarehouseDeleteOut,
+  SchemeWarehousePatchIn,
+  SchemeWarehousePatchOut,
+  SegmentRangeOut,
+  ZoneBracketsMatrixGroupOut,
+  ZoneBracketsMatrixOut,
+  ZoneCreateIn,
+  ZoneCreateAtomicIn,
+  SchemeDefaultSegmentTemplateIn,
+  MarkFailedIn,
+  MarkPrintedIn,
+  PurchaseOrderLineListOut,
+  PurchaseOrderListItemOut,
+  PurchaseOrderLineCreate,
+  PurchaseOrderCreateV2,
+  PurchaseOrderLineOut,
+  PurchaseOrderWithLinesOut,
+  PurchaseOrderCloseIn,
+  PurchaseOrderReceiptEventOut,
+  PurchaseOrderReceiveLineIn,
+  WorkbenchCapsOut,
+  WorkbenchExplainOut,
+  PoSummaryOut,
+  ReceiptSummaryOut,
+  WorkbenchBatchRowOut,
+  WorkbenchRowOut,
+  PurchaseOrderReceiveWorkbenchOut,
+  DailyPurchaseReportItem,
+  ItemPurchaseReportItem,
+  SupplierPurchaseReportItem,
+  ReturnTaskLineOut,
+  ReturnTaskOut,
+  ReturnTaskCreateFromOrder,
+  ReturnOrderRefItem,
+  ReturnOrderRefReceiverOut,
+  ReturnOrderRefShippingOut,
+  ReturnOrderRefSummaryLine,
+  ReturnOrderRefSummaryOut,
+  ReturnOrderRefDetailOut,
+  ReturnTaskCommitIn,
+  ReturnTaskReceiveIn,
+  RoleOut,
+  RoleCreate,
+  RolePermissionsBody,
+  ScanRequest,
+  ScanResponse,
+  ScanCountCommitRequest,
+  SegmentTemplateItemActivePatchIn,
+  SegmentTemplateItemIn,
+  SegmentTemplateItemsPutIn,
+  SegmentTemplateRenameIn,
+  ShipCalcRequest,
+  ShipQuoteOut,
+  ShipRecommendedOut,
+  ShipCalcResponse,
+  ShipConfirmRequest,
+  ShipConfirmResponse,
+  ShipPrepareRequest,
+  CandidateWarehouseOut,
+  FulfillmentMissingLineOut,
+  FulfillmentScanWarehouseOut,
+  ShipPrepareItem,
+  ShipPrepareResponse,
+  ShippingProviderContactUpdateIn,
   ShippingProviderContactOut,
   ShippingProviderOut,
   ShippingProviderListOut,
@@ -6371,81 +6405,17 @@ export const schemas = {
   ShippingProviderUpdateIn,
   ShippingProviderUpdateOut,
   ShippingProviderContactCreateIn,
-  ShippingProviderContactUpdateIn,
-  WeightSegmentIn,
-  SchemeSegmentOut,
-  ZoneMemberOut,
-  ZoneBracketOut,
-  ZoneOut,
-  SurchargeOut,
-  DestAdjustmentOut,
-  SchemeOut,
   SchemeListOut,
   SchemeCreateIn,
-  SchemeDetailOut,
-  SchemeUpdateIn,
-  SegmentRangeOut,
-  ZoneBracketsMatrixGroupOut,
-  ZoneBracketsMatrixOut,
-  SchemeDefaultSegmentTemplateIn,
-  SchemeSegmentActivePatchIn,
-  WarehouseLiteOut,
-  SchemeWarehouseOut,
-  SchemeWarehousesGetOut,
-  SchemeWarehouseBindIn,
-  SchemeWarehouseBindOut,
-  SchemeWarehousePatchIn,
-  SchemeWarehousePatchOut,
-  SchemeWarehouseDeleteOut,
-  SegmentTemplateItemOut,
-  SegmentTemplateOut,
-  SegmentTemplateListOut,
-  SegmentTemplateCreateIn,
-  SegmentTemplateDetailOut,
-  SegmentTemplateItemIn,
-  SegmentTemplateItemsPutIn,
-  SegmentTemplateItemActivePatchIn,
-  SegmentTemplateRenameIn,
-  ZoneCreateIn,
-  ZoneCreateAtomicIn,
-  ZoneUpdateIn,
-  ZoneProvinceMembersReplaceIn,
-  ZoneMemberCreateIn,
-  ZoneBracketCreateIn,
-  ZoneBracketUpdateIn,
-  CopyZoneBracketsIn,
-  CopyZoneBracketsSummary,
-  CopyZoneBracketsOut,
-  SurchargeCreateIn,
-  SurchargeUpsertIn,
-  SurchargeUpdateIn,
-  DestAdjustmentUpsertIn,
-  DestAdjustmentUpdateIn,
-  GeoItemOut,
-  OpsActiveSchemeRow,
-  OpsActiveSchemesOut,
-  PricingIntegrityReportSummary,
-  PricingIntegrityArchivedZoneIssue,
-  PricingIntegrityReleasedZoneStillPricedIssue,
-  PricingIntegrityArchivedTemplateStillReferencedIssue,
-  PricingIntegrityReportOut,
-  PricingIntegrityFixArchiveReleaseIn,
-  PricingIntegrityFixArchiveReleaseItemOut,
-  PricingIntegrityFixArchiveReleaseOut,
-  PricingIntegrityFixDetachZoneBracketsIn,
-  PricingIntegrityFixDetachZoneBracketsItemOut,
-  PricingIntegrityFixDetachZoneBracketsOut,
-  PricingIntegrityFixUnbindArchivedTemplatesIn,
-  PricingIntegrityFixUnbindArchivedTemplatesItemOut,
-  PricingIntegrityFixUnbindArchivedTemplatesOut,
-  ShellSchemeRow,
-  CleanupShellSchemesOut,
   QuoteDestIn,
   QuoteCalcIn,
   QuoteCalcOut,
   QuoteRecommendIn,
   QuoteRecommendItemOut,
   QuoteRecommendOut,
+  ShippingRecordOut,
+  ShippingStatusUpdateIn,
+  ShippingStatusUpdateOut,
   ShippingByCarrierRow,
   ShippingByCarrierResponse,
   ShippingByProvinceRow,
@@ -6459,31 +6429,10 @@ export const schemas = {
   ShippingListRow,
   ShippingListResponse,
   ShippingReportFilterOptions,
-  ShippingRecordOut,
-  ShippingStatusUpdateIn,
-  ShippingStatusUpdateOut,
-  TraceEventModel,
-  TraceResponseModel,
-  AlertItem,
-  AlertsResponse,
-  OutboundDistributionPoint,
-  OutboundMetricsV2,
-  OutboundDaySummary,
-  OutboundRangeMetricsResponse,
-  OutboundWarehouseMetric,
-  OutboundWarehouseMetricsResponse,
-  OutboundFailureDetail,
-  OutboundFailuresMetricsResponse,
-  ShippingQuoteFailureDetail,
-  ShippingQuoteFailuresMetricsResponse,
-  FefoItemRisk,
-  FefoRiskMetricsResponse,
-  OutboundShopMetric,
-  OutboundShopMetricsResponse,
   InventoryRow,
   InventorySnapshotResponse,
-  ItemDetailTotals,
   ItemDetailSlice,
+  ItemDetailTotals,
   ItemDetailResponse,
   StockBatchQueryIn,
   StockBatchRow,
@@ -6491,61 +6440,112 @@ export const schemas = {
   ReasonCanon,
   SubReason,
   LedgerEnums,
+  ExplainAnchor,
+  ExplainLedgerRow,
+  ExplainPurchaseOrderLine,
+  ExplainPurchaseOrder,
+  ExplainReceipt,
+  ExplainReceiptLine,
+  LedgerExplainOut,
   LedgerQuery,
   LedgerRow,
   LedgerList,
-  ExplainAnchor,
-  ExplainLedgerRow,
-  ExplainReceipt,
-  ExplainReceiptLine,
-  ExplainPurchaseOrderLine,
-  ExplainPurchaseOrder,
-  LedgerExplainOut,
-  LedgerReasonStat,
-  LedgerSummary,
   LedgerReconcileRow,
   LedgerReconcileResult,
-  OrdersDailyStatsModel,
-  OrdersDailyTrendItem,
-  OrdersTrendResponseModel,
-  OrdersSlaStatsModel,
+  ReconcileSummaryPayload,
+  ThreeBooksPayload,
+  LedgerReasonStat,
+  LedgerSummary,
+  StoreListItem,
+  StoreListOut,
+  StoreCreateIn,
+  StoreCreateOut,
+  StoreDetailOut,
+  StoreUpdateIn,
+  StoreUpdateOut,
+  DefaultWarehouseOut,
+  OrderSimCartGetOut,
+  CartLineItemIn,
+  OrderSimCartPutIn,
+  OrderSimCartPutOut,
+  OrderSimFilledCodeOptionOut,
+  OrderSimFilledCodeOptionsData,
+  OrderSimFilledCodeOptionsOut,
+  OrderSimGenerateOrderIn,
+  OrderSimGenerateOrderOut,
+  OrderSimMerchantLinesGetOut,
+  MerchantLineItemIn,
+  OrderSimMerchantLinesPutIn,
+  OrderSimMerchantLinesPutOut,
+  OrderSimPreviewOrderIn,
+  OrderSimPreviewOrderOut,
+  StorePlatformAuthOut,
+  ProvinceRouteItem,
+  ProvinceRouteListOut,
+  ProvinceRouteCreateIn,
+  ProvinceRouteWriteOut,
+  ProvinceRouteUpdateIn,
+  RoutingHealthOut,
+  BindWarehouseIn,
+  BindWarehouseOut,
+  BindingDeleteOut,
+  BindingUpdateIn,
+  BindingUpdateOut,
+  SupplierContactUpdateIn,
+  SupplierContactOut,
+  SupplierOut,
+  SupplierCreateIn,
+  active,
+  SupplierBasicOut,
+  SupplierUpdateIn,
+  SupplierContactCreateIn,
+  SurchargeUpdateIn,
+  UserOut,
+  PasswordChangeIn,
   UserLogin,
   Token,
   UserCreateMulti,
-  UserOut,
   UserUpdateMulti,
   PasswordResetIn,
-  PasswordChangeIn,
-  PermissionOut,
-  RoleOut,
-  RoleCreate,
-  RolePermissionsBody,
-  PermissionCreate,
-  ReconcileSummaryPayload,
-  ThreeBooksPayload,
-  FinanceDailyRow,
-  FinanceShopRow,
-  FinanceSkuRow,
-  DevDemoOrderOut,
-  DevOrderInfo,
-  DevOrderView,
-  DevOrderItemFact,
-  DevOrderFacts,
-  time_from,
-  DevOrderSummary,
-  DevOrderReconcileLine,
-  DevOrderReconcileResultModel,
-  DevReconcileRangeResult,
-  DevEnsureWarehouseOut,
-  FakeOrderStatusIn,
-  FakeOrderStatusOut,
-  PlatformEventRow,
-  PlatformEventListOut,
-  FakeGenerateParams,
-  DevFakeOrdersGenerateIn,
-  DevFakeOrdersGenerateOut,
-  DevFakeOrdersRunIn,
-  DevFakeOrdersRunOut,
+  WarehouseOut,
+  WarehouseListOut,
+  WarehouseCreateIn,
+  WarehouseCreateOut,
+  ActiveCarrierOut,
+  WarehouseActiveCarriersOut,
+  WarehouseActiveCarriersSummaryOut,
+  WarehouseServiceCityOccupancyRow,
+  WarehouseServiceCityOccupancyOut,
+  WarehouseServiceCitySplitProvincesOut,
+  WarehouseServiceCitySplitProvincesPutIn,
+  WarehouseServiceProvinceOccupancyRow,
+  WarehouseServiceProvinceOccupancyOut,
+  WarehouseDetailOut,
+  WarehouseUpdateIn,
+  WarehouseUpdateOut,
+  WarehouseServiceCitiesOut,
+  WarehouseServiceCitiesPutIn,
+  WarehouseServiceProvincesOut,
+  WarehouseServiceProvincesPutIn,
+  ShippingProviderLiteOut,
+  WarehouseShippingProviderOut,
+  WarehouseShippingProviderListOut,
+  WarehouseShippingProviderUpsertItemIn,
+  WarehouseShippingProviderBulkUpsertIn,
+  WarehouseShippingProviderBulkUpsertOut,
+  WarehouseShippingProviderBindIn,
+  WarehouseShippingProviderBindOut,
+  WarehouseShippingProviderDeleteOut,
+  WarehouseShippingProviderUpdateIn,
+  WarehouseShippingProviderUpdateOut,
+  ZoneBracketUpdateIn,
+  CopyZoneBracketsIn,
+  CopyZoneBracketsSummary,
+  CopyZoneBracketsOut,
+  ZoneUpdateIn,
+  ZoneBracketCreateIn,
+  ZoneMemberCreateIn,
+  ZoneProvinceMembersReplaceIn,
   OrderFactItemOut,
   OrderFactsResponse,
 };
@@ -6600,10 +6600,32 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: TraceResponseModel,
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
+    method: "delete",
+    path: "/dest-adjustments/:dest_adjustment_id",
+    alias:
+      "delete_dest_adjustment_route_dest_adjustments__dest_adjustment_id__delete",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "dest_adjustment_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: z.unknown(),
     errors: [
       {
         status: 422,
@@ -6630,28 +6652,6 @@ const endpoints = makeApi([
       },
     ],
     response: DestAdjustmentOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
-    method: "delete",
-    path: "/dest-adjustments/:dest_adjustment_id",
-    alias:
-      "delete_dest_adjustment_route_dest_adjustments__dest_adjustment_id__delete",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "dest_adjustment_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: z.unknown(),
     errors: [
       {
         status: 422,
@@ -7223,27 +7223,6 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/fskus",
-    alias: "create_fskus_post",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "body",
-        type: "Body",
-        schema: FskuCreateIn,
-      },
-    ],
-    response: FskuDetailOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
     method: "get",
     path: "/fskus",
     alias: "list__fskus_get",
@@ -7262,7 +7241,7 @@ const endpoints = makeApi([
       {
         name: "store_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "limit",
@@ -7276,6 +7255,27 @@ const endpoints = makeApi([
       },
     ],
     response: FskuListOut,
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/fskus",
+    alias: "create_fskus_post",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: FskuCreateIn,
+      },
+    ],
+    response: FskuDetailOut,
     errors: [
       {
         status: 422,
@@ -7499,33 +7499,6 @@ const endpoints = makeApi([
     response: z.object({}).partial().passthrough(),
   },
   {
-    method: "post",
-    path: "/inbound-receipts/",
-    alias: "create_inbound_receipt_inbound_receipts__post",
-    description: `Phase5：Receipt 创建入口（DRAFT）
-- 当前仅支持 PO：创建/复用最新 DRAFT receipt
-- ✅ 只写 Receipt(DRAFT) 事实
-- ❌ 不写库存（库存只能由 /confirm 触发）
-
-重要：返回前必须确保 lines 已加载，避免 async 环境下触发 relationship lazyload -&gt; MissingGreenlet`,
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "body",
-        type: "Body",
-        schema: InboundReceiptCreateIn,
-      },
-    ],
-    response: InboundReceiptOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
     method: "get",
     path: "/inbound-receipts/",
     alias: "list_inbound_receipts_inbound_receipts__get",
@@ -7544,7 +7517,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "source_type",
@@ -7554,7 +7527,7 @@ const endpoints = makeApi([
       {
         name: "source_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "time_from",
@@ -7578,6 +7551,33 @@ const endpoints = makeApi([
       },
     ],
     response: z.array(InboundReceiptOut),
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/inbound-receipts/",
+    alias: "create_inbound_receipt_inbound_receipts__post",
+    description: `Phase5：Receipt 创建入口（DRAFT）
+- 当前仅支持 PO：创建/复用最新 DRAFT receipt
+- ✅ 只写 Receipt(DRAFT) 事实
+- ❌ 不写库存（库存只能由 /confirm 触发）
+
+重要：返回前必须确保 lines 已加载，避免 async 环境下触发 relationship lazyload -&gt; MissingGreenlet`,
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: InboundReceiptCreateIn,
+      },
+    ],
+    response: InboundReceiptOut,
     errors: [
       {
         status: 422,
@@ -7655,31 +7655,6 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/internal-outbound/docs",
-    alias: "create_internal_outbound_doc_internal_outbound_docs_post",
-    description: `创建内部出库单（只建头，不带行）：
-
-- 必须指定 warehouse_id / doc_type / recipient_name；
-- 初始状态为 DRAFT。`,
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "body",
-        type: "Body",
-        schema: InternalOutboundCreateDocIn,
-      },
-    ],
-    response: InternalOutboundDocOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
     method: "get",
     path: "/internal-outbound/docs",
     alias: "list_internal_outbound_docs_internal_outbound_docs_get",
@@ -7707,10 +7682,35 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: z.array(InternalOutboundDocOut),
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/internal-outbound/docs",
+    alias: "create_internal_outbound_doc_internal_outbound_docs_post",
+    description: `创建内部出库单（只建头，不带行）：
+
+- 必须指定 warehouse_id / doc_type / recipient_name；
+- 初始状态为 DRAFT。`,
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: InternalOutboundCreateDocIn,
+      },
+    ],
+    response: InternalOutboundDocOut,
     errors: [
       {
         status: 422,
@@ -8046,6 +8046,27 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: "delete",
+    path: "/item-barcodes/:id",
+    alias: "delete_barcode_item_barcodes__id__delete",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "id",
+        type: "Path",
+        schema: z.number().int(),
+      },
+    ],
+    response: z.void(),
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
     method: "patch",
     path: "/item-barcodes/:id",
     alias: "update_barcode_item_barcodes__id__patch",
@@ -8063,27 +8084,6 @@ const endpoints = makeApi([
       },
     ],
     response: ItemBarcodeOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
-    method: "delete",
-    path: "/item-barcodes/:id",
-    alias: "delete_barcode_item_barcodes__id__delete",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "id",
-        type: "Path",
-        schema: z.number().int(),
-      },
-    ],
-    response: z.void(),
     errors: [
       {
         status: 422,
@@ -8182,6 +8182,42 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: "get",
+    path: "/items",
+    alias: "get_all_items_items_get",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "supplier_id",
+        type: "Query",
+        schema: warehouse_id,
+      },
+      {
+        name: "enabled",
+        type: "Query",
+        schema: enabled,
+      },
+      {
+        name: "q",
+        type: "Query",
+        schema: platform,
+      },
+      {
+        name: "limit",
+        type: "Query",
+        schema: warehouse_id,
+      },
+    ],
+    response: z.array(ItemOut),
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
     method: "post",
     path: "/items",
     alias: "create_item_items_post",
@@ -8194,42 +8230,6 @@ const endpoints = makeApi([
       },
     ],
     response: ItemOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
-    method: "get",
-    path: "/items",
-    alias: "get_all_items_items_get",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "supplier_id",
-        type: "Query",
-        schema: fsku_id,
-      },
-      {
-        name: "enabled",
-        type: "Query",
-        schema: active,
-      },
-      {
-        name: "q",
-        type: "Query",
-        schema: platform,
-      },
-      {
-        name: "limit",
-        type: "Query",
-        schema: fsku_id,
-      },
-    ],
-    response: z.array(ItemOut),
     errors: [
       {
         status: 422,
@@ -8388,7 +8388,7 @@ const endpoints = makeApi([
       {
         name: "fsku_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "fsku_code",
@@ -9717,7 +9717,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "status",
@@ -10465,6 +10465,33 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: "delete",
+    path: "/pricing-schemes/:scheme_id/warehouses/:warehouse_id",
+    alias:
+      "delete_scheme_warehouse_pricing_schemes__scheme_id__warehouses__warehouse_id__delete",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "scheme_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+      {
+        name: "warehouse_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: SchemeWarehouseDeleteOut,
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
     method: "patch",
     path: "/pricing-schemes/:scheme_id/warehouses/:warehouse_id",
     alias:
@@ -10488,33 +10515,6 @@ const endpoints = makeApi([
       },
     ],
     response: SchemeWarehousePatchOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
-    method: "delete",
-    path: "/pricing-schemes/:scheme_id/warehouses/:warehouse_id",
-    alias:
-      "delete_scheme_warehouse_pricing_schemes__scheme_id__warehouses__warehouse_id__delete",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "scheme_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-      {
-        name: "warehouse_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: SchemeWarehouseDeleteOut,
     errors: [
       {
         status: 422,
@@ -10698,27 +10698,6 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/purchase-orders/",
-    alias: "create_purchase_order_purchase_orders__post",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "body",
-        type: "Body",
-        schema: PurchaseOrderCreateV2,
-      },
-    ],
-    response: PurchaseOrderWithLinesOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
     method: "get",
     path: "/purchase-orders/",
     alias: "list_purchase_orders_purchase_orders__get",
@@ -10746,6 +10725,27 @@ const endpoints = makeApi([
       },
     ],
     response: z.array(PurchaseOrderListItemOut),
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/purchase-orders/",
+    alias: "create_purchase_order_purchase_orders__post",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: PurchaseOrderCreateV2,
+      },
+    ],
+    response: PurchaseOrderWithLinesOut,
     errors: [
       {
         status: 422,
@@ -10926,12 +10926,12 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "supplier_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "status",
@@ -10977,12 +10977,12 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "supplier_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "status",
@@ -10992,7 +10992,7 @@ const endpoints = makeApi([
       {
         name: "item_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "item_keyword",
@@ -11038,12 +11038,12 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "supplier_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "status",
@@ -11099,7 +11099,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: z.array(ReturnTaskOut),
@@ -11256,7 +11256,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: z.array(ReturnOrderRefItem),
@@ -11283,7 +11283,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: ReturnOrderRefDetailOut,
@@ -11310,7 +11310,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: ReturnOrderRefSummaryOut,
@@ -11791,6 +11791,28 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: "delete",
+    path: "/shipping-provider-contacts/:contact_id",
+    alias:
+      "shipping_provider_delete_contact_shipping_provider_contacts__contact_id__delete",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "contact_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
     method: "patch",
     path: "/shipping-provider-contacts/:contact_id",
     alias:
@@ -11818,28 +11840,6 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "delete",
-    path: "/shipping-provider-contacts/:contact_id",
-    alias:
-      "shipping_provider_delete_contact_shipping_provider_contacts__contact_id__delete",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "contact_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: z.unknown(),
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
     method: "get",
     path: "/shipping-providers",
     alias: "list_shipping_providers_shipping_providers_get",
@@ -11851,7 +11851,7 @@ const endpoints = makeApi([
       {
         name: "active",
         type: "Query",
-        schema: active,
+        schema: enabled,
       },
       {
         name: "q",
@@ -11997,7 +11997,7 @@ const endpoints = makeApi([
       {
         name: "active",
         type: "Query",
-        schema: active,
+        schema: enabled,
       },
       {
         name: "include_archived",
@@ -12229,7 +12229,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: ShippingByCarrierResponse,
@@ -12290,7 +12290,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: ShippingByProvinceResponse,
@@ -12351,7 +12351,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: ShippingByShopResponse,
@@ -12412,7 +12412,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: ShippingByWarehouseResponse,
@@ -12473,7 +12473,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: ShippingDailyResponse,
@@ -12535,7 +12535,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "limit",
@@ -12582,7 +12582,7 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
     ],
     response: ShippingReportFilterOptions,
@@ -12942,12 +12942,12 @@ const endpoints = makeApi([
       {
         name: "warehouse_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "item_id",
         type: "Query",
-        schema: fsku_id,
+        schema: warehouse_id,
       },
       {
         name: "batch_code",
@@ -13111,6 +13111,29 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: "get",
+    path: "/stores/:store_id",
+    alias: "get_store_detail_stores__store_id__get",
+    description: `店铺详情（含绑定仓列表）。
+权限：config.store.read`,
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "store_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: StoreDetailOut,
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
     method: "patch",
     path: "/stores/:store_id",
     alias: "update_store_stores__store_id__patch",
@@ -13131,29 +13154,6 @@ const endpoints = makeApi([
       },
     ],
     response: StoreUpdateOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
-    method: "get",
-    path: "/stores/:store_id",
-    alias: "get_store_detail_stores__store_id__get",
-    description: `店铺详情（含绑定仓列表）。
-权限：config.store.read`,
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "store_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: StoreDetailOut,
     errors: [
       {
         status: 422,
@@ -13476,17 +13476,12 @@ data:
     ],
   },
   {
-    method: "patch",
+    method: "delete",
     path: "/stores/:store_id/routes/provinces/:route_id",
     alias:
-      "update_province_route_stores__store_id__routes_provinces__route_id__patch",
+      "delete_province_route_stores__store_id__routes_provinces__route_id__delete",
     requestFormat: "json",
     parameters: [
-      {
-        name: "body",
-        type: "Body",
-        schema: ProvinceRouteUpdateIn,
-      },
       {
         name: "store_id",
         type: "Path",
@@ -13508,12 +13503,17 @@ data:
     ],
   },
   {
-    method: "delete",
+    method: "patch",
     path: "/stores/:store_id/routes/provinces/:route_id",
     alias:
-      "delete_province_route_stores__store_id__routes_provinces__route_id__delete",
+      "update_province_route_stores__store_id__routes_provinces__route_id__patch",
     requestFormat: "json",
     parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: ProvinceRouteUpdateIn,
+      },
       {
         name: "store_id",
         type: "Path",
@@ -13547,6 +13547,34 @@ data:
       },
     ],
     response: RoutingHealthOut,
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
+    method: "delete",
+    path: "/stores/:store_id/warehouses/:warehouse_id",
+    alias: "delete_binding_stores__store_id__warehouses__warehouse_id__delete",
+    description: `解除店 ↔ 仓 绑定关系。
+权限：config.store.write`,
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "store_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+      {
+        name: "warehouse_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: BindingDeleteOut,
     errors: [
       {
         status: 422,
@@ -13592,34 +13620,6 @@ data:
     ],
   },
   {
-    method: "delete",
-    path: "/stores/:store_id/warehouses/:warehouse_id",
-    alias: "delete_binding_stores__store_id__warehouses__warehouse_id__delete",
-    description: `解除店 ↔ 仓 绑定关系。
-权限：config.store.write`,
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "store_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-      {
-        name: "warehouse_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: BindingDeleteOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
     method: "post",
     path: "/stores/:store_id/warehouses/bind",
     alias: "bind_store_warehouse_stores__store_id__warehouses_bind_post",
@@ -13643,6 +13643,27 @@ data:
       },
     ],
     response: BindWarehouseOut,
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
+    method: "delete",
+    path: "/supplier-contacts/:contact_id",
+    alias: "supplier_delete_contact_supplier_contacts__contact_id__delete",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "contact_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: z.unknown(),
     errors: [
       {
         status: 422,
@@ -13678,27 +13699,6 @@ data:
     ],
   },
   {
-    method: "delete",
-    path: "/supplier-contacts/:contact_id",
-    alias: "supplier_delete_contact_supplier_contacts__contact_id__delete",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "contact_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: z.unknown(),
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
     method: "get",
     path: "/suppliers",
     alias: "list_suppliers_suppliers_get",
@@ -13707,7 +13707,7 @@ data:
       {
         name: "active",
         type: "Query",
-        schema: active,
+        schema: enabled,
       },
       {
         name: "q",
@@ -13806,7 +13806,7 @@ data:
       {
         name: "active",
         type: "Query",
-        schema: active__2,
+        schema: active,
       },
       {
         name: "q",
@@ -13815,6 +13815,27 @@ data:
       },
     ],
     response: z.array(SupplierBasicOut),
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
+    method: "delete",
+    path: "/surcharges/:surcharge_id",
+    alias: "delete_surcharge_surcharges__surcharge_id__delete",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "surcharge_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: z.unknown(),
     errors: [
       {
         status: 422,
@@ -13841,27 +13862,6 @@ data:
       },
     ],
     response: SurchargeOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
-    method: "delete",
-    path: "/surcharges/:surcharge_id",
-    alias: "delete_surcharge_surcharges__surcharge_id__delete",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "surcharge_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: z.unknown(),
     errors: [
       {
         status: 422,
@@ -14008,7 +14008,7 @@ data:
       {
         name: "active",
         type: "Query",
-        schema: active,
+        schema: enabled,
       },
     ],
     response: WarehouseListOut,
@@ -14234,6 +14234,33 @@ data:
     ],
   },
   {
+    method: "delete",
+    path: "/warehouses/:warehouse_id/shipping-providers/:shipping_provider_id",
+    alias:
+      "unbind_shipping_provider_from_warehouse_warehouses__warehouse_id__shipping_providers__shipping_provider_id__delete",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "warehouse_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+      {
+        name: "shipping_provider_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: WarehouseShippingProviderDeleteOut,
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
     method: "patch",
     path: "/warehouses/:warehouse_id/shipping-providers/:shipping_provider_id",
     alias:
@@ -14257,33 +14284,6 @@ data:
       },
     ],
     response: WarehouseShippingProviderUpdateOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
-    method: "delete",
-    path: "/warehouses/:warehouse_id/shipping-providers/:shipping_provider_id",
-    alias:
-      "unbind_shipping_provider_from_warehouse_warehouses__warehouse_id__shipping_providers__shipping_provider_id__delete",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "warehouse_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-      {
-        name: "shipping_provider_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: WarehouseShippingProviderDeleteOut,
     errors: [
       {
         status: 422,
@@ -14381,6 +14381,27 @@ data:
     response: WarehouseServiceProvinceOccupancyOut,
   },
   {
+    method: "delete",
+    path: "/zone-brackets/:bracket_id",
+    alias: "delete_zone_bracket_zone_brackets__bracket_id__delete",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "bracket_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
     method: "patch",
     path: "/zone-brackets/:bracket_id",
     alias: "update_zone_bracket_zone_brackets__bracket_id__patch",
@@ -14398,27 +14419,6 @@ data:
       },
     ],
     response: ZoneBracketOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
-    method: "delete",
-    path: "/zone-brackets/:bracket_id",
-    alias: "delete_zone_bracket_zone_brackets__bracket_id__delete",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "bracket_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: z.unknown(),
     errors: [
       {
         status: 422,
@@ -14475,6 +14475,27 @@ data:
     ],
   },
   {
+    method: "delete",
+    path: "/zones/:zone_id",
+    alias: "delete_zone_zones__zone_id__delete",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "zone_id",
+        type: "Path",
+        schema: z.number().int().gte(1),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
     method: "patch",
     path: "/zones/:zone_id",
     alias: "update_zone_zones__zone_id__patch",
@@ -14492,27 +14513,6 @@ data:
       },
     ],
     response: ZoneOut,
-    errors: [
-      {
-        status: 422,
-        description: `Validation Error`,
-        schema: HTTPValidationError,
-      },
-    ],
-  },
-  {
-    method: "delete",
-    path: "/zones/:zone_id",
-    alias: "delete_zone_zones__zone_id__delete",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "zone_id",
-        type: "Path",
-        schema: z.number().int().gte(1),
-      },
-    ],
-    response: z.unknown(),
     errors: [
       {
         status: 422,

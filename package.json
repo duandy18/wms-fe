@@ -7,13 +7,15 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .ts,.tsx --fix",
-    "test": "vitest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest --watch",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
-    "gen:contracts": "openapi-zod-client \"http://127.0.0.1:8000/openapi.json\" -o \"src/contracts/generated/api.ts\" --export-schemas --export-types && python3 scripts/contracts/postprocess_openapi_zod_client.py"
+    "sync:openapi": "python3 -m json.tool ../wms-du/openapi/_current.json > openapi/_current.json && cp openapi/_current.json openapi/v1.json",
+    "gen:contracts": "openapi-zod-client \"openapi/_current.json\" -o \"src/contracts/generated/api.ts\" --export-schemas --export-types && python3 scripts/contracts/postprocess_openapi_zod_client.py"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

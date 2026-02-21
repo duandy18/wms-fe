@@ -19,5 +19,34 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // ✅ 护栏：业务代码禁止直接引用 generated（防扩散）
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                'src/contracts/generated/*',
+                'src/contracts/generated/**',
+                '@/contracts/generated/*',
+                '@/contracts/generated/**',
+                '../generated/*',
+                '../generated/**',
+              ],
+              message:
+                '禁止业务直接引用 contracts/generated。请从 src/contracts/<domain>/contract.ts 稳定入口导入。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // ✅ 白名单：桥接层允许读 generated（只允许 contract.ts/tsx）
+    files: ['src/contracts/**/contract.ts', 'src/contracts/**/contract.tsx'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
   },
 ])
