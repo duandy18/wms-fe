@@ -28,18 +28,9 @@ export function formatTsCompact(ts?: string | null): string {
   return `${mm}-${dd} ${hh}:${mi}`;
 }
 
-type ListLineQty = {
-  // 采购单位（仅用于兼容旧数据；主线优先使用 *_base）
-  qty_ordered?: number | null;
-  units_per_case?: number | null;
-
-  // ✅ 新主线：base 口径（后端已提供）
+type ListLineQtyV2 = {
   qty_ordered_base?: number | null;
   qty_received_base?: number | null;
-  qty_remaining_base?: number | null;
-
-  // 兼容：老字段（有的系统会把 qty_received 当 base）
-  qty_received?: number | null;
 };
 
 function safeInt(v: unknown, fallback: number): number {
@@ -48,32 +39,14 @@ function safeInt(v: unknown, fallback: number): number {
   return Math.trunc(n);
 }
 
-function lineUnitsPerCase(line: ListLineQty): number {
-  const n = safeInt(line.units_per_case ?? 1, 1);
-  return n > 0 ? n : 1;
-}
-
-function lineOrderedBase(line: ListLineQty): number {
-  // ✅ 主线：后端已提供 qty_ordered_base（合同事实）
+function lineOrderedBase(line: ListLineQtyV2): number {
   const qob = line.qty_ordered_base;
-  if (qob != null) return Math.max(safeInt(qob, 0), 0);
-
-  // 兼容：旧数据无 qty_ordered_base，退回到“采购口径×upc”推导
-  const upc = lineUnitsPerCase(line);
-  const orderedPurchase = safeInt(line.qty_ordered ?? 0, 0);
-  return Math.max(orderedPurchase * upc, 0);
+  return qob != null ? Math.max(safeInt(qob, 0), 0) : 0;
 }
 
-function lineReceivedBase(line: ListLineQty): number {
-  // ✅ 主线：后端已提供 qty_received_base（Receipt CONFIRMED 聚合）
+function lineReceivedBase(line: ListLineQtyV2): number {
   const qrb = line.qty_received_base;
-  if (qrb != null) return Math.max(safeInt(qrb, 0), 0);
-
-  // 兼容：旧字段 qty_received（若存在则按 base 处理）
-  const legacy = line.qty_received;
-  if (legacy != null) return Math.max(safeInt(legacy, 0), 0);
-
-  return 0;
+  return qrb != null ? Math.max(safeInt(qrb, 0), 0) : 0;
 }
 
 export function calcPoProgress(
@@ -85,7 +58,7 @@ export function calcPoProgress(
 } {
   if (!po || !po.lines) return { ordered: 0, received: 0, pct: 0 };
 
-  const lines = (po.lines ?? []) as unknown as ListLineQty[];
+  const lines = (po.lines ?? []) as unknown as ListLineQtyV2[];
 
   const ordered = lines.reduce((sum: number, l) => sum + lineOrderedBase(l), 0);
   const received = lines.reduce((sum: number, l) => sum + lineReceivedBase(l), 0);

@@ -1,11 +1,7 @@
 // src/features/purchase-orders/api.ts
 import { apiGet, apiPost } from "../../lib/api";
 
-export type PurchaseOrderStatus =
-  | "CREATED"
-  | "CLOSED"
-  | "CANCELED"
-  | string;
+export type PurchaseOrderStatus = "CREATED" | "CLOSED" | "CANCELED" | string;
 
 // ----------------------
 // ✅ 列表态：轻量类型（/purchase-orders/）
@@ -17,19 +13,21 @@ export interface PurchaseOrderListLine {
   line_no: number;
   item_id: number;
 
-  // 采购单位口径（箱/件/托…）
-  qty_ordered: number;
-  qty_received: number;
-  status: PurchaseOrderStatus;
+  // ✅ Phase2：快照解释器
+  uom_snapshot?: string | null;
+  case_ratio_snapshot?: number | null;
+  case_uom_snapshot?: string | null;
+  qty_ordered_case_input?: number | null;
 
-  // ✅ 可选：若后端列表态返回 base 字段（不强制）
-  qty_ordered_base?: number;
-  qty_received_base?: number;
+  // ✅ Phase2：事实口径（兼容旧数据允许可选）
+  qty_ordered_base?: number | null;
+  qty_received_base?: number | null;
+  qty_remaining_base?: number | null;
 
-  // ✅ 为“最小单位口径”显示准备
-  units_per_case?: number | null; // 每采购单位包含的最小单位数量
-  base_uom?: string | null; // 最小单位名称（袋/个…）
-  purchase_uom?: string | null; // 采购单位名称（件/箱…）
+  // 展示辅助
+  base_uom?: string | null;
+
+  status?: PurchaseOrderStatus;
 
   created_at: string;
   updated_at: string;
@@ -40,7 +38,6 @@ export interface PurchaseOrderListItem {
   supplier: string;
   warehouse_id: number;
 
-  // ✅ 展示字段：仓库名称（后端列表态已补齐；但前端类型必须容忍旧数据/详情态缺失）
   warehouse_name?: string | null;
 
   supplier_id: number | null;
@@ -58,10 +55,17 @@ export interface PurchaseOrderListItem {
   last_received_at: string | null;
   closed_at: string | null;
 
+  close_reason?: string | null;
+  close_note?: string | null;
+  closed_by?: number | null;
+
+  canceled_at?: string | null;
+  canceled_reason?: string | null;
+  canceled_by?: number | null;
+
   lines: PurchaseOrderListLine[];
 }
 
-/** 列表查询参数（v2 列表） */
 export interface PurchaseOrderListParams {
   skip?: number;
   limit?: number;
@@ -69,7 +73,6 @@ export interface PurchaseOrderListParams {
   status?: string;
 }
 
-/** 查询采购单列表（列表态：轻量） */
 export async function fetchPurchaseOrders(
   params: PurchaseOrderListParams = {},
 ): Promise<PurchaseOrderListItem[]> {
@@ -102,8 +105,8 @@ export interface PurchaseOrderDetailLine {
 
   spec_text: string | null;
   base_uom: string | null;
-  purchase_uom: string | null;
 
+  // enrich
   sku: string | null;
   primary_barcode: string | null;
 
@@ -121,25 +124,22 @@ export interface PurchaseOrderDetailLine {
   shelf_life_unit: string | null;
   enabled: boolean | null;
 
+  // 合同字段
   supply_price: string | null;
   retail_price: string | null;
   promo_price: string | null;
   min_price: string | null;
 
-  qty_cases: number | null;
-  units_per_case: number | null;
+  // ✅ Phase2：快照解释器（第一公民）
+  uom_snapshot?: string | null;
+  case_ratio_snapshot?: number | null;
+  case_uom_snapshot?: string | null;
+  qty_ordered_case_input?: number | null;
 
-  // 采购单位口径（展示用）
-  qty_ordered: number;
-
-  // ✅ base 口径（唯一真相，前端判断/创建任务只能用它）
+  // ✅ Phase2：事实口径（唯一真相）
   qty_ordered_base: number;
   qty_received_base: number;
   qty_remaining_base: number;
-
-  // 采购单位口径（展示/兼容；不要用于判断）
-  qty_received: number;
-  qty_remaining: number;
 
   line_amount: string | null;
   status: PurchaseOrderStatus;
@@ -169,6 +169,14 @@ export interface PurchaseOrderDetail {
   last_received_at: string | null;
   closed_at: string | null;
 
+  close_reason?: string | null;
+  close_note?: string | null;
+  closed_by?: number | null;
+
+  canceled_at?: string | null;
+  canceled_reason?: string | null;
+  canceled_by?: number | null;
+
   lines: PurchaseOrderDetailLine[];
 }
 
@@ -188,15 +196,27 @@ export interface PurchaseOrderLineCreatePayload {
 
   spec_text?: string | null;
   base_uom?: string | null;
+
+  // ✅ 兼容旧入参（后端当前仍接收）
   purchase_uom?: string | null;
+  units_per_case?: number | null;
+  qty_ordered: number;
+
+  // 合同/价格
   supply_price?: number | null;
   retail_price?: number | null;
   promo_price?: number | null;
   min_price?: number | null;
   qty_cases?: number | null;
-  units_per_case?: number | null;
-  qty_ordered: number;
+
   remark?: string | null;
+
+  // ✅ Phase2 forward fields（可选）
+  uom_snapshot?: string | null;
+  case_uom_snapshot?: string | null;
+  case_ratio_snapshot?: number | null;
+  qty_ordered_case_input?: number | null;
+  qty_ordered_base?: number | null;
 }
 
 export interface PurchaseOrderCreateV2Payload {

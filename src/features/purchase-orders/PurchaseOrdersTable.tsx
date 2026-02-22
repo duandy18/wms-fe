@@ -15,19 +15,14 @@ interface PurchaseOrdersTableProps {
 const formatMoney = (v: string | null | undefined) => (v == null ? "-" : v);
 
 const statusBadge = (s: string) => {
-  const base =
-    "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium";
+  const base = "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium";
   switch (s) {
     case "CREATED":
       return <span className={`${base} bg-slate-100 text-slate-700`}>新建</span>;
     case "PARTIAL":
-      return (
-        <span className={`${base} bg-amber-100 text-amber-800`}>部分收货</span>
-      );
+      return <span className={`${base} bg-amber-100 text-amber-800`}>部分收货</span>;
     case "RECEIVED":
-      return (
-        <span className={`${base} bg-emerald-100 text-emerald-800`}>已收货</span>
-      );
+      return <span className={`${base} bg-emerald-100 text-emerald-800`}>已收货</span>;
     case "CLOSED":
       return <span className={`${base} bg-slate-200 text-slate-800`}>已关闭</span>;
     default:
@@ -35,8 +30,7 @@ const statusBadge = (s: string) => {
   }
 };
 
-const formatTs = (ts: string | null | undefined) =>
-  ts ? ts.replace("T", " ").replace("Z", "") : "-";
+const formatTs = (ts: string | null | undefined) => (ts ? ts.replace("T", " ").replace("Z", "") : "-");
 
 function safeInt(v: unknown, fallback: number): number {
   const n = Number(v);
@@ -44,75 +38,97 @@ function safeInt(v: unknown, fallback: number): number {
   return Math.trunc(n);
 }
 
-// 列表态行：后端刚补的字段（可选，兼容旧数据）
-type ListLineWithUom = PurchaseOrderListLine & {
-  units_per_case?: number | null;
+type ListLineV2 = PurchaseOrderListLine & {
+  uom_snapshot?: string | null;
+  case_ratio_snapshot?: number | null;
+  case_uom_snapshot?: string | null;
+  qty_ordered_case_input?: number | null;
+
+  qty_ordered_base?: number | null;
+  qty_received_base?: number | null;
+
   base_uom?: string | null;
-  purchase_uom?: string | null;
 };
 
-function lineUnitsPerCase(l: ListLineWithUom): number {
-  const n = safeInt(l.units_per_case ?? 1, 1);
-  return n > 0 ? n : 1;
+function lineCaseRatio(l: ListLineV2): number {
+  const r = safeInt(l.case_ratio_snapshot, 0);
+  return r > 0 ? r : 1;
 }
 
-function lineBaseUom(l: ListLineWithUom): string {
+function lineBaseUom(l: ListLineV2): string {
   const v = String(l.base_uom ?? "").trim();
-  return v || "最小单位";
+  if (v) return v;
+  const snap = String(l.uom_snapshot ?? "").trim();
+  return snap || "最小单位";
 }
 
-function linePurchaseUom(l: ListLineWithUom): string {
-  const v = String(l.purchase_uom ?? "").trim();
+function linePurchaseUom(l: ListLineV2): string {
+  const v = String(l.case_uom_snapshot ?? "").trim();
   return v || "采购单位";
 }
 
+function lineOrderedBase(l: ListLineV2): number {
+  const qob = l.qty_ordered_base;
+  return qob != null ? Math.max(safeInt(qob, 0), 0) : 0;
+}
+
+function lineReceivedBase(l: ListLineV2): number {
+  const qrb = l.qty_received_base;
+  return qrb != null ? Math.max(safeInt(qrb, 0), 0) : 0;
+}
+
+function lineOrderedPurchase(l: ListLineV2): number {
+  const ci = l.qty_ordered_case_input;
+  if (ci != null) return Math.max(safeInt(ci, 0), 0);
+
+  const base = lineOrderedBase(l);
+  const r = lineCaseRatio(l);
+  if (r > 1 && base > 0 && base % r === 0) return Math.floor(base / r);
+  if (r === 1) return base;
+  return 0;
+}
+
 function sumQtyBase(po: PurchaseOrderListItem, kind: "ordered" | "received") {
-  const lines = (po.lines ?? []) as ListLineWithUom[];
+  const lines = (po.lines ?? []) as ListLineV2[];
 
   let baseUom = "";
   let purchaseUom = "";
 
   let totalBase = 0;
 
-  // 仅用于“订购”的采购单位合计（因为订购口径本来就是采购单位）
   let totalPurchaseOrdered = 0;
 
-  // 用于“已收”的采购单位近似合计（因为已收是 base，需要除以 upc）
   let approxPurchaseReceived = 0;
   let hasFraction = false;
-
-  let hasAnyUpc = false;
+  let hasAnyRatio = false;
 
   for (const l of lines) {
-    const upc = lineUnitsPerCase(l);
-    if (upc !== 1) hasAnyUpc = true;
+    const ratio = lineCaseRatio(l);
+    if (ratio !== 1) hasAnyRatio = true;
 
     if (!baseUom) baseUom = lineBaseUom(l);
     if (!purchaseUom) purchaseUom = linePurchaseUom(l);
 
     if (kind === "ordered") {
-      const qPurchase = safeInt(l.qty_ordered ?? 0, 0); // 采购单位
-      totalPurchaseOrdered += qPurchase;
-      totalBase += qPurchase * upc; // 订购换算到 base
+      const base = lineOrderedBase(l);
+      totalBase += base;
+      totalPurchaseOrdered += lineOrderedPurchase(l);
       continue;
     }
 
-    // ✅ 已收：qty_received 已经是 base units（不要再乘 upc）
-    const receivedBase = safeInt(l.qty_received ?? 0, 0);
+    const receivedBase = lineReceivedBase(l);
     totalBase += receivedBase;
 
-    // 采购单位近似解释：如果不能整除则标记 "+"
-    const div = Math.floor(receivedBase / upc);
+    const div = Math.floor(receivedBase / ratio);
     approxPurchaseReceived += div;
-    if (receivedBase % upc !== 0) hasFraction = true;
+    if (receivedBase % ratio !== 0) hasFraction = true;
   }
 
   return {
     totalBase,
     baseUom: baseUom || "最小单位",
     purchaseUom: purchaseUom || "采购单位",
-    hasAnyUpc,
-
+    hasAnyRatio,
     totalPurchaseOrdered,
     approxPurchaseReceived,
     hasFraction,
@@ -161,10 +177,9 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
       align: "right",
       render: (po) => (po.lines ?? []).length,
     },
-
     {
       key: "qty_ordered_base",
-      header: "订购数量（最小单位）",
+      header: "订购数量（base）",
       align: "right",
       render: (po) => {
         const x = sumQtyBase(po, "ordered");
@@ -175,16 +190,15 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
             </div>
             <div className="text-[11px] text-slate-500">
               （{x.totalPurchaseOrdered} {x.purchaseUom}
-              {x.hasAnyUpc ? " · 含换算" : ""}）
+              {x.hasAnyRatio ? " · 含换算" : ""}）
             </div>
           </div>
         );
       },
     },
-
     {
       key: "qty_received_base",
-      header: "已收数量（最小单位）",
+      header: "已收数量（base）",
       align: "right",
       render: (po) => {
         const x = sumQtyBase(po, "received");
@@ -201,7 +215,6 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
         );
       },
     },
-
     {
       key: "total_amount",
       header: "汇总金额",

@@ -4561,7 +4561,7 @@
                                 "type": "null"
                             }
                         ],
-                        "description": "\u5355\u4f4d\uff08items.unit\uff09",
+                        "description": "\u5355\u4f4d\uff08items.uom\uff09",
                         "title": "Uom"
                     },
                     "warehouse_id": {
