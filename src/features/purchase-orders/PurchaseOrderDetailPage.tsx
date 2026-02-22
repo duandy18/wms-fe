@@ -9,6 +9,12 @@ import { PurchaseOrderHeaderCard } from "./PurchaseOrderHeaderCard";
 import { PurchaseOrderLinesTable } from "./PurchaseOrderLinesTable";
 import { PurchaseOrderReceiptsPanel } from "./PurchaseOrderReceiptsPanel";
 
+function safeInt(v: unknown, fallback: number): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.trunc(n);
+}
+
 const PurchaseOrderDetailPage: React.FC = () => {
   const { poId } = useParams<{ poId: string }>();
   const navigate = useNavigate();
@@ -55,14 +61,21 @@ const PurchaseOrderDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poId]);
 
+  // ✅ 主线：数量统计以 base 事实口径为准（不依赖旧展示字段）
   const totalQtyOrdered = useMemo(() => {
     if (!po) return 0;
-    return po.lines.reduce((sum, l) => sum + l.qty_ordered, 0);
+    return (po.lines ?? []).reduce(
+      (sum, l) => sum + safeInt((l as { qty_ordered_base?: number | null }).qty_ordered_base, 0),
+      0,
+    );
   }, [po]);
 
   const totalQtyReceived = useMemo(() => {
     if (!po) return 0;
-    return po.lines.reduce((sum, l) => sum + l.qty_received, 0);
+    return (po.lines ?? []).reduce(
+      (sum, l) => sum + safeInt((l as { qty_received_base?: number | null }).qty_received_base, 0),
+      0,
+    );
   }, [po]);
 
   if (!isIdValid) {
@@ -76,9 +89,7 @@ const PurchaseOrderDetailPage: React.FC = () => {
         >
           ← 返回采购单列表
         </button>
-        <div className="text-sm text-red-600">
-          无效的采购单 ID（URL 中的 :poId 不是数字）。
-        </div>
+        <div className="text-sm text-red-600">无效的采购单 ID（URL 中的 :poId 不是数字）。</div>
       </div>
     );
   }

@@ -1,7 +1,16 @@
 // src/features/purchase-orders/usePurchaseOrderCreatePresenter.ts
 // 采购单创建 Presenter（大字号 Cockpit 版）
+//
 // - 支持：供应商 / 仓库 / 采购人 / 采购时间 必填
-// - 行：最小单位 / 采购单位 / 每件数量 / 订购件数 / 单价 / 行金额（按最小单位）
+// - 行（Phase2 语言）：
+//   * 最小单位（uom_snapshot）
+//   * 采购单位（case_uom）
+//   * 倍率（case_ratio）= 1采购单位=多少最小单位
+//   * 订购数量（case_input）= 用户按采购口径录入的数量（输入痕迹）
+//   * 数量（base 事实）= case_input × case_ratio
+//   * 单价（按最小单位 base）/ 行金额（预估）
+//
+// 说明：本阶段只做 UI 语言升级（A 档），底层 LineDraft 字段名仍沿用旧名，避免牵动范围过大。
 
 import { useState } from "react";
 import { nowIsoMinuteForDatetimeLocal } from "./createV2/utils";
@@ -16,10 +25,7 @@ import type { PurchaseOrderCreateActions, PurchaseOrderCreateState } from "./cre
 // ✅ 兼容旧 import 路径：让其它组件仍可从本文件导入 LineDraft
 export type { LineDraft } from "./createV2/lineDraft";
 
-export function usePurchaseOrderCreatePresenter(): [
-  PurchaseOrderCreateState,
-  PurchaseOrderCreateActions,
-] {
+export function usePurchaseOrderCreatePresenter(): [PurchaseOrderCreateState, PurchaseOrderCreateActions] {
   // 供应商
   const { supplierOptions, suppliersLoading, suppliersError } = useSuppliersLoader();
   const [supplierId, setSupplierId] = useState<number | null>(null);

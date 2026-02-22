@@ -17,12 +17,13 @@ export type PlanRow = {
   base_uom: string;
 
   // ✅ 辅助口径：采购单位（用于括号解释；不参与事实比较）
-  ordered_purchase: number;
-  received_purchase: number;
-  remain_purchase: number;
-  purchase_uom: string;
+  ordered_case: number;
+  received_case: number;
+  remain_case: number;
+  case_uom: string;
 
-  units_per_case: number; // 1采购单位=多少最小单位
+  // ✅ 快照解释器（Phase2 第一公民）
+  case_ratio_snapshot: number; // 1采购单位=多少最小单位（>=1；无则为 1）
 
   // ✅ 保质期策略（来自详情态行）
   has_shelf_life: boolean;
@@ -36,28 +37,53 @@ function safeInt(v: unknown, fallback: number): number {
   return Math.trunc(n);
 }
 
-function unitsPerCase(line: PurchaseOrderDetailLine): number {
-  const n = safeInt(line.units_per_case, 1);
-  return n > 0 ? n : 1;
-}
-
 function baseUomLabel(line: PurchaseOrderDetailLine): string {
-  const a = (line.base_uom ?? "").trim();
-  if (a) return a;
-  const b = (line.uom ?? "").trim();
-  if (b) return b;
+  const baseUom = String((line as { base_uom?: string | null }).base_uom ?? "").trim();
+  if (baseUom) return baseUom;
+
+  // ✅ 新合同：uom_snapshot（事实单位快照）
+  const snap = String((line as { uom_snapshot?: string | null }).uom_snapshot ?? "").trim();
+  if (snap) return snap;
+
+  // ✅ enrich fallback（不属于旧字段，允许）
+  const uom = String((line as { uom?: string | null }).uom ?? "").trim();
+  if (uom) return uom;
+
   return "最小单位";
 }
 
-function purchaseUomLabel(line: PurchaseOrderDetailLine): string {
-  const p = (line.purchase_uom ?? "").trim();
-  return p || "采购单位";
+function caseRatioSnapshot(line: PurchaseOrderDetailLine): number {
+  const ratio = safeInt((line as { case_ratio_snapshot?: number | null }).case_ratio_snapshot, 0);
+  return ratio > 0 ? ratio : 1;
 }
 
-function baseToPurchaseQty(line: PurchaseOrderDetailLine, baseQty: number): number {
-  const upc = unitsPerCase(line);
+function caseUomSnapshot(line: PurchaseOrderDetailLine): string {
+  const snap = String((line as { case_uom_snapshot?: string | null }).case_uom_snapshot ?? "").trim();
+  return snap || "采购单位";
+}
+
+function deriveOrderedCase(line: PurchaseOrderDetailLine, orderedBase: number, ratio: number): number {
+  // ✅ 主线：输入痕迹 qty_ordered_case_input
+  const caseInput = (line as { qty_ordered_case_input?: number | null }).qty_ordered_case_input;
+  if (caseInput != null) return safeInt(caseInput, 0);
+
+  const r = ratio > 0 ? ratio : 1;
+  const base = safeInt(orderedBase, 0);
+  if (r > 1 && base > 0 && base % r === 0) {
+    return Math.floor(base / r);
+  }
+
+  // 保守兜底：倍率=1 时，case 与 base 等价
+  if (r === 1) return base;
+
+  // 否则不给“瞎猜的件数”
+  return 0;
+}
+
+function baseToCaseQty(baseQty: number, ratio: number): number {
+  const r = ratio > 0 ? ratio : 1;
   const q = safeInt(baseQty, 0);
-  return Math.floor(q / upc);
+  return Math.floor(q / r);
 }
 
 function normalizeBatch(v: string): string {
@@ -84,11 +110,17 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
   const [prodMap, setProdMap] = useState<Record<number, string>>({});
   const [expMap, setExpMap] = useState<Record<number, string>>({});
 
+  // ✅ 变更检测：以 base 事实 + 快照解释器为 key
   const poRevKey = useMemo(() => {
     if (!po) return "";
     const parts = (po.lines ?? []).map((l) => {
-      const upc = l.units_per_case ?? 1;
-      return `${l.id}:${l.qty_ordered_base}:${l.qty_received_base}:${l.qty_remaining_base}:${upc}`;
+      const ratio = caseRatioSnapshot(l);
+      const caseInput = (l as { qty_ordered_case_input?: number | null }).qty_ordered_case_input;
+      const caseUom = caseUomSnapshot(l);
+      const orderedBase = safeInt((l as { qty_ordered_base?: number | null }).qty_ordered_base, 0);
+      const receivedBase = safeInt((l as { qty_received_base?: number | null }).qty_received_base, 0);
+      const remainBase = safeInt((l as { qty_remaining_base?: number | null }).qty_remaining_base, 0);
+      return `${l.id}:${orderedBase}:${receivedBase}:${remainBase}:${ratio}:${caseInput ?? "N"}:${caseUom}`;
     });
     return `${po.id}|${parts.join("|")}`;
   }, [po]);
@@ -125,18 +157,17 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
 
     return (po.lines ?? [])
       .map((l) => {
-        const ordered_purchase = safeInt(l.qty_ordered, 0);
+        const ordered_base = safeInt((l as { qty_ordered_base?: number | null }).qty_ordered_base, 0);
+        const received_base = safeInt((l as { qty_received_base?: number | null }).qty_received_base, 0);
+        const remain_base = safeInt((l as { qty_remaining_base?: number | null }).qty_remaining_base, 0);
 
-        const ordered_base = safeInt(l.qty_ordered_base, 0);
-        const received_base = safeInt(l.qty_received_base, 0);
-        const remain_base = safeInt(l.qty_remaining_base, 0);
-
-        const upc = unitsPerCase(l);
+        const ratio = caseRatioSnapshot(l);
         const base_uom = baseUomLabel(l);
-        const purchase_uom = purchaseUomLabel(l);
+        const case_uom = caseUomSnapshot(l);
 
-        const received_purchase = baseToPurchaseQty(l, received_base);
-        const remain_purchase = Math.max(ordered_purchase - received_purchase, 0);
+        const ordered_case = deriveOrderedCase(l, ordered_base, ratio);
+        const received_case = baseToCaseQty(received_base, ratio);
+        const remain_case = Math.max(ordered_case - received_case, 0);
 
         return {
           poLineId: l.id,
@@ -150,16 +181,22 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
           remain_base,
           base_uom,
 
-          ordered_purchase,
-          received_purchase,
-          remain_purchase,
-          purchase_uom,
+          ordered_case,
+          received_case,
+          remain_case,
+          case_uom,
 
-          units_per_case: upc,
+          case_ratio_snapshot: ratio,
 
-          has_shelf_life: Boolean(l.has_shelf_life ?? false),
-          shelf_life_value: l.shelf_life_value == null ? null : Number(l.shelf_life_value),
-          shelf_life_unit: l.shelf_life_unit == null ? null : String(l.shelf_life_unit),
+          has_shelf_life: Boolean((l as { has_shelf_life?: boolean | null }).has_shelf_life ?? false),
+          shelf_life_value:
+            (l as { shelf_life_value?: number | null }).shelf_life_value == null
+              ? null
+              : Number((l as { shelf_life_value?: number | null }).shelf_life_value),
+          shelf_life_unit:
+            (l as { shelf_life_unit?: string | null }).shelf_life_unit == null
+              ? null
+              : String((l as { shelf_life_unit?: string | null }).shelf_life_unit),
         };
       })
       .filter((r) => r.remain_base > 0);

@@ -11,22 +11,53 @@ interface PurchaseOrderLinesTableProps {
   mode?: "default" | "inbound";
 }
 
-function unitsPerCase(line: PurchaseOrderDetailLine): number {
-  const n = Number(line.units_per_case ?? 1);
-  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 1;
+function safeInt(v: unknown, fallback: number): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.trunc(n);
+}
+
+function caseRatio(line: PurchaseOrderDetailLine): number {
+  const r = safeInt((line as { case_ratio_snapshot?: number | null }).case_ratio_snapshot, 0);
+  return r > 0 ? r : 1;
 }
 
 function baseUomLabel(line: PurchaseOrderDetailLine): string {
-  const a = (line.base_uom ?? "").trim();
+  const a = String((line as { base_uom?: string | null }).base_uom ?? "").trim();
   if (a) return a;
-  const b = (line.uom ?? "").trim();
+
+  const snap = String((line as { uom_snapshot?: string | null }).uom_snapshot ?? "").trim();
+  if (snap) return snap;
+
+  const b = String((line as { uom?: string | null }).uom ?? "").trim();
   if (b) return b;
+
   return "最小单位";
 }
 
 function purchaseUomLabel(line: PurchaseOrderDetailLine): string {
-  const p = (line.purchase_uom ?? "").trim();
+  const p = String((line as { case_uom_snapshot?: string | null }).case_uom_snapshot ?? "").trim();
   return p || "采购单位";
+}
+
+function orderedBaseQty(line: PurchaseOrderDetailLine): number {
+  const n = safeInt((line as { qty_ordered_base?: number | null }).qty_ordered_base, 0);
+  return Math.max(n, 0);
+}
+
+function orderedPurchaseQty(line: PurchaseOrderDetailLine): number {
+  // 主线：输入痕迹优先
+  const caseInput = (line as { qty_ordered_case_input?: number | null }).qty_ordered_case_input;
+  if (caseInput != null) return Math.max(safeInt(caseInput, 0), 0);
+
+  // 若能整除倍率，用 base 推导；否则返回 0（避免制造虚假的“件数”）
+  const base = orderedBaseQty(line);
+  const r = caseRatio(line);
+  if (r > 1 && base > 0 && base % r === 0) return Math.floor(base / r);
+
+  if (r === 1) return base;
+
+  return 0;
 }
 
 function fmtMoney(v: unknown): string {
@@ -40,17 +71,6 @@ function fmtDiscount(v: unknown): string {
   const n = Number(v);
   if (!Number.isFinite(n)) return String(v);
   return String(n);
-}
-
-function orderedPurchaseQty(line: PurchaseOrderDetailLine): number {
-  const n = Number(line.qty_ordered ?? 0);
-  return Math.trunc(Number.isFinite(n) ? n : 0);
-}
-
-function orderedBaseQty(line: PurchaseOrderDetailLine): number {
-  // ✅ 后端已提供 qty_ordered_base（合同事实），前端不再自行乘 upc
-  const n = Number((line as { qty_ordered_base?: number | null }).qty_ordered_base ?? 0);
-  return Math.trunc(Number.isFinite(n) ? n : 0);
 }
 
 export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = ({
@@ -84,15 +104,15 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       render: (line) => <span className="text-slate-700">{line.spec_text ?? "—"}</span>,
     },
 
-    // ✅ 单位换算单独一列
+    // ✅ 换算（快照解释器）
     {
-      key: "units_per_case",
+      key: "case_ratio_snapshot",
       header: "换算",
       align: "right",
       render: (line) => (
         <div className="text-right">
           <div className="font-mono">
-            {unitsPerCase(line)}{" "}
+            {caseRatio(line)}{" "}
             <span className="text-slate-600">
               {baseUomLabel(line)}/{purchaseUomLabel(line)}
             </span>
@@ -102,8 +122,8 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     },
 
     {
-      key: "qty_ordered",
-      header: "订购数量",
+      key: "qty_ordered_case_input",
+      header: "订购数量（case）",
       align: "right",
       render: (line) => (
         <div className="text-right">
@@ -115,7 +135,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     },
     {
       key: "qty_ordered_base",
-      header: "订购数量（最小单位）",
+      header: "订购数量（base）",
       align: "right",
       render: (line) => (
         <div className="text-right">
@@ -129,9 +149,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       key: "supply_price",
       header: "采购单价",
       align: "right",
-      render: (line) => (
-        <span className="font-mono">{fmtMoney((line as { supply_price?: unknown }).supply_price)}</span>
-      ),
+      render: (line) => <span className="font-mono">{fmtMoney((line as { supply_price?: unknown }).supply_price)}</span>,
     },
     {
       key: "discount_amount",
@@ -155,7 +173,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     },
   ];
 
-  // default 模式保持原先全量（不动）
+  // default 模式：保留原有百科列，但数量/换算展示切到 Phase2 字段
   const defaultColumns: ColumnDef<PurchaseOrderDetailLine>[] = [
     {
       key: "line_no",
@@ -198,20 +216,22 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     },
     {
       key: "qty_ordered_base",
-      header: "订购数量（最小单位）",
+      header: "订购数量（base）",
       align: "right",
       render: (line) => {
         const baseQty = orderedBaseQty(line);
-        const upc = unitsPerCase(line);
+        const ratio = caseRatio(line);
         const baseUom = baseUomLabel(line);
         const puom = purchaseUomLabel(line);
+        const caseQty = orderedPurchaseQty(line);
+
         return (
           <div className="text-right">
             <div className="font-mono">
               {baseQty} <span className="text-slate-600">{baseUom}</span>
             </div>
             <div className="text-[11px] text-slate-500">
-              （{orderedPurchaseQty(line)} {puom} × {upc} {baseUom}/{puom}）
+              （{caseQty} {puom} × {ratio} {baseUom}/{puom}）
             </div>
           </div>
         );

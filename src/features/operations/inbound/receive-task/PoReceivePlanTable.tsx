@@ -49,7 +49,10 @@ export function PoReceivePlanTable(props: {
         const showMeta = checked && r.has_shelf_life;
 
         return (
-          <div key={r.poLineId} className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 space-y-2">
+          <div
+            key={r.poLineId}
+            className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 space-y-2"
+          >
             <div className="flex items-start justify-between gap-3">
               <label className="flex items-start gap-3">
                 <input
@@ -70,9 +73,8 @@ export function PoReceivePlanTable(props: {
                   </div>
 
                   <div className="text-[12px] text-slate-500">
-                    （应收 {r.ordered_purchase} {r.purchase_uom} · 已收 {r.received_purchase} {r.purchase_uom} · 每
-                    {r.purchase_uom}={r.units_per_case}
-                    {r.base_uom}）
+                    （应收 {r.ordered_case} {r.case_uom} · 已收 {r.received_case} {r.case_uom} · 每
+                    {r.case_uom}={r.case_ratio_snapshot} {r.base_uom}）
                   </div>
 
                   {r.has_shelf_life ? (
@@ -102,7 +104,9 @@ export function PoReceivePlanTable(props: {
                     onChange={(e) => onBatchChange(r.poLineId, e.target.value)}
                     placeholder="例如：BATCH-20260216-A"
                   />
-                  {errMeta?.batch ? <div className="text-[12px] text-rose-700">{errMeta.batch}</div> : null}
+                  {errMeta?.batch ? (
+                    <div className="text-[12px] text-rose-700">{errMeta.batch}</div>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -113,7 +117,9 @@ export function PoReceivePlanTable(props: {
                     value={prodMap[r.poLineId] ?? ""}
                     onChange={(e) => onProdChange(r.poLineId, e.target.value)}
                   />
-                  {errMeta?.prod ? <div className="text-[12px] text-rose-700">{errMeta.prod}</div> : null}
+                  {errMeta?.prod ? (
+                    <div className="text-[12px] text-rose-700">{errMeta.prod}</div>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -124,7 +130,9 @@ export function PoReceivePlanTable(props: {
                     value={expMap[r.poLineId] ?? ""}
                     onChange={(e) => onExpChange(r.poLineId, e.target.value)}
                   />
-                  {errMeta?.exp ? <div className="text-[12px] text-rose-700">{errMeta.exp}</div> : null}
+                  {errMeta?.exp ? (
+                    <div className="text-[12px] text-rose-700">{errMeta.exp}</div>
+                  ) : null}
                 </div>
               </div>
             ) : null}

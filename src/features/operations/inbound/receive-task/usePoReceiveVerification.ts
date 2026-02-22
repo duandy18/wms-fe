@@ -9,11 +9,12 @@ export function usePoReceiveVerification(po: PurchaseOrderDetail | null) {
   const [checkQty, setCheckQty] = useState(false);
 
   // ✅ PO 刷新版本：同一 po.id 下，只要“应收/已收”发生变化，就视为新一轮作业确认（清空勾选）
+  // ✅ 主线：使用 base 事实口径，避免依赖 deprecated/兼容字段
   const poRevKey = useMemo(() => {
     if (!po) return "";
     const parts = (po.lines ?? []).map((l) => {
-      const ordered = l.qty_ordered ?? 0;
-      const received = l.qty_received ?? 0;
+      const ordered = l.qty_ordered_base ?? 0;
+      const received = l.qty_received_base ?? 0;
       return `${l.id}:${ordered}:${received}`;
     });
     return `${po.id}|${parts.join("|")}`;
@@ -51,13 +52,9 @@ export function usePoReceiveVerification(po: PurchaseOrderDetail | null) {
       reset();
       lastRevRef.current = poRevKey;
     }
-     
   }, [poRevKey, po]);
 
-  const verified = useMemo(
-    () => checkGoods && checkSpec && checkQty,
-    [checkGoods, checkSpec, checkQty],
-  );
+  const verified = useMemo(() => checkGoods && checkSpec && checkQty, [checkGoods, checkSpec, checkQty]);
 
   return {
     checkGoods,
