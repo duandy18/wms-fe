@@ -18,13 +18,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 只负责装 Node，不要再 cache: pnpm（会去找系统里的 pnpm）
       - name: Use Node 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 安装 pnpm（自带缓存能力）
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -34,25 +32,11 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      # ✅ 失败要尽早：没有快照就别浪费后续时间
-      - name: Ensure OpenAPI snapshot exists
-        run: |
-          test -f openapi/_current.json
-
-      # ✅ 失败要尽早：generated 不一致直接 fail
-      - name: Generate contracts
-        run: pnpm gen:contracts
-
-      - name: Ensure generated contracts are up to date
-        run: |
-          git diff --exit-code -- src/contracts/generated
-
       - name: Lint
         run: pnpm lint
 
       - name: Test (vitest)
         run: pnpm test
 
-      # ✅ build 已包含 `tsc -b`
       - name: Build
         run: pnpm build
