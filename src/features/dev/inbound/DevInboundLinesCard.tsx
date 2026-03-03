@@ -2,10 +2,7 @@
 // 收货任务行明细（应收 / 实收 / 差异 + 批次信息）
 
 import React from "react";
-import {
-  StandardTable,
-  type ColumnDef,
-} from "../../../components/wmsdu/StandardTable";
+import { StandardTable, type ColumnDef } from "../../../components/wmsdu/StandardTable";
 import type { ReceiveTaskLine } from "../../receive-tasks/api";
 import type { DevInboundController } from "./types";
 
@@ -13,9 +10,12 @@ interface Props {
   c: DevInboundController;
 }
 
-const fmtDate = (v: string | null | undefined) =>
-  v ? v : "-";
+const fmtDate = (v: string | null | undefined) => (v ? v : "-");
 
+/**
+ * 注意：收货任务行的终态合同不再携带“文本单位结构”字段。
+ * 本 dev 卡片仅展示收货事实（批次/日期/应收/实收/差异），单位列不再尝试拼装。
+ */
 export const DevInboundLinesCard: React.FC<Props> = ({ c }) => {
   const task = c.currentTask;
 
@@ -23,9 +23,7 @@ export const DevInboundLinesCard: React.FC<Props> = ({ c }) => {
     {
       key: "item_id",
       header: "Item ID",
-      render: (l) => (
-        <span className="font-mono text-[11px]">{l.item_id}</span>
-      ),
+      render: (l) => <span className="font-mono text-[11px]">{l.item_id}</span>,
     },
     {
       key: "item_name",
@@ -39,11 +37,8 @@ export const DevInboundLinesCard: React.FC<Props> = ({ c }) => {
     },
     {
       key: "uom",
-      header: "最小单位",
-      render: (l) =>
-        l.purchase_uom
-          ? `${l.purchase_uom}${l.units_per_case ? `(${l.units_per_case}/${l.base_uom || ""})` : ""}`
-          : l.base_uom || "-",
+      header: "单位",
+      render: () => <span className="text-slate-400">—</span>,
     },
     {
       key: "batch_code",
@@ -79,12 +74,7 @@ export const DevInboundLinesCard: React.FC<Props> = ({ c }) => {
       render: (l) => {
         if (l.expected_qty == null) return "-";
         const v = l.scanned_qty - l.expected_qty;
-        const cls =
-          v === 0
-            ? "text-emerald-700"
-            : v > 0
-            ? "text-amber-700"
-            : "text-rose-700";
+        const cls = v === 0 ? "text-emerald-700" : v > 0 ? "text-amber-700" : "text-rose-700";
         return <span className={cls}>{v}</span>;
       },
     },
@@ -98,9 +88,7 @@ export const DevInboundLinesCard: React.FC<Props> = ({ c }) => {
   return (
     <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-800">
-          收货明细（应收 / 实收 / 差异 / 批次）
-        </h2>
+        <h2 className="text-sm font-semibold text-slate-800">收货明细（应收 / 实收 / 差异 / 批次）</h2>
         {task && (
           <button
             type="button"
@@ -115,15 +103,14 @@ export const DevInboundLinesCard: React.FC<Props> = ({ c }) => {
       {task ? (
         <>
           <div className="text-xs text-slate-600 mb-1">
-            应收合计：{c.varianceSummary.totalExpected}，实收合计：
-            {c.varianceSummary.totalScanned}，差异：
+            应收合计：{c.varianceSummary.totalExpected}，实收合计：{c.varianceSummary.totalScanned}，差异：
             <span
               className={
                 c.varianceSummary.totalVariance === 0
                   ? "text-emerald-700"
                   : c.varianceSummary.totalVariance > 0
-                  ? "text-amber-700"
-                  : "text-rose-700"
+                    ? "text-amber-700"
+                    : "text-rose-700"
               }
             >
               {c.varianceSummary.totalVariance}
@@ -135,17 +122,11 @@ export const DevInboundLinesCard: React.FC<Props> = ({ c }) => {
             dense
             getRowKey={(l) => l.id}
             emptyText="暂无行数据"
-            footer={
-              <span className="text-xs text-slate-500">
-                共 {task.lines.length} 行
-              </span>
-            }
+            footer={<span className="text-xs text-slate-500">共 {task.lines.length} 行</span>}
           />
         </>
       ) : (
-        <div className="text-xs text-slate-500">
-          尚未绑定收货任务。请先在上方上下文卡片中创建或绑定任务。
-        </div>
+        <div className="text-xs text-slate-500">尚未绑定收货任务。请先在上方上下文卡片中创建或绑定任务。</div>
       )}
     </section>
   );

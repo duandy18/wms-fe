@@ -22,15 +22,14 @@ export type ItemDraft = {
   supplier_id: number | null;
   weight_kg: string;
 
+  /**
+   * ⚠️ 注意：终态单位真相在 item_uoms 子表。
+   * 本弹窗当前保留“基准单位选择”仅作为输入/展示（历史上 items.uom 使用过），
+   * 后续应迁移为 item_uoms 的结构化编辑（base + purchase 双层）。
+   */
   uom_mode: "preset" | "custom";
   uom_preset: string;
   uom_custom: string;
-
-  // ✅ Phase 1：结构化包装（仅一层箱装）
-  // - case_ratio：整数，允许空
-  // - case_uom：可选，默认展示为“箱”（留空不影响事实口径）
-  case_ratio: string;
-  case_uom: string;
 
   shelf_mode: "yes" | "no";
   shelf_value: string;

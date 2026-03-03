@@ -12,13 +12,16 @@ export const PO_CREATE_LINE_COLUMNS: ColumnDef[] = [
   { key: "item_name", label: "商品名称", align: "left" },
   { key: "brand", label: "品牌", align: "left" },
   { key: "category", label: "分类", align: "left" },
-  { key: "barcode", label: "条码", align: "left" }, // ✅ 新增
+  { key: "barcode", label: "条码", align: "left" },
   { key: "spec", label: "规格", align: "left" },
-  { key: "uom_snapshot", label: "最小单位（uom_snapshot）", align: "left" },
-  { key: "case_uom_snapshot", label: "采购单位（case_uom）", align: "left" },
-  { key: "case_ratio_snapshot", label: "倍率（case_ratio）", align: "right" },
-  { key: "qty_ordered_case_input", label: "订购数量（case_input）", align: "right" },
-  { key: "qty_base", label: "数量（base 事实）", align: "right" },
+
+  // ✅ 终态：uom_id + qty_input
+  { key: "uom_id", label: "输入单位（uom_id）", align: "left" },
+  { key: "qty_input", label: "数量（qty_input）", align: "right" },
+
+  // ✅ 提示：预计 base（只提示，不作为事实）
+  { key: "qty_base_hint", label: "预计 base", align: "right" },
+
   { key: "supply_price", label: "采购单价(每最小单位)", align: "right" },
   { key: "line_amount", label: "行金额(预估)", align: "right" },
   { key: "ops", label: "操作", align: "left" },

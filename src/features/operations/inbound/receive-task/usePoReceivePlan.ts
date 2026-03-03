@@ -14,7 +14,7 @@ export type PlanRow = {
   ordered_base: number;
   received_base: number;
   remain_base: number;
-  base_uom: string;
+  base_uom_label: string;
 
   // ✅ 辅助口径：采购单位（用于括号解释；不参与事实比较）
   ordered_case: number;
@@ -38,14 +38,10 @@ function safeInt(v: unknown, fallback: number): number {
 }
 
 function baseUomLabel(line: PurchaseOrderDetailLine): string {
-  const baseUom = String((line as { base_uom?: string | null }).base_uom ?? "").trim();
-  if (baseUom) return baseUom;
-
-  // ✅ 新合同：uom_snapshot（事实单位快照）
+  // ✅ 终态：禁止依赖文本单位残影字段
   const snap = String((line as { uom_snapshot?: string | null }).uom_snapshot ?? "").trim();
   if (snap) return snap;
 
-  // ✅ enrich fallback（不属于旧字段，允许）
   const uom = String((line as { uom?: string | null }).uom ?? "").trim();
   if (uom) return uom;
 
@@ -162,7 +158,7 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
         const remain_base = safeInt((l as { qty_remaining_base?: number | null }).qty_remaining_base, 0);
 
         const ratio = caseRatioSnapshot(l);
-        const base_uom = baseUomLabel(l);
+        const base_uom_label = baseUomLabel(l);
         const case_uom = caseUomSnapshot(l);
 
         const ordered_case = deriveOrderedCase(l, ordered_base, ratio);
@@ -179,7 +175,7 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
           ordered_base,
           received_base,
           remain_base,
-          base_uom,
+          base_uom_label,
 
           ordered_case,
           received_case,
@@ -367,10 +363,7 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
     setQtyMap(q);
   }
 
-  const selectedIds = useMemo(
-    () => Object.keys(selected).filter((k) => selected[Number(k)]).map(Number),
-    [selected],
-  );
+  const selectedIds = useMemo(() => Object.keys(selected).filter((k) => selected[Number(k)]).map(Number), [selected]);
 
   return {
     rows,

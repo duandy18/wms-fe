@@ -1,74 +1,75 @@
 // src/features/admin/items/create/types.ts
 
-export type ShelfMode = "yes" | "no";
 export type StatusMode = "enabled" | "disabled";
+export type ShelfLifeUnit = "DAY" | "WEEK" | "MONTH" | "YEAR";
+
+export interface UomDraft {
+  uom: string; // 单位代码（必填 for base；其它行可选）
+  ratio_to_base: string; // 字符串态，便于输入；校验时转 int（>=1）
+  display_name: string; // 可选展示名
+
+  // item_uoms flags（终态合同）
+  is_base: boolean;
+  is_purchase_default: boolean;
+  is_inbound_default: boolean;
+  is_outbound_default: boolean;
+}
+
+export interface BarcodesDraft {
+  item_barcode: string; // 产品码（可选但通常应填）
+  case_barcode: string; // 箱码/包装码（可选）
+}
 
 export interface FormState {
   name: string;
-
-  // ✅ 规格（items.spec，展示文本）
   spec: string;
-
-  // ✅ 主数据补齐：品牌 / 品类
   brand: string;
   category: string;
 
   supplier_id: string;
-
-  uom_mode: "preset" | "custom";
-  uom_preset: string;
-  uom_custom: string;
-
-  // ✅ Phase 1：结构化包装（仅一层箱装）
-  // - case_ratio：整数（字符串态），允许空
-  // - case_uom：箱装单位名（字符串态），允许空（展示默认“箱”）
-  case_ratio: string;
-  case_uom: string;
-
   weight_kg: string;
 
-  shelf_mode: ShelfMode;
+  lot_source_policy: "SUPPLIER_ONLY" | "INTERNAL_ONLY";
+  expiry_policy: "NONE" | "REQUIRED";
+  derivation_allowed: boolean;
+  uom_governance_enabled: boolean;
+
   shelf_life_value: string;
-  shelf_life_unit: "MONTH" | "DAY";
+  shelf_life_unit: ShelfLifeUnit;
+
+  /**
+   * ✅ 终态：单位真相完全表达为 item_uoms 子表结构
+   * - 至少包含 1 条 base（is_base=true, ratio_to_base=1）
+   * - 可选包含 1 条 purchase_default（is_purchase_default=true, ratio_to_base>=1）
+   */
+  uoms: UomDraft[];
+
+  // barcodes（两层）
+  barcodes: BarcodesDraft;
 
   status: StatusMode;
-
-  barcode: string;
 }
-
-export const COMMON_UOMS = ["PCS", "袋", "个", "罐", "箱", "瓶"];
 
 export const EMPTY_FORM: FormState = {
   name: "",
-
-  // ✅ 规格默认空
   spec: "",
-
-  // ✅ 主数据默认空
   brand: "",
   category: "",
 
   supplier_id: "",
-
-  uom_mode: "preset",
-  uom_preset: "",
-  uom_custom: "",
-
-  // ✅ Phase 1：默认未配置
-  case_ratio: "",
-  case_uom: "",
-
   weight_kg: "",
 
-  shelf_mode: "no",
+  lot_source_policy: "SUPPLIER_ONLY",
+  expiry_policy: "NONE",
+  derivation_allowed: true,
+  uom_governance_enabled: false,
+
   shelf_life_value: "",
   shelf_life_unit: "MONTH",
 
+  uoms: [],
+
+  barcodes: { item_barcode: "", case_barcode: "" },
+
   status: "enabled",
-
-  barcode: "",
 };
-
-export function effectiveUom(f: FormState): string {
-  return f.uom_mode === "preset" ? f.uom_preset.trim() : f.uom_custom.trim();
-}

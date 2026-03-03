@@ -1,4 +1,5 @@
 // src/features/purchase-orders/PurchaseOrdersTable.tsx
+// 终态版本：数量展示只信任 base 事实（qty_ordered_base / qty_received_base）
 
 import React, { useMemo } from "react";
 import type { PurchaseOrderListItem, PurchaseOrderListLine } from "./api";
@@ -30,7 +31,8 @@ const statusBadge = (s: string) => {
   }
 };
 
-const formatTs = (ts: string | null | undefined) => (ts ? ts.replace("T", " ").replace("Z", "") : "-");
+const formatTs = (ts: string | null | undefined) =>
+  ts ? ts.replace("T", " ").replace("Z", "") : "-";
 
 function safeInt(v: unknown, fallback: number): number {
   const n = Number(v);
@@ -38,100 +40,34 @@ function safeInt(v: unknown, fallback: number): number {
   return Math.trunc(n);
 }
 
-type ListLineV2 = PurchaseOrderListLine & {
-  uom_snapshot?: string | null;
-  case_ratio_snapshot?: number | null;
-  case_uom_snapshot?: string | null;
-  qty_ordered_case_input?: number | null;
-
-  qty_ordered_base?: number | null;
-  qty_received_base?: number | null;
-
-  base_uom?: string | null;
-};
-
-function lineCaseRatio(l: ListLineV2): number {
-  const r = safeInt(l.case_ratio_snapshot, 0);
-  return r > 0 ? r : 1;
-}
-
-function lineBaseUom(l: ListLineV2): string {
-  const v = String(l.base_uom ?? "").trim();
-  if (v) return v;
-  const snap = String(l.uom_snapshot ?? "").trim();
-  return snap || "最小单位";
-}
-
-function linePurchaseUom(l: ListLineV2): string {
-  const v = String(l.case_uom_snapshot ?? "").trim();
-  return v || "采购单位";
-}
-
-function lineOrderedBase(l: ListLineV2): number {
-  const qob = l.qty_ordered_base;
-  return qob != null ? Math.max(safeInt(qob, 0), 0) : 0;
-}
-
-function lineReceivedBase(l: ListLineV2): number {
-  const qrb = l.qty_received_base;
-  return qrb != null ? Math.max(safeInt(qrb, 0), 0) : 0;
-}
-
-function lineOrderedPurchase(l: ListLineV2): number {
-  const ci = l.qty_ordered_case_input;
-  if (ci != null) return Math.max(safeInt(ci, 0), 0);
-
-  const base = lineOrderedBase(l);
-  const r = lineCaseRatio(l);
-  if (r > 1 && base > 0 && base % r === 0) return Math.floor(base / r);
-  if (r === 1) return base;
-  return 0;
-}
-
-function sumQtyBase(po: PurchaseOrderListItem, kind: "ordered" | "received") {
-  const lines = (po.lines ?? []) as ListLineV2[];
-
-  let baseUom = "";
-  let purchaseUom = "";
+/**
+ * 终态：汇总只信任 base 事实
+ */
+function sumBaseQty(
+  po: PurchaseOrderListItem,
+  kind: "ordered" | "received",
+) {
+  const lines: PurchaseOrderListLine[] = po.lines ?? [];
 
   let totalBase = 0;
-
-  let totalPurchaseOrdered = 0;
-
-  let approxPurchaseReceived = 0;
-  let hasFraction = false;
-  let hasAnyRatio = false;
+  let baseUom = "";
 
   for (const l of lines) {
-    const ratio = lineCaseRatio(l);
-    if (ratio !== 1) hasAnyRatio = true;
-
-    if (!baseUom) baseUom = lineBaseUom(l);
-    if (!purchaseUom) purchaseUom = linePurchaseUom(l);
-
-    if (kind === "ordered") {
-      const base = lineOrderedBase(l);
-      totalBase += base;
-      totalPurchaseOrdered += lineOrderedPurchase(l);
-      continue;
+    if (!baseUom) {
+      const snap = String(l.uom_snapshot ?? "").trim();
+      baseUom = snap || "最小单位";
     }
 
-    const receivedBase = lineReceivedBase(l);
-    totalBase += receivedBase;
-
-    const div = Math.floor(receivedBase / ratio);
-    approxPurchaseReceived += div;
-    if (receivedBase % ratio !== 0) hasFraction = true;
+    if (kind === "ordered") {
+      totalBase += Math.max(safeInt(l.qty_ordered_base, 0), 0);
+    } else {
+      totalBase += Math.max(safeInt(l.qty_received_base, 0), 0);
+    }
   }
 
   return {
     totalBase,
     baseUom: baseUom || "最小单位",
-    purchaseUom: purchaseUom || "采购单位",
-    hasAnyRatio,
-    totalPurchaseOrdered,
-    approxPurchaseReceived,
-    hasFraction,
   };
 }
 
@@ -154,7 +90,7 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
     {
       key: "supplier_name",
       header: "供应商",
-      render: (po) => po.supplier_name ?? po.supplier ?? "-",
+      render: (po) => po.supplier_name ?? "-",
     },
     {
       key: "purchaser",
@@ -182,15 +118,12 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
       header: "订购数量（base）",
       align: "right",
       render: (po) => {
-        const x = sumQtyBase(po, "ordered");
+        const x = sumBaseQty(po, "ordered");
         return (
           <div className="text-right">
             <div className="font-mono">
-              {x.totalBase} <span className="text-slate-600">{x.baseUom}</span>
-            </div>
-            <div className="text-[11px] text-slate-500">
-              （{x.totalPurchaseOrdered} {x.purchaseUom}
-              {x.hasAnyRatio ? " · 含换算" : ""}）
+              {x.totalBase}{" "}
+              <span className="text-slate-600">{x.baseUom}</span>
             </div>
           </div>
         );
@@ -201,15 +134,12 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
       header: "已收数量（base）",
       align: "right",
       render: (po) => {
-        const x = sumQtyBase(po, "received");
+        const x = sumBaseQty(po, "received");
         return (
           <div className="text-right">
             <div className="font-mono">
-              {x.totalBase} <span className="text-slate-600">{x.baseUom}</span>
-            </div>
-            <div className="text-[11px] text-slate-500">
-              （≈{x.approxPurchaseReceived}
-              {x.hasFraction ? "+" : ""} {x.purchaseUom}）
+              {x.totalBase}{" "}
+              <span className="text-slate-600">{x.baseUom}</span>
             </div>
           </div>
         );

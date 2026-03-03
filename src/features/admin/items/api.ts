@@ -15,43 +15,39 @@ export async function fetchNextSku(): Promise<string> {
   return res.sku;
 }
 
-export async function createItem(input: ItemCreateInput): Promise<Item> {
-  const supplierId = Number(input.supplier_id);
-  if (!Number.isFinite(supplierId) || supplierId <= 0) {
-    throw new Error("supplier_id 必须为有效数字（>0）");
-  }
+function toNumOrNull(v: unknown): number | null {
+  if (v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 
+export async function createItem(input: ItemCreateInput): Promise<Item> {
   const name = String(input.name ?? "").trim();
   if (!name) throw new Error("name 不能为空");
 
-  const uom = String(input.uom ?? "").trim();
-  if (!uom) throw new Error("uom 必须填写");
-
-  const barcode = String(input.barcode ?? "").trim();
-  if (!barcode) throw new Error("barcode 必须填写");
-
   const body: Record<string, unknown> = {
     name,
-    spec: typeof input.spec === "string" ? input.spec.trim() || undefined : undefined,
+    spec: typeof input.spec === "string" ? input.spec.trim() || null : input.spec ?? null,
+    brand: typeof input.brand === "string" ? input.brand.trim() || null : input.brand ?? null,
+    category: typeof input.category === "string" ? input.category.trim() || null : input.category ?? null,
 
-    uom,
-    barcode,
+    enabled: input.enabled ?? true,
 
-    // ✅ Phase 1：结构化包装（允许 null）
-    case_ratio: input.case_ratio ?? null,
-    case_uom: typeof input.case_uom === "string" ? input.case_uom.trim() || null : input.case_uom ?? null,
+    supplier_id: input.supplier_id ?? null,
+    weight_kg: input.weight_kg ?? null,
 
-    // ✅ brand/category：可选，空串视为 null
-    brand: typeof input.brand === "string" && input.brand.trim() ? input.brand.trim() : null,
-    category: typeof input.category === "string" && input.category.trim() ? input.category.trim() : null,
+    // ---- terminal policy fields ----
+    lot_source_policy: String(input.lot_source_policy ?? "").trim(),
+    expiry_policy: String(input.expiry_policy ?? "").trim(),
+    derivation_allowed: Boolean(input.derivation_allowed),
+    uom_governance_enabled: Boolean(input.uom_governance_enabled),
 
-    enabled: Boolean(input.enabled),
-    supplier_id: supplierId,
-    weight_kg: input.weight_kg,
-    has_shelf_life: input.has_shelf_life,
-    shelf_life_value: input.shelf_life_value ?? null,
+    shelf_life_value: toNumOrNull(input.shelf_life_value),
     shelf_life_unit: input.shelf_life_unit ?? null,
   };
+
+  if (!String(body.lot_source_policy ?? "").trim()) throw new Error("lot_source_policy 必须填写");
+  if (!String(body.expiry_policy ?? "").trim()) throw new Error("expiry_policy 必须填写");
 
   return apiPost<Item>("/items", body);
 }
@@ -59,45 +55,31 @@ export async function createItem(input: ItemCreateInput): Promise<Item> {
 export async function updateItem(id: number, input: ItemUpdateInput): Promise<Item> {
   const body: Record<string, unknown> = {};
 
-  if (input.name !== undefined) body.name = typeof input.name === "string" ? input.name.trim() : input.name ?? "";
-  if (input.spec !== undefined) body.spec = typeof input.spec === "string" ? input.spec.trim() || null : input.spec ?? null;
-  if (input.uom !== undefined) body.uom = typeof input.uom === "string" ? input.uom.trim() || null : input.uom ?? null;
+  if (input.name !== undefined) body.name = typeof input.name === "string" ? input.name.trim() : input.name;
+  if (input.spec !== undefined) body.spec = typeof input.spec === "string" ? input.spec.trim() || null : input.spec;
+  if (input.brand !== undefined) body.brand = typeof input.brand === "string" ? input.brand.trim() || null : input.brand;
+  if (input.category !== undefined) body.category = typeof input.category === "string" ? input.category.trim() || null : input.category;
 
-  // ✅ Phase 1：结构化包装（允许显式清空）
-  if (input.case_ratio !== undefined) body.case_ratio = input.case_ratio;
-  if (input.case_uom !== undefined) body.case_uom = typeof input.case_uom === "string" ? input.case_uom.trim() || null : input.case_uom ?? null;
+  if (input.enabled !== undefined) body.enabled = Boolean(input.enabled);
 
-  // ✅ brand/category：可更新；空串 => null（清空）
-  if (input.brand !== undefined) body.brand = typeof input.brand === "string" && input.brand.trim() ? input.brand.trim() : null;
-  if (input.category !== undefined) body.category = typeof input.category === "string" && input.category.trim() ? input.category.trim() : null;
-
-  if (input.enabled !== undefined) body.enabled = input.enabled;
-
-  if (input.supplier_id !== undefined) {
-    const supplierId = Number(input.supplier_id);
-    if (!Number.isFinite(supplierId) || supplierId <= 0) {
-      throw new Error("supplier_id 必须为有效数字（>0）");
-    }
-    body.supplier_id = supplierId;
-  }
-
+  if (input.supplier_id !== undefined) body.supplier_id = input.supplier_id;
   if (input.weight_kg !== undefined) body.weight_kg = input.weight_kg;
 
-  if (input.has_shelf_life !== undefined) body.has_shelf_life = input.has_shelf_life;
-
-  if (input.shelf_life_value !== undefined) body.shelf_life_value = input.shelf_life_value;
-  if (input.shelf_life_unit !== undefined) body.shelf_life_unit = input.shelf_life_unit;
-
-  // ✅ 关键：允许编辑区修改主条码
-  if (input.barcode !== undefined) {
-    const bc = typeof input.barcode === "string" ? input.barcode.trim() : input.barcode;
-    if (typeof bc === "string") {
-      if (!bc) throw new Error("barcode 必须填写");
-      body.barcode = bc;
-    } else {
-      body.barcode = bc;
-    }
+  if (input.lot_source_policy !== undefined) {
+    const v = String(input.lot_source_policy ?? "").trim();
+    if (!v) throw new Error("lot_source_policy 不能为空");
+    body.lot_source_policy = v;
   }
+  if (input.expiry_policy !== undefined) {
+    const v = String(input.expiry_policy ?? "").trim();
+    if (!v) throw new Error("expiry_policy 不能为空");
+    body.expiry_policy = v;
+  }
+  if (input.derivation_allowed !== undefined) body.derivation_allowed = Boolean(input.derivation_allowed);
+  if (input.uom_governance_enabled !== undefined) body.uom_governance_enabled = Boolean(input.uom_governance_enabled);
+
+  if (input.shelf_life_value !== undefined) body.shelf_life_value = toNumOrNull(input.shelf_life_value);
+  if (input.shelf_life_unit !== undefined) body.shelf_life_unit = input.shelf_life_unit ?? null;
 
   return apiPatch<Item>(`/items/${id}`, body);
 }

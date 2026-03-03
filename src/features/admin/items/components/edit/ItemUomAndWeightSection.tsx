@@ -9,27 +9,12 @@ function effectiveUom(draft: ItemDraft): string {
   return draft.uom_mode === "preset" ? draft.uom_preset.trim() : draft.uom_custom.trim();
 }
 
-function parsePositiveInt(text: string): number | null {
-  const t = (text ?? "").trim();
-  if (!t) return null;
-  if (!/^\d+$/.test(t)) return null;
-  const n = Number(t);
-  if (!Number.isFinite(n)) return null;
-  const i = Math.trunc(n);
-  if (i < 1) return null;
-  return i;
-}
-
 export const ItemUomAndWeightSection: React.FC<{
   draft: ItemDraft;
   saving: boolean;
   onChangeDraft: (next: ItemDraft) => void;
 }> = ({ draft, saving, onChangeDraft }) => {
   void effectiveUom(draft);
-
-  const ratio = parsePositiveInt(draft.case_ratio);
-  const ratioTouched = (draft.case_ratio ?? "").trim().length > 0;
-  const ratioInvalid = ratioTouched && ratio === null;
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -72,31 +57,13 @@ export const ItemUomAndWeightSection: React.FC<{
           />
         ) : null}
 
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            className="w-full rounded border border-slate-200 px-3 py-2 text-base"
-            placeholder="包装单位（可选，默认：箱）"
-            value={draft.case_uom}
-            onChange={(e) => onChangeDraft({ ...draft, case_uom: e.target.value })}
-            disabled={saving}
-          />
-
-          <input
-            className={[
-              "w-full rounded border px-3 py-2 text-base font-mono",
-              ratioInvalid ? "border-red-300" : "border-slate-200",
-            ].join(" ")}
-            placeholder="单位换算（整数，可选，如：12）"
-            value={draft.case_ratio}
-            onChange={(e) => onChangeDraft({ ...draft, case_ratio: e.target.value })}
-            disabled={saving}
-            inputMode="numeric"
-          />
+        <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <div className="font-semibold">单位治理提示</div>
+          <div className="mt-1">
+            终态合同：单位真相在 <span className="font-mono">item_uoms</span> 子表（基准单位 + 采购单位）。
+            本弹窗不再提供“包装单位/换算（case_uom/case_ratio）”编辑入口。
+          </div>
         </div>
-
-        {ratioTouched && ratioInvalid ? (
-          <div className="text-xs text-red-600">请输入 ≥ 1 的整数</div>
-        ) : null}
       </div>
     </div>
   );
