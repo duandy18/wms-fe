@@ -45,6 +45,14 @@ function lineBaseQty(l: unknown): number {
   return base > 0 ? base : 0;
 }
 
+function lineBaseUom(l: unknown): string {
+  const x = l as { uom_snapshot?: string | null; uom?: string | null };
+  const snap = String(x.uom_snapshot ?? "").trim();
+  if (snap) return snap;
+  const uom = String(x.uom ?? "").trim();
+  return uom || "-";
+}
+
 /**
  * 本次采购报告（只针对最近一次创建成功的采购单）
  */
@@ -89,13 +97,13 @@ export const PurchaseOrderCurrentReport: React.FC<Props> = ({ po }) => {
         item_id: number;
         item_name?: string | null;
         spec_text?: string | null;
-        base_uom?: string | null;
         uom_snapshot?: string | null;
+        uom?: string | null;
         supply_price?: string | null;
         line_amount?: string | null;
       };
 
-      const baseUom = String(row.base_uom ?? "").trim() || String(row.uom_snapshot ?? "").trim();
+      const baseUom = lineBaseUom(row);
 
       return [
         row.line_no,
@@ -137,12 +145,12 @@ export const PurchaseOrderCurrentReport: React.FC<Props> = ({ po }) => {
         <div className="space-y-1">
           <h3 className="text-xl font-bold text-slate-900">采购报告（本次采购单）</h3>
           <p className="text-base text-slate-600">
-            采购单号：#{po.id}，供应商：{po.supplier_name ?? po.supplier}，仓库：{po.warehouse_id}，
-            采购人：{po.purchaser}，采购时间：{formatTs(po.purchase_time)}。
+            采购单号：#{po.id}，供应商：{po.supplier_name ?? po.supplier}，仓库：{po.warehouse_id}，采购人：{po.purchaser}
+            ，采购时间：{formatTs(po.purchase_time)}。
           </p>
           <p className="text-base text-slate-600">
-            行数：{lineCount}，订购数量（输入痕迹）：{totalQtyCases}，最小单位数（事实）：{totalUnits}
-            ，总金额：{totalAmount.toFixed(2)}。
+            行数：{lineCount}，订购数量（输入痕迹）：{totalQtyCases}，最小单位数（事实）：{totalUnits}，总金额：
+            {totalAmount.toFixed(2)}。
           </p>
         </div>
 
@@ -185,13 +193,13 @@ export const PurchaseOrderCurrentReport: React.FC<Props> = ({ po }) => {
                 item_id: number;
                 item_name?: string | null;
                 spec_text?: string | null;
-                base_uom?: string | null;
                 uom_snapshot?: string | null;
+                uom?: string | null;
                 supply_price?: string | null;
                 line_amount?: string | null;
               };
 
-              const baseUom = String(row.base_uom ?? "").trim() || String(row.uom_snapshot ?? "").trim() || "-";
+              const baseUom = lineBaseUom(row);
 
               return (
                 <tr key={row.id} className="border-t border-slate-100 align-top">

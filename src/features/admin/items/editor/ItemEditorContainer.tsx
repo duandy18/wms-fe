@@ -11,9 +11,6 @@ import useGlobalBarcodeScan from "./useGlobalBarcodeScan";
 
 const EDITOR_ANCHOR_ID = "items-editor";
 const CREATE_BARCODE_INPUT_ID = "items-create-barcode-input";
-const BARCODE_SCANNED_EVENT = "items:barcode-scanned";
-
-type ItemsBarcodeScannedDetail = { code: string };
 
 const ItemEditorContainer: React.FC = () => {
   const selectedItem = useItemsStore((s) => s.selectedItem);
@@ -25,10 +22,8 @@ const ItemEditorContainer: React.FC = () => {
 
   const { suppliers, supLoading, supError } = useSuppliersOptions();
 
-  const selectedPrimaryBarcode =
-    selectedItem ? primaryBarcodes[selectedItem.id] ?? "" : "";
+  const selectedPrimaryBarcode = selectedItem ? primaryBarcodes[selectedItem.id] ?? "" : "";
 
-  // ✅ Hook 必须在组件内部调用
   const vm: ItemEditorVm = useItemEditor({
     selectedItem,
     selectedPrimaryBarcode,
@@ -42,13 +37,10 @@ const ItemEditorContainer: React.FC = () => {
     onResetToCreate: () => setSelectedItem(null),
   });
 
-  // 编辑时滚动到顶部
   useEffect(() => {
     if (!selectedItem) return;
     const el = document.getElementById(EDITOR_ANCHOR_ID);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [selectedItem]);
 
   const focusCreateBarcodeInput = useCallback(() => {
@@ -61,61 +53,63 @@ const ItemEditorContainer: React.FC = () => {
     });
   }, []);
 
-  const dispatchBarcodeToEditSection = useCallback((code: string) => {
-    const detail: ItemsBarcodeScannedDetail = { code };
-    window.dispatchEvent(new CustomEvent<ItemsBarcodeScannedDetail>(BARCODE_SCANNED_EVENT, { detail }));
-  }, []);
-
+  /**
+   * ✅ 终态：扫码直接写入表单（产品码/箱码），不再投递到“条码管理面板”
+   * 规则：
+   * - 优先填产品码（item_barcode）
+   * - 若产品码已有，再填箱码（case_barcode）
+   * - 两个都已有则忽略（避免意外覆盖）
+   */
   const handleScan = useCallback(
     (code: string) => {
       if (vm.saving) return;
       const trimmed = code.trim();
       if (!trimmed) return;
 
-      // 无论在哪：先滚动到编辑器，让用户知道“我接管了扫码”
+      // 先滚到编辑器
       const anchor = document.getElementById(EDITOR_ANCHOR_ID);
-      if (anchor) {
-        anchor.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
 
-      if (vm.mode === "create") {
-        vm.setForm({ ...vm.form, barcode: trimmed });
-        focusCreateBarcodeInput();
+      const curItem = vm.form.barcodes.item_barcode.trim();
+      const curCase = vm.form.barcodes.case_barcode.trim();
+
+      if (!curItem) {
+        vm.setForm({
+          ...vm.form,
+          barcodes: { ...vm.form.barcodes, item_barcode: trimmed },
+        });
+        if (vm.mode === "create") focusCreateBarcodeInput();
         return;
       }
 
-      // edit 模式：把条码投递给条码区块（新增条码输入框）
-      dispatchBarcodeToEditSection(trimmed);
+      if (!curCase) {
+        vm.setForm({
+          ...vm.form,
+          barcodes: { ...vm.form.barcodes, case_barcode: trimmed },
+        });
+        return;
+      }
+
+      // 两个都已有，不覆盖
     },
-    [dispatchBarcodeToEditSection, focusCreateBarcodeInput, vm],
+    [focusCreateBarcodeInput, vm],
   );
 
-  // 1) 全局扫码：强制捕获 → 聚焦条码框（create or edit）
   useGlobalBarcodeScan({
     enabled: true,
     onScan: handleScan,
   });
 
-  // 2) URL / store 带入 scannedBarcode：create mode 且当前 barcode 为空时，自动回填一次
   useEffect(() => {
     if (vm.saving) return;
     if (!scannedBarcode || !scannedBarcode.trim()) return;
 
-    if (vm.mode === "create") {
-      if (vm.form.barcode.trim()) return;
-      handleScan(scannedBarcode);
-      return;
-    }
-
-    // edit 模式：也允许 URL 带入后直接投递到条码区块
+    // create/edit 都统一走 handleScan（终态：扫码写入表单字段）
     handleScan(scannedBarcode);
-  }, [handleScan, scannedBarcode, vm.form.barcode, vm.mode, vm.saving]);
+  }, [handleScan, scannedBarcode, vm.saving]);
 
   return (
-    <section
-      id={EDITOR_ANCHOR_ID}
-      className="rounded-xl border border-slate-200 bg-white p-6 space-y-6"
-    >
+    <section id={EDITOR_ANCHOR_ID} className="rounded-xl border border-slate-200 bg-white p-6 space-y-6">
       <ItemEditorForm vm={vm} />
     </section>
   );

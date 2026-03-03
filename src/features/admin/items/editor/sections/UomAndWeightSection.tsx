@@ -1,180 +1,175 @@
 // src/features/admin/items/editor/sections/UomAndWeightSection.tsx
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import type { ItemEditorVm } from "../useItemEditor";
+import type { UomDraft } from "../../create/types";
 
 const FieldError: React.FC<{ msg?: string }> = ({ msg }) =>
   msg ? <div className="mt-1 text-xs text-red-600">{msg}</div> : null;
 
-function parsePositiveInt(text: string): number | null {
-  const t = (text ?? "").trim();
-  if (!t) return null;
-  if (!/^\d+$/.test(t)) return null;
-  const n = Number(t);
-  if (!Number.isFinite(n)) return null;
-  const i = Math.trunc(n);
-  if (i < 1) return null;
-  return i;
+function trimOrEmpty(v: string): string {
+  return (v ?? "").trim();
 }
 
-const UOM_PRESETS = ["PCS", "袋", "包", "罐", "瓶", "箱", "件"];
-const PACK_UOM_PRESETS = ["箱", "盒", "件", "包", "袋", "瓶", "罐"];
-
-function norm(s: string): string {
-  return (s ?? "").trim();
+function findBase(uoms: UomDraft[]): UomDraft | null {
+  return uoms.find((x) => x.is_base) ?? null;
 }
 
-type PackUomMode = "select" | "custom";
+function findPurchaseDefault(uoms: UomDraft[]): UomDraft | null {
+  return uoms.find((x) => x.is_purchase_default && !x.is_base) ?? null;
+}
+
+function emptyUomDraft(): UomDraft {
+  return {
+    uom: "",
+    ratio_to_base: "",
+    display_name: "",
+    is_base: false,
+    is_purchase_default: false,
+    is_inbound_default: false,
+    is_outbound_default: false,
+  };
+}
+
+function upsertBase(uoms: UomDraft[], patch: Partial<UomDraft>): UomDraft[] {
+  const base = findBase(uoms);
+  const rest = uoms.filter((x) => !x.is_base);
+
+  const draft: UomDraft = {
+    ...emptyUomDraft(),
+    ...(base ?? {}),
+    ...patch,
+  };
+
+  const nextBase: UomDraft = {
+    ...draft,
+    is_base: true,
+    ratio_to_base: "1",
+    is_inbound_default: true,
+    is_outbound_default: true,
+    display_name: "",
+  };
+
+  return [nextBase, ...rest];
+}
+
+function removePurchase(uoms: UomDraft[]): UomDraft[] {
+  const rest = uoms.filter((x) => !(x.is_purchase_default && !x.is_base));
+  const base = findBase(rest);
+  if (!base) return rest;
+  return upsertBase(rest, { is_purchase_default: true });
+}
+
+function upsertPurchase(uoms: UomDraft[], patch: Partial<UomDraft>): UomDraft[] {
+  const base = findBase(uoms);
+
+  const cleaned = uoms.filter((x) => !(x.is_purchase_default && !x.is_base));
+
+  const nextWithBase = base != null ? upsertBase(cleaned, { is_purchase_default: false }) : cleaned;
+
+  const prevPurchase = findPurchaseDefault(uoms);
+
+  const draft: UomDraft = {
+    ...emptyUomDraft(),
+    ...(prevPurchase ?? {}),
+    ...patch,
+  };
+
+  const nextPurchase: UomDraft = {
+    ...draft,
+    is_base: false,
+    is_purchase_default: true,
+    is_inbound_default: false,
+    is_outbound_default: false,
+    display_name: "",
+  };
+
+  return [...nextWithBase, nextPurchase];
+}
 
 const UomAndWeightSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
   const { form, setForm, fieldErrors } = vm;
 
-  const ratio = parsePositiveInt(form.case_ratio);
-  const ratioTouched = norm(form.case_ratio).length > 0;
-  const ratioInvalid = ratioTouched && ratio === null;
+  // ✅ 与页面其它输入框统一：白底、同样 border/spacing
+  const monoInput = "rounded border px-3 py-2 w-full bg-white font-mono text-base";
 
-  // --- 包装单位：select + custom 输入（不引入新字段，使用本地 UI 状态解决 __CUSTOM__ 回弹） ---
-  const caseUomText = norm(form.case_uom);
+  const base = useMemo(() => findBase(form.uoms) ?? null, [form.uoms]);
+  const purchase = useMemo(() => findPurchaseDefault(form.uoms) ?? null, [form.uoms]);
 
-  const initialPackMode: PackUomMode = useMemo(() => {
-    if (!caseUomText) return "select";
-    if (PACK_UOM_PRESETS.includes(caseUomText)) return "select";
-    return "custom";
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const [packMode, setPackMode] = useState<PackUomMode>(initialPackMode);
-
-  useEffect(() => {
-    // 当外部（如选中 item）切换导致 case_uom 变化时，自动校正 packMode
-    const v = norm(form.case_uom);
-    if (!v) {
-      if (packMode !== "select") setPackMode("select");
-      return;
-    }
-    if (PACK_UOM_PRESETS.includes(v)) {
-      if (packMode !== "select") setPackMode("select");
-      return;
-    }
-    if (packMode !== "custom") setPackMode("custom");
-  }, [form.case_uom, packMode]);
-
-  // --- 最小单位：select + custom 输入（沿用既有 uom_mode） ---
-  const uomSelectValue = form.uom_mode === "preset" ? form.uom_preset : "__CUSTOM__";
-
-  const commonInput = "w-full rounded border px-3 py-2 text-base";
-  const monoInput = "w-full rounded border px-3 py-2 text-base font-mono";
+  const baseUom = base?.uom ?? "";
+  const purchaseUom = purchase?.uom ?? "";
+  const purchaseRatio = purchase?.ratio_to_base ?? "";
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-      {/* 1) 单位净重 */}
+      {/* 单件净重 */}
       <div>
         <input
-          className={`${monoInput} border-slate-200`}
-          placeholder="单位净重(kg)"
+          className={monoInput}
+          placeholder="单件净重(kg)（可选，如：0.2）"
           value={form.weight_kg}
           onChange={(e) => setForm({ ...form, weight_kg: e.target.value })}
           disabled={vm.saving}
+          inputMode="decimal"
         />
         <FieldError msg={fieldErrors.weight_kg} />
       </div>
 
-      {/* 2) 最小单位（必选） */}
-      <div>
-        {form.uom_mode === "custom" ? (
-          <input
-            className={`${commonInput} border-slate-200`}
-            placeholder="最小单位（自定义）"
-            value={form.uom_custom}
-            onChange={(e) => setForm({ ...form, uom_custom: e.target.value })}
-            disabled={vm.saving}
-          />
-        ) : (
-          <select
-            className={`${commonInput} border-slate-200`}
-            value={uomSelectValue}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "__CUSTOM__") {
-                setForm({ ...form, uom_mode: "custom", uom_custom: "" });
-              } else {
-                setForm({ ...form, uom_mode: "preset", uom_preset: v });
-              }
-            }}
-            disabled={vm.saving}
-          >
-            <option value="">最小单位（必选）</option>
-            {UOM_PRESETS.map((u) => (
-              <option key={u} value={u}>
-                {u}
-              </option>
-            ))}
-            <option value="__CUSTOM__">自定义</option>
-          </select>
-        )}
-        <FieldError msg={fieldErrors.uom_preset} />
-      </div>
-
-      {/* 3) 包装单位（可选，下拉；支持自定义） */}
-      <div>
-        {packMode === "custom" ? (
-          <input
-            className={`${commonInput} border-slate-200`}
-            placeholder="包装单位（自定义，可选）"
-            value={form.case_uom}
-            onChange={(e) => setForm({ ...form, case_uom: e.target.value })}
-            disabled={vm.saving}
-          />
-        ) : (
-          <select
-            className={`${commonInput} border-slate-200`}
-            value={caseUomText}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "__CUSTOM__") {
-                setPackMode("custom");
-                // 切到自定义时不写死“箱”，让用户自由输入
-                setForm({ ...form, case_uom: "" });
-              } else {
-                setPackMode("select");
-                setForm({ ...form, case_uom: v });
-              }
-            }}
-            disabled={vm.saving}
-          >
-            <option value="">包装单位（可选，默认：箱）</option>
-            {PACK_UOM_PRESETS.map((u) => (
-              <option key={u} value={u}>
-                {u}
-              </option>
-            ))}
-            <option value="__CUSTOM__">自定义</option>
-          </select>
-        )}
-        <FieldError msg={fieldErrors.case_uom} />
-      </div>
-
-      {/* 4) 单位换算（整数，可选） */}
+      {/* 最小包装单位 */}
       <div>
         <input
-          className={[
-            monoInput,
-            // ✅ 要求：与其他输入一致的“黑边框”风格
-            ratioInvalid ? "border-red-300" : "border-slate-900",
-          ].join(" ")}
-          placeholder="单位换算（整数，可选，如：12）"
-          value={form.case_ratio}
+          className={monoInput}
+          placeholder="最小包装单位（必填，如：PCS/袋/箱）"
+          value={baseUom}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              uoms: upsertBase(form.uoms, { uom: e.target.value }),
+            })
+          }
+          disabled={vm.saving}
+        />
+        <FieldError msg={fieldErrors.base_uom_uom} />
+      </div>
+
+      {/* 采购包装单位 */}
+      <div>
+        <input
+          className={monoInput}
+          placeholder="采购包装单位（可选，如：箱/件）"
+          value={purchaseUom}
           onChange={(e) => {
-            // ✅ 关键：永远按字符串态写回，避免任何回弹/不可输入
-            setForm({ ...form, case_ratio: e.target.value });
+            const uom = e.target.value;
+            if (!trimOrEmpty(uom)) {
+              setForm({ ...form, uoms: removePurchase(form.uoms) });
+              return;
+            }
+            setForm({
+              ...form,
+              uoms: upsertPurchase(form.uoms, { uom }),
+            });
           }}
           disabled={vm.saving}
+        />
+        <FieldError msg={fieldErrors.purchase_default_uom} />
+      </div>
+
+      {/* 采购倍率 */}
+      <div>
+        <input
+          className={monoInput}
+          placeholder="采购包装倍率（整数≥1，如：12）"
+          value={purchaseRatio}
+          onChange={(e) => {
+            if (!trimOrEmpty(purchaseUom)) return;
+            setForm({
+              ...form,
+              uoms: upsertPurchase(form.uoms, { ratio_to_base: e.target.value }),
+            });
+          }}
+          disabled={vm.saving || !trimOrEmpty(purchaseUom)}
           inputMode="numeric"
         />
-        <FieldError msg={fieldErrors.case_ratio} />
-        {!fieldErrors.case_ratio && ratioTouched && ratioInvalid ? (
-          <div className="mt-1 text-xs text-red-600">请输入 ≥ 1 的整数</div>
-        ) : null}
       </div>
     </div>
   );

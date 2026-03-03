@@ -24,6 +24,10 @@ type UseItemBarcodesPanelModelArgs = {
   disableClosePanel?: boolean;
 };
 
+function hasPrimary(list: ItemBarcode[]): boolean {
+  return list.some((b) => Boolean(b.is_primary));
+}
+
 export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) {
   const selectedItem = useItemsStore((s) => s.selectedItem);
   const scannedBarcode = useItemsStore((s) => s.scannedBarcode);
@@ -35,7 +39,7 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
   const setScannedBarcode = useItemsStore((s) => s.setScannedBarcode);
 
   const explicitItemId = args?.itemId;
-  const itemId: number | null = explicitItemId != null ? explicitItemId : (selectedItem ? selectedItem.id : null);
+  const itemId: number | null = explicitItemId != null ? explicitItemId : selectedItem ? selectedItem.id : null;
 
   const [barcodes, setBarcodes] = useState<ItemBarcode[]>([]);
   const [loading, setLoading] = useState(false);
@@ -153,7 +157,16 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
         active: true,
       });
 
-      await setPrimaryBarcode(created.id);
+      /**
+       * ✅ 终态规则（避免箱码/INNER 抢主条码）：
+       * - INNER 永远不自动设为主条码
+       * - 非 INNER：仅当当前还没有主条码时，自动设为主条码
+       */
+      const shouldAutoPrimary = newKind !== "INNER" && !hasPrimary(barcodes);
+      if (shouldAutoPrimary) {
+        await setPrimaryBarcode(created.id);
+      }
+
       await refresh();
       setNewCode("");
     } catch (e: unknown) {

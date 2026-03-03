@@ -23,14 +23,13 @@ function caseRatio(line: PurchaseOrderDetailLine): number {
 }
 
 function baseUomLabel(line: PurchaseOrderDetailLine): string {
-  const a = String((line as { base_uom?: string | null }).base_uom ?? "").trim();
-  if (a) return a;
-
+  // ✅ 终态：禁止依赖 base_uom（文本单位残影）
+  // 优先：快照解释器 uom_snapshot；其次：enrich uom；最后兜底
   const snap = String((line as { uom_snapshot?: string | null }).uom_snapshot ?? "").trim();
   if (snap) return snap;
 
-  const b = String((line as { uom?: string | null }).uom ?? "").trim();
-  if (b) return b;
+  const uom = String((line as { uom?: string | null }).uom ?? "").trim();
+  if (uom) return uom;
 
   return "最小单位";
 }
@@ -104,10 +103,10 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       render: (line) => <span className="text-slate-700">{line.spec_text ?? "—"}</span>,
     },
 
-    // ✅ 换算（快照解释器）
+    // ✅ 倍率（快照解释器）
     {
       key: "case_ratio_snapshot",
-      header: "换算",
+      header: "倍率",
       align: "right",
       render: (line) => (
         <div className="text-right">
@@ -123,7 +122,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
 
     {
       key: "qty_ordered_case_input",
-      header: "订购数量（case）",
+      header: "订购数量（输入）",
       align: "right",
       render: (line) => (
         <div className="text-right">
@@ -135,7 +134,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     },
     {
       key: "qty_ordered_base",
-      header: "订购数量（base）",
+      header: "订购数量（最小单位）",
       align: "right",
       render: (line) => (
         <div className="text-right">
@@ -173,7 +172,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     },
   ];
 
-  // default 模式：保留原有百科列，但数量/换算展示切到 Phase2 字段
+  // default 模式：保留原有百科列，但数量/倍率展示切到 Phase2 字段
   const defaultColumns: ColumnDef<PurchaseOrderDetailLine>[] = [
     {
       key: "line_no",
@@ -208,7 +207,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
       header: "单位净重(kg)",
       render: (line) => <span className="font-mono">{line.weight_kg ?? "—"}</span>,
     },
-    { key: "uom", header: "最小包装单位", render: (line) => baseUomLabel(line) },
+    { key: "uom", header: "最小单位", render: (line) => baseUomLabel(line) },
     {
       key: "has_shelf_life",
       header: "有效期",
@@ -216,7 +215,7 @@ export const PurchaseOrderLinesTable: React.FC<PurchaseOrderLinesTableProps> = (
     },
     {
       key: "qty_ordered_base",
-      header: "订购数量（base）",
+      header: "订购数量（最小单位）",
       align: "right",
       render: (line) => {
         const baseQty = orderedBaseQty(line);

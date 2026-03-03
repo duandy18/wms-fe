@@ -16,9 +16,12 @@ export interface ReceiveTaskLine {
   item_sku?: string | null;
   category?: string | null;
   spec_text?: string | null;
-  base_uom?: string | null;
-  purchase_uom?: string | null;
-  units_per_case?: number | null;
+
+  /**
+   * 终态说明：
+   * - 单位真相在 item_uoms；收货数量终态为 uom_id + qty_input（由服务层推导 qty_base）
+   * - 收货任务行禁止继续透出/依赖任何“文本单位结构残影字段”
+   */
 
   batch_code: string | null;
   production_date?: string | null;

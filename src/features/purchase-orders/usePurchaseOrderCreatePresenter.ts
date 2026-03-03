@@ -1,16 +1,14 @@
 // src/features/purchase-orders/usePurchaseOrderCreatePresenter.ts
 // 采购单创建 Presenter（大字号 Cockpit 版）
 //
-// - 支持：供应商 / 仓库 / 采购人 / 采购时间 必填
-// - 行（Phase2 语言）：
-//   * 最小单位（uom_snapshot）
-//   * 采购单位（case_uom）
-//   * 倍率（case_ratio）= 1采购单位=多少最小单位
-//   * 订购数量（case_input）= 用户按采购口径录入的数量（输入痕迹）
-//   * 数量（base 事实）= case_input × case_ratio
-//   * 单价（按最小单位 base）/ 行金额（预估）
+// 终态合同（Phase M-6，对齐后端 PurchaseOrderCreateV2 / PurchaseOrderCreateLineV2）：
+// - 头部必填：supplier_id / warehouse_id / purchaser / purchase_time
+// - 行必填：item_id + uom_id + qty_input
+// - qty_base（qty_ordered_base）由后端服务层通过 item_uoms.ratio_to_base 推导（前端不做推导、不做双轨）
 //
-// 说明：本阶段只做 UI 语言升级（A 档），底层 LineDraft 字段名仍沿用旧名，避免牵动范围过大。
+// 红线：供应商强约束
+// - items 下拉必须严格按 supplierId 过滤
+// - 切换 supplier 必须清空行明细，禁止携带跨供应商商品形成事实污染
 
 import { useState } from "react";
 import { nowIsoMinuteForDatetimeLocal } from "./createV2/utils";
@@ -40,10 +38,10 @@ export function usePurchaseOrderCreatePresenter(): [PurchaseOrderCreateState, Pu
   const [purchaseTime, setPurchaseTime] = useState(() => nowIsoMinuteForDatetimeLocal());
   const [remark, setRemark] = useState("");
 
-  // 行编辑（依赖 itemOptions：用于回填 item_name/spec/uom）
+  // 行编辑（依赖 itemOptions：用于回填 item_name/spec/uom_snapshot 等展示信息）
   const linesModel = useLinesDraft(itemOptions);
 
-  // 提交
+  // 提交（终态：payload 使用 supplierId + warehouseId + lines[{item_id,uom_id,qty_input}]）
   const submitModel = useSubmitPurchaseOrder({
     supplierId,
     supplierName,
