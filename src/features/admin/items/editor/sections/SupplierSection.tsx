@@ -20,7 +20,7 @@ const SupplierSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
           disabled={vm.supLoading || vm.saving}
         >
           <option value="">
-            {vm.supLoading ? "供货商加载中…" : "请选择供货商（必选）"}
+            {vm.supLoading ? "供货商加载中…" : "请选择供货商（可选）"}
           </option>
           {vm.suppliers.map((s: Supplier) => (
             <option key={s.id} value={String(s.id)}>

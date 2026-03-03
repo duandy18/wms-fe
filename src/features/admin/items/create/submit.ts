@@ -4,22 +4,12 @@ import type { Supplier } from "../../suppliers/api";
 import type { Item, ItemCreateInput } from "../../../../contracts/item/contract";
 import { createItem } from "../api";
 import type { FormState } from "./types";
-import { effectiveUom } from "./types";
+import { createItemUom } from "../../../../master-data/itemUomsApi";
+import { createItemBarcode, setPrimaryBarcode } from "../../../../master-data/itemBarcodesApi";
 
 export type SubmitResult =
   | { ok: true; created: { id: number; sku: string } }
   | { ok: false; error: string };
-
-function parseCaseRatio(v: string): number | null {
-  const s = v.trim();
-  if (!s) return null;
-  if (!/^\d+$/.test(s)) return null;
-  const n = Number(s);
-  if (!Number.isFinite(n)) return null;
-  const i = Math.trunc(n);
-  if (i < 1) return null;
-  return i;
-}
 
 export async function submitCreateItem(args: {
   form: FormState;
@@ -28,7 +18,6 @@ export async function submitCreateItem(args: {
 }): Promise<{ body: ItemCreateInput } | SubmitResult> {
   const { form, suppliers, supLoading } = args;
 
-  // 供货商必须存在（UI级防撞墙）
   if (!supLoading && suppliers.length === 0) {
     return {
       ok: false,
@@ -39,86 +28,87 @@ export async function submitCreateItem(args: {
   const name = form.name.trim();
   if (!name) return { ok: false, error: "商品名称不能为空" };
 
-  // ✅ spec：可选展示文本（空串视为 undefined，不传）
-  const spec = form.spec.trim() || undefined;
+  const body: ItemCreateInput = {
+    name,
+    spec: form.spec.trim() || null,
+    brand: form.brand.trim() || null,
+    category: form.category.trim() || null,
 
-  // ✅ brand / category：可选展示文本（空串视为 undefined）
-  const brand = form.brand.trim() || undefined;
-  const category = form.category.trim() || undefined;
+    supplier_id: form.supplier_id.trim() ? Number(form.supplier_id.trim()) : null,
+    weight_kg: form.weight_kg.trim() ? Number(form.weight_kg.trim()) : null,
 
-  const supplierId = Number(form.supplier_id);
-  if (!form.supplier_id || !Number.isFinite(supplierId) || supplierId <= 0) {
-    return { ok: false, error: "供货商必须选择" };
-  }
+    lot_source_policy: form.lot_source_policy,
+    expiry_policy: form.expiry_policy,
+    derivation_allowed: Boolean(form.derivation_allowed),
+    uom_governance_enabled: Boolean(form.uom_governance_enabled),
 
-  const uom = effectiveUom(form);
-  if (!uom) return { ok: false, error: "最小单位必须选择或填写" };
+    shelf_life_value: form.shelf_life_value.trim() ? Number(form.shelf_life_value.trim()) : null,
+    shelf_life_unit: form.shelf_life_value.trim() ? form.shelf_life_unit : null,
 
-  // ✅ Phase 1：结构化包装（允许空；非空必须整数 >=1）
-  const ratioText = form.case_ratio.trim();
-  const case_ratio = parseCaseRatio(ratioText);
-  if (ratioText && case_ratio === null) {
-    return { ok: false, error: "箱装倍率必须为 ≥ 1 的整数" };
-  }
-  const case_uom = form.case_uom.trim() || null;
-
-  // 单位净重必填（允许 0）
-  const weightRaw = form.weight_kg.trim();
-  if (!weightRaw) return { ok: false, error: "单位净重(kg)必须填写（可填 0）" };
-  const weightNum = Number(weightRaw);
-  if (!Number.isFinite(weightNum) || weightNum < 0) {
-    return { ok: false, error: "单位净重(kg)必须是 >= 0 的数字" };
-  }
-  const weight_kg: number = weightNum;
-
-  // 主条码必填
-  const barcode = form.barcode.trim();
-  if (!barcode) return { ok: false, error: "主条码必须填写" };
-
-  const has_shelf_life = form.shelf_mode === "yes";
-
-  let shelf_life_value: number | null = null;
-  let shelf_life_unit: "MONTH" | "DAY" | null = null;
-
-  if (has_shelf_life) {
-    const v = form.shelf_life_value.trim();
-    if (!v) return { ok: false, error: "默认有效期值必须填写" };
-    const n = Number(v);
-    if (!Number.isFinite(n) || n < 0) {
-      return { ok: false, error: "默认有效期值必须是 >= 0 的数字" };
-    }
-    shelf_life_value = n;
-    shelf_life_unit = form.shelf_life_unit;
-  } else {
-    shelf_life_value = null;
-    shelf_life_unit = null;
-  }
-
-  const enabled = form.status === "enabled";
-
-  return {
-    body: {
-      name,
-      spec,
-      brand,
-      category,
-
-      supplier_id: supplierId,
-      uom,
-      case_ratio,
-      case_uom,
-      weight_kg,
-
-      has_shelf_life,
-      shelf_life_value,
-      shelf_life_unit,
-
-      enabled,
-      barcode,
-    },
+    enabled: form.status === "enabled",
   };
+
+  return { body };
 }
 
 export async function runCreateItem(body: ItemCreateInput): Promise<Item> {
   return await createItem(body);
+}
+
+export async function runPostCreateWrites(args: {
+  itemId: number;
+  uomsToCreate: Array<{
+    uom: string;
+    ratio_to_base: number;
+    display_name: string | null;
+    is_base: boolean;
+    is_purchase_default: boolean;
+    is_inbound_default: boolean;
+    is_outbound_default: boolean;
+  }>;
+  barcodesToCreate: Array<{ barcode: string; kind: "EAN13" | "UPC" | "INNER" | "CUSTOM"; set_primary: boolean }>;
+}): Promise<void> {
+  const { itemId, uomsToCreate, barcodesToCreate } = args;
+
+  const base = uomsToCreate.find((x) => x.is_base);
+  if (!base) throw new Error("missing base uom");
+
+  // 先创建 base（ratio_to_base 强制 1）
+  await createItemUom({
+    item_id: itemId,
+    uom: base.uom,
+    ratio_to_base: 1,
+    display_name: base.display_name,
+    is_base: true,
+    is_purchase_default: Boolean(base.is_purchase_default),
+    is_inbound_default: Boolean(base.is_inbound_default),
+    is_outbound_default: Boolean(base.is_outbound_default),
+  });
+
+  // 再创建 purchase_default（若存在）
+  const purchase = uomsToCreate.find((x) => !x.is_base && x.is_purchase_default);
+  if (purchase) {
+    await createItemUom({
+      item_id: itemId,
+      uom: purchase.uom,
+      ratio_to_base: purchase.ratio_to_base,
+      display_name: purchase.display_name,
+      is_base: false,
+      is_purchase_default: true,
+      is_inbound_default: Boolean(purchase.is_inbound_default),
+      is_outbound_default: Boolean(purchase.is_outbound_default),
+    });
+  }
+
+  for (const b of barcodesToCreate) {
+    const created = await createItemBarcode({
+      item_id: itemId,
+      barcode: b.barcode,
+      kind: b.kind,
+      active: true,
+    });
+    if (b.set_primary) {
+      await setPrimaryBarcode(created.id);
+    }
+  }
 }

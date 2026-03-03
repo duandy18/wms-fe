@@ -2,8 +2,8 @@
 //
 // SKU 选择对话框：
 // - 支持输入关键词（name / sku）本地过滤
-// - 使用 ItemsTable 一致的视觉风格（简化版）
-// - 点击一行回调 (item_id, sku, name)
+// - 使用简化表格
+// - 点击一行回调 (item)
 
 import React, { useMemo, useState } from "react";
 import type { Item } from "@/contracts/item/contract";
@@ -88,7 +88,6 @@ export const ItemSelectorDialog: React.FC<Props> = ({
                   <th className="px-3 py-2 text-left">SKU</th>
                   <th className="px-3 py-2 text-left">名称</th>
                   <th className="px-3 py-2 text-left">规格</th>
-                  <th className="px-3 py-2 text-left">最小单位</th>
                 </tr>
               </thead>
               <tbody>
@@ -105,7 +104,6 @@ export const ItemSelectorDialog: React.FC<Props> = ({
                     <td className="px-3 py-1.5 font-mono">{it.sku}</td>
                     <td className="px-3 py-1.5">{it.name}</td>
                     <td className="px-3 py-1.5">{it.spec ?? "-"}</td>
-                    <td className="px-3 py-1.5">{it.uom ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>

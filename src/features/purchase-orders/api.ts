@@ -13,19 +13,22 @@ export interface PurchaseOrderListLine {
   line_no: number;
   item_id: number;
 
-  // ✅ Phase2：快照解释器
+  // ✅ Phase2：快照解释器（历史/展示）
   uom_snapshot?: string | null;
   case_ratio_snapshot?: number | null;
   case_uom_snapshot?: string | null;
   qty_ordered_case_input?: number | null;
 
-  // ✅ Phase2：事实口径（兼容旧数据允许可选）
+  // ✅ 事实口径（后端输出）
   qty_ordered_base?: number | null;
   qty_received_base?: number | null;
   qty_remaining_base?: number | null;
 
-  // 展示辅助
-  base_uom?: string | null;
+  /**
+   * 终态说明：
+   * - 禁止依赖 base_uom 等文本单位残影
+   * - 单位展示应来自快照解释器（uom_snapshot / case_*_snapshot）或 item_uoms 映射
+   */
 
   status?: PurchaseOrderStatus;
 
@@ -104,7 +107,6 @@ export interface PurchaseOrderDetailLine {
   biz_category: string | null;
 
   spec_text: string | null;
-  base_uom: string | null;
 
   // enrich
   sku: string | null;
@@ -136,7 +138,7 @@ export interface PurchaseOrderDetailLine {
   case_uom_snapshot?: string | null;
   qty_ordered_case_input?: number | null;
 
-  // ✅ Phase2：事实口径（唯一真相）
+  // ✅ 事实口径（唯一真相）
   qty_ordered_base: number;
   qty_received_base: number;
   qty_remaining_base: number;
@@ -185,45 +187,25 @@ export async function fetchPurchaseOrderV2(id: number): Promise<PurchaseOrderDet
 }
 
 // ----------------------
-// Create / receive（保持不变）
+// Create / receive（后端终态合同：uom_id + qty_input）
 // ----------------------
 
 export interface PurchaseOrderLineCreatePayload {
-  line_no?: number;
+  line_no: number;
   item_id: number;
 
+  // ✅ 终态：输入单位 + 输入数量（由服务层推导 qty_base）
+  uom_id: number;
+  qty_input: number;
+
+  // 可选：业务分类/备注
   category?: string | null;
-
-  spec_text?: string | null;
-  base_uom?: string | null;
-
-  // ✅ 兼容旧入参（后端当前仍接收）
-  purchase_uom?: string | null;
-  units_per_case?: number | null;
-  qty_ordered: number;
-
-  // 合同/价格
-  supply_price?: number | null;
-  retail_price?: number | null;
-  promo_price?: number | null;
-  min_price?: number | null;
-  qty_cases?: number | null;
-
   remark?: string | null;
-
-  // ✅ Phase2 forward fields（可选）
-  uom_snapshot?: string | null;
-  case_uom_snapshot?: string | null;
-  case_ratio_snapshot?: number | null;
-  qty_ordered_case_input?: number | null;
-  qty_ordered_base?: number | null;
 }
 
 export interface PurchaseOrderCreateV2Payload {
-  supplier: string;
+  supplier_id: number;
   warehouse_id: number;
-  supplier_id?: number | null;
-  supplier_name?: string | null;
 
   purchaser: string;
   purchase_time: string;

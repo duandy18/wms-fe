@@ -2,12 +2,13 @@
 
 import React from "react";
 import type { ItemEditorVm } from "./useItemEditor";
+
 import HeaderBar from "./sections/HeaderBar";
 import FlashBar from "./sections/FlashBar";
 import BasicSection from "./sections/BasicSection";
-import SupplierSection from "./sections/SupplierSection";
 import UomAndWeightSection from "./sections/UomAndWeightSection";
-import ShelfLifeSection from "./sections/ShelfLifeSection";
+import SupplierSection from "./sections/SupplierSection";
+import ProductAttributesSection from "./sections/ProductAttributesSection";
 import StatusSection from "./sections/StatusSection";
 
 const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
@@ -29,14 +30,25 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
         </div>
       ) : null}
 
-      <form onSubmit={vm.submit} className="space-y-4">
+      <form onSubmit={vm.submit} className="space-y-6">
+
+        {/* 第一行 + 第二行（名称/规格/品牌/品类 + 条码） */}
         <BasicSection vm={vm} />
-        <SupplierSection vm={vm} />
+
+        {/* 第三行：单位行（从原第四行提升上来） */}
         <UomAndWeightSection vm={vm} />
-        <ShelfLifeSection vm={vm} />
+
+        {/* 供应商 */}
+        <SupplierSection vm={vm} />
+
+        {/* 批次 / 有效期策略 */}
+        <ProductAttributesSection vm={vm} />
+
+        {/* 状态 */}
         <StatusSection vm={vm} />
 
-        <div className="flex items-center gap-3">
+        {/* 操作按钮 */}
+        <div className="flex items-center gap-3 pt-2">
           {vm.mode === "edit" ? (
             <button
               type="button"
@@ -54,7 +66,11 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
             disabled={!vm.canSubmit}
             className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
           >
-            {vm.saving ? "保存中…" : vm.mode === "edit" ? "保存修改" : "保存商品"}
+            {vm.saving
+              ? "保存中…"
+              : vm.mode === "edit"
+              ? "保存修改"
+              : "保存商品"}
           </button>
         </div>
       </form>

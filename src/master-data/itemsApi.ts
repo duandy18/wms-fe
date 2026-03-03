@@ -17,8 +17,11 @@ export interface ItemBasic {
   brand_name: string | null;
   category_name: string | null;
 
-  // ✅ 条码（展示用：主条码）
-  barcode: string | null;
+  /**
+   * ✅ 主条码（展示冗余）
+   * 终态合同：条码真相在 item_barcodes 子表。这里仅提供“主条码展示字段”。
+   */
+  main_barcode: string | null;
 }
 
 type ItemsApiRow = {
@@ -27,15 +30,19 @@ type ItemsApiRow = {
   name?: string | null;
   spec?: string | null;
   spec_text?: string | null;
+
+  /**
+   * ✅ 注意：uom 仅作为展示字段使用。
+   * 终态合同：单位真相在 item_uoms 子表；任何旧字段兜底（如 base_uom）都会引入双轨回潮，禁止。
+   */
   uom?: string | null;
-  base_uom?: string | null;
+
   enabled?: boolean;
   spec_family?: string | null;
 
-  // ✅ 你的后端真实字段：brand/category/barcode（字符串或 null）
+  // ✅ 品牌 / 分类（字符串或 null）
   brand?: string | null;
   category?: string | null;
-  barcode?: string | null;
 
   // ✅ 兼容其它可能形态（保留，不影响）
   brand_name?: string | null;
@@ -81,6 +88,8 @@ export type FetchItemsBasicParams = {
    * 关键词搜索（主数据）
    * - 约定传给后端 query: q
    * - 命中：sku / name / barcode / id
+   *
+   * 注意：这里的 “barcode 命中” 属于后端搜索能力；前端不再依赖 items.barcode 字段。
    */
   keyword?: string;
 
@@ -117,12 +126,12 @@ export async function fetchItemsBasic(params: FetchItemsBasicParams = {}): Promi
     const it = row as ItemsApiRow;
 
     const spec = it.spec ?? it.spec_text ?? null;
-    const uom = it.uom ?? it.base_uom ?? null;
+
+    // ✅ 只认后端显式返回的 uom（展示字段）；不做任何 base_uom 兜底，避免双轨回潮
+    const uom = cleanStr(it.uom);
 
     const brandName = cleanStr(it.brand_name) ?? cleanStr(it.brand) ?? null;
     const categoryName = cleanStr(it.category_name) ?? cleanStr(it.category) ?? null;
-
-    const barcode = cleanStr(it.barcode) ?? null;
 
     return {
       id: Number(it.id),
@@ -135,12 +144,13 @@ export async function fetchItemsBasic(params: FetchItemsBasicParams = {}): Promi
 
       brand_name: brandName,
       category_name: categoryName,
-      barcode,
+
+      // 先置空，后面统一用 item_barcodes 批量补齐
+      main_barcode: null,
     };
   });
 
-  // ✅ 批量补齐主条码（避免 N+1）：复用现成的 /item-barcodes/by-items
-  // 规则：仅在 base.barcode 为空时才补齐（不覆盖后端已带的值）
+  // ✅ 批量补齐主条码（避免 N+1）：/item-barcodes/by-items
   const itemIds = base.map((x) => x.id).filter((x) => Number.isFinite(x) && x > 0);
   if (itemIds.length === 0) return base;
 
@@ -149,9 +159,8 @@ export async function fetchItemsBasic(params: FetchItemsBasicParams = {}): Promi
     const map = buildPrimaryBarcodeMap(all);
 
     return base.map((x) => {
-      if (x.barcode && x.barcode.trim()) return x;
       const bc = map[x.id];
-      return bc ? { ...x, barcode: bc } : x;
+      return bc ? { ...x, main_barcode: bc } : x;
     });
   } catch (err) {
     // 条码补齐失败不应阻断采购单录入；保持 base 返回即可

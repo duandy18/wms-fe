@@ -29,10 +29,10 @@ export function useSubmitPurchaseOrder(args: {
   const submit = async (onSuccess?: (poId: number) => void) => {
     setError(null);
 
-    const { supplierId, supplierName, warehouseId, purchaser, purchaseTime, remark, lines } = args;
+    const { supplierId, warehouseId, purchaser, purchaseTime, remark, lines } = args;
 
-    // 供应商必选
-    if (!supplierId || !supplierName.trim()) {
+    // 供应商必选（终态以 supplier_id 为准）
+    if (supplierId == null || !Number.isFinite(supplierId) || supplierId <= 0) {
       setError("请选择供应商");
       return;
     }
@@ -76,9 +76,7 @@ export function useSubmitPurchaseOrder(args: {
     setSubmitting(true);
     try {
       const po = await createPurchaseOrderV2({
-        supplier: supplierName,
         supplier_id: supplierId,
-        supplier_name: supplierName,
         warehouse_id: wid,
         purchaser: purchaserTrimmed,
         purchase_time: purchaseTimeIso,
@@ -91,7 +89,6 @@ export function useSubmitPurchaseOrder(args: {
       args.onAfterSuccessReset();
       onSuccess?.(po.id);
     } catch (err) {
-       
       console.error("createPurchaseOrderV2 failed", err);
       setError(getErrorMessage(err, "创建多行采购单失败"));
     } finally {

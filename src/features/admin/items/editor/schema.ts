@@ -1,58 +1,33 @@
 // src/features/admin/items/editor/schema.ts
 
-import { z } from "zod";
 import type { ItemCreateInput, ItemUpdateInput } from "../../../../contracts/item/contract";
-import type { FormState } from "../create/types";
+import type { FormState, UomDraft } from "../create/types";
 
 export type Flash = { kind: "success" | "error"; text: string } | null;
-export type FieldErrors = Partial<Record<keyof FormState, string>>;
 
-export const itemFormSchema = z.object({
-  name: z.string().trim().min(1, "商品名称不能为空"),
-  spec: z.string(),
-  brand: z.string(),
-  category: z.string(),
-
-  supplier_id: z.string().trim().min(1, "必须选择供货商"),
-
-  uom_mode: z.enum(["preset", "custom"]),
-  uom_preset: z.string(),
-  uom_custom: z.string(),
-
-  // ✅ Phase 1：结构化包装字段（字符串态，校验在 validate 内做）
-  case_ratio: z.string(),
-  case_uom: z.string(),
-
-  weight_kg: z.string(),
-
-  shelf_mode: z.enum(["yes", "no"]),
-  shelf_life_value: z.string(),
-  shelf_life_unit: z.enum(["MONTH", "DAY"]),
-
-  status: z.enum(["enabled", "disabled"]),
-  barcode: z.string(),
-});
-
-export type ItemFormValues = z.infer<typeof itemFormSchema>;
-
-function effectiveUom(f: ItemFormValues): string {
-  return f.uom_mode === "preset" ? f.uom_preset.trim() : f.uom_custom.trim();
-}
+export type FieldErrors =
+  Partial<Record<keyof FormState, string>> & {
+    base_uom_uom?: string;
+    purchase_default_uom?: string;
+    barcodes?: string;
+  };
 
 function parseSupplierId(v: string): number | null {
-  const n = Number(v);
+  const s = (v ?? "").trim();
+  if (!s) return null;
+  const n = Number(s);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
 function parseNonNegativeNumber(v: string): number | null {
-  const s = v.trim();
+  const s = (v ?? "").trim();
   if (!s) return null;
   const n = Number(s);
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
-function parseCaseRatio(v: string): number | null {
-  const s = v.trim();
+function parsePositiveIntStrict(v: string): number | null {
+  const s = (v ?? "").trim();
   if (!s) return null;
   if (!/^\d+$/.test(s)) return null;
   const n = Number(s);
@@ -62,163 +37,188 @@ function parseCaseRatio(v: string): number | null {
   return i;
 }
 
+function normalizeText(v: string): string | null {
+  const s = (v ?? "").trim();
+  return s ? s : null;
+}
+
+function normalizeUomText(v: string): string {
+  return (v ?? "").trim();
+}
+
+function normalizeBarcode(v: string): string | null {
+  const s = (v ?? "").trim();
+  return s ? s : null;
+}
+
+function allowShelfLife(expiryPolicy: string): boolean {
+  return expiryPolicy.trim() === "REQUIRED";
+}
+
+function pickBase(uoms: UomDraft[]): UomDraft | null {
+  return uoms.find((x) => x.is_base) ?? null;
+}
+
+function pickPurchaseDefault(uoms: UomDraft[]): UomDraft | null {
+  return uoms.find((x) => x.is_purchase_default && !x.is_base) ?? null;
+}
+
 export function validateCreate(
-  form: ItemFormValues
+  form: FormState,
 ):
-  | { ok: true; body: ItemCreateInput }
-  | { ok: false; fieldErrors: FieldErrors } {
-  const base = itemFormSchema.safeParse(form);
-  if (!base.success) {
-    const out: FieldErrors = {};
-    base.error.issues.forEach((i) => {
-      const k = i.path[0];
-      if (typeof k === "string") {
-        out[k as keyof FormState] = i.message;
-      }
-    });
-    return { ok: false, fieldErrors: out };
-  }
-
-  const supplierId = parseSupplierId(base.data.supplier_id);
-  if (!supplierId) {
-    return { ok: false, fieldErrors: { supplier_id: "必须选择供货商" } };
-  }
-
-  const uom = effectiveUom(base.data);
-  if (!uom) {
-    return { ok: false, fieldErrors: { uom_preset: "最小单位不能为空" } };
-  }
-
-  const weight = parseNonNegativeNumber(base.data.weight_kg);
-  if (weight === null) {
-    return { ok: false, fieldErrors: { weight_kg: "单位净重必须是 >= 0 的数字" } };
-  }
-
-  const barcode = base.data.barcode.trim();
-  if (!barcode) {
-    return { ok: false, fieldErrors: { barcode: "主条码必须填写" } };
-  }
-
-  // ✅ Phase 1：case_ratio 允许空；非空必须是 >=1 的整数
-  const ratioText = base.data.case_ratio.trim();
-  const ratio = parseCaseRatio(ratioText);
-  if (ratioText && ratio === null) {
-    return { ok: false, fieldErrors: { case_ratio: "箱装倍率必须为 ≥ 1 的整数" } };
-  }
-
-  const case_uom = base.data.case_uom.trim() || null;
-  const case_ratio = ratio; // number | null
-
-  const hasShelf = base.data.shelf_mode === "yes";
-
-  let shelf_life_value: number | null = null;
-  let shelf_life_unit: "MONTH" | "DAY" | null = null;
-
-  if (hasShelf) {
-    const sv = parseNonNegativeNumber(base.data.shelf_life_value);
-    if (sv === null) {
-      return {
-        ok: false,
-        fieldErrors: { shelf_life_value: "默认有效期必须是 >= 0 的数字" },
+  | {
+      ok: true;
+      body: ItemCreateInput;
+      post: {
+        uomsToCreate: Array<{
+          uom: string;
+          ratio_to_base: number;
+          display_name: string | null;
+          is_base: boolean;
+          is_purchase_default: boolean;
+          is_inbound_default: boolean;
+          is_outbound_default: boolean;
+        }>;
+        barcodesToCreate: Array<{ barcode: string; kind: "EAN13" | "UPC" | "INNER" | "CUSTOM"; set_primary: boolean }>;
       };
     }
-    shelf_life_value = sv;
-    shelf_life_unit = base.data.shelf_life_unit;
+  | { ok: false; fieldErrors: FieldErrors } {
+  const errors: FieldErrors = {};
+
+  if (!form.name.trim()) errors.name = "商品名称不能为空";
+
+  const supplierId = parseSupplierId(form.supplier_id);
+
+  const weight = parseNonNegativeNumber(form.weight_kg);
+  if (form.weight_kg.trim() && weight === null) errors.weight_kg = "单件净重必须是 >= 0 的数字";
+
+  // ---- uoms（终态：item_uoms 结构）----
+  const baseDraft = pickBase(form.uoms);
+  const baseUom = normalizeUomText(baseDraft?.uom ?? "");
+  if (!baseUom) errors.base_uom_uom = "基准单位必须填写";
+
+  const purchaseDraft = pickPurchaseDefault(form.uoms);
+  const purchaseUom = normalizeUomText(purchaseDraft?.uom ?? "");
+  const purchaseRatio = purchaseDraft ? parsePositiveIntStrict(purchaseDraft.ratio_to_base) : null;
+
+  const hasPurchaseAny =
+    !!purchaseUom ||
+    !!(purchaseDraft?.ratio_to_base ?? "").trim() ||
+    !!normalizeUomText(purchaseDraft?.display_name ?? "");
+
+  if (hasPurchaseAny) {
+    if (!purchaseUom) errors.purchase_default_uom = "采购默认单位：单位名称不能为空";
+    else if (purchaseUom && baseUom && purchaseUom.toLowerCase() === baseUom.toLowerCase()) {
+      errors.purchase_default_uom = "采购默认单位不能与基准单位相同";
+    }
+    if (purchaseRatio === null) {
+      errors.purchase_default_uom =
+        (errors.purchase_default_uom ? `${errors.purchase_default_uom}；` : "") + "倍率必须为整数 ≥ 1";
+    }
   }
+
+  // barcodes
+  const itemBarcode = normalizeBarcode(form.barcodes.item_barcode);
+  const caseBarcode = normalizeBarcode(form.barcodes.case_barcode);
+  if (itemBarcode && caseBarcode && itemBarcode === caseBarcode) {
+    errors.barcodes = "产品码与箱码不能相同";
+  }
+
+  // shelf life（仅 REQUIRED 允许）
+  const expiryPolicy = form.expiry_policy;
+  const needShelf = allowShelfLife(expiryPolicy);
+
+  let shelf_life_value: number | null = null;
+  let shelf_life_unit: "DAY" | "WEEK" | "MONTH" | "YEAR" | null = null;
+
+  if (needShelf) {
+    if (form.shelf_life_value.trim()) {
+      const n = parsePositiveIntStrict(form.shelf_life_value);
+      if (n === null) errors.shelf_life_value = "默认保质期必须为整数 ≥ 1";
+      else {
+        shelf_life_value = n;
+        shelf_life_unit = form.shelf_life_unit;
+      }
+    }
+  } else {
+    shelf_life_value = null;
+    shelf_life_unit = null;
+  }
+
+  if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
+
+  // ---- uoms to create ----
+  const hasPurchase = !!purchaseUom && purchaseRatio != null;
+
+  const uomsToCreate: Array<{
+    uom: string;
+    ratio_to_base: number;
+    display_name: string | null;
+    is_base: boolean;
+    is_purchase_default: boolean;
+    is_inbound_default: boolean;
+    is_outbound_default: boolean;
+  }> = [
+    {
+      uom: baseUom,
+      ratio_to_base: 1,
+      display_name: normalizeText(baseDraft?.display_name ?? ""),
+      is_base: true,
+      is_purchase_default: hasPurchase ? false : true,
+      is_inbound_default: true,
+      is_outbound_default: true,
+    },
+  ];
+
+  if (hasPurchase) {
+    uomsToCreate.push({
+      uom: purchaseUom,
+      ratio_to_base: purchaseRatio as number,
+      display_name: normalizeText(purchaseDraft?.display_name ?? ""),
+      is_base: false,
+      is_purchase_default: true,
+      is_inbound_default: false,
+      is_outbound_default: false,
+    });
+  }
+
+  // barcodes to create
+  const barcodesToCreate: Array<{ barcode: string; kind: "EAN13" | "UPC" | "INNER" | "CUSTOM"; set_primary: boolean }> =
+    [];
+  if (itemBarcode) barcodesToCreate.push({ barcode: itemBarcode, kind: "EAN13", set_primary: true });
+  if (caseBarcode) barcodesToCreate.push({ barcode: caseBarcode, kind: "INNER", set_primary: false });
 
   return {
     ok: true,
     body: {
-      name: base.data.name.trim(),
-      spec: base.data.spec.trim() || undefined,
-      brand: base.data.brand.trim() || undefined,
-      category: base.data.category.trim() || undefined,
+      name: form.name.trim(),
+      spec: normalizeText(form.spec),
+      brand: normalizeText(form.brand),
+      category: normalizeText(form.category),
 
       supplier_id: supplierId,
-      uom,
-      case_ratio,
-      case_uom,
       weight_kg: weight,
 
-      has_shelf_life: hasShelf,
+      lot_source_policy: form.lot_source_policy,
+      expiry_policy: form.expiry_policy,
+      derivation_allowed: form.derivation_allowed,
+      uom_governance_enabled: form.uom_governance_enabled,
+
       shelf_life_value,
       shelf_life_unit,
 
-      enabled: base.data.status === "enabled",
-      barcode,
+      enabled: form.status === "enabled",
     },
+    post: { uomsToCreate, barcodesToCreate },
   };
 }
 
 export function validateEdit(
-  form: ItemFormValues
+  form: FormState,
 ):
   | { ok: true; body: ItemUpdateInput }
   | { ok: false; fieldErrors: FieldErrors } {
-  const base = itemFormSchema.safeParse(form);
-  if (!base.success) {
-    const out: FieldErrors = {};
-    base.error.issues.forEach((i) => {
-      const k = i.path[0];
-      if (typeof k === "string") {
-        out[k as keyof FormState] = i.message;
-      }
-    });
-    return { ok: false, fieldErrors: out };
-  }
-
-  const supplierId = parseSupplierId(base.data.supplier_id);
-  if (!supplierId) {
-    return { ok: false, fieldErrors: { supplier_id: "必须选择供货商" } };
-  }
-
-  const uom = effectiveUom(base.data);
-  if (!uom) {
-    return { ok: false, fieldErrors: { uom_preset: "最小单位不能为空" } };
-  }
-
-  const weight = parseNonNegativeNumber(base.data.weight_kg);
-  if (weight === null) {
-    return { ok: false, fieldErrors: { weight_kg: "单位净重必须是 >= 0 的数字" } };
-  }
-
-  // ✅ 编辑也允许改主条码：不允许为空
-  const barcode = base.data.barcode.trim();
-  if (!barcode) {
-    return { ok: false, fieldErrors: { barcode: "主条码必须填写" } };
-  }
-
-  const hasShelf = base.data.shelf_mode === "yes";
-
-  // ✅ Phase 1：case_ratio 允许空；非空必须是 >=1 的整数
-  const ratioText = base.data.case_ratio.trim();
-  const ratio = parseCaseRatio(ratioText);
-  if (ratioText && ratio === null) {
-    return { ok: false, fieldErrors: { case_ratio: "箱装倍率必须为 ≥ 1 的整数" } };
-  }
-
-  const case_uom = base.data.case_uom.trim() || null;
-  const case_ratio = ratio; // number | null
-
-  return {
-    ok: true,
-    body: {
-      name: base.data.name.trim(),
-      spec: base.data.spec.trim() || undefined,
-      brand: base.data.brand.trim() || undefined,
-      category: base.data.category.trim() || undefined,
-
-      supplier_id: supplierId,
-      uom,
-      case_ratio,
-      case_uom,
-      weight_kg: weight,
-
-      enabled: base.data.status === "enabled",
-      has_shelf_life: hasShelf,
-
-      // ✅ 关键：把 barcode 带进更新体
-      barcode,
-    },
-  };
+  const r = validateCreate(form);
+  if (!r.ok) return r;
+  return { ok: true, body: r.body };
 }

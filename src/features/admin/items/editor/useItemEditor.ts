@@ -1,49 +1,21 @@
 // src/features/admin/items/editor/useItemEditor.ts
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { Supplier } from "../../suppliers/api";
 import type { Item } from "../../../../contracts/item/contract";
 import { updateItem } from "../api";
-import { runCreateItem, submitCreateItem } from "../create/submit";
-import type { FormState } from "../create/types";
+import { runCreateItem, runPostCreateWrites, submitCreateItem } from "../create/submit";
+import type { FormState, UomDraft } from "../create/types";
 import { errMsg } from "../itemsHelpers";
-import { type Flash, type FieldErrors, type ItemFormValues, validateCreate, validateEdit } from "./schema";
+import { type Flash, type FieldErrors, validateCreate, validateEdit } from "./schema";
+import { fetchItemUoms } from "../../../../master-data/itemUomsApi";
+import { syncItemUomsForEdit } from "./syncItemUomsForEdit";
+import { syncItemBarcodesForEdit } from "./syncItemBarcodesForEdit";
+import { draftFromItemUom, pickBaseUom, pickPurchaseDefaultUom } from "./itemEditorUtils";
+import { buildEditForm } from "./buildEditForm";
+import type { ItemEditorVm, ItemEditorMode } from "./itemEditorTypes";
 
-export type ItemEditorMode = "create" | "edit";
-
-export type ItemEditorVm = {
-  mode: ItemEditorMode;
-  editorTitle: string;
-
-  suppliers: Supplier[];
-  supLoading: boolean;
-  supError: string | null;
-
-  selectedItem: Item | null;
-  selectedPrimaryBarcode: string;
-
-  form: FormState;
-  setForm: (next: FormState) => void;
-
-  saving: boolean;
-  error: string | null;
-  flash: Flash;
-  fieldErrors: FieldErrors;
-
-  created: { id: number; sku: string } | null;
-
-  canSubmit: boolean;
-
-  resetToCreate: () => void;
-  resetToEditOriginal: () => void;
-  submit: (e: React.FormEvent) => Promise<void>;
-};
-
-type UnknownRecord = Record<string, unknown>;
-
-function asRecord(v: unknown): UnknownRecord {
-  return (v ?? {}) as UnknownRecord;
-}
+export type { ItemEditorVm, ItemEditorMode };
 
 export default function useItemEditor(args: {
   selectedItem: Item | null;
@@ -79,18 +51,16 @@ export default function useItemEditor(args: {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [created, setCreated] = useState<{ id: number; sku: string } | null>(null);
 
-  // ✅ 防 emptyForm 引用抖动导致 edit 回显反复覆盖用户输入
   const emptyFormRef = useRef<FormState>(emptyForm);
   useEffect(() => {
     emptyFormRef.current = emptyForm;
   }, [emptyForm]);
 
-  // ✅ 保存“进入编辑时”的原始快照：用于“放弃修改”
   const initialEditFormRef = useRef<FormState | null>(null);
 
+  // 1) items 基础字段回填（抽成纯函数 buildEditForm）
   useEffect(() => {
     if (!selectedItem) {
-      // 离开 edit 模式时清空快照
       initialEditFormRef.current = null;
       return;
     }
@@ -100,49 +70,51 @@ export default function useItemEditor(args: {
     setFieldErrors({});
     setCreated(null);
 
-    const r = asRecord(selectedItem);
-
-    const ratioRaw = r["case_ratio"];
-    const ratioText =
-      typeof ratioRaw === "number" && Number.isFinite(ratioRaw)
-        ? String(Math.trunc(ratioRaw))
-        : typeof ratioRaw === "string"
-          ? ratioRaw.trim()
-          : "";
-
-    const caseUomText = typeof r["case_uom"] === "string" ? r["case_uom"].trim() : "";
-
-    const nextForm: FormState = {
-      ...emptyFormRef.current,
-      name: selectedItem.name ?? "",
-      spec: (selectedItem.spec ?? "").trim(),
-      brand: (selectedItem.brand ?? "").trim(),
-      category: (selectedItem.category ?? "").trim(),
-
-      supplier_id: selectedItem.supplier_id == null ? "" : String(selectedItem.supplier_id),
-      weight_kg: selectedItem.weight_kg == null ? "" : String(selectedItem.weight_kg),
-
-      uom_mode: "preset",
-      uom_preset: (selectedItem.uom ?? "").trim(),
-      uom_custom: "",
-
-      // ✅ Phase 1：回显结构化包装字段
-      case_ratio: ratioText,
-      case_uom: caseUomText,
-
-      shelf_mode: selectedItem.has_shelf_life ? "yes" : "no",
-      shelf_life_value: selectedItem.shelf_life_value == null ? "" : String(selectedItem.shelf_life_value),
-      shelf_life_unit: (selectedItem.shelf_life_unit ?? "MONTH") as "MONTH" | "DAY",
-
-      status: selectedItem.enabled ? "enabled" : "disabled",
-
-      // ✅ 条码：以传入 primary barcode 为准
-      barcode: selectedPrimaryBarcode,
-    };
+    const nextForm = buildEditForm({
+      selectedItem,
+      emptyForm: emptyFormRef.current,
+    });
 
     setForm(nextForm);
     initialEditFormRef.current = { ...nextForm };
   }, [selectedItem, selectedPrimaryBarcode]);
+
+  // 2) item_uoms 回填（编辑时显示真实值）
+  const selectedItemId = selectedItem?.id ?? null;
+  const uomsLoadSeq = useRef(0);
+
+  useEffect(() => {
+    if (selectedItemId == null) return;
+
+    const itemIdNum: number = selectedItemId;
+
+    uomsLoadSeq.current += 1;
+    const seq = uomsLoadSeq.current;
+
+    async function run() {
+      try {
+        const uoms = await fetchItemUoms(itemIdNum);
+        if (uomsLoadSeq.current !== seq) return;
+
+        const base = pickBaseUom(uoms);
+        const purchase = pickPurchaseDefaultUom(uoms);
+
+        setForm((cur) => {
+          if (cur.uoms.length > 0) return cur;
+
+          const nextUoms: UomDraft[] = [];
+          if (base) nextUoms.push(draftFromItemUom(base));
+          if (purchase && !purchase.is_base) nextUoms.push(draftFromItemUom(purchase));
+
+          return { ...cur, uoms: nextUoms };
+        });
+      } catch (e) {
+        console.error("fetchItemUoms failed:", e);
+      }
+    }
+
+    void run();
+  }, [selectedItemId]);
 
   const resetToCreate = () => {
     if (saving) return;
@@ -175,8 +147,9 @@ export default function useItemEditor(args: {
     return true;
   }, [saving, supLoading, suppliers.length]);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
+
     setError(null);
     setFlash(null);
     setFieldErrors({});
@@ -185,15 +158,13 @@ export default function useItemEditor(args: {
     if (mode === "create") {
       const prepared = await submitCreateItem({ form, suppliers, supLoading });
 
-      // 失败分支
       if ("ok" in prepared && !prepared.ok) {
         setError(prepared.error);
         return;
       }
 
-      // 只在存在 body 时继续
       if ("body" in prepared) {
-        const r = validateCreate(form as unknown as ItemFormValues);
+        const r = validateCreate(form);
         if (!r.ok) {
           setFieldErrors(r.fieldErrors);
           return;
@@ -202,9 +173,17 @@ export default function useItemEditor(args: {
         setSaving(true);
         try {
           const createdItem = await runCreateItem(prepared.body);
+
+          await runPostCreateWrites({
+            itemId: createdItem.id,
+            uomsToCreate: r.post.uomsToCreate,
+            barcodesToCreate: r.post.barcodesToCreate,
+          });
+
           setCreated({ id: createdItem.id, sku: createdItem.sku });
           setFlash({ kind: "success", text: "创建成功" });
           setForm({ ...emptyFormRef.current });
+
           await onAfterSaved();
         } catch (ex: unknown) {
           const msg = ex instanceof Error ? ex.message : "创建商品失败";
@@ -220,7 +199,7 @@ export default function useItemEditor(args: {
 
     if (!selectedItem) return;
 
-    const r = validateEdit(form as unknown as ItemFormValues);
+    const r = validateEdit(form);
     if (!r.ok) {
       setFieldErrors(r.fieldErrors);
       return;
@@ -229,10 +208,13 @@ export default function useItemEditor(args: {
     setSaving(true);
     try {
       await updateItem(selectedItem.id, r.body);
+
+      await syncItemUomsForEdit({ itemId: selectedItem.id, form });
+      await syncItemBarcodesForEdit({ itemId: selectedItem.id, form });
+
       await onAfterSaved();
       setFlash({ kind: "success", text: "保存成功" });
 
-      // 保存成功后，更新“原始快照”，避免用户点“放弃修改”又回滚到旧值
       initialEditFormRef.current = { ...form };
 
       onResetToCreate();
