@@ -6,13 +6,11 @@
 // - 解释/实验/调试统一迁入 DevConsole → Shipping Pricing Lab
 //
 // ✅ Workbench Tabs（Admin 可用）：
-// - table：二维价格表工作台（Zone × 重量段模板行 × 单元格价格）
+// - table：二维价格表工作台（当前保留为历史 tab key 名称，承载新四卡工作台）
 // - zones：区域分类
-// - segments：重量段方案（保存/启用）
-// - brackets：价格录入（旧入口，后续可降级/删除）
 // - dest_adjustments：目的地附加费（结构化事实）
 // - preview：算价预览
-export type SchemeTabKey = "table" | "zones" | "segments" | "brackets" | "dest_adjustments" | "preview";
+export type SchemeTabKey = "table" | "zones" | "dest_adjustments" | "preview";
 
 export type MutateFn = () => Promise<void>;
 

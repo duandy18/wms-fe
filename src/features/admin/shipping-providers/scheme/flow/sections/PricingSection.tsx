@@ -2,46 +2,24 @@
 
 import React from "react";
 import FlowSectionCard from "../FlowSectionCard";
-import { PricingTableWorkbenchPanel } from "../../table/PricingTableWorkbenchPanel";
-import type { PricingSchemeDetail, PricingSchemeZone } from "../../../api";
+import type { PricingSchemeDetail } from "../../../api";
+import PricingWorkbenchPanel from "../../workbench/PricingWorkbenchPanel";
 
 type Props = {
   detail: PricingSchemeDetail;
   disabled: boolean;
-  flowLocked: boolean;
-
-  selectedZoneId: number | null;
-  onSelectZone: (zoneId: number) => void;
   onError: (msg: string) => void;
-
-  onToggleZone: (z: PricingSchemeZone) => Promise<void>;
-  onPatchZoneTemplate: (zoneId: number, templateId: number) => Promise<void>;
-
-  // ✅ 解除绑定：segment_template_id -> null
-  onUnbindZoneTemplate: (zoneId: number) => Promise<void>;
-
-  onGoZonesTab: () => void;
-  onGoSegmentsTab: () => void;
 };
 
 export const PricingSection: React.FC<Props> = (p) => {
+  const readOnly = p.disabled || p.detail.status !== "draft";
+
   return (
     <FlowSectionCard
-      title="3）区域绑定重量段 + 4）二维价格表格"
-      desc="绑定在二维价格表中完成：先选 Zone，再为该 Zone 显式绑定一个启用中的重量段模板，然后录价。"
+      title="1）运价编辑工作台"
+      desc="按真实业务顺序编辑：重量段 → 区域范围 → 价格矩阵 → 附加费。算价与解释作为第 5 张卡由页面下方承接。"
     >
-      <PricingTableWorkbenchPanel
-        detail={p.detail}
-        disabled={p.disabled || p.flowLocked}
-        selectedZoneId={p.selectedZoneId}
-        onSelectZone={p.onSelectZone}
-        onError={p.onError}
-        onToggleZone={p.onToggleZone}
-        onPatchZoneTemplate={p.onPatchZoneTemplate}
-        onUnbindZoneTemplate={p.onUnbindZoneTemplate}
-        onGoZonesTab={p.onGoZonesTab}
-        onGoSegmentsTab={p.onGoSegmentsTab}
-      />
+      <PricingWorkbenchPanel detail={p.detail} disabled={readOnly} onError={p.onError} />
     </FlowSectionCard>
   );
 };

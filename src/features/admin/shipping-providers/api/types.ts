@@ -71,17 +71,31 @@ export interface PricingSchemeSegment {
 export interface PricingScheme {
   id: number;
   shipping_provider_id: number;
+  shipping_provider_name?: string;
+  warehouse_id?: number;
   name: string;
 
-  // UI 需要
-  active?: boolean;
+  // 新主线：status 真相字段
+  status?: "draft" | "active" | "archived" | string;
   archived_at?: string | null;
+
+  // 兼容旧 UI
+  active?: boolean;
 
   // 扩展 / 排序字段
   priority?: number | null;
 
   currency?: string;
   default_pricing_mode?: string;
+
+  effective_from?: string | null;
+  effective_to?: string | null;
+
+  billable_weight_strategy?: string;
+  volume_divisor?: number | null;
+  rounding_mode?: string;
+  rounding_step_kg?: number | null;
+  min_billable_weight_kg?: number | null;
 }
 
 export interface PricingSchemeZoneMember {
@@ -91,31 +105,12 @@ export interface PricingSchemeZoneMember {
   value: string;
 }
 
-export interface PricingSchemeZoneBracket {
-  id: number;
-  zone_id: number;
-  min_kg: number;
-  max_kg: number | null;
-  pricing_mode: string;
-  flat_amount: number | null;
-  base_amount: number | null;
-  rate_per_kg: number | null;
-  base_kg?: number | null;
-  price_json: Record<string, unknown>;
-  active: boolean;
-}
-
 export interface PricingSchemeZone {
   id: number;
   scheme_id: number;
   name: string;
   active: boolean;
-
-  // Zone 显式绑定段模板
-  segment_template_id?: number | null;
-
   members: PricingSchemeZoneMember[];
-  brackets: PricingSchemeZoneBracket[];
 }
 
 export interface PricingSchemeSurcharge {
@@ -123,8 +118,18 @@ export interface PricingSchemeSurcharge {
   scheme_id: number;
   name: string;
   active: boolean;
-  condition_json: Record<string, unknown>;
-  amount_json: Record<string, unknown>;
+
+  // 新主线字段
+  scope?: "province" | "city";
+  province_code?: string | null;
+  city_code?: string | null;
+  province_name?: string | null;
+  city_name?: string | null;
+  fixed_amount?: number | null;
+
+  // 历史兼容字段
+  condition_json?: Record<string, unknown>;
+  amount_json?: Record<string, unknown>;
 }
 
 // ✅ 新：目的地附加费（结构化事实）——已切换为标准 code 世界
@@ -153,6 +158,29 @@ export interface PricingSchemeDestAdjustment {
 }
 
 // ======================================================
+// 共享目的地组类型（新工作台 / 只读详情仍可复用）
+// ======================================================
+
+export interface PricingSchemeDestinationGroupProvince {
+  id: number;
+  group_id: number;
+  province_code?: string | null;
+  province_name?: string | null;
+}
+
+export interface PricingSchemeDestinationGroup {
+  id: number;
+  group_key: string;
+  scheme_id: number;
+  module_id: number;
+  module_key: string;
+  name: string;
+  sort_order: number;
+  active: boolean;
+  provinces: PricingSchemeDestinationGroupProvince[];
+}
+
+// ======================================================
 // Scheme Detail / List（核心）
 // ======================================================
 
@@ -162,17 +190,18 @@ export interface PricingSchemeDetail extends PricingScheme {
   effective_from?: string | null;
   effective_to?: string | null;
 
-  billable_weight_rule?: Record<string, unknown> | null;
+  billable_weight_strategy?: string;
+  volume_divisor?: number | null;
+  rounding_mode?: string;
+  rounding_step_kg?: number | null;
+  min_billable_weight_kg?: number | null;
 
-  // ✅ 本次主线新增：显式默认回退模板
-  default_segment_template_id?: number | null;
-
-  segments_json?: WeightSegment[] | null;
-  segments_updated_at?: string | null;
-
-  segments: PricingSchemeSegment[];
+  // 当前主线字段
   zones: PricingSchemeZone[];
   surcharges: PricingSchemeSurcharge[];
+
+  // 新主线只读字段
+  destination_groups?: PricingSchemeDestinationGroup[];
 
   // ✅ 新：目的地附加费（结构化事实）
   dest_adjustments?: PricingSchemeDestAdjustment[];

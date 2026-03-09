@@ -22,7 +22,6 @@ export type ReleasedZoneStillPricedIssue = {
   zone_active: boolean;
   province_member_n: number;
   brackets_n: number;
-  segment_template_id: number | null;
   suggested_action: string;
 };
 
