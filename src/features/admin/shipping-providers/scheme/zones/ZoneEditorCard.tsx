@@ -6,18 +6,12 @@ import { RegionSelector } from "../components/RegionSelector";
 import { UI } from "../ui";
 import { buildProvinceOccupancy } from "./regionRules";
 import { buildNameFromProvinces, extractProvinceMembers, getErrorMessage } from "./zonesHelpers";
-import type { SegmentTemplateLite } from "./segmentTemplatesApi";
 import { ZoneList } from "./ZoneList";
 
 type Props = {
   zones: PricingSchemeZone[];
   disabled: boolean;
   selectedZoneId: number | null;
-
-  // ⚠️ 仍保留这些 props（避免牵连上层签名），但本页不再使用
-  templates: SegmentTemplateLite[];
-  templatesLoading: boolean;
-  templatesErr: string | null;
 
   onError: (msg: string) => void;
   onSelectZone: (zoneId: number) => void;
@@ -26,9 +20,8 @@ type Props = {
   // - onToggle 仍保留签名（避免牵连上层）
   onToggle: (z: PricingSchemeZone) => Promise<void>;
 
-  onCommitCreate: (name: string, provinces: string[], segmentTemplateId: number | null) => Promise<void>;
+  onCommitCreate: (name: string, provinces: string[]) => Promise<void>;
   onReplaceProvinceMembers: (zoneId: number, provinces: string[]) => Promise<void>;
-  onPatchZone: (zoneId: number, payload: { segment_template_id?: number | null }) => Promise<void>;
 };
 
 export const ZoneEditorCard: React.FC<Props> = ({
@@ -118,9 +111,9 @@ export const ZoneEditorCard: React.FC<Props> = ({
     }
 
     try {
-      // ✅ zones 段不再绑定模板：segmentTemplateId 统一为 null（后端/DB 需允许）
+      // ✅ zones 段不再绑定模板
       // ✅ 去掉 confirm 弹窗：成功反馈走页面顶部 SuccessBar（绿条）
-      await onCommitCreate(n, ps, null);
+      await onCommitCreate(n, ps);
       resetForm();
     } catch (e: unknown) {
       onError(getErrorMessage(e, "保存失败"));

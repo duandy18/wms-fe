@@ -6,7 +6,6 @@
 
 export * from "./api/types";
 export * from "./api/zones";
-export * from "./api/brackets";
 
 export * from "./api/providers";
 export * from "./api/contacts";

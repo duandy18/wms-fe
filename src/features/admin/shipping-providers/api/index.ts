@@ -3,5 +3,4 @@ export * from "./types";
 export * from "./providers";
 export * from "./contacts";
 export * from "./schemes";
-export * from "./brackets";
 export * from "./zones";

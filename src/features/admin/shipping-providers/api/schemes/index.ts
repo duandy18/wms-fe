@@ -52,7 +52,7 @@ export async function patchPricingScheme(
   payload: Partial<{
     name: string;
     active: boolean;
-    archived_at: string | null; // ✅ 归档/取消归档
+    archived_at: string | null;
     priority: number;
     currency: string;
     effective_from: string | null;
@@ -65,7 +65,6 @@ export async function patchPricingScheme(
   return res.data;
 }
 
-// ⚠️ 删除接口保留也无妨，但 UI 将不再使用（生产不建议真删）
 export async function deletePricingScheme(schemeId: number): Promise<{ ok: boolean }> {
   return apiDelete<{ ok: boolean }>(`/pricing-schemes/${schemeId}`);
 }

@@ -205,7 +205,7 @@ export default function PricingOpsSchemeDetailPage() {
 
       <OpsSectionCard
         title="warning：归档模板仍被引用"
-        subtitle="template.status=archived 但仍被 zones.segment_template_id 引用（系统护栏已加入）。"
+        subtitle="归档模板仍存在历史引用，系统护栏已加入。"
         right={
           templateIssues.length > 0 ? (
             <div style={{ display: "flex", gap: 8 }}>
@@ -249,8 +249,7 @@ function IssueListBrackets(props: { issues: ReleasedZoneStillPricedIssue[] }) {
       {props.issues.map((x) => (
         <div key={x.zone_id} style={{ padding: "8px 0", borderBottom: "1px dashed #e5e7eb" }}>
           <div>
-            <b>zone#{x.zone_id}</b> {x.zone_name} / active={String(x.zone_active)} / brackets={x.brackets_n} / tpl=
-            {x.segment_template_id ?? "null"}
+            <b>zone#{x.zone_id}</b> {x.zone_name} / active={String(x.zone_active)} / brackets={x.brackets_n}
           </div>
           <div style={{ color: "#6b7280" }}>members=0（已释放）但仍存在报价明细</div>
         </div>
