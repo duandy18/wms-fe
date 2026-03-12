@@ -40,75 +40,17 @@ export function renderBracketRange(minKg: unknown, maxKg: unknown): string {
 
 /**
  * 计价模型（中文）
- * 目标：固定价格 / 线性价格 / 首重/续重
- * 依据：后端 bracket 字段（flat_amount/base_amount/rate_per_kg/pricing_mode）
+ * 直接按当前后端 pricing_matrix.pricing_mode 解释。
  */
-export function resolvePricingModelCn(bracket: CalcOut["bracket"]): string {
-  const raw = safeText(bracket?.pricing_mode).trim().toLowerCase();
-  const flat = bracket?.flat_amount ?? null;
-  const base = bracket?.base_amount ?? null;
-  const rate = bracket?.rate_per_kg ?? null;
+export function resolvePricingModelCn(matrix: CalcOut["pricing_matrix"]): string {
+  const raw = safeText(matrix?.pricing_mode).trim().toLowerCase();
 
-  // 固定价格
-  if (flat != null || raw === "flat") return "固定价格";
+  if (raw === "flat") return "固定价格";
+  if (raw === "linear_total") return "首重+续重每公斤";
+  if (raw === "step_over") return "面单费+总重每公斤";
+  if (raw === "manual_quote") return "人工报价";
 
-  // 首重/续重：base + rate 同时存在
-  if (base != null && rate != null) return "首重/续重";
-
-  // 线性价格：linear_total 或只有 rate
-  if (raw === "linear_total" || rate != null) return "线性价格";
-
-  // 兜底：不解释，原样
   return raw ? safeText(raw) : "—";
-}
-
-/* ---------- condition / detail render ---------- */
-
-export function renderConditionCn(condition: unknown): React.ReactNode {
-  const cond = isRecord(condition) ? condition : {};
-
-  const destRaw = cond["dest"];
-  const dest = isRecord(destRaw) ? destRaw : {};
-  const provs = asStringArray(dest["province"]);
-  const cities = asStringArray(dest["city"]);
-  const dists = asStringArray(dest["district"]);
-
-  const flagAny = asStringArray(cond["flag_any"]);
-
-  const hasAny = provs.length || cities.length || dists.length || flagAny.length;
-  if (!hasAny) return <span className="text-slate-600">—</span>;
-
-  return (
-    <div className="space-y-1 text-sm">
-      {provs.length ? (
-        <div className="flex gap-2">
-          <span className="text-slate-500">省</span>
-          <span className="text-slate-900">{joinOrDash(provs)}</span>
-        </div>
-      ) : null}
-
-      {cities.length ? (
-        <div className="flex gap-2">
-          <span className="text-slate-500">市</span>
-          <span className="text-slate-900">{joinOrDash(cities)}</span>
-        </div>
-      ) : null}
-
-      {dists.length ? (
-        <div className="flex gap-2">
-          <span className="text-slate-500">区/县</span>
-          <span className="text-slate-900">{joinOrDash(dists)}</span>
-        </div>
-      ) : null}
-
-      {flagAny.length ? (
-        <div className="flex gap-2">
-          <span className="text-slate-500">特征</span>
-          <span className="font-mono text-slate-900">{joinOrDash(flagAny)}</span>
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 export function renderDetailCn(detail: unknown): React.ReactNode {
@@ -116,6 +58,21 @@ export function renderDetailCn(detail: unknown): React.ReactNode {
   const kind = String(d["kind"] ?? "").trim().toLowerCase();
 
   if (!kind) return <span className="text-slate-600">—</span>;
+
+  if (kind === "fixed") {
+    return (
+      <div className="space-y-1 text-sm">
+        <div className="flex gap-2">
+          <span className="text-slate-500">方式</span>
+          <span className="text-slate-900">固定金额</span>
+        </div>
+        <div className="flex gap-2">
+          <span className="text-slate-500">金额</span>
+          <span className="font-mono text-slate-900">{numOrDash(d["amount"])}</span>
+        </div>
+      </div>
+    );
+  }
 
   if (kind === "flat") {
     return (

@@ -7,11 +7,10 @@ import { renderBracketRange, resolvePricingModelCn } from "../quotePreviewResult
 import { fmtKg } from "./viewModel";
 
 export const QuoteResultHeaderCards: React.FC<{ result: CalcOut }> = ({ result }) => {
-  const zoneName = safeText(result.zone?.name ?? result.zone?.id);
-  const bracketRangeText = renderBracketRange(result.bracket?.min_kg, result.bracket?.max_kg);
-  const pricingModelCn = resolvePricingModelCn(result.bracket);
+  const groupName = safeText(result.destination_group?.name ?? result.destination_group?.id);
+  const matrixRangeText = renderBracketRange(result.pricing_matrix?.min_kg, result.pricing_matrix?.max_kg);
+  const pricingModelCn = resolvePricingModelCn(result.pricing_matrix);
 
-  // ✅ 修复 hooks 警告：直接以 result.weight 作为依赖
   const wrec = useMemo<Record<string, unknown>>(() => {
     const w = result.weight;
     return typeof w === "object" && w !== null && !Array.isArray(w) ? (w as Record<string, unknown>) : {};
@@ -37,14 +36,14 @@ export const QuoteResultHeaderCards: React.FC<{ result: CalcOut }> = ({ result }
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <div className="text-sm text-slate-600">命中 Zone</div>
-        <div className="mt-1 text-base font-semibold text-slate-900 font-mono">{zoneName}</div>
+        <div className="text-sm text-slate-600">命中区域组</div>
+        <div className="mt-1 text-base font-semibold text-slate-900 font-mono">{groupName}</div>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <div className="text-sm text-slate-600">命中重量段</div>
-        <div className="mt-1 text-base font-semibold text-slate-900 font-mono">{bracketRangeText}</div>
-        <div className="mt-1 text-xs text-slate-500">按计费重命中</div>
+        <div className="mt-1 text-base font-semibold text-slate-900 font-mono">{matrixRangeText}</div>
+        <div className="mt-1 text-xs text-slate-500">按计费重命中矩阵单元格</div>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

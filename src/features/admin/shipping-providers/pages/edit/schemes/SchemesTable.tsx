@@ -31,6 +31,19 @@ function getSchemeStatusLabel(s: PricingScheme): {
   };
 }
 
+function formatDateTime(v?: string | null): string {
+  if (!v) return "—";
+  const ts = Date.parse(v);
+  if (!Number.isFinite(ts)) return v;
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(ts));
+}
+
 export const SchemesTable: React.FC<{
   list: PricingScheme[];
   disabled: boolean;
@@ -90,6 +103,7 @@ export const SchemesTable: React.FC<{
             <th className="px-3 py-2 text-left">ID</th>
             <th className="px-3 py-2 text-left">名称</th>
             <th className="px-3 py-2 text-left">币种</th>
+            <th className="px-3 py-2 text-left">生效时间</th>
             <th className="px-3 py-2 text-left">优先级</th>
             <th className="px-3 py-2 text-left">状态</th>
             <th className="px-3 py-2 text-right">操作</th>
@@ -127,6 +141,7 @@ export const SchemesTable: React.FC<{
                 </td>
 
                 <td className="px-3 py-2 font-mono">{s.currency ?? "—"}</td>
+                <td className="px-3 py-2 font-mono">{formatDateTime(s.effective_from)}</td>
                 <td className="px-3 py-2 font-mono">{typeof s.priority === "number" ? s.priority : "—"}</td>
 
                 <td className="px-3 py-2">
@@ -143,7 +158,7 @@ export const SchemesTable: React.FC<{
                       disabled={editing}
                       onClick={() => onOpenWorkbench(s.id)}
                     >
-                      打开工作台
+                      编辑方案
                     </button>
 
                     {!editing ? (
@@ -186,7 +201,7 @@ export const SchemesTable: React.FC<{
                         onClick={() => void onPublishScheme(s)}
                         title="发布后将成为当前网点的生效方案；后端会自动归档同仓同承运商下其他 active 方案"
                       >
-                        {rowBusy === s.id ? "发布中…" : "发布生效"}
+                        {rowBusy === s.id ? "发布中…" : "发布"}
                       </button>
                     ) : null}
 
@@ -198,29 +213,9 @@ export const SchemesTable: React.FC<{
                         onClick={() => void onCloneScheme(s)}
                         title="将当前方案完整复制为新的 draft"
                       >
-                        {rowBusy === s.id ? "克隆中…" : "克隆为草稿"}
+                        {rowBusy === s.id ? "复制中…" : "复制方案"}
                       </button>
                     ) : null}
-
-                    {!archived ? (
-                      <button
-                        type="button"
-                        className={UI.btnSecondary}
-                        disabled
-                        title="当前后端主线未提供独立归档接口，先不要接假动作"
-                      >
-                        归档
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className={UI.btnSecondary}
-                        disabled
-                        title="当前后端主线未提供取消归档接口"
-                      >
-                        取消归档
-                      </button>
-                    )}
                   </div>
                 </td>
               </tr>
@@ -229,8 +224,8 @@ export const SchemesTable: React.FC<{
 
           {list.length === 0 ? (
             <tr>
-              <td className="px-3 py-6 text-center text-sm text-slate-500" colSpan={6}>
-                没有匹配的收费标准
+              <td className="px-3 py-6 text-center text-sm text-slate-500" colSpan={7}>
+                没有匹配的运价方案
               </td>
             </tr>
           ) : null}

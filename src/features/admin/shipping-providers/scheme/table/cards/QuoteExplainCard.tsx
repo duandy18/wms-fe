@@ -13,13 +13,46 @@ import { useQuoteExplainWarehouses } from "./quote-explain/useQuoteExplainWareho
 import { useQuoteExplainGeo } from "./quote-explain/useQuoteExplainGeo";
 import { calcChargeableWeightKg, calcVolumeWeightKg, parseDims, shouldShowDimsWarning } from "./quote-explain/weight";
 
-function toHumanError(e: unknown, fallback: string): string {
-  if (!e) return fallback;
+function readRawErrorMessage(e: unknown): string {
+  if (!e) return "";
   if (typeof e === "string") return e;
   if (e instanceof Error && e.message) return e.message;
   const r = e as Record<string, unknown>;
   if (typeof r?.message === "string") return r.message;
-  return fallback;
+  return "";
+}
+
+function mapCalcErrorToCn(e: unknown, fallback: string): string {
+  const raw = readRawErrorMessage(e).trim();
+  if (!raw) return fallback;
+
+  const m = raw.toLowerCase();
+
+  if (m.includes("scheme not found")) {
+    return "未找到该收费标准，请刷新页面后重试。";
+  }
+
+  if (m.includes("scheme archived")) {
+    return "该收费标准已归档，不能用于试算；请改用其他方案或先克隆为草稿。";
+  }
+
+  if (m.includes("scheme not effective")) {
+    return "该收费标准当前未生效或不在有效期内，不能用于试算。";
+  }
+
+  if (m.includes("no matching zone") || m.includes("no matching destination group")) {
+    return "当前目的地未命中任何区域范围，请先检查区域配置。";
+  }
+
+  if (m.includes("no matching pricing matrix")) {
+    return "当前计费重未命中任何价格矩阵单元格，请先检查重量段与矩阵配置。";
+  }
+
+  if (m.includes("only draft scheme can be modified")) {
+    return "当前方案不是草稿，不能直接修改；如需编辑，请先克隆为新的草稿方案。";
+  }
+
+  return raw;
 }
 
 export const QuoteExplainCard: React.FC<{
@@ -125,7 +158,7 @@ export const QuoteExplainCard: React.FC<{
       toReasonsList(res);
       setResult(res);
     } catch (e: unknown) {
-      onError(toHumanError(e, "算价失败"));
+      onError(mapCalcErrorToCn(e, "算价失败，请稍后重试。"));
       setResult(null);
     } finally {
       setLoading(false);
