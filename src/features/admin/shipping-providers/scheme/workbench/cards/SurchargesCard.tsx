@@ -1,42 +1,76 @@
 // src/features/admin/shipping-providers/scheme/workbench/cards/SurchargesCard.tsx
 //
 // 分拆说明：
-// - 从 PricingWorkbenchPanel.tsx 中拆出。
-// - 当前只负责“附加费”卡片 UI。
+// - 从原先超长 surcharge 卡片文件继续拆分而来。
+// - 当前文件只负责：
+//   1) surcharge 卡整体壳子
+//   2) 省级 / 城市配置两大区块编排
+//   3) 将父层动作透传给子组件
 // - 当前不负责：
-//   1) surcharge 校验
-//   2) upsert / patch / delete 请求
-//   3) 顶层错误与成功提示
+//   1) 候选省份搜索与待创建列表细节
+//   2) 城市配置创建器内部选择逻辑
+//   3) 单张省级配置卡 / 城市配置卡内部布局
+//   4) 城市子项编辑器细节
 // - 协作关系：
-//   - 父层由 ../PricingWorkbenchPanel 传入省份选项与动作回调
-//   - 真实状态更新与保存逻辑位于 ../usePricingWorkbench
+//   - ./surcharges/types
+//   - ./surcharges/utils
+//   - ./surcharges/ProvinceBatchCreator
+//   - ./surcharges/CityConfigCreator
+//   - ./surcharges/CitySurchargeCardEditor
 // - 维护约束：
-//   - 本文件保持为附加费表单展示层，不再承载 API 与业务判定细节。
-//   - 为抑制局部视觉抖动，本卡片关闭滚动锚定，并通过 React.memo 避免无意义重渲染放大抖动。
+//   - 本文件保持为 surcharge 卡“页面壳”定位，不再回涨成 800+ 行杂货铺。
+//   - 业务真相仍在 state/surcharges.ts；本文件只做展示与动作分发。
 
 import React from "react";
 import type { GeoItem } from "../../../api/geo";
 import { UI } from "../../ui";
 import type { SurchargeRuleRow } from "../domain/types";
+import type { ProvinceBatchDraft, ProvinceSelection } from "./surcharges/types";
+import { collectExistingProvinceCodes } from "./surcharges/utils";
+import ProvinceBatchCreator from "./surcharges/ProvinceBatchCreator";
+import CityConfigCreator from "./surcharges/CityConfigCreator";
+import CitySurchargeCardEditor from "./surcharges/CitySurchargeCardEditor";
 
 type Props = {
   disabled: boolean;
   saving: boolean;
   rows: SurchargeRuleRow[];
   provinceOptions: GeoItem[];
-  provinceNameByCode: Map<string, string>;
-  onAddRow: () => void;
-  onSave: () => void;
+  provinceDrafts: ProvinceBatchDraft[];
+  provinceErrorMessage: string | null;
+  cityErrorByClientId: Record<string, string | null>;
+  onAddProvinceDraft: (item: { provinceCode: string; provinceName: string }) => void;
+  onUpdateProvinceDraft: (
+    provinceCode: string,
+    patch: Partial<Pick<ProvinceBatchDraft, "fixedAmount" | "active">>,
+  ) => void;
+  onRemoveProvinceDraft: (provinceCode: string) => void;
+  onClearProvinceDrafts: () => void;
+  onSaveProvinceWorkspace: () => Promise<boolean>;
+  onCreateCityGroup: (item: ProvinceSelection) => Promise<boolean>;
+  onSaveCityRow: (clientId: string) => Promise<boolean>;
   onUpdateRow: (
     clientId: string,
     patch: Partial<
       Pick<
         SurchargeRuleRow,
-        "name" | "active" | "scope" | "provinceCode" | "provinceName" | "cityName" | "fixedAmount"
+        "provinceCode" | "provinceName" | "provinceMode" | "fixedAmount" | "active" | "cities"
       >
     >,
   ) => void;
   onRemoveRow: (clientId: string) => void;
+  onAddCityToRow: (clientId: string) => void;
+  onUpdateCity: (
+    clientId: string,
+    cityClientId: string,
+    patch: Partial<{
+      cityCode: string;
+      cityName: string;
+      fixedAmount: string;
+      active: boolean;
+    }>,
+  ) => void;
+  onRemoveCity: (clientId: string, cityClientId: string) => void;
 };
 
 export const SurchargesCard: React.FC<Props> = React.memo(
@@ -45,120 +79,112 @@ export const SurchargesCard: React.FC<Props> = React.memo(
     saving,
     rows,
     provinceOptions,
-    provinceNameByCode,
-    onAddRow,
-    onSave,
+    provinceDrafts,
+    provinceErrorMessage,
+    cityErrorByClientId,
+    onAddProvinceDraft,
+    onUpdateProvinceDraft,
+    onRemoveProvinceDraft,
+    onClearProvinceDrafts,
+    onSaveProvinceWorkspace,
+    onCreateCityGroup,
+    onSaveCityRow,
     onUpdateRow,
     onRemoveRow,
+    onAddCityToRow,
+    onUpdateCity,
+    onRemoveCity,
   }) => {
+    const provinceRows = rows.filter((x) => x.provinceMode === "province");
     const aliveRows = rows.filter((x) => !x.isDeleted);
+    const aliveProvinceRows = provinceRows.filter((x) => !x.isDeleted);
+    const cityRows = aliveRows.filter((x) => x.provinceMode === "cities");
+
+    const existingProvinceCodes = React.useMemo(
+      () => collectExistingProvinceCodes(aliveRows),
+      [aliveRows],
+    );
 
     return (
       <div className={`${UI.cardTight} [overflow-anchor:none]`}>
         <div className={UI.headerRow}>
           <div>
             <div className={UI.panelTitle}>4）附加费</div>
-            <div className={UI.panelHint}>只支持省 / 市两层；城市优先覆盖省份；单次只命中一条，不叠加。</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button type="button" className={UI.btnNeutralSm} onClick={onAddRow} disabled={disabled || saving}>
-              新增附加费
-            </button>
-            <button type="button" className={UI.btnPrimaryGreen} onClick={onSave} disabled={disabled || saving}>
-              {saving ? "保存中…" : "保存附加费"}
-            </button>
+            <div className={UI.panelHint}>
+              已切到 surcharge_config 终态模型：省级附加费在右侧统一编辑并整体保存，城市附加费继续按容器卡单独保存。
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 space-y-3">
-          {aliveRows.map((row) => (
-            <div key={row.clientId} className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-6">
-              <div>
-                <label className={UI.tinyHelpText}>范围</label>
-                <select
-                  className={`${UI.selectBase} mt-1 w-full`}
-                  value={row.scope}
-                  disabled={disabled || saving}
-                  onChange={(e) =>
-                    onUpdateRow(row.clientId, {
-                      scope: e.target.value as "province" | "city",
-                    })
-                  }
-                >
-                  <option value="province">省级</option>
-                  <option value="city">市级</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={UI.tinyHelpText}>省份</label>
-                <select
-                  className={`${UI.selectBase} mt-1 w-full`}
-                  value={row.provinceCode}
-                  disabled={disabled || saving}
-                  onChange={(e) => {
-                    const provinceCode = e.target.value;
-                    const provinceName = provinceNameByCode.get(provinceCode) ?? "";
-                    onUpdateRow(row.clientId, { provinceCode, provinceName });
-                  }}
-                >
-                  <option value="">请选择省份</option>
-                  {provinceOptions.map((opt) => (
-                    <option key={String(opt.code)} value={String(opt.code)}>
-                      {String(opt.name)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className={UI.tinyHelpText}>城市（省级可留空）</label>
-                <input
-                  className={UI.inputBase}
-                  value={row.cityName}
-                  disabled={disabled || saving || row.scope !== "city"}
-                  onChange={(e) => onUpdateRow(row.clientId, { cityName: e.target.value })}
-                  placeholder="例如 深圳市"
-                />
-              </div>
-
-              <div>
-                <label className={UI.tinyHelpText}>固定加价</label>
-                <input
-                  className={UI.inputBase}
-                  value={row.fixedAmount}
-                  disabled={disabled || saving}
-                  onChange={(e) => onUpdateRow(row.clientId, { fixedAmount: e.target.value })}
-                  placeholder="例如 2"
-                />
-              </div>
-
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={row.active}
-                    disabled={disabled || saving}
-                    onChange={(e) => onUpdateRow(row.clientId, { active: e.target.checked })}
-                  />
-                  启用
-                </label>
-              </div>
-
-              <div className="flex items-end justify-end">
-                <button
-                  type="button"
-                  className={UI.btnDangerSm}
-                  onClick={() => onRemoveRow(row.clientId)}
-                  disabled={disabled || saving}
-                >
-                  删除
-                </button>
+        <div className="mt-4 space-y-6">
+          <section className="space-y-4">
+            <div>
+              <div className="text-sm font-semibold text-slate-800">省级附加费</div>
+              <div className="mt-1 text-xs text-slate-500">
+                用于“全省统一收费”。左侧选择省份加入右侧编辑区，在右侧统一维护金额与启用状态后整体保存。
               </div>
             </div>
-          ))}
 
-          {aliveRows.length === 0 ? <div className={UI.emptyText}>当前方案暂无附加费规则。</div> : null}
+            <ProvinceBatchCreator
+              disabled={disabled}
+              saving={saving}
+              errorMessage={provinceErrorMessage}
+              options={provinceOptions}
+              existingProvinceCodes={existingProvinceCodes}
+              savedRows={aliveProvinceRows}
+              selectedItems={provinceDrafts}
+              onAddDraft={onAddProvinceDraft}
+              onUpdateDraft={onUpdateProvinceDraft}
+              onRemoveDraft={onRemoveProvinceDraft}
+              onClearDrafts={onClearProvinceDrafts}
+              onSaveWorkspace={onSaveProvinceWorkspace}
+              onUpdateSavedRow={onUpdateRow}
+              onRemoveSavedRow={onRemoveRow}
+            />
+          </section>
+
+          <section className="space-y-4">
+            <div>
+              <div className="text-sm font-semibold text-slate-800">城市附加费</div>
+              <div className="mt-1 text-xs text-slate-500">
+                用于“省内部分城市收费”。先选一个省创建容器卡，再维护该省的城市子项。
+              </div>
+            </div>
+
+            <CityConfigCreator
+              disabled={disabled}
+              saving={saving}
+              options={provinceOptions}
+              existingProvinceCodes={existingProvinceCodes}
+              onConfirm={onCreateCityGroup}
+            />
+
+            {cityRows.length === 0 ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                当前还没有城市附加费配置。
+              </div>
+            ) : (
+              cityRows.map((row) => (
+                <CitySurchargeCardEditor
+                  key={row.clientId}
+                  row={row}
+                  disabled={disabled}
+                  saving={saving}
+                  errorMessage={cityErrorByClientId[row.clientId] ?? null}
+                  onSaveRow={onSaveCityRow}
+                  onUpdateRow={onUpdateRow}
+                  onRemoveRow={onRemoveRow}
+                  onAddCityToRow={onAddCityToRow}
+                  onUpdateCity={onUpdateCity}
+                  onRemoveCity={onRemoveCity}
+                />
+              ))
+            )}
+          </section>
+
+          {aliveRows.length === 0 ? (
+            <div className={UI.emptyText}>当前方案暂无附加费配置。</div>
+          ) : null}
         </div>
       </div>
     );

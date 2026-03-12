@@ -13,60 +13,72 @@
 //   - 本文件聚焦重量段，不要吸收别的子域动作。
 
 import { useCallback } from "react";
-import { putModuleRanges } from "../api/modules";
-import type { ModuleCode } from "../api/types";
+import { fetchSchemeMatrixCells, putSchemeRanges } from "../api/modules";
 import {
   newClientId,
   sortRanges,
   validateRangeRows,
 } from "../domain/derived";
-import type { ModuleEditorState, RangeRow } from "../domain/types";
-import { mapRangeApiToRow } from "./mappers";
+import type {
+  MatrixCellDraft,
+  PricingMode,
+  RangeRow,
+  SaveFeedback,
+} from "../domain/types";
+import { mapCellApiToDraft, mapRangeApiToRow } from "./mappers";
 
 type Args = {
   schemeId: number;
   disabled: boolean;
-  getModuleState: (moduleCode: ModuleCode) => ModuleEditorState;
-  setModuleState: (moduleCode: ModuleCode, updater: (prev: ModuleEditorState) => ModuleEditorState) => void;
-  setError: (msg: string | null) => void;
-  setSuccess: (msg: string | null) => void;
+  ranges: RangeRow[];
+  setRanges: (updater: (prev: RangeRow[]) => RangeRow[]) => void;
+  setCells: (updater: (prev: Record<string, MatrixCellDraft>) => Record<string, MatrixCellDraft>) => void;
+  setSavingRanges: (updater: (prev: boolean) => boolean) => void;
+  setRangesFeedback: React.Dispatch<React.SetStateAction<SaveFeedback>>;
 };
 
+function nextDefaultPricingMode(rows: RangeRow[]): PricingMode {
+  const alive = sortRanges(rows.filter((r) => !r.isDeleted));
+  return alive.slice(-1)[0]?.defaultPricingMode ?? "flat";
+}
+
 export function useRangesActions(args: Args) {
-  const { schemeId, disabled, getModuleState, setModuleState, setError, setSuccess } = args;
+  const {
+    schemeId,
+    disabled,
+    ranges,
+    setRanges,
+    setCells,
+    setSavingRanges,
+    setRangesFeedback,
+  } = args;
 
-  const addRange = useCallback(
-    (moduleCode: ModuleCode) => {
-      setModuleState(moduleCode, (prev) => {
-        const alive = prev.ranges.filter((r) => !r.isDeleted);
-        const last = sortRanges(alive).slice(-1)[0] ?? null;
-        const nextMin = last ? (last.maxKg.trim() || last.minKg.trim() || "0") : "0";
+  const addRange = useCallback(() => {
+    setRanges((prev) => {
+      const alive = prev.filter((r) => !r.isDeleted);
+      const last = sortRanges(alive).slice(-1)[0] ?? null;
+      const nextMin = last ? (last.maxKg.trim() || last.minKg.trim() || "0") : "0";
 
-        const next: RangeRow = {
-          id: undefined,
-          clientId: newClientId(`range:${moduleCode}`),
-          minKg: nextMin,
-          maxKg: "",
-          sortOrder: alive.length,
-          isNew: true,
-          isDirty: true,
-          isDeleted: false,
-        };
+      const next: RangeRow = {
+        id: undefined,
+        clientId: newClientId("range"),
+        minKg: nextMin,
+        maxKg: "",
+        defaultPricingMode: nextDefaultPricingMode(prev),
+        sortOrder: alive.length,
+        isNew: true,
+        isDirty: true,
+        isDeleted: false,
+      };
 
-        return {
-          ...prev,
-          ranges: sortRanges([...prev.ranges, next]),
-        };
-      });
-    },
-    [setModuleState],
-  );
+      return sortRanges([...prev, next]);
+    });
+  }, [setRanges]);
 
   const updateRangeField = useCallback(
-    (moduleCode: ModuleCode, clientId: string, field: "minKg" | "maxKg", value: string) => {
-      setModuleState(moduleCode, (prev) => ({
-        ...prev,
-        ranges: prev.ranges.map((row) =>
+    (clientId: string, field: "minKg" | "maxKg" | "defaultPricingMode", value: string) => {
+      setRanges((prev) =>
+        prev.map((row) =>
           row.clientId === clientId
             ? {
                 ...row,
@@ -75,89 +87,103 @@ export function useRangesActions(args: Args) {
               }
             : row,
         ),
-      }));
+      );
+      setRangesFeedback((prev) =>
+        prev.error || prev.success ? { error: null, success: null } : prev,
+      );
     },
-    [setModuleState],
+    [setRanges, setRangesFeedback],
   );
 
   const removeRange = useCallback(
-    (moduleCode: ModuleCode, clientId: string) => {
-      setModuleState(moduleCode, (prev) => {
-        const alive = prev.ranges.filter((r) => !r.isDeleted);
+    (clientId: string) => {
+      setRanges((prev) => {
+        const alive = prev.filter((r) => !r.isDeleted);
         if (alive.length <= 1) return prev;
 
-        return {
-          ...prev,
-          ranges: prev.ranges.map((row) =>
-            row.clientId === clientId
-              ? {
-                  ...row,
-                  isDeleted: true,
-                  isDirty: true,
-                }
-              : row,
-          ),
-        };
-      });
-    },
-    [setModuleState],
-  );
-
-  const saveRanges = useCallback(
-    async (moduleCode: ModuleCode) => {
-      if (disabled) return false;
-
-      const moduleState = getModuleState(moduleCode);
-      const errors = validateRangeRows(moduleState.ranges);
-      if (errors.length > 0) {
-        setError(errors[0]);
-        return false;
-      }
-
-      setModuleState(moduleCode, (prev) => ({
-        ...prev,
-        savingRanges: true,
-        error: null,
-      }));
-      setError(null);
-      setSuccess(null);
-
-      try {
-        const alive = sortRanges(moduleState.ranges.filter((r) => !r.isDeleted));
-        const payload = {
-          ranges: alive.map((row, idx) => ({
-            min_kg: Number(row.minKg.trim()),
-            max_kg: row.maxKg.trim() ? Number(row.maxKg.trim()) : null,
-            sort_order: idx,
-          })),
-        };
-
-        const resp = await putModuleRanges(schemeId, moduleCode, payload);
-
-        setModuleState(moduleCode, (prev) => ({
-          ...prev,
-          savingRanges: false,
-          ranges: sortRanges((resp.ranges ?? []).map(mapRangeApiToRow)),
-          cells: {},
-        }));
-
-        setSuccess(
-          `${moduleCode === "standard" ? "标准区域" : "其他区域"}重量段已保存；该模块矩阵已清空，需要重新录入后保存。`,
+        return prev.map((row) =>
+          row.clientId === clientId
+            ? {
+                ...row,
+                isDeleted: true,
+                isDirty: true,
+              }
+            : row,
         );
-        return true;
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "保存重量段失败";
-        setModuleState(moduleCode, (prev) => ({
-          ...prev,
-          savingRanges: false,
-          error: msg,
-        }));
-        setError(msg);
-        return false;
-      }
+      });
+      setRangesFeedback((prev) =>
+        prev.error || prev.success ? { error: null, success: null } : prev,
+      );
     },
-    [disabled, getModuleState, schemeId, setError, setModuleState, setSuccess],
+    [setRanges, setRangesFeedback],
   );
+
+  const saveRanges = useCallback(async () => {
+    if (disabled) return false;
+
+    const errors = validateRangeRows(ranges);
+    if (errors.length > 0) {
+      setRangesFeedback({
+        error: errors[0],
+        success: null,
+      });
+      return false;
+    }
+
+    const hasPendingChanges = ranges.some((row) => row.isNew || row.isDirty || row.isDeleted);
+    if (!hasPendingChanges) {
+      setRangesFeedback({
+        error: null,
+        success: "没有需要保存的更改",
+      });
+      return true;
+    }
+
+    setSavingRanges(() => true);
+    setRangesFeedback({
+      error: null,
+      success: null,
+    });
+
+    try {
+      const alive = sortRanges(ranges.filter((r) => !r.isDeleted));
+      const payload = {
+        ranges: alive.map((row, idx) => ({
+          min_kg: Number(row.minKg.trim()),
+          max_kg: row.maxKg.trim() ? Number(row.maxKg.trim()) : null,
+          default_pricing_mode: row.defaultPricingMode,
+          sort_order: idx,
+        })),
+      };
+
+      const resp = await putSchemeRanges(schemeId, payload);
+
+      setRanges(() => sortRanges((resp.ranges ?? []).map(mapRangeApiToRow)));
+
+      const cellsResp = await fetchSchemeMatrixCells(schemeId);
+      const nextCells: Record<string, MatrixCellDraft> = {};
+      (cellsResp.cells ?? []).forEach((cellRow) => {
+        const draft = mapCellApiToDraft(cellRow);
+        nextCells[draft.key] = draft;
+      });
+      setCells(() => nextCells);
+
+      setRangesFeedback({
+        error: null,
+        success: "重量段已保存；价格矩阵已按最新保存结果刷新。",
+      });
+      return true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "保存重量段失败";
+      setRangesFeedback({
+        error: msg,
+        success: null,
+      });
+      return false;
+    } finally {
+      setSavingRanges(() => false);
+    }
+  }, [disabled, ranges, schemeId, setCells, setRanges, setRangesFeedback, setSavingRanges]);
 
   return {
     addRange,

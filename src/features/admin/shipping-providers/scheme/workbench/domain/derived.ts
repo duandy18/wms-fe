@@ -1,6 +1,6 @@
 // src/features/admin/shipping-providers/scheme/workbench/domain/derived.ts
 //
-// 运价工作台（新主线）纯函数与派生逻辑。
+// 运价工作台（单 scheme 主线）纯函数与派生逻辑。
 
 import type {
   GroupProvinceRow,
@@ -9,7 +9,6 @@ import type {
   MatrixCellView,
   MatrixColumn,
   MatrixRowView,
-  ModuleCode,
   ModuleEditorState,
   PricingMode,
   RangeRow,
@@ -22,10 +21,6 @@ import type {
 export function newClientId(prefix: string): string {
   const rand = Math.random().toString(36).slice(2, 8);
   return `${prefix}:${Date.now()}:${rand}`;
-}
-
-export function moduleLabel(moduleCode: ModuleCode): string {
-  return moduleCode === "standard" ? "标准区域" : "其他区域";
 }
 
 export function buildCellKey(groupId: number, moduleRangeId: number): string {
@@ -72,7 +67,7 @@ export function parseRequiredNumber(text: string): number | null {
 export function createEmptyCellDraft(
   groupId: number,
   moduleRangeId: number,
-  pricingMode: PricingMode = "flat",
+  pricingMode: PricingMode,
 ): MatrixCellDraft {
   return {
     key: buildCellKey(groupId, moduleRangeId),
@@ -170,7 +165,9 @@ export function validateRangeRows(rows: RangeRow[]): string[] {
       const nextEnd = nextMax ?? Number.POSITIVE_INFINITY;
 
       if (currentMin < nextEnd && nextMin < currentEnd) {
-        errors.push(`重量段存在重叠：${formatRangeLabel(current.minKg, current.maxKg)} 与 ${formatRangeLabel(next.minKg, next.maxKg)}`);
+        errors.push(
+          `重量段存在重叠：${formatRangeLabel(current.minKg, current.maxKg)} 与 ${formatRangeLabel(next.minKg, next.maxKg)}`,
+        );
       }
     }
   }
@@ -216,15 +213,15 @@ export function validateGroupRows(rows: GroupRow[]): string[] {
 export function validateMatrixCellDraft(cell: MatrixCellDraft): string | null {
   if (cell.pricingMode === "flat") {
     const flat = parseRequiredNumber(cell.flatAmount);
-    if (flat === null || flat < 0) return "固定价格模式必须填写非负固定价";
+    if (flat === null || flat < 0) return "固定价格模式必须填写非负固定价格";
     return null;
   }
 
   if (cell.pricingMode === "linear_total") {
     const base = parseRequiredNumber(cell.baseAmount);
     const rate = parseRequiredNumber(cell.ratePerKg);
-    if (base === null || base < 0) return "面单费+总重费率模式必须填写非负面单费";
-    if (rate === null || rate < 0) return "面单费+总重费率模式必须填写非负费率";
+    if (base === null || base < 0) return "面单费+总重每公斤模式必须填写非负面单费";
+    if (rate === null || rate < 0) return "面单费+总重每公斤模式必须填写非负总重每公斤";
     return null;
   }
 
@@ -232,9 +229,9 @@ export function validateMatrixCellDraft(cell: MatrixCellDraft): string | null {
     const baseKg = parseRequiredNumber(cell.baseKg);
     const base = parseRequiredNumber(cell.baseAmount);
     const rate = parseRequiredNumber(cell.ratePerKg);
-    if (baseKg === null || baseKg < 0) return "首重续重模式必须填写非负首重重量";
-    if (base === null || base < 0) return "首重续重模式必须填写非负首重价";
-    if (rate === null || rate < 0) return "首重续重模式必须填写非负续重费率";
+    if (baseKg === null || baseKg < 0) return "首重+续重每公斤模式必须填写非负首重重量";
+    if (base === null || base < 0) return "首重+续重每公斤模式必须填写非负首重费用";
+    if (rate === null || rate < 0) return "首重+续重每公斤模式必须填写非负续重每公斤";
     return null;
   }
 
@@ -248,7 +245,7 @@ export function displayTextOfCell(cell: MatrixCellDraft): string {
   if (cell.pricingMode === "linear_total") {
     const base = cell.baseAmount.trim() || "-";
     const rate = cell.ratePerKg.trim() || "-";
-    return `面单¥${base} + ¥${rate}/kg`;
+    return `面单¥${base} + 总重¥${rate}/kg`;
   }
   if (cell.pricingMode === "step_over") {
     const kg = cell.baseKg.trim() || "-";
@@ -281,6 +278,7 @@ export function deriveMatrixColumns(ranges: RangeRow[]): MatrixColumn[] {
       minKgText: r.minKg,
       maxKgText: r.maxKg,
       label: formatRangeLabel(r.minKg, r.maxKg),
+      defaultPricingMode: r.defaultPricingMode,
     }));
 }
 
@@ -299,7 +297,8 @@ export function deriveMatrixRows(args: {
 
       const cells: MatrixCellView[] = columns.map((col) => {
         const key = buildCellKey(groupId, col.moduleRangeId);
-        const draft = cellMap[key] ?? createEmptyCellDraft(groupId, col.moduleRangeId);
+        const draft =
+          cellMap[key] ?? createEmptyCellDraft(groupId, col.moduleRangeId, col.defaultPricingMode);
         const isValid = validateMatrixCellDraft(draft) === null;
 
         return {
@@ -328,70 +327,115 @@ export function deriveMatrixRows(args: {
     });
 }
 
-function moduleHasAllCells(module: ModuleEditorState): boolean {
-  const groups = module.groups.filter((g) => !g.isDeleted && typeof g.id === "number");
-  const ranges = module.ranges.filter((r) => !r.isDeleted && typeof r.id === "number");
+function hasCompleteValidMatrix(args: {
+  groups: GroupRow[];
+  ranges: RangeRow[];
+  cells: Record<string, MatrixCellDraft>;
+}): boolean {
+  const groups = args.groups.filter((g) => !g.isDeleted && typeof g.id === "number");
+  const ranges = args.ranges.filter((r) => !r.isDeleted && typeof r.id === "number");
+
   if (groups.length === 0 || ranges.length === 0) return false;
 
   for (const g of groups) {
     for (const r of ranges) {
       const key = buildCellKey(g.id as number, r.id as number);
-      if (!module.cells[key]) return false;
-      if (validateMatrixCellDraft(module.cells[key]) !== null) return false;
+      const draft = args.cells[key];
+      if (!draft) return false;
+      if (validateMatrixCellDraft(draft) !== null) return false;
     }
   }
+
   return true;
 }
 
-function moduleHasDirty(module: ModuleEditorState): boolean {
-  const rangesDirty = module.ranges.some((r) => r.isDirty || r.isNew || r.isDeleted);
-  const groupsDirty = module.groups.some((g) => g.isDirty || g.isNew || g.isDeleted);
-  const cellsDirty = Object.values(module.cells).some((c) => c.isDirty);
+function countExpectedCells(args: { groups: GroupRow[]; ranges: RangeRow[] }): number {
+  const groups = args.groups.filter((g) => !g.isDeleted && typeof g.id === "number");
+  const ranges = args.ranges.filter((r) => !r.isDeleted && typeof r.id === "number");
+  return groups.length * ranges.length;
+}
+
+function countActualCells(args: {
+  groups: GroupRow[];
+  ranges: RangeRow[];
+  cells: Record<string, MatrixCellDraft>;
+}): number {
+  const groupIds = new Set(
+    args.groups.filter((g) => !g.isDeleted && typeof g.id === "number").map((g) => g.id as number),
+  );
+  const rangeIds = new Set(
+    args.ranges.filter((r) => !r.isDeleted && typeof r.id === "number").map((r) => r.id as number),
+  );
+
+  let count = 0;
+  Object.values(args.cells).forEach((cell) => {
+    if (groupIds.has(cell.groupId) && rangeIds.has(cell.moduleRangeId)) {
+      count += 1;
+    }
+  });
+  return count;
+}
+
+function hasDirtyModuleState(state: ModuleEditorState): boolean {
+  const rangesDirty = state.ranges.some((r) => r.isDirty || r.isNew || r.isDeleted);
+  const groupsDirty = state.groups.some((g) => g.isDirty || g.isNew || g.isDeleted);
+  const cellsDirty = Object.values(state.cells).some((c) => c.isDirty);
   return rangesDirty || groupsDirty || cellsDirty;
 }
 
 export function deriveWorkbenchState(args: {
-  activeModuleCode: ModuleCode;
-  standard: ModuleEditorState;
-  other: ModuleEditorState;
+  ranges: RangeRow[];
+  groups: GroupRow[];
+  cells: Record<string, MatrixCellDraft>;
   surcharges: SurchargeRuleRow[];
 }): WorkbenchDerivedState {
-  const { activeModuleCode, standard, other, surcharges } = args;
-  const active = activeModuleCode === "standard" ? standard : other;
+  const { ranges, groups, cells, surcharges } = args;
 
-  const activeModuleRangesReady = active.ranges.filter((r) => !r.isDeleted && typeof r.id === "number").length > 0;
-  const activeModuleGroupsReady = active.groups.filter((g) => !g.isDeleted && typeof g.id === "number").length > 0;
-  const activeModuleMatrixReady = moduleHasAllCells(active);
-  const canEditActiveMatrix = activeModuleRangesReady && activeModuleGroupsReady;
+  const rangesReady = ranges.filter((r) => !r.isDeleted && typeof r.id === "number").length > 0;
+  const groupsReady = groups.filter((g) => !g.isDeleted && typeof g.id === "number").length > 0;
+  const canEditMatrix = rangesReady && groupsReady;
+  const matrixReady = hasCompleteValidMatrix({ ranges, groups, cells });
 
-  const standardReady = moduleHasAllCells(standard);
+  const expectedCellCount = countExpectedCells({ ranges, groups });
+  const actualCellCount = countActualCells({ ranges, groups, cells });
+  const missingCellCount = Math.max(0, expectedCellCount - actualCellCount);
 
-  const otherUsed =
-    other.ranges.filter((r) => !r.isDeleted).length > 0 ||
-    other.groups.filter((g) => !g.isDeleted).length > 0 ||
-    Object.keys(other.cells).length > 0;
-
-  const otherReady = !otherUsed || moduleHasAllCells(other);
-
-  const surchargeDirty = surcharges.some((s) => s.isDirty || s.isNew || s.isDeleted);
-  const hasUnsavedChanges = moduleHasDirty(standard) || moduleHasDirty(other) || surchargeDirty;
+  const hasUnsavedChanges =
+    hasDirtyModuleState({
+      loading: false,
+      savingRanges: false,
+      savingGroups: false,
+      savingCells: false,
+      error: null,
+      ranges,
+      groups,
+      cells,
+    }) || surcharges.some((s) => s.isDirty || s.isNew || s.isDeleted);
 
   const blockers: WorkbenchBlocker[] = [];
   const warnings: WorkbenchWarning[] = [];
 
-  if (!standardReady) {
+  if (!rangesReady) {
     blockers.push({
-      code: "STANDARD_INCOMPLETE",
-      message: "标准区域未完成：需先保存重量段、区域范围，并补齐价格矩阵。",
-      scope: "standard",
+      code: "RANGES_EMPTY",
+      message: "重量段未完成：至少需要 1 条已保存重量段。",
+      scope: "ranges",
     });
   }
 
-  if (otherUsed && !otherReady) {
+  if (!groupsReady) {
     blockers.push({
-      code: "OTHER_INCOMPLETE",
-      message: "其他区域已开始配置，但尚未补齐完整矩阵。",
-      scope: "other",
+      code: "GROUPS_EMPTY",
+      message: "区域范围未完成：至少需要 1 条已保存区域行。",
+      scope: "groups",
+    });
+  }
+
+  if (canEditMatrix && !matrixReady) {
+    blockers.push({
+      code: "MATRIX_INCOMPLETE",
+      message: "价格矩阵尚未补齐并保存，当前不能发布。",
+      scope: "matrix",
     });
   }
 
@@ -403,19 +447,11 @@ export function deriveWorkbenchState(args: {
     });
   }
 
-  if (!otherUsed) {
+  if (canEditMatrix && !matrixReady) {
     warnings.push({
-      code: "OTHER_UNUSED",
-      message: "当前未启用“其他区域”模块；仅标准区域参与报价。",
-      scope: "other",
-    });
-  }
-
-  if (!activeModuleMatrixReady && canEditActiveMatrix) {
-    warnings.push({
-      code: "ACTIVE_MATRIX_PENDING",
-      message: `${moduleLabel(activeModuleCode)}：已可录入矩阵，但当前尚未完成保存。`,
-      scope: "active-module",
+      code: "MATRIX_PENDING",
+      message: `价格矩阵待完善：当前已录入 ${actualCellCount} / ${expectedCellCount} 个单元格。`,
+      scope: "matrix",
     });
   }
 
@@ -427,25 +463,20 @@ export function deriveWorkbenchState(args: {
     });
   }
 
-  const canPublish =
-    standardReady &&
-    !hasUnsavedChanges &&
-    blockers.length === 0 &&
-    (!otherUsed || otherReady);
+  const canPublish = rangesReady && groupsReady && matrixReady && !hasUnsavedChanges && blockers.length === 0;
 
   return {
-    activeModuleCode,
-    activeModuleRangesReady,
-    activeModuleGroupsReady,
-    activeModuleMatrixReady,
-    canEditActiveMatrix,
-    standardReady,
-    otherUsed,
-    otherReady,
+    rangesReady,
+    groupsReady,
+    matrixReady,
+    canEditMatrix,
+    expectedCellCount,
+    actualCellCount,
+    missingCellCount,
     hasUnsavedChanges,
     canPublish,
     blockers,
     warnings,
-    quoteBasedOnSavedVersion: !hasUnsavedChanges,
+    quoteBasedOnSavedVersion: hasUnsavedChanges,
   };
 }

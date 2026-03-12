@@ -65,6 +65,16 @@ export async function patchPricingScheme(
   return res.data;
 }
 
+export async function publishPricingScheme(schemeId: number): Promise<PricingSchemeDetail> {
+  const res = await apiPost<SchemeDetailResponse>(`/pricing-schemes/${schemeId}/publish`, {});
+  return res.data;
+}
+
+export async function clonePricingScheme(schemeId: number): Promise<PricingSchemeDetail> {
+  const res = await apiPost<SchemeDetailResponse>(`/pricing-schemes/${schemeId}/clone`, {});
+  return res.data;
+}
+
 export async function deletePricingScheme(schemeId: number): Promise<{ ok: boolean }> {
   return apiDelete<{ ok: boolean }>(`/pricing-schemes/${schemeId}`);
 }

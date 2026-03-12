@@ -1,12 +1,11 @@
 // src/features/admin/shipping-providers/scheme/workbench/api/modules.ts
 //
-// 运价工作台（新主线）modules 三阶段接口封装。
+// 运价工作台（单 scheme 主线）接口封装。
 // 只使用后端终态合同：ranges / groups / matrix-cells。
 
-import { apiGet, apiPut } from "../../../../../../lib/api";
+import { apiDelete, apiGet, apiPost, apiPut } from "../../../../../../lib/api";
 import type {
-  ModuleCode,
-  ModuleGroupsPutPayload,
+  ModuleGroupApi,
   ModuleGroupsResponse,
   ModuleMatrixCellsPutPayload,
   ModuleMatrixCellsResponse,
@@ -14,50 +13,83 @@ import type {
   ModuleRangesResponse,
 } from "./types";
 
-export async function fetchModuleRanges(
-  schemeId: number,
-  moduleCode: ModuleCode,
-): Promise<ModuleRangesResponse> {
-  return apiGet<ModuleRangesResponse>(`/pricing-schemes/${schemeId}/modules/${moduleCode}/ranges`);
+export interface ModuleGroupWritePayload {
+  sort_order?: number | null;
+  active?: boolean;
+  provinces: Array<{
+    province_code?: string | null;
+    province_name?: string | null;
+  }>;
 }
 
-export async function putModuleRanges(
+export interface ModuleGroupSingleResponse {
+  ok: boolean;
+  group: ModuleGroupApi;
+}
+
+export interface ModuleGroupDeleteResponse {
+  ok: boolean;
+  deleted_group_id: number;
+}
+
+export async function fetchSchemeRanges(
   schemeId: number,
-  moduleCode: ModuleCode,
+): Promise<ModuleRangesResponse> {
+  return apiGet<ModuleRangesResponse>(`/pricing-schemes/${schemeId}/ranges`);
+}
+
+export async function putSchemeRanges(
+  schemeId: number,
   payload: ModuleRangesPutPayload,
 ): Promise<ModuleRangesResponse> {
-  return apiPut<ModuleRangesResponse>(`/pricing-schemes/${schemeId}/modules/${moduleCode}/ranges`, payload);
+  return apiPut<ModuleRangesResponse>(`/pricing-schemes/${schemeId}/ranges`, payload);
 }
 
-export async function fetchModuleGroups(
+export async function fetchSchemeGroups(
   schemeId: number,
-  moduleCode: ModuleCode,
 ): Promise<ModuleGroupsResponse> {
-  return apiGet<ModuleGroupsResponse>(`/pricing-schemes/${schemeId}/modules/${moduleCode}/groups`);
+  return apiGet<ModuleGroupsResponse>(`/pricing-schemes/${schemeId}/groups`);
 }
 
-export async function putModuleGroups(
+export async function createSchemeGroup(
   schemeId: number,
-  moduleCode: ModuleCode,
-  payload: ModuleGroupsPutPayload,
-): Promise<ModuleGroupsResponse> {
-  return apiPut<ModuleGroupsResponse>(`/pricing-schemes/${schemeId}/modules/${moduleCode}/groups`, payload);
+  payload: ModuleGroupWritePayload,
+): Promise<ModuleGroupSingleResponse> {
+  return apiPost<ModuleGroupSingleResponse>(`/pricing-schemes/${schemeId}/groups`, payload);
 }
 
-export async function fetchModuleMatrixCells(
+export async function updateSchemeGroup(
   schemeId: number,
-  moduleCode: ModuleCode,
+  groupId: number,
+  payload: ModuleGroupWritePayload,
+): Promise<ModuleGroupSingleResponse> {
+  return apiPut<ModuleGroupSingleResponse>(
+    `/pricing-schemes/${schemeId}/groups/${groupId}`,
+    payload,
+  );
+}
+
+export async function deleteSchemeGroup(
+  schemeId: number,
+  groupId: number,
+): Promise<ModuleGroupDeleteResponse> {
+  return apiDelete<ModuleGroupDeleteResponse>(
+    `/pricing-schemes/${schemeId}/groups/${groupId}`,
+  );
+}
+
+export async function fetchSchemeMatrixCells(
+  schemeId: number,
 ): Promise<ModuleMatrixCellsResponse> {
-  return apiGet<ModuleMatrixCellsResponse>(`/pricing-schemes/${schemeId}/modules/${moduleCode}/matrix-cells`);
+  return apiGet<ModuleMatrixCellsResponse>(`/pricing-schemes/${schemeId}/matrix-cells`);
 }
 
-export async function putModuleMatrixCells(
+export async function putSchemeMatrixCells(
   schemeId: number,
-  moduleCode: ModuleCode,
   payload: ModuleMatrixCellsPutPayload,
 ): Promise<ModuleMatrixCellsResponse> {
   return apiPut<ModuleMatrixCellsResponse>(
-    `/pricing-schemes/${schemeId}/modules/${moduleCode}/matrix-cells`,
+    `/pricing-schemes/${schemeId}/matrix-cells`,
     payload,
   );
 }

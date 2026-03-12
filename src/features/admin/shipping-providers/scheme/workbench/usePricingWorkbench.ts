@@ -4,8 +4,8 @@
 // - 本文件是“运价工作台主 hook 装配层”，由原先超长单文件状态总控继续收口而来。
 // - 当前只负责：
 //   1) 挂接 React 状态
-//   2) 组装 standard / other / surcharges 三块状态
-//   3) 装配 modules / ranges / groups / matrix / surcharges 子域动作
+//   2) 装配 ranges / groups / matrix / surcharge_configs 四块状态
+//   3) 装配加载与子域动作
 //   4) 输出统一 workbench API 给页面壳使用
 // - 当前不负责：
 //   1) DTO -> 前端行状态的 mapper 细节
@@ -25,9 +25,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PricingSchemeDetail } from "../../api/types";
 import { deriveWorkbenchState } from "./domain/derived";
-import type { ModuleCode, PricingMode } from "./api/types";
-import type { ModuleEditorState, SurchargeRuleRow } from "./domain/types";
-import { emptyModuleState, mapSurchargeApiToRow } from "./state/mappers";
+import type {
+  CitySaveFeedbackMap,
+  GroupRow,
+  MatrixCellDraft,
+  ModuleEditorState,
+  RangeRow,
+  SaveFeedback,
+  SurchargeRuleRow,
+} from "./domain/types";
+import { mapSurchargeConfigApiListToRows } from "./state/mappers";
 import { useModuleLoadActions } from "./state/modules";
 import { useRangesActions } from "./state/ranges";
 import { useGroupsActions } from "./state/groups";
@@ -40,41 +47,48 @@ export function usePricingWorkbench(args: {
 }) {
   const { detail, disabled = false } = args;
 
-  const [activeModuleCode, setActiveModuleCode] = useState<ModuleCode>("standard");
+  const [loading, setLoading] = useState(false);
 
-  const [standard, setStandard] = useState<ModuleEditorState>(() => emptyModuleState("standard"));
-  const [other, setOther] = useState<ModuleEditorState>(() => emptyModuleState("other"));
+  const [ranges, setRanges] = useState<RangeRow[]>([]);
+  const [groups, setGroups] = useState<GroupRow[]>([]);
+  const [cells, setCells] = useState<Record<string, MatrixCellDraft>>({});
 
   const [surcharges, setSurcharges] = useState<SurchargeRuleRow[]>([]);
+  const [savingRanges, setSavingRanges] = useState(false);
+  const [savingGroups, setSavingGroups] = useState(false);
+  const [savingCells, setSavingCells] = useState(false);
   const [savingSurcharges, setSavingSurcharges] = useState(false);
 
   const [provinceLoading, setProvinceLoading] = useState(false);
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const setModuleState = useCallback(
-    (moduleCode: ModuleCode, updater: (prev: ModuleEditorState) => ModuleEditorState) => {
-      if (moduleCode === "standard") {
-        setStandard((prev) => updater(prev));
-      } else {
-        setOther((prev) => updater(prev));
-      }
-    },
-    [],
-  );
+  const [rangesFeedback, setRangesFeedback] = useState<SaveFeedback>({
+    error: null,
+    success: null,
+  });
+  const [groupsFeedback, setGroupsFeedback] = useState<SaveFeedback>({
+    error: null,
+    success: null,
+  });
+  const [matrixFeedback, setMatrixFeedback] = useState<SaveFeedback>({
+    error: null,
+    success: null,
+  });
+  const [provinceSurchargeFeedback, setProvinceSurchargeFeedback] = useState<SaveFeedback>({
+    error: null,
+    success: null,
+  });
+  const [citySurchargeFeedbackByClientId, setCitySurchargeFeedbackByClientId] =
+    useState<CitySaveFeedbackMap>({});
 
-  const getModuleState = useCallback(
-    (moduleCode: ModuleCode): ModuleEditorState => {
-      return moduleCode === "standard" ? standard : other;
-    },
-    [other, standard],
-  );
-
-  const { loadModule, loadAll } = useModuleLoadActions({
+  const { loadAll } = useModuleLoadActions({
     schemeId: detail.id,
-    setModuleState,
-    setError,
+    setLoading,
+    setRanges,
+    setGroups,
+    setCells,
+    setLoadError,
   });
 
   useEffect(() => {
@@ -82,10 +96,10 @@ export function usePricingWorkbench(args: {
   }, [loadAll]);
 
   useEffect(() => {
-    setSurcharges((detail.surcharges ?? []).map(mapSurchargeApiToRow));
-  }, [detail.surcharges]);
-
-  const currentModule = activeModuleCode === "standard" ? standard : other;
+    setSurcharges(mapSurchargeConfigApiListToRows(detail.surcharge_configs ?? []));
+    setProvinceSurchargeFeedback({ error: null, success: null });
+    setCitySurchargeFeedbackByClientId({});
+  }, [detail.surcharge_configs]);
 
   const {
     addRange,
@@ -95,10 +109,11 @@ export function usePricingWorkbench(args: {
   } = useRangesActions({
     schemeId: detail.id,
     disabled,
-    getModuleState,
-    setModuleState,
-    setError,
-    setSuccess,
+    ranges,
+    setRanges,
+    setCells,
+    setSavingRanges,
+    setRangesFeedback,
   });
 
   const {
@@ -112,10 +127,11 @@ export function usePricingWorkbench(args: {
   } = useGroupsActions({
     schemeId: detail.id,
     disabled,
-    getModuleState,
-    setModuleState,
-    setError,
-    setSuccess,
+    groups,
+    setGroups,
+    setCells,
+    setSavingGroups,
+    setGroupsFeedback,
   });
 
   const {
@@ -126,61 +142,133 @@ export function usePricingWorkbench(args: {
   } = useMatrixActions({
     schemeId: detail.id,
     disabled,
-    getModuleState,
-    setModuleState,
-    setError,
-    setSuccess,
+    ranges,
+    groups,
+    cells,
+    setCells,
+    setSavingCells,
+    setMatrixFeedback,
   });
 
   const {
-    addSurchargeRow,
+    provinceDrafts,
+    addProvinceDraft,
+    updateProvinceDraft,
+    removeProvinceDraft,
+    clearProvinceDrafts,
+    createCitySurchargeGroup,
     updateSurchargeRow,
     removeSurchargeRow,
-    saveSurcharges,
+    addCityToSurchargeRow,
+    updateSurchargeCity,
+    removeSurchargeCity,
+    saveProvinceWorkspace: rawSaveProvinceWorkspace,
+    saveCityRow: rawSaveCityRow,
   } = useSurchargeActions({
     schemeId: detail.id,
     disabled,
     surcharges,
     setSurcharges,
     setSavingSurcharges,
-    setError,
-    setSuccess,
+    setError: setLoadError,
+    setSuccess: () => undefined,
   });
+
+  const saveProvinceWorkspace = useCallback(async () => {
+    setProvinceSurchargeFeedback({ error: null, success: null });
+
+    const result = await rawSaveProvinceWorkspace();
+
+    setProvinceSurchargeFeedback({
+      error: result.error,
+      success: result.success,
+    });
+
+    return result.ok;
+  }, [rawSaveProvinceWorkspace]);
+
+  const saveCityRow = useCallback(
+    async (clientId: string) => {
+      setCitySurchargeFeedbackByClientId((prev) => ({
+        ...prev,
+        [clientId]: { error: null, success: null },
+      }));
+
+      const result = await rawSaveCityRow(clientId);
+
+      setCitySurchargeFeedbackByClientId((prev) => ({
+        ...prev,
+        [clientId]: {
+          error: result.error,
+          success: result.success,
+        },
+      }));
+
+      return result.ok;
+    },
+    [rawSaveCityRow],
+  );
 
   const derived = useMemo(
     () =>
       deriveWorkbenchState({
-        activeModuleCode,
-        standard,
-        other,
+        ranges,
+        groups,
+        cells,
         surcharges,
       }),
-    [activeModuleCode, other, standard, surcharges],
+    [cells, groups, ranges, surcharges],
+  );
+
+  const moduleState: ModuleEditorState = useMemo(
+    () => ({
+      loading,
+      savingRanges,
+      savingGroups,
+      savingCells,
+      error: loadError,
+      ranges,
+      groups,
+      cells,
+    }),
+    [cells, groups, loadError, loading, ranges, savingCells, savingGroups, savingRanges],
   );
 
   return {
-    activeModuleCode,
-    setActiveModuleCode,
+    moduleState,
 
-    standard,
-    other,
-    currentModule,
+    loading,
+    ranges,
+    groups,
+    cells,
 
     surcharges,
+    provinceDrafts,
+    savingRanges,
+    savingGroups,
+    savingCells,
     savingSurcharges,
 
     provinceLoading,
     setProvinceLoading,
 
-    error,
-    setError,
-    success,
-    setSuccess,
+    loadError,
+    setLoadError,
+
+    rangesFeedback,
+    setRangesFeedback,
+    groupsFeedback,
+    setGroupsFeedback,
+    matrixFeedback,
+    setMatrixFeedback,
+    provinceSurchargeFeedback,
+    setProvinceSurchargeFeedback,
+    citySurchargeFeedbackByClientId,
+    setCitySurchargeFeedbackByClientId,
 
     derived,
 
     loadAll,
-    loadModule,
 
     addRange,
     updateRangeField,
@@ -195,26 +283,23 @@ export function usePricingWorkbench(args: {
     setGroupProvinces,
     saveGroups,
 
-    updateCellMode: (
-      moduleCode: ModuleCode,
-      groupId: number,
-      moduleRangeId: number,
-      mode: PricingMode,
-    ) => updateCellMode(moduleCode, groupId, moduleRangeId, mode),
-    updateCellField: (
-      moduleCode: ModuleCode,
-      groupId: number,
-      moduleRangeId: number,
-      field: "flatAmount" | "baseAmount" | "ratePerKg" | "baseKg",
-      value: string,
-    ) => updateCellField(moduleCode, groupId, moduleRangeId, field, value),
+    updateCellMode,
+    updateCellField,
     toggleCellActive,
     saveCells,
 
-    addSurchargeRow,
+    addProvinceDraft,
+    updateProvinceDraft,
+    removeProvinceDraft,
+    clearProvinceDrafts,
+    createCitySurchargeGroup,
     updateSurchargeRow,
     removeSurchargeRow,
-    saveSurcharges,
+    addCityToSurchargeRow,
+    updateSurchargeCity,
+    removeSurchargeCity,
+    saveProvinceWorkspace,
+    saveCityRow,
   };
 }
 

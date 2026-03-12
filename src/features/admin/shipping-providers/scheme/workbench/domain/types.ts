@@ -1,14 +1,22 @@
 // src/features/admin/shipping-providers/scheme/workbench/domain/types.ts
 //
-// 运价工作台（新主线）领域类型。
+// 运价工作台（单 scheme 主线）领域类型。
 // 说明：
 // - 输入态金额/重量统一用 string，提交前再 parse
 // - matrix 只使用后端真实 id，不依赖未保存 group/range 临时键
 // - group.name 为内部辅助字段；UI 主线不展示
+// - 为兼容当前卡片组件入参，保留 ModuleEditorState 名称，但其语义已不再代表“双模块”
 
-import type { ModuleCode, PricingMode } from "../api/types";
+import type { PricingMode } from "../api/types";
 
-export type { ModuleCode, PricingMode };
+export type { PricingMode };
+
+export type SaveFeedback = {
+  error: string | null;
+  success: string | null;
+};
+
+export type CitySaveFeedbackMap = Record<string, SaveFeedback | undefined>;
 
 export type RangeRow = {
   id?: number;
@@ -16,6 +24,7 @@ export type RangeRow = {
 
   minKg: string;
   maxKg: string;
+  defaultPricingMode: PricingMode;
 
   sortOrder: number;
 
@@ -63,29 +72,39 @@ export type MatrixCellDraft = {
   isDirty: boolean;
 };
 
-export type SurchargeScope = "province" | "city";
-
-export type SurchargeRuleRow = {
+export type SurchargeConfigCityRow = {
   id?: number;
   clientId: string;
-  originalKey: string | null;
 
-  name: string;
-  active: boolean;
-
-  scope: SurchargeScope;
-
-  provinceCode: string;
-  provinceName: string;
-
+  cityCode: string;
   cityName: string;
-
   fixedAmount: string;
+  active: boolean;
 
   isNew: boolean;
   isDirty: boolean;
   isDeleted: boolean;
 };
+
+export type SurchargeConfigRow = {
+  id?: number;
+  clientId: string;
+
+  provinceCode: string;
+  provinceName: string;
+  provinceMode: "province" | "cities";
+  fixedAmount: string;
+  active: boolean;
+
+  cities: SurchargeConfigCityRow[];
+
+  isNew: boolean;
+  isDirty: boolean;
+  isDeleted: boolean;
+};
+
+// 为减少本轮连锁爆炸，暂时沿用旧名字给下游组件。
+export type SurchargeRuleRow = SurchargeConfigRow;
 
 export type MatrixColumn = {
   moduleRangeId: number;
@@ -93,6 +112,7 @@ export type MatrixColumn = {
   minKgText: string;
   maxKgText: string;
   label: string;
+  defaultPricingMode: PricingMode;
 };
 
 export type MatrixCellView = {
@@ -123,9 +143,9 @@ export type MatrixRowView = {
   cells: MatrixCellView[];
 };
 
+// 兼容当前各卡片组件 props 的单份资源态。
+// 注意：这里已经不是“module editor”，只是沿用旧名字避免本轮未审卡片文件同时爆炸。
 export type ModuleEditorState = {
-  moduleCode: ModuleCode;
-
   loading: boolean;
 
   savingRanges: boolean;
@@ -142,25 +162,24 @@ export type ModuleEditorState = {
 export type WorkbenchBlocker = {
   code: string;
   message: string;
-  scope: "scheme" | "standard" | "other" | "active-module";
+  scope: "scheme" | "ranges" | "groups" | "matrix" | "surcharges";
 };
 
 export type WorkbenchWarning = {
   code: string;
   message: string;
-  scope: "scheme" | "standard" | "other" | "active-module" | "quote-explain";
+  scope: "scheme" | "matrix" | "quote-explain";
 };
 
 export type WorkbenchDerivedState = {
-  activeModuleCode: ModuleCode;
-  activeModuleRangesReady: boolean;
-  activeModuleGroupsReady: boolean;
-  activeModuleMatrixReady: boolean;
-  canEditActiveMatrix: boolean;
+  rangesReady: boolean;
+  groupsReady: boolean;
+  matrixReady: boolean;
+  canEditMatrix: boolean;
 
-  standardReady: boolean;
-  otherUsed: boolean;
-  otherReady: boolean;
+  expectedCellCount: number;
+  actualCellCount: number;
+  missingCellCount: number;
 
   hasUnsavedChanges: boolean;
   canPublish: boolean;

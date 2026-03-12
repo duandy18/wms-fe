@@ -21,14 +21,14 @@
 //   - 后续不要再把大段 JSX、卡片内部交互、局部编辑器逻辑塞回本文件。
 //   - 第五张卡“算价与解释”继续复用页面外层 ExplainSection，不在本文件扩张。
 //   - 省份选项拉取 effect 严禁依赖整个 wb 对象，避免因对象引用变化导致重复拉取与页面抖动。
-//   - 区域范围卡当前采用“单一省份面板 + 当前编辑行”模式，避免每新增一行就重复整套省份网格。
-//   - 行级“保存本行并继续下一行”只是前端交互收口；底层仍复用 saveGroups 保存当前模块全部区域范围。
+//   - 区域范围卡当前仍采用“单一省份面板 + 当前编辑行”模式，避免每新增一行就重复整套省份网格。
+//   - 第四刀后：区域范围改为“整体保存”，不再逐行提交。
 
 import React from "react";
 import type { PricingSchemeDetail } from "../../api/types";
 import { fetchGeoProvinces, type GeoItem } from "../../api/geo";
 import { UI } from "../ui";
-import { deriveMatrixColumns, deriveMatrixRows, moduleLabel } from "./domain/derived";
+import { deriveMatrixColumns, deriveMatrixRows } from "./domain/derived";
 import { usePricingWorkbench } from "./usePricingWorkbench";
 import CellEditor from "./cards/CellEditor";
 import GroupsCard from "./cards/GroupsCard";
@@ -49,13 +49,21 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
   const [provinceError, setProvinceError] = React.useState<string | null>(null);
   const [activeGroupClientId, setActiveGroupClientId] = React.useState<string | null>(null);
 
+  // 保存成功后，当前轮不自动回选首行；等用户主动点“编辑该行”后再恢复。
+  const [suppressAutoPick, setSuppressAutoPick] = React.useState(false);
+
   const {
-    error,
-    success,
+    loadError,
+    rangesFeedback,
+    groupsFeedback,
+    matrixFeedback,
+    provinceSurchargeFeedback,
+    citySurchargeFeedbackByClientId,
+    surcharges,
+    provinceDrafts,
+    savingSurcharges,
     derived,
-    currentModule,
-    activeModuleCode,
-    setActiveModuleCode,
+    moduleState,
     loadAll,
     addRange,
     saveRanges,
@@ -71,17 +79,23 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
     updateCellMode,
     toggleCellActive,
     updateCellField,
-    savingSurcharges,
-    surcharges,
-    addSurchargeRow,
-    saveSurcharges,
+    addProvinceDraft,
+    updateProvinceDraft,
+    removeProvinceDraft,
+    clearProvinceDrafts,
+    createCitySurchargeGroup,
     updateSurchargeRow,
     removeSurchargeRow,
+    addCityToSurchargeRow,
+    updateSurchargeCity,
+    removeSurchargeCity,
+    saveProvinceWorkspace,
+    saveCityRow,
   } = wb;
 
   React.useEffect(() => {
-    if (error) onError(error);
-  }, [onError, error]);
+    if (loadError) onError(loadError);
+  }, [loadError, onError]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -108,8 +122,6 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
     };
   }, [onError, setProvinceLoading]);
 
-  const moduleState = currentModule;
-
   const aliveGroups = React.useMemo(
     () => moduleState.groups.filter((g) => !g.isDeleted),
     [moduleState.groups],
@@ -121,10 +133,15 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
       return;
     }
 
-    if (!activeGroupClientId || !aliveGroups.some((g) => g.clientId === activeGroupClientId)) {
+    if (activeGroupClientId && !aliveGroups.some((g) => g.clientId === activeGroupClientId)) {
+      setActiveGroupClientId(null);
+      return;
+    }
+
+    if (!activeGroupClientId && !suppressAutoPick) {
       setActiveGroupClientId(aliveGroups[0]?.clientId ?? null);
     }
-  }, [activeGroupClientId, aliveGroups]);
+  }, [activeGroupClientId, aliveGroups, suppressAutoPick]);
 
   const columns = React.useMemo(() => deriveMatrixColumns(moduleState.ranges), [moduleState.ranges]);
 
@@ -172,38 +189,24 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
     return out;
   }, [moduleState.groups]);
 
-  const handleSaveActiveGroupAndNext = React.useCallback(async () => {
-    const currentAliveGroups = moduleState.groups.filter((g) => !g.isDeleted);
-    if (currentAliveGroups.length === 0) return;
-
-    const currentClientId = activeGroupClientId ?? currentAliveGroups[0]?.clientId ?? null;
-    if (!currentClientId) return;
-
-    const currentIndex = currentAliveGroups.findIndex((g) => g.clientId === currentClientId);
-    const saved = await saveGroups(activeModuleCode);
-    if (!saved) return;
-
-    const nextAliveGroups = currentModule.groups.filter((g) => !g.isDeleted);
-    const nextIndex = currentIndex >= 0 ? currentIndex + 1 : 1;
-
-    if (nextIndex < nextAliveGroups.length) {
-      setActiveGroupClientId(nextAliveGroups[nextIndex]?.clientId ?? null);
-      return;
+  const handleSaveGroups = React.useCallback(async () => {
+    const saved = await saveGroups();
+    if (saved) {
+      setSuppressAutoPick(true);
+      setActiveGroupClientId(null);
     }
+    return saved;
+  }, [saveGroups]);
 
-    addGroup(activeModuleCode);
-
-    // 这里不直接依赖“新增后立刻可见”的同步假设，交给下面 effect 收口：
-    // 如果当前 activeGroupClientId 已不存在或为空，会自动切到第一条；
-    // 但我们希望新增后优先切到最后一条，所以延迟一个微任务再尝试切换。
-    queueMicrotask(() => {
-      const latestGroups = currentModule.groups.filter((g) => !g.isDeleted);
-      const last = latestGroups[latestGroups.length - 1] ?? null;
-      if (last?.clientId) {
-        setActiveGroupClientId(last.clientId);
-      }
+  const cityErrorByClientId = React.useMemo(() => {
+    const out: Record<string, string | null> = {};
+    surcharges.forEach((row) => {
+      out[row.clientId] = citySurchargeFeedbackByClientId[row.clientId]?.error ?? null;
     });
-  }, [activeGroupClientId, activeModuleCode, addGroup, currentModule.groups, moduleState.groups, saveGroups]);
+    return out;
+  }, [citySurchargeFeedbackByClientId, surcharges]);
+
+  const generalError = loadError;
 
   return (
     <div className="space-y-4">
@@ -219,22 +222,6 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className={`${UI.btnNeutralSm} ${activeModuleCode === "standard" ? "bg-slate-100" : ""}`}
-              onClick={() => setActiveModuleCode("standard")}
-              disabled={disabled}
-            >
-              标准区域
-            </button>
-            <button
-              type="button"
-              className={`${UI.btnNeutralSm} ${activeModuleCode === "other" ? "bg-slate-100" : ""}`}
-              onClick={() => setActiveModuleCode("other")}
-              disabled={disabled}
-            >
-              其他区域
-            </button>
-            <button
-              type="button"
               className={UI.btnNeutralSm}
               onClick={() => void loadAll()}
               disabled={disabled || moduleState.loading}
@@ -244,9 +231,24 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            当前模块：<span className="font-semibold">{moduleLabel(activeModuleCode)}</span>
+            重量段：
+            <span className="ml-1 font-semibold">
+              {moduleState.ranges.filter((r) => !r.isDeleted).length}
+            </span>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            区域行：
+            <span className="ml-1 font-semibold">
+              {moduleState.groups.filter((g) => !g.isDeleted).length}
+            </span>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            矩阵：
+            <span className="ml-1 font-semibold">
+              {derived.actualCellCount} / {derived.expectedCellCount}
+            </span>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             发布状态：{" "}
@@ -262,15 +264,9 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
           </div>
         ) : null}
 
-        {success ? (
-          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            {success}
-          </div>
-        ) : null}
-
-        {error ? (
+        {generalError ? (
           <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
-            {error}
+            {generalError}
           </div>
         ) : null}
 
@@ -298,56 +294,66 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
       <RangesCard
         disabled={disabled}
         moduleState={moduleState}
-        onAddRange={() => addRange(activeModuleCode)}
-        onSaveRanges={() => void saveRanges(activeModuleCode)}
+        errorMessage={rangesFeedback.error}
+        successMessage={rangesFeedback.success}
+        onAddRange={() => addRange()}
+        onSaveRanges={saveRanges}
         onUpdateRangeField={(clientId, field, value) =>
-          updateRangeField(activeModuleCode, clientId, field, value)
+          updateRangeField(clientId, field, value)
         }
-        onRemoveRange={(clientId) => removeRange(activeModuleCode, clientId)}
+        onRemoveRange={(clientId) => removeRange(clientId)}
       />
 
       <GroupsCard
         disabled={disabled}
         moduleState={moduleState}
+        errorMessage={groupsFeedback.error}
+        successMessage={groupsFeedback.success}
         activeGroupClientId={activeGroupClientId}
         provinceOptions={provinceOptions}
         provinceLoading={provinceLoading}
         provinceNameByCode={provinceNameByCode}
         provinceOrder={provinceOrder}
         provinceOwnerMap={provinceOwnerMap}
-        onSetActiveGroup={setActiveGroupClientId}
-        onAddGroup={() => {
-          addGroup(activeModuleCode);
+        onSetActiveGroup={(clientId) => {
+          setSuppressAutoPick(false);
+          setActiveGroupClientId(clientId);
         }}
-        onSaveGroups={() => void saveGroups(activeModuleCode)}
-        onSaveActiveGroupAndNext={() => void handleSaveActiveGroupAndNext()}
+        onAddGroup={() => {
+          setSuppressAutoPick(false);
+          const nextClientId = addGroup();
+          setActiveGroupClientId(nextClientId);
+        }}
+        onSaveGroups={handleSaveGroups}
         onRemoveGroup={(clientId) => {
           const nextGroups = aliveGroups.filter((g) => g.clientId !== clientId);
           if (activeGroupClientId === clientId) {
             setActiveGroupClientId(nextGroups[0]?.clientId ?? null);
           }
-          removeGroup(activeModuleCode, clientId);
+          void removeGroup(clientId);
         }}
         onSetGroupProvinces={(clientId, provinces) =>
-          setGroupProvinces(activeModuleCode, clientId, provinces)
+          setGroupProvinces(clientId, provinces)
         }
       />
 
       <MatrixCard
         disabled={disabled}
         moduleState={moduleState}
+        errorMessage={matrixFeedback.error}
+        successMessage={matrixFeedback.success}
         rows={rows}
         columns={columns}
-        canEdit={derived.canEditActiveMatrix}
-        onSaveCells={() => void saveCells(activeModuleCode)}
+        canEdit={derived.canEditMatrix}
+        onSaveCells={saveCells}
         renderCell={(cell) => (
           <CellEditor
             cell={cell}
             disabled={disabled || moduleState.savingCells}
-            onUpdateMode={(mode) => updateCellMode(activeModuleCode, cell.groupId, cell.moduleRangeId, mode)}
-            onToggleActive={() => toggleCellActive(activeModuleCode, cell.groupId, cell.moduleRangeId)}
+            onUpdateMode={(mode) => updateCellMode(cell.groupId, cell.moduleRangeId, mode)}
+            onToggleActive={() => toggleCellActive(cell.groupId, cell.moduleRangeId)}
             onUpdateField={(field, value) =>
-              updateCellField(activeModuleCode, cell.groupId, cell.moduleRangeId, field, value)
+              updateCellField(cell.groupId, cell.moduleRangeId, field, value)
             }
           />
         )}
@@ -358,11 +364,25 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
         saving={savingSurcharges}
         rows={surcharges}
         provinceOptions={provinceOptions}
-        provinceNameByCode={provinceNameByCode}
-        onAddRow={() => addSurchargeRow()}
-        onSave={() => void saveSurcharges()}
+        provinceDrafts={provinceDrafts}
+        provinceErrorMessage={provinceSurchargeFeedback.error}
+        cityErrorByClientId={cityErrorByClientId}
+        onAddProvinceDraft={addProvinceDraft}
+        onUpdateProvinceDraft={updateProvinceDraft}
+        onRemoveProvinceDraft={removeProvinceDraft}
+        onClearProvinceDrafts={clearProvinceDrafts}
+        onSaveProvinceWorkspace={saveProvinceWorkspace}
+        onCreateCityGroup={createCitySurchargeGroup}
+        onSaveCityRow={saveCityRow}
         onUpdateRow={(clientId, patch) => updateSurchargeRow(clientId, patch)}
         onRemoveRow={(clientId) => removeSurchargeRow(clientId)}
+        onAddCityToRow={(clientId) => addCityToSurchargeRow(clientId)}
+        onUpdateCity={(clientId, cityClientId, patch) =>
+          updateSurchargeCity(clientId, cityClientId, patch)
+        }
+        onRemoveCity={(clientId, cityClientId) =>
+          removeSurchargeCity(clientId, cityClientId)
+        }
       />
     </div>
   );
