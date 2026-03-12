@@ -17,17 +17,20 @@
 // - 维护约束：
 //   - 后续若调整省份选择交互，应继续在本文件内收口；不要再把区域范围 JSX 塞回页面壳。
 //   - 已被其他组占用的省份禁用逻辑，保持在展示层消费父层传入的 provinceOwnerMap。
-//   - 行级主动作优先使用“保存本行并继续下一行”，减少用户每完成一行后手动切换的摩擦。
+//   - 第四刀后：区域范围改为“整体保存”，不再逐行提交。
 
 import React from "react";
 import type { GeoItem } from "../../../api/geo";
 import { UI } from "../../ui";
+import SuccessBar from "../SuccessBar";
 import { summarizeProvinceNames } from "../domain/derived";
 import type { GroupProvinceRow, GroupRow, ModuleEditorState } from "../domain/types";
 
 type Props = {
   disabled: boolean;
   moduleState: ModuleEditorState;
+  errorMessage: string | null;
+  successMessage: string | null;
   activeGroupClientId: string | null;
   provinceOptions: GeoItem[];
   provinceLoading: boolean;
@@ -36,8 +39,7 @@ type Props = {
   provinceOwnerMap: Map<string, string>;
   onSetActiveGroup: (clientId: string | null) => void;
   onAddGroup: () => void;
-  onSaveGroups: () => void;
-  onSaveActiveGroupAndNext: () => void;
+  onSaveGroups: () => Promise<boolean>;
   onRemoveGroup: (clientId: string) => void;
   onSetGroupProvinces: (clientId: string, provinces: GroupProvinceRow[]) => void;
 };
@@ -75,6 +77,8 @@ function buildSelectedSummary(
 export const GroupsCard: React.FC<Props> = ({
   disabled,
   moduleState,
+  errorMessage,
+  successMessage,
   activeGroupClientId,
   provinceOptions,
   provinceLoading,
@@ -84,7 +88,6 @@ export const GroupsCard: React.FC<Props> = ({
   onSetActiveGroup,
   onAddGroup,
   onSaveGroups,
-  onSaveActiveGroupAndNext,
   onRemoveGroup,
   onSetGroupProvinces,
 }) => {
@@ -100,7 +103,7 @@ export const GroupsCard: React.FC<Props> = ({
         <div>
           <div className={UI.panelTitle}>2）区域范围</div>
           <div className={UI.panelHint}>
-            使用单一省份面板编辑当前区域行；下方每一行只展示已选结果，不再重复整套省份网格。
+            当前编辑仍按单行切换，但提交改为整卡统一保存。先在下方逐行调整，再统一保存区域范围。
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -115,13 +118,23 @@ export const GroupsCard: React.FC<Props> = ({
           <button
             type="button"
             className={UI.btnPrimaryGreen}
-            onClick={onSaveGroups}
+            onClick={() => void onSaveGroups()}
             disabled={disabled || moduleState.savingGroups}
           >
             {moduleState.savingGroups ? "保存中…" : "保存区域范围"}
           </button>
         </div>
       </div>
+
+      <div className="mt-3">
+        <SuccessBar msg={successMessage} onClose={() => undefined} />
+      </div>
+
+      {errorMessage ? (
+        <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+          {errorMessage}
+        </div>
+      ) : null}
 
       <div className="mt-4 space-y-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -136,19 +149,8 @@ export const GroupsCard: React.FC<Props> = ({
               <div className="mt-1 text-xs text-slate-500">
                 {activeGroup
                   ? `已选：${buildSelectedSummary(activeGroup, provinceOrder, provinceNameByCode) || "未选择省份"}`
-                  : "请先在下方选择一个区域行，再勾选省份。"}
+                  : "请选择下方某一行进入编辑。所有改动先留在本地，点击右上角统一保存。"}
               </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                className={UI.btnPrimaryGreen}
-                onClick={onSaveActiveGroupAndNext}
-                disabled={disabled || moduleState.savingGroups || !activeGroup}
-              >
-                {moduleState.savingGroups ? "保存中…" : "保存本行并继续下一行"}
-              </button>
             </div>
           </div>
 
@@ -157,8 +159,8 @@ export const GroupsCard: React.FC<Props> = ({
           ) : provinceOptions.length === 0 ? (
             <div className="text-sm text-slate-600">暂无省份数据</div>
           ) : !activeGroup ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              请先选择一个区域行作为当前编辑对象。
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              当前没有正在编辑的区域行。请在下方点击“编辑该行”，或新增区域行后开始选择省份。
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-2 xl:grid-cols-4">
@@ -249,6 +251,7 @@ export const GroupsCard: React.FC<Props> = ({
                     >
                       {isActive ? "当前编辑中" : "编辑该行"}
                     </button>
+
                     <button
                       type="button"
                       className={UI.btnDangerSm}
@@ -263,7 +266,7 @@ export const GroupsCard: React.FC<Props> = ({
             );
           })}
 
-          {aliveGroups.length === 0 ? <div className={UI.emptyText}>当前模块尚未配置区域范围。</div> : null}
+          {aliveGroups.length === 0 ? <div className={UI.emptyText}>当前尚未配置区域范围。</div> : null}
         </div>
       </div>
     </div>

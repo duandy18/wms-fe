@@ -1,30 +1,30 @@
 // src/features/admin/shipping-providers/scheme/workbench/api/types.ts
 //
-// 运价工作台（新主线）API 类型：严格对应后端 modules 三阶段合同。
-// 不复用旧 matrix-view / matrix 整表合同，避免双轨。
+// 运价工作台（单 scheme 主线）API 类型：
+// - 严格对应后端终态合同：ranges / groups / matrix-cells
+// - 不再暴露 standard / other / moduleCode
+// - 命名历史上保留 Module* 前缀以减少本轮连带改动，但语义已是单 scheme 资源
 
-export type ModuleCode = "standard" | "other";
 export type PricingMode = "flat" | "linear_total" | "step_over" | "manual_quote";
 
 export interface ModuleRangeApi {
   id: number;
-  module_id: number;
-  module_code: string;
   min_kg: number;
   max_kg: number | null;
   sort_order: number;
-  label: string;
+  label?: string;
+  default_pricing_mode?: PricingMode;
 }
 
 export interface ModuleRangesResponse {
   ok: boolean;
-  module_code: string;
   ranges: ModuleRangeApi[];
 }
 
 export interface ModuleRangePutItem {
   min_kg: number;
   max_kg: number | null;
+  default_pricing_mode: PricingMode;
   sort_order?: number | null;
 }
 
@@ -42,8 +42,6 @@ export interface ModuleGroupProvinceApi {
 export interface ModuleGroupApi {
   id: number;
   scheme_id: number;
-  module_id: number;
-  module_code: string;
   name: string;
   sort_order: number;
   active: boolean;
@@ -52,7 +50,6 @@ export interface ModuleGroupApi {
 
 export interface ModuleGroupsResponse {
   ok: boolean;
-  module_code: string;
   groups: ModuleGroupApi[];
 }
 
@@ -61,22 +58,10 @@ export interface ModuleGroupProvincePutItem {
   province_name?: string | null;
 }
 
-export interface ModuleGroupPutItem {
-  name: string;
-  sort_order?: number | null;
-  active?: boolean;
-  provinces: ModuleGroupProvincePutItem[];
-}
-
-export interface ModuleGroupsPutPayload {
-  groups: ModuleGroupPutItem[];
-}
-
 export interface ModuleMatrixCellApi {
   id: number;
   group_id: number;
   module_range_id: number;
-  range_module_id: number;
   pricing_mode: PricingMode;
   flat_amount: number | null;
   base_amount: number | null;
@@ -87,7 +72,6 @@ export interface ModuleMatrixCellApi {
 
 export interface ModuleMatrixCellsResponse {
   ok: boolean;
-  module_code: string;
   cells: ModuleMatrixCellApi[];
 }
 

@@ -113,23 +113,28 @@ export interface PricingSchemeZone {
   members: PricingSchemeZoneMember[];
 }
 
-export interface PricingSchemeSurcharge {
+// ======================================================
+// Surcharge Config（新主线）
+// ======================================================
+
+export interface PricingSchemeSurchargeConfigCity {
+  id: number;
+  config_id: number;
+  city_code: string;
+  city_name: string | null;
+  fixed_amount: number;
+  active: boolean;
+}
+
+export interface PricingSchemeSurchargeConfig {
   id: number;
   scheme_id: number;
-  name: string;
+  province_code: string;
+  province_name: string | null;
+  province_mode: "province" | "cities";
+  fixed_amount: number;
   active: boolean;
-
-  // 新主线字段
-  scope?: "province" | "city";
-  province_code?: string | null;
-  city_code?: string | null;
-  province_name?: string | null;
-  city_name?: string | null;
-  fixed_amount?: number | null;
-
-  // 历史兼容字段
-  condition_json?: Record<string, unknown>;
-  amount_json?: Record<string, unknown>;
+  cities: PricingSchemeSurchargeConfigCity[];
 }
 
 // ✅ 新：目的地附加费（结构化事实）——已切换为标准 code 世界
@@ -198,7 +203,7 @@ export interface PricingSchemeDetail extends PricingScheme {
 
   // 当前主线字段
   zones: PricingSchemeZone[];
-  surcharges: PricingSchemeSurcharge[];
+  surcharge_configs: PricingSchemeSurchargeConfig[];
 
   // 新主线只读字段
   destination_groups?: PricingSchemeDestinationGroup[];

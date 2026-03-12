@@ -229,11 +229,11 @@ export const SchemeHealthScan: React.FC<{ schemeId: number | null }> = ({ scheme
       scheme_status: detail.status ?? null,
       zones: zones.length,
       destination_groups: groups.length,
-      surcharges: (detail.surcharges ?? []).length,
+      surcharge_configs: (detail.surcharge_configs ?? []).length,
       dest_adjustments: (detail.dest_adjustments ?? []).length,
       total_issues: totalIssues,
       note:
-        "旧 bracket 覆盖/空洞/重叠扫描已退出；当前扫描仅基于 zones / destination_groups / surcharges / dest_adjustments 做主线结构检查。",
+        "旧 bracket 覆盖/空洞/重叠扫描已退出；当前扫描仅基于 zones / destination_groups / surcharge_configs / dest_adjustments 做主线结构检查。",
       cross_issues: crossIssues,
       zone_reports: zoneReports,
       group_reports: groupReports,
@@ -246,7 +246,7 @@ export const SchemeHealthScan: React.FC<{ schemeId: number | null }> = ({ scheme
         <div>
           <div className="text-sm font-semibold text-slate-800">Scheme Health Scan</div>
           <div className="mt-1 text-xs text-slate-500">
-            zones / destination_groups / surcharges / dest_adjustments 结构诊断。
+            zones / destination_groups / surcharge_configs / dest_adjustments 结构诊断。
           </div>
         </div>
         <button
@@ -278,7 +278,7 @@ export const SchemeHealthScan: React.FC<{ schemeId: number | null }> = ({ scheme
               <span className="font-mono"> {report.destination_groups}</span>
             </div>
             <div className="mt-1 text-slate-700">
-              surcharges：<span className="font-mono">{report.surcharges}</span> · dest_adjustments：
+              surcharge_configs：<span className="font-mono">{report.surcharge_configs}</span> · dest_adjustments：
               <span className="font-mono"> {report.dest_adjustments}</span> · total_issues：
               <span className="font-mono"> {report.total_issues}</span>
             </div>

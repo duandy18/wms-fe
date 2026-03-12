@@ -17,8 +17,7 @@
 //   - 单元格状态真相收口在这里；不要把 matrix 保存逻辑散回 UI 组件。
 
 import { useCallback } from "react";
-import { putModuleMatrixCells } from "../api/modules";
-import type { ModuleCode, PricingMode } from "../api/types";
+import { putSchemeMatrixCells } from "../api/modules";
 import {
   buildCellKey,
   createEmptyCellDraft,
@@ -28,184 +27,229 @@ import {
   sortRanges,
   validateMatrixCellDraft,
 } from "../domain/derived";
-import type { ModuleEditorState } from "../domain/types";
+import type {
+  GroupRow,
+  MatrixCellDraft,
+  PricingMode,
+  RangeRow,
+  SaveFeedback,
+} from "../domain/types";
 import { mapCellApiToDraft } from "./mappers";
 
 type Args = {
   schemeId: number;
   disabled: boolean;
-  getModuleState: (moduleCode: ModuleCode) => ModuleEditorState;
-  setModuleState: (moduleCode: ModuleCode, updater: (prev: ModuleEditorState) => ModuleEditorState) => void;
-  setError: (msg: string | null) => void;
-  setSuccess: (msg: string | null) => void;
+  ranges: RangeRow[];
+  groups: GroupRow[];
+  cells: Record<string, MatrixCellDraft>;
+  setCells: (updater: (prev: Record<string, MatrixCellDraft>) => Record<string, MatrixCellDraft>) => void;
+  setSavingCells: (updater: (prev: boolean) => boolean) => void;
+  setMatrixFeedback: React.Dispatch<React.SetStateAction<SaveFeedback>>;
 };
 
+function resolveRangePricingMode(ranges: RangeRow[], moduleRangeId: number): PricingMode {
+  const row = ranges.find((r) => r.id === moduleRangeId && !r.isDeleted);
+  return row?.defaultPricingMode ?? "flat";
+}
+
+function clearFeedbackIfNeeded(
+  setMatrixFeedback: React.Dispatch<React.SetStateAction<SaveFeedback>>,
+) {
+  setMatrixFeedback((prev) =>
+    prev.error || prev.success ? { error: null, success: null } : prev,
+  );
+}
+
 export function useMatrixActions(args: Args) {
-  const { schemeId, disabled, getModuleState, setModuleState, setError, setSuccess } = args;
+  const {
+    schemeId,
+    disabled,
+    ranges,
+    groups,
+    cells,
+    setCells,
+    setSavingCells,
+    setMatrixFeedback,
+  } = args;
 
   const updateCellMode = useCallback(
-    (moduleCode: ModuleCode, groupId: number, moduleRangeId: number, mode: PricingMode) => {
-      setModuleState(moduleCode, (prev) => {
+    (groupId: number, moduleRangeId: number, mode: PricingMode) => {
+      setCells((prev) => {
         const key = buildCellKey(groupId, moduleRangeId);
-        const current = prev.cells[key] ?? createEmptyCellDraft(groupId, moduleRangeId);
+        const current =
+          prev[key] ??
+          createEmptyCellDraft(
+            groupId,
+            moduleRangeId,
+            resolveRangePricingMode(ranges, moduleRangeId),
+          );
+
         return {
           ...prev,
-          cells: {
-            ...prev.cells,
-            [key]: {
-              ...normalizeCellDraftMode(current, mode),
-              isDirty: true,
-            },
+          [key]: {
+            ...normalizeCellDraftMode(current, mode),
+            isDirty: true,
           },
         };
       });
+      clearFeedbackIfNeeded(setMatrixFeedback);
     },
-    [setModuleState],
+    [ranges, setCells, setMatrixFeedback],
   );
 
   const updateCellField = useCallback(
     (
-      moduleCode: ModuleCode,
       groupId: number,
       moduleRangeId: number,
       field: "flatAmount" | "baseAmount" | "ratePerKg" | "baseKg",
       value: string,
     ) => {
-      setModuleState(moduleCode, (prev) => {
+      setCells((prev) => {
         const key = buildCellKey(groupId, moduleRangeId);
-        const current = prev.cells[key] ?? createEmptyCellDraft(groupId, moduleRangeId);
+        const current =
+          prev[key] ??
+          createEmptyCellDraft(
+            groupId,
+            moduleRangeId,
+            resolveRangePricingMode(ranges, moduleRangeId),
+          );
 
         return {
           ...prev,
-          cells: {
-            ...prev.cells,
-            [key]: {
-              ...current,
-              [field]: value,
-              isDirty: true,
-            },
+          [key]: {
+            ...current,
+            [field]: value,
+            isDirty: true,
           },
         };
       });
+      clearFeedbackIfNeeded(setMatrixFeedback);
     },
-    [setModuleState],
+    [ranges, setCells, setMatrixFeedback],
   );
 
   const toggleCellActive = useCallback(
-    (moduleCode: ModuleCode, groupId: number, moduleRangeId: number) => {
-      setModuleState(moduleCode, (prev) => {
+    (groupId: number, moduleRangeId: number) => {
+      setCells((prev) => {
         const key = buildCellKey(groupId, moduleRangeId);
-        const current = prev.cells[key] ?? createEmptyCellDraft(groupId, moduleRangeId);
+        const current =
+          prev[key] ??
+          createEmptyCellDraft(
+            groupId,
+            moduleRangeId,
+            resolveRangePricingMode(ranges, moduleRangeId),
+          );
 
         return {
           ...prev,
-          cells: {
-            ...prev.cells,
-            [key]: {
-              ...current,
-              active: !current.active,
-              isDirty: true,
-            },
+          [key]: {
+            ...current,
+            active: !current.active,
+            isDirty: true,
           },
         };
       });
+      clearFeedbackIfNeeded(setMatrixFeedback);
     },
-    [setModuleState],
+    [ranges, setCells, setMatrixFeedback],
   );
 
-  const saveCells = useCallback(
-    async (moduleCode: ModuleCode) => {
-      if (disabled) return false;
+  const saveCells = useCallback(async () => {
+    if (disabled) return false;
 
-      const moduleState = getModuleState(moduleCode);
+    const aliveGroups = sortGroups(groups.filter((g) => !g.isDeleted && typeof g.id === "number"));
+    const aliveRanges = sortRanges(ranges.filter((r) => !r.isDeleted && typeof r.id === "number"));
 
-      const groups = sortGroups(
-        moduleState.groups.filter((g) => !g.isDeleted && typeof g.id === "number"),
-      );
-      const ranges = sortRanges(
-        moduleState.ranges.filter((r) => !r.isDeleted && typeof r.id === "number"),
-      );
+    if (aliveGroups.length === 0) {
+      setMatrixFeedback({
+        error: "请先保存区域范围",
+        success: null,
+      });
+      return false;
+    }
+    if (aliveRanges.length === 0) {
+      setMatrixFeedback({
+        error: "请先保存重量段",
+        success: null,
+      });
+      return false;
+    }
 
-      if (groups.length === 0) {
-        setError("请先保存区域范围");
-        return false;
-      }
-      if (ranges.length === 0) {
-        setError("请先保存重量段");
-        return false;
-      }
+    const cellsPayload = [];
+    for (const g of aliveGroups) {
+      for (const r of aliveRanges) {
+        const key = buildCellKey(g.id as number, r.id as number);
+        const draft =
+          cells[key] ??
+          createEmptyCellDraft(
+            g.id as number,
+            r.id as number,
+            r.defaultPricingMode,
+          );
 
-      const cellsPayload = [];
-      for (const g of groups) {
-        for (const r of ranges) {
-          const key = buildCellKey(g.id as number, r.id as number);
-          const draft = moduleState.cells[key] ?? createEmptyCellDraft(g.id as number, r.id as number);
-
-          const err = validateMatrixCellDraft(draft);
-          if (err) {
-            setError(err);
-            return false;
-          }
-
-          cellsPayload.push({
-            group_id: g.id as number,
-            module_range_id: r.id as number,
-            pricing_mode: draft.pricingMode,
-            flat_amount: draft.pricingMode === "flat" ? parseRequiredNumber(draft.flatAmount) : null,
-            base_amount:
-              draft.pricingMode === "linear_total" || draft.pricingMode === "step_over"
-                ? parseRequiredNumber(draft.baseAmount)
-                : null,
-            rate_per_kg:
-              draft.pricingMode === "linear_total" || draft.pricingMode === "step_over"
-                ? parseRequiredNumber(draft.ratePerKg)
-                : null,
-            base_kg: draft.pricingMode === "step_over" ? parseRequiredNumber(draft.baseKg) : null,
-            active: draft.active,
+        const err = validateMatrixCellDraft(draft);
+        if (err) {
+          setMatrixFeedback({
+            error: err,
+            success: null,
           });
+          return false;
         }
-      }
 
-      setModuleState(moduleCode, (prev) => ({
-        ...prev,
-        savingCells: true,
+        cellsPayload.push({
+          group_id: g.id as number,
+          module_range_id: r.id as number,
+          pricing_mode: draft.pricingMode,
+          flat_amount: draft.pricingMode === "flat" ? parseRequiredNumber(draft.flatAmount) : null,
+          base_amount:
+            draft.pricingMode === "linear_total" || draft.pricingMode === "step_over"
+              ? parseRequiredNumber(draft.baseAmount)
+              : null,
+          rate_per_kg:
+            draft.pricingMode === "linear_total" || draft.pricingMode === "step_over"
+              ? parseRequiredNumber(draft.ratePerKg)
+              : null,
+          base_kg: draft.pricingMode === "step_over" ? parseRequiredNumber(draft.baseKg) : null,
+          active: draft.active,
+        });
+      }
+    }
+
+    setSavingCells(() => true);
+    setMatrixFeedback({
+      error: null,
+      success: null,
+    });
+
+    try {
+      const resp = await putSchemeMatrixCells(schemeId, {
+        cells: cellsPayload,
+      });
+
+      const nextCells: Record<string, ReturnType<typeof mapCellApiToDraft>> = {};
+      (resp.cells ?? []).forEach((row) => {
+        const draft = mapCellApiToDraft(row);
+        nextCells[draft.key] = draft;
+      });
+
+      setCells(() => nextCells);
+
+      setMatrixFeedback({
         error: null,
-      }));
-      setError(null);
-      setSuccess(null);
-
-      try {
-        const resp = await putModuleMatrixCells(schemeId, moduleCode, {
-          cells: cellsPayload,
-        });
-
-        const nextCells: Record<string, ReturnType<typeof mapCellApiToDraft>> = {};
-        (resp.cells ?? []).forEach((row) => {
-          const draft = mapCellApiToDraft(row);
-          nextCells[draft.key] = draft;
-        });
-
-        setModuleState(moduleCode, (prev) => ({
-          ...prev,
-          savingCells: false,
-          cells: nextCells,
-        }));
-
-        setSuccess(`${moduleCode === "standard" ? "标准区域" : "其他区域"}价格矩阵已保存。`);
-        return true;
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "保存价格矩阵失败";
-        setModuleState(moduleCode, (prev) => ({
-          ...prev,
-          savingCells: false,
-          error: msg,
-        }));
-        setError(msg);
-        return false;
-      }
-    },
-    [disabled, getModuleState, schemeId, setError, setModuleState, setSuccess],
-  );
+        success: "价格矩阵已保存。",
+      });
+      return true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "保存价格矩阵失败";
+      setMatrixFeedback({
+        error: msg,
+        success: null,
+      });
+      return false;
+    } finally {
+      setSavingCells(() => false);
+    }
+  }, [cells, disabled, groups, ranges, schemeId, setCells, setMatrixFeedback, setSavingCells]);
 
   return {
     updateCellMode,

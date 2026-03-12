@@ -4,34 +4,42 @@
 // - 从 usePricingWorkbench.ts 中拆出。
 // - 当前只负责：
 //   1) API DTO -> workbench 行状态映射
-//   2) workbench 初始化用空状态构造
-//   3) surcharge scope key 生成
+//   2) surcharge_config DTO -> surcharge_config card 映射
 // - 当前不负责：
 //   1) React 状态管理
 //   2) 保存动作
 //   3) hook 生命周期
 // - 协作关系：
-//   - 被 ./modules / ./surcharges 等子域动作文件复用
+//   - 被 ./modules / ./ranges / ./groups / ./matrix / ./surcharges 等子域动作文件复用
 // - 维护约束：
 //   - 本文件只放纯函数；不要引入 useState/useEffect 等 React 逻辑。
 
-import type { PricingSchemeSurcharge } from "../../../api/types";
-import type { ModuleCode, ModuleGroupApi, ModuleMatrixCellApi, ModuleRangeApi } from "../api/types";
-import { buildCellKey, textFromNumber } from "../domain/derived";
+import type { PricingSchemeSurchargeConfig } from "../../../api/types";
+import type {
+  ModuleGroupApi,
+  ModuleMatrixCellApi,
+  ModuleRangeApi,
+  PricingMode,
+} from "../api/types";
+import { buildCellKey, newClientId, textFromNumber } from "../domain/derived";
 import type {
   GroupRow,
   MatrixCellDraft,
-  ModuleEditorState,
   RangeRow,
+  SurchargeConfigCityRow,
   SurchargeRuleRow,
 } from "../domain/types";
 
 export function mapRangeApiToRow(row: ModuleRangeApi): RangeRow {
+  const mode =
+    (row as ModuleRangeApi & { default_pricing_mode?: PricingMode }).default_pricing_mode ?? "flat";
+
   return {
     id: row.id,
     clientId: `range:${row.id}`,
     minKg: textFromNumber(row.min_kg),
     maxKg: textFromNumber(row.max_kg),
+    defaultPricingMode: mode,
     sortOrder: row.sort_order,
     isNew: false,
     isDirty: false,
@@ -72,46 +80,94 @@ export function mapCellApiToDraft(row: ModuleMatrixCellApi): MatrixCellDraft {
   };
 }
 
-export function emptyModuleState(moduleCode: ModuleCode): ModuleEditorState {
+function sortProvinceLike(a: SurchargeRuleRow, b: SurchargeRuleRow): number {
+  const ap = `${a.provinceName}:${a.provinceCode}`;
+  const bp = `${b.provinceName}:${b.provinceCode}`;
+  return ap.localeCompare(bp, "zh-CN");
+}
+
+function sortCityLike(a: SurchargeConfigCityRow, b: SurchargeConfigCityRow): number {
+  const ak = `${a.cityName}:${a.cityCode}`;
+  const bk = `${b.cityName}:${b.cityCode}`;
+  return ak.localeCompare(bk, "zh-CN");
+}
+
+export function mapSurchargeConfigApiToRow(row: PricingSchemeSurchargeConfig): SurchargeRuleRow {
   return {
-    moduleCode,
-    loading: false,
-    savingRanges: false,
-    savingGroups: false,
-    savingCells: false,
-    error: null,
-    ranges: [],
-    groups: [],
-    cells: {},
+    id: row.id,
+    clientId: `surcharge-config:${row.id}`,
+    provinceCode: row.province_code ?? "",
+    provinceName: row.province_name ?? "",
+    provinceMode: row.province_mode,
+    fixedAmount: textFromNumber(row.fixed_amount),
+    active: row.active ?? true,
+    cities: (row.cities ?? [])
+      .map((city) => ({
+        id: city.id,
+        clientId: `surcharge-config-city:${city.id}`,
+        cityCode: city.city_code ?? "",
+        cityName: city.city_name ?? "",
+        fixedAmount: textFromNumber(city.fixed_amount),
+        active: city.active ?? true,
+        isNew: false,
+        isDirty: false,
+        isDeleted: false,
+      }))
+      .sort(sortCityLike),
+    isNew: false,
+    isDirty: false,
+    isDeleted: false,
   };
 }
 
-export function surchargeScopeKey(
-  scope: "province" | "city",
-  provinceName: string,
-  cityName: string,
-): string {
-  return `${scope}:${provinceName.trim()}:${cityName.trim()}`;
+export function mapSurchargeConfigApiListToRows(
+  rows: PricingSchemeSurchargeConfig[],
+): SurchargeRuleRow[] {
+  return [...rows].map(mapSurchargeConfigApiToRow).sort(sortProvinceLike);
 }
 
-export function mapSurchargeApiToRow(row: PricingSchemeSurcharge): SurchargeRuleRow {
-  const scope = row.scope === "city" ? "city" : "province";
-  const provinceName = row.province_name ?? "";
-  const cityName = row.city_name ?? "";
-
+export function createEmptyProvinceSurchargeRow(): SurchargeRuleRow {
   return {
-    id: row.id,
-    clientId: `surcharge:${row.id}`,
-    originalKey: surchargeScopeKey(scope, provinceName, cityName),
-    name: row.name ?? "",
-    active: row.active ?? true,
-    scope,
-    provinceCode: row.province_code ?? "",
-    provinceName,
-    cityName,
-    fixedAmount: textFromNumber(row.fixed_amount),
-    isNew: false,
-    isDirty: false,
+    id: undefined,
+    clientId: newClientId("surcharge-config:province"),
+    provinceCode: "",
+    provinceName: "",
+    provinceMode: "province",
+    fixedAmount: "",
+    active: true,
+    cities: [],
+    isNew: true,
+    isDirty: true,
+    isDeleted: false,
+  };
+}
+
+export function createEmptyCitiesSurchargeRow(): SurchargeRuleRow {
+  return {
+    id: undefined,
+    clientId: newClientId("surcharge-config:cities"),
+    provinceCode: "",
+    provinceName: "",
+    provinceMode: "cities",
+    fixedAmount: "0",
+    active: true,
+    cities: [],
+    isNew: true,
+    isDirty: true,
+    isDeleted: false,
+  };
+}
+
+export function createEmptySurchargeCityRow(): SurchargeConfigCityRow {
+  return {
+    id: undefined,
+    clientId: newClientId("surcharge-config-city"),
+    cityCode: "",
+    cityName: "",
+    fixedAmount: "",
+    active: true,
+    isNew: true,
+    isDirty: true,
     isDeleted: false,
   };
 }
