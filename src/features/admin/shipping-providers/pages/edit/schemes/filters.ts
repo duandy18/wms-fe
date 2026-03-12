@@ -17,8 +17,8 @@ export function filterAndSortSchemes(args: {
     const archived = isArchived(s);
     if (!showArchived && archived) return false;
 
-    if (viewMode === "active" && !s.active) return false;
-    if (viewMode === "inactive" && s.active) return false;
+    if (viewMode === "active" && s.status !== "active") return false;
+    if (viewMode === "inactive" && s.status !== "draft") return false;
 
     if (hideTests && isTestLikeName(s.name)) return false;
 
@@ -30,14 +30,14 @@ export function filterAndSortSchemes(args: {
     return idHit || nameHit || curHit;
   });
 
-  // 未归档优先 → 启用优先 → 新的在前
+  // 未归档优先 → active 优先 → 新的在前
   list.sort((a, b) => {
     const aArc = isArchived(a) ? 1 : 0;
     const bArc = isArchived(b) ? 1 : 0;
     if (aArc !== bArc) return aArc - bArc;
 
-    const aAct = a.active ? 1 : 0;
-    const bAct = b.active ? 1 : 0;
+    const aAct = a.status === "active" ? 1 : 0;
+    const bAct = b.status === "active" ? 1 : 0;
     if (aAct !== bAct) return bAct - aAct;
 
     return b.id - a.id;
@@ -47,8 +47,8 @@ export function filterAndSortSchemes(args: {
 }
 
 export function splitByStatus(list: PricingScheme[]) {
-  const active = list.filter((s) => s.active && !isArchived(s));
-  const inactive = list.filter((s) => !s.active && !isArchived(s));
+  const active = list.filter((s) => s.status === "active" && !isArchived(s));
+  const inactive = list.filter((s) => s.status === "draft" && !isArchived(s));
   const archived = list.filter((s) => isArchived(s));
   return { active, inactive, archived };
 }

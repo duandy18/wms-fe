@@ -8,9 +8,9 @@
 // ✅ Workbench Tabs（Admin 可用）：
 // - table：二维价格表工作台（当前保留为历史 tab key 名称，承载新四卡工作台）
 // - zones：区域分类
-// - dest_adjustments：目的地附加费（结构化事实）
 // - preview：算价预览
-export type SchemeTabKey = "table" | "zones" | "dest_adjustments" | "preview";
+export type SchemeTabKey = "table" | "zones" | "preview";
+
 
 export type MutateFn = () => Promise<void>;
 

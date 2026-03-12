@@ -7,13 +7,17 @@ import { renderBracketRange, resolvePricingModelCn } from "../quotePreviewResult
 import { baseKindLabelCn, fmtKg, readBaseBreakdown, readRoundingText } from "./viewModel";
 
 export const QuoteMainFlowCard: React.FC<{ result: CalcOut; baseAmount: number | null }> = ({ result, baseAmount }) => {
-  const zoneName = safeText(result.zone?.name ?? result.zone?.id);
-  const bracketRangeText = renderBracketRange(result.bracket?.min_kg, result.bracket?.max_kg);
-  const pricingModelCn = resolvePricingModelCn(result.bracket);
+  const groupName = safeText(result.destination_group?.name ?? result.destination_group?.id);
+  const hitMember = result.destination_group?.hit_member ?? null;
+  const hitMemberText = hitMember
+    ? `${safeText(hitMember.level)} · ${safeText(hitMember.value)}`
+    : "—";
+
+  const matrixRangeText = renderBracketRange(result.pricing_matrix?.min_kg, result.pricing_matrix?.max_kg);
+  const pricingModelCn = resolvePricingModelCn(result.pricing_matrix);
 
   const baseBd = readBaseBreakdown(result);
 
-  // ✅ 修复 hooks 警告：直接以 result.weight 作为依赖
   const wrec = useMemo<Record<string, unknown>>(() => {
     const w = result.weight;
     return typeof w === "object" && w !== null && !Array.isArray(w) ? (w as Record<string, unknown>) : {};
@@ -34,7 +38,6 @@ export const QuoteMainFlowCard: React.FC<{ result: CalcOut; baseAmount: number |
         说明：运费由<strong>基础运费</strong>与<strong>附加费</strong>共同构成；本卡展示基础运费的完整计算过程（以<strong>后端输出</strong>为唯一真相）。
       </div>
 
-      {/* ① 计费重 */}
       <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
         <div className="text-xs font-semibold text-slate-700">① 计费重的确定</div>
 
@@ -65,19 +68,23 @@ export const QuoteMainFlowCard: React.FC<{ result: CalcOut; baseAmount: number |
         </div>
       </div>
 
-      {/* ② 命中规则 */}
       <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
         <div className="text-xs font-semibold text-slate-700">② 命中计价规则</div>
 
-        <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-white p-3">
-            <div className="text-xs text-slate-600">命中 Zone</div>
-            <div className="mt-1 text-sm font-semibold text-slate-900 font-mono">{zoneName}</div>
+            <div className="text-xs text-slate-600">命中区域组</div>
+            <div className="mt-1 text-sm font-semibold text-slate-900 font-mono">{groupName}</div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <div className="text-xs text-slate-600">命中成员</div>
+            <div className="mt-1 text-sm font-semibold text-slate-900 font-mono">{hitMemberText}</div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-3">
             <div className="text-xs text-slate-600">命中重量段</div>
-            <div className="mt-1 text-sm font-semibold text-slate-900 font-mono">{bracketRangeText}</div>
+            <div className="mt-1 text-sm font-semibold text-slate-900 font-mono">{matrixRangeText}</div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-3">
@@ -87,14 +94,15 @@ export const QuoteMainFlowCard: React.FC<{ result: CalcOut; baseAmount: number |
         </div>
       </div>
 
-      {/* ③ 基础运费 */}
       <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
         <div className="text-xs font-semibold text-slate-700">③ 基础运费计算</div>
 
-        <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-5">
           <div className="rounded-xl border border-slate-200 bg-white p-3">
             <div className="text-xs text-slate-600">模型（后端）</div>
-            <div className="mt-1 text-sm font-semibold text-slate-900 font-mono">{baseBd ? baseKindLabelCn(baseBd.kind) : "—"}</div>
+            <div className="mt-1 text-sm font-semibold text-slate-900 font-mono">
+              {baseBd ? baseKindLabelCn(baseBd.kind) : "—"}
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-3">
@@ -102,15 +110,23 @@ export const QuoteMainFlowCard: React.FC<{ result: CalcOut; baseAmount: number |
             <div className="mt-1 font-mono text-sm font-semibold text-slate-900">
               {baseBd?.base_amount == null ? "—" : `￥${safeMoney(baseBd.base_amount)}`}
             </div>
-            <div className="mt-1 text-xs text-slate-500">仅线性模型使用</div>
+            <div className="mt-1 text-xs text-slate-500">线性/步进模型可使用</div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-3">
-            <div className="text-xs text-slate-600">单价（rate_per_kg）</div>
+            <div className="text-xs text-slate-600">首重kg / 基础kg</div>
+            <div className="mt-1 font-mono text-sm font-semibold text-slate-900">
+              {baseBd?.base_kg == null ? "—" : fmtKg(baseBd.base_kg)}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">若模型不使用则为空</div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <div className="text-xs text-slate-600">续重每公斤</div>
             <div className="mt-1 font-mono text-sm font-semibold text-slate-900">
               {baseBd?.rate_per_kg == null ? "—" : `￥${safeMoney(baseBd.rate_per_kg)}/kg`}
             </div>
-            <div className="mt-1 text-xs text-slate-500">仅线性模型使用</div>
+            <div className="mt-1 text-xs text-slate-500">若模型不使用则为空</div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-3">

@@ -35,32 +35,36 @@ export function useSchemesSectionModel(args: {
 
   const [q, setQ] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("all");
-  const [hideTests, setHideTests] = useState(true);
-  const [showArchived, setShowArchived] = useState(false);
+  const [hideTests, setHideTests] = useState(false);
 
   const batchBusy = false;
   const archivingId: number | null = null;
 
   const summary = useMemo(() => {
-    const total = args.schemes.length;
-    const activeN = args.schemes.filter((s) => s.status === "active" && !isArchived(s)).length;
+    const visibleSchemes = args.schemes.filter((s) => !isArchived(s));
+    const total = visibleSchemes.length;
+    const activeN = visibleSchemes.filter((s) => s.status === "active").length;
     return { total, activeN };
   }, [args.schemes]);
 
   const filtered = useMemo(() => {
+    const visibleSchemes = args.schemes.filter((s) => !isArchived(s));
     return filterAndSortSchemes({
-      schemes: args.schemes,
+      schemes: visibleSchemes,
       q,
       viewMode,
       hideTests,
-      showArchived,
+      showArchived: false,
     });
-  }, [args.schemes, q, viewMode, hideTests, showArchived]);
+  }, [args.schemes, q, viewMode, hideTests]);
 
-  const { active: filteredActive, inactive: filteredInactive, archived: filteredArchived } = useMemo(
-    () => splitByStatus(filtered),
-    [filtered],
-  );
+  const { active: filteredActive, inactive: filteredInactive } = useMemo(() => {
+    const parts = splitByStatus(filtered);
+    return {
+      active: parts.active,
+      inactive: parts.inactive,
+    };
+  }, [filtered]);
 
   async function onCreate() {
     if (!args.providerId) return;
@@ -98,7 +102,7 @@ export function useSchemesSectionModel(args: {
     setLocalOk(null);
 
     if (isArchived(s)) {
-      setLocalErr("已归档方案不允许改名。");
+      setLocalErr("已归档方案当前为只读；如需修改，请先克隆为新的草稿方案。");
       return;
     }
 
@@ -139,7 +143,7 @@ export function useSchemesSectionModel(args: {
     setLocalOk(null);
 
     if (isArchived(s)) {
-      setLocalErr("已归档方案不能发布。");
+      setLocalErr("已归档方案不能发布；如需继续使用，请先克隆为新的草稿方案。");
       return;
     }
 
@@ -148,16 +152,11 @@ export function useSchemesSectionModel(args: {
       return;
     }
 
-    const ok = window.confirm(
-      `发布收费标准「${s.name}」（ID: ${s.id}）？\n\n发布后将成为当前网点的生效方案；同仓同承运商下其他 active 方案会由后端自动归档。`,
-    );
-    if (!ok) return;
-
     setRowBusy(s.id);
     try {
       await publishPricingScheme(s.id);
       await args.onRefresh();
-      flashOk(`已发布生效：${s.name}`);
+      flashOk(`发布成功：${s.name} 已生效`);
     } catch (e: unknown) {
       setLocalErr(e instanceof Error ? e.message : "发布失败");
     } finally {
@@ -171,14 +170,11 @@ export function useSchemesSectionModel(args: {
     setLocalErr(null);
     setLocalOk(null);
 
-    const ok = window.confirm(`克隆收费标准「${s.name}」（ID: ${s.id}）为新的草稿方案？`);
-    if (!ok) return;
-
     setRowBusy(s.id);
     try {
       await clonePricingScheme(s.id);
       await args.onRefresh();
-      flashOk("已克隆为草稿");
+      flashOk(`克隆成功：已基于「${s.name}」创建草稿方案`);
     } catch (e: unknown) {
       setLocalErr(e instanceof Error ? e.message : "克隆失败");
     } finally {
@@ -187,19 +183,19 @@ export function useSchemesSectionModel(args: {
   }
 
   async function onArchiveScheme() {
-    setLocalErr("当前后端主线未提供独立归档接口，前端先不接假动作。");
+    setLocalErr("当前后端主线未提供可用归档能力：前端不接假按钮，也不再发送旧 archived_at/status 合同。");
   }
 
   async function onUnarchiveScheme() {
-    setLocalErr("当前后端主线未提供取消归档接口。");
+    setLocalErr("当前后端主线未提供可用取消归档能力。");
   }
 
   async function batchDeactivateCurrent() {
-    setLocalErr("当前主线已切到 publish/status 语义，旧的批量取消生效动作先不使用。");
+    setLocalErr("当前主线已切到 publish/status 语义，旧的批量取消生效动作已退出主线。");
   }
 
   async function batchArchiveInactiveCurrent() {
-    setLocalErr("当前后端主线未提供批量归档接口。");
+    setLocalErr("当前后端主线未提供批量归档能力。");
   }
 
   return {
@@ -222,8 +218,6 @@ export function useSchemesSectionModel(args: {
     setViewMode,
     hideTests,
     setHideTests,
-    showArchived,
-    setShowArchived,
 
     batchBusy,
 
@@ -231,7 +225,6 @@ export function useSchemesSectionModel(args: {
     filtered,
     filteredActive,
     filteredInactive,
-    filteredArchived,
 
     onCreate,
     onRenameScheme,

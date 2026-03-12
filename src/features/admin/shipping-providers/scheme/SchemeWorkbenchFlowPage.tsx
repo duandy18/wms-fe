@@ -95,6 +95,11 @@ export const SchemeWorkbenchFlowPage: React.FC = () => {
               onError={(msg) => wb.setError(msg)}
             />
 
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+              算价解释基于<strong>当前已保存版本</strong>执行。
+              若你刚修改了重量段、区域范围、价格矩阵或附加费但尚未保存，这里的试算结果不会反映未保存改动。
+            </div>
+
             <ExplainSection
               schemeId={wb.detail.id}
               selectedZoneId={null}

@@ -209,7 +209,6 @@ export interface PricingSchemeDetail extends PricingScheme {
   destination_groups?: PricingSchemeDestinationGroup[];
 
   // ✅ 新：目的地附加费（结构化事实）
-  dest_adjustments?: PricingSchemeDestAdjustment[];
 }
 
 export type SchemeListResponse = ListResponse<PricingScheme>;
