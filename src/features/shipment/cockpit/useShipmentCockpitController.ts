@@ -10,6 +10,7 @@ import {
   prepareShipFromOrder,
   type CandidateWarehouse,
   type FulfillmentScanWarehouse,
+  type ShipPrepareItem,
 } from "../api/shipmentPrepareApi";
 import {
   shipWithWaybill,
@@ -41,6 +42,14 @@ export function useShipmentCockpitController() {
 
   const [preparing, setPreparing] = useState(false);
   const [preparedRef, setPreparedRef] = useState<string | null>(null);
+  const [preparedOrderId, setPreparedOrderId] = useState<number | null>(null);
+  const [preparedItems, setPreparedItems] = useState<ShipPrepareItem[]>([]);
+  const [preparedTotalQty, setPreparedTotalQty] = useState(0);
+  const [preparedTraceId, setPreparedTraceId] = useState<string | null>(null);
+
+  const [receiverName, setReceiverName] = useState("");
+  const [receiverPhone, setReceiverPhone] = useState("");
+  const [addressDetail, setAddressDetail] = useState("");
 
   const [candidateWarehouses, setCandidateWarehouses] = useState<
     CandidateWarehouse[]
@@ -82,6 +91,7 @@ export function useShipmentCockpitController() {
   }, [scanRows]);
 
   const canCalc =
+    !!preparedRef &&
     !!selectedWarehouseId &&
     okWarehouseIdSet.has(Number(selectedWarehouseId)) &&
     !loadingCalc &&
@@ -89,9 +99,16 @@ export function useShipmentCockpitController() {
     !confirming;
 
   const canConfirm =
+    !!preparedRef &&
+    preparedItems.length > 0 &&
     !!selectedWarehouseId &&
     okWarehouseIdSet.has(Number(selectedWarehouseId)) &&
     !!selectedQuote &&
+    !!receiverName.trim() &&
+    !!receiverPhone.trim() &&
+    !!province.trim() &&
+    !!city.trim() &&
+    !!district.trim() &&
     !confirming;
 
   useEffect(() => {
@@ -139,6 +156,24 @@ export function useShipmentCockpitController() {
       }
 
       setPreparedRef(out.ref ?? null);
+      setPreparedOrderId(
+        typeof out.order_id === "number" && Number.isFinite(out.order_id)
+          ? out.order_id
+          : null,
+      );
+
+      const items = Array.isArray(out.items) ? out.items : [];
+      setPreparedItems(items);
+      setPreparedTotalQty(
+        typeof out.total_qty === "number" && Number.isFinite(out.total_qty)
+          ? out.total_qty
+          : 0,
+      );
+      setPreparedTraceId(out.trace_id ?? null);
+
+      setReceiverName((out.receiver_name ?? "").trim());
+      setReceiverPhone((out.receiver_phone ?? "").trim());
+      setAddressDetail((out.address_detail ?? "").trim());
 
       if (out.province) setProvince(out.province);
       if (out.city) setCity(out.city);
@@ -183,6 +218,13 @@ export function useShipmentCockpitController() {
     } catch (e: unknown) {
       setError(toHumanError(e, "prepare 失败"));
       setPreparedRef(null);
+      setPreparedOrderId(null);
+      setPreparedItems([]);
+      setPreparedTotalQty(0);
+      setPreparedTraceId(null);
+      setReceiverName("");
+      setReceiverPhone("");
+      setAddressDetail("");
       setCandidateWarehouses([]);
       setScanRows([]);
       setFulfillmentStatus(null);
@@ -194,6 +236,10 @@ export function useShipmentCockpitController() {
   };
 
   const handleCalc = async () => {
+    if (!preparedRef) {
+      setError("请先完成订单准备。");
+      return;
+    }
     if (!selectedWarehouseId) {
       setError("请先准备订单并选择起运仓（仅允许选择可履约的仓）。");
       return;
@@ -242,6 +288,16 @@ export function useShipmentCockpitController() {
       return;
     }
 
+    if (!preparedRef) {
+      setError("请先完成订单准备。");
+      return;
+    }
+
+    if (preparedItems.length === 0) {
+      setError("prepare 未返回订单明细，禁止发货。");
+      return;
+    }
+
     if (!selectedWarehouseId) {
       setError("未选择起运仓：禁止发货（仅允许选择可履约的仓）");
       return;
@@ -272,6 +328,21 @@ export function useShipmentCockpitController() {
       selectedQuote.reasons.length === 0
     ) {
       setError("报价缺少可解释证据（reasons），禁止发货");
+      return;
+    }
+
+    if (!receiverName.trim()) {
+      setError("缺少收件人信息，禁止发货。");
+      return;
+    }
+
+    if (!receiverPhone.trim()) {
+      setError("缺少收件电话，禁止发货。");
+      return;
+    }
+
+    if (!province.trim() || !city.trim() || !district.trim()) {
+      setError("收货地址不完整，禁止发货。");
       return;
     }
 
@@ -313,12 +384,12 @@ export function useShipmentCockpitController() {
         carrier_code: selectedQuote.carrier_code,
         carrier_name: selectedQuote.carrier_name,
         weight_kg: numericWeight,
-        receiver_name: "",
-        receiver_phone: "",
+        receiver_name: receiverName.trim(),
+        receiver_phone: receiverPhone.trim(),
         province,
         city,
         district,
-        address_detail: "",
+        address_detail: addressDetail.trim(),
         quote_snapshot: snapshot,
       });
 
@@ -346,6 +417,14 @@ export function useShipmentCockpitController() {
 
     preparing,
     preparedRef,
+    preparedOrderId,
+    preparedItems,
+    preparedTotalQty,
+    preparedTraceId,
+    receiverName,
+    receiverPhone,
+    addressDetail,
+
     candidateWarehouses,
     scanRows,
     fulfillmentStatus,
