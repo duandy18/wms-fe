@@ -5,21 +5,29 @@ import React, { Suspense } from "react";
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
 
 import { AppLayout } from "../layout/AppLayout";
-import { RequireAuth, RequirePermission, ForbiddenPage, RouteLoading } from "./guards";
+import {
+  RequireAuth,
+  RequirePermission,
+  ForbiddenPage,
+  RouteLoading,
+} from "./guards";
 import * as P from "./lazyPages";
 
 /* ✅ 兼容入口：统一收敛到“编辑网点”唯一入口 */
 function RedirectToProviderEdit() {
   const { providerId } = useParams();
   if (!providerId) return <Navigate to="/admin/shipping-providers" replace />;
-  return <Navigate to={`/admin/shipping-providers/${providerId}/edit`} replace />;
+  return (
+    <Navigate to={`/admin/shipping-providers/${providerId}/edit`} replace />
+  );
 }
 
 function RedirectToProviderEditFromSchemes() {
   const { providerId } = useParams();
   if (!providerId) return <Navigate to="/admin/shipping-providers" replace />;
-  // 只保留一个入口：编辑网点。这里不再保留 schemes 子页心智。
-  return <Navigate to={`/admin/shipping-providers/${providerId}/edit`} replace />;
+  return (
+    <Navigate to={`/admin/shipping-providers/${providerId}/edit`} replace />
+  );
 }
 
 /* 路由入口 */
@@ -27,16 +35,15 @@ const AppRouter: React.FC = () => {
   return (
     <Suspense fallback={<RouteLoading />}>
       <Routes>
-        {/* 登录页（不带 Layout） */}
         <Route path="/login" element={<P.LoginPage />} />
 
-        {/* 无权限页（不带 Layout） */}
         <Route path="/forbidden" element={<ForbiddenPage />} />
 
-        {/* 标签打印页（不挂菜单，不需要登录） */}
-        <Route path="/print/shipping-label" element={<P.ShippingLabelPrintPage />} />
+        <Route
+          path="/print/shipping-label"
+          element={<P.ShippingLabelPrintPage />}
+        />
 
-        {/* 受保护业务区（带 Layout） */}
         <Route
           path="/"
           element={
@@ -54,7 +61,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 作业台 Cockpits */}
           <Route
             path="inbound"
             element={
@@ -91,7 +97,7 @@ const AppRouter: React.FC = () => {
             path="outbound/ship"
             element={
               <RequirePermission permission="operations.outbound">
-                <P.ShipCockpitPage />
+                <P.ShipmentCockpitPage />
               </RequirePermission>
             }
           />
@@ -104,7 +110,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 出库看板：订单出库域专题页（新 URL） */}
           <Route
             path="outbound/dashboard"
             element={
@@ -113,10 +118,11 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          {/* ✅ 旧 URL：重定向到新 URL */}
-          <Route path="inventory/outbound-dashboard" element={<Navigate to="/outbound/dashboard" replace />} />
+          <Route
+            path="inventory/outbound-dashboard"
+            element={<Navigate to="/outbound/dashboard" replace />}
+          />
 
-          {/* 库存 */}
           <Route
             path="snapshot"
             element={
@@ -134,7 +140,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 订单出库：发货成本/账本 */}
           <Route
             path="shipping/reports"
             element={
@@ -152,7 +157,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 财务分析 */}
           <Route
             path="finance"
             element={
@@ -194,7 +198,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 权限与账号：三个子页面 */}
           <Route
             path="iam/users"
             element={
@@ -219,7 +222,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          {/* ✅ 旧入口：保留但重定向到新子页 */}
           <Route
             path="admin/users-admin"
             element={
@@ -229,7 +231,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 运维中心（新） */}
           <Route
             path="ops"
             element={
@@ -254,7 +255,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          {/* ✅ 旧入口（兼容）：商铺商品组合（FSKU）从 ops 迁到主数据 */}
           <Route
             path="ops/shop-bundles"
             element={
@@ -264,7 +264,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 运价运维中心（治理 / 修复 / 清理） */}
           <Route
             path="ops/pricing-ops"
             element={
@@ -290,7 +289,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 运维中心 / 后端调试台：Tab → 页面化 */}
           <Route
             path="ops/dev/orders"
             element={
@@ -332,7 +330,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 采购系统 */}
           <Route
             path="purchase-orders/overview"
             element={
@@ -341,8 +338,14 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          <Route path="purchase-orders" element={<Navigate to="/purchase-orders/overview" replace />} />
-          <Route path="purchase-orders/reports" element={<Navigate to="/purchase-orders/overview" replace />} />
+          <Route
+            path="purchase-orders"
+            element={<Navigate to="/purchase-orders/overview" replace />}
+          />
+          <Route
+            path="purchase-orders/reports"
+            element={<Navigate to="/purchase-orders/overview" replace />}
+          />
 
           <Route
             path="purchase-orders/new-v2"
@@ -361,7 +364,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 收货任务 */}
           <Route
             path="receive-tasks/:taskId"
             element={
@@ -370,7 +372,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          {/* 退货任务 */}
           <Route
             path="return-tasks/:taskId"
             element={
@@ -380,7 +381,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 诊断 & 工具（归入运维中心） */}
           <Route
             path="trace"
             element={
@@ -406,7 +406,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ /dev：兼容入口（保留旧 query 语义，内部跳转 /ops/dev/*） */}
           <Route
             path="dev"
             element={
@@ -416,7 +415,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* 主数据 */}
           <Route
             path="stores"
             element={
@@ -459,7 +457,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 主数据：商铺商品组合（FSKU） */}
           <Route
             path="admin/shop-bundles"
             element={
@@ -468,7 +465,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
 
           <Route
             path="admin/items"
@@ -488,7 +484,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 物流与承运商：语义化入口（别名） */}
           <Route
             path="logistics/providers"
             element={
@@ -498,7 +493,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 快递公司列表 */}
           <Route
             path="admin/shipping-providers"
             element={
@@ -508,7 +502,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          {/* ✅ 兼容入口：曾经的“详情页/方案页”，统一收敛到编辑页（唯一入口） */}
           <Route
             path="admin/shipping-providers/:providerId"
             element={
@@ -525,8 +518,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
-          /* ✅ 快递网点编辑页（两页模型） */
 
           <Route
             path="admin/shipping-providers/new"
@@ -545,7 +536,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          {/* ✅ 运价方案工作台：纵向主线页（包含所有内容，从上到下） */}
           <Route
             path="admin/shipping-providers/schemes/:schemeId/workbench-flow"
             element={
@@ -555,16 +545,15 @@ const AppRouter: React.FC = () => {
             }
           />
         </Route>
-          <Route
-            path="ops/dev/order-parse-simulator"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.OpsDevOrderParseSimulatorPage />
-              </RequirePermission>
-            }
-          />
+        <Route
+          path="ops/dev/order-parse-simulator"
+          element={
+            <RequirePermission permission="dev.tools.access">
+              <P.OpsDevOrderParseSimulatorPage />
+            </RequirePermission>
+          }
+        />
 
-        {/* 兜底 */}
         <Route path="*" element={<Navigate to="/snapshot" replace />} />
       </Routes>
     </Suspense>
