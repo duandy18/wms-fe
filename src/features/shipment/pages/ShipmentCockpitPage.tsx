@@ -2,7 +2,7 @@
 //
 // 发货 Shipment Cockpit（作业台）
 // - 左：ShipmentInputPanel（订单 / 重量 / 地址 / 电子称 + prepare + 候选仓扫描 + 人工裁决）
-// - 中：ShipmentOrderSummaryPanel（订单明细占位）
+// - 中：ShipmentOrderSummaryPanel（prepare 返回的真实订单摘要）
 // - 右：ShipmentQuoteComparePanel（报价对比）
 
 import React from "react";
@@ -52,6 +52,13 @@ const ShipmentCockpitPage: React.FC = () => {
         />
 
         <ShipmentOrderSummaryPanel
+          orderId={c.preparedOrderId}
+          items={c.preparedItems}
+          totalQty={c.preparedTotalQty}
+          traceId={c.preparedTraceId}
+          receiverName={c.receiverName}
+          receiverPhone={c.receiverPhone}
+          addressDetail={c.addressDetail}
           province={c.province}
           city={c.city}
           district={c.district}
