@@ -99,7 +99,7 @@ export const menuSections: RouteSection[] = [
 
       // ✅ 物流 / 承运商（主数据归位）
       // 语义：Shipping Provider = 仓库可用的快递网点（warehouse_id 是事实边界）
-      { path: "/admin/shipping-providers", label: "快递网点", requiredPermissions: ["config.store.write"] },
+      { path: "/tms/providers", label: "快递网点", requiredPermissions: ["config.store.write"] },
 
       { path: "/admin/items", label: "商品主数据", requiredPermissions: ["config.store.write"] },
       { path: "/admin/suppliers", label: "供应商主数据", requiredPermissions: ["config.store.write"] },
@@ -114,7 +114,7 @@ export const menuSections: RouteSection[] = [
 
       // ✅ 兼容深链：Provider 详情（Tab → 子页面）
       {
-        path: "/admin/shipping-providers/:providerId/*",
+        path: "/tms/providers/:providerId/*",
         label: "快递网点详情",
         requiredPermissions: ["config.store.write"],
         showInSidebar: false,
@@ -122,7 +122,7 @@ export const menuSections: RouteSection[] = [
 
       // ✅ 兼容深链：运价方案工作台（唯一入口：纵向主线页）
       {
-        path: "/admin/shipping-providers/schemes/:schemeId/workbench-flow",
+        path: "/tms/providers/schemes/:schemeId/workbench-flow",
         label: "运价方案工作台",
         requiredPermissions: ["config.store.write"],
         showInSidebar: false,

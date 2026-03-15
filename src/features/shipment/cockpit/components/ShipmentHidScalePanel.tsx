@@ -85,7 +85,7 @@ export const ShipmentHidScalePanel: React.FC<Props> = ({ onWeightLocked }) => {
             电子称（WebHID）
           </h2>
           <p className="text-[11px] text-slate-500">
-            连接 USB 电子称，自动读取毛重（kg），并支持锁定后回填到发货表单。
+            连接 USB 电子称，自动读取发货毛重（kg），并支持锁定后回填到发货表单。
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -126,13 +126,13 @@ export const ShipmentHidScalePanel: React.FC<Props> = ({ onWeightLocked }) => {
         </div>
 
         <div className="flex flex-col gap-1 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
-          <span className="text-[11px] text-emerald-700">已锁定重量</span>
+          <span className="text-[11px] text-emerald-700">已锁定发货毛重</span>
           <span className="font-mono text-2xl font-semibold text-emerald-900">
             {lockedWeightKg != null ? lockedWeightKg.toFixed(3) : "--.-"}
             <span className="ml-1 text-xs text-emerald-600">kg</span>
           </span>
           <span className="text-[10px] text-emerald-700">
-            锁定后会将此值写入发货表单的毛重字段（gross_weight_kg）。
+            锁定后会将此值写入发货表单的“发货毛重”字段，并用于后续算价与发货提交。
           </span>
         </div>
 

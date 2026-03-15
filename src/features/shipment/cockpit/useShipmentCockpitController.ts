@@ -21,6 +21,8 @@ import { buildQuoteSnapshot, parseOrderRef } from "./utils";
 const DEFAULT_PROVINCE = "广东省";
 const DEFAULT_CITY = "深圳市";
 const DEFAULT_DISTRICT = "南山区";
+const DEFAULT_WEIGHT_KG = "2.36";
+const DEFAULT_PACKAGING_WEIGHT_KG = "0.10";
 
 function toHumanError(e: unknown, fallback: string): string {
   if (!e) return fallback;
@@ -33,8 +35,10 @@ function toHumanError(e: unknown, fallback: string): string {
 
 export function useShipmentCockpitController() {
   const [orderRef, setOrderRef] = useState("");
-  const [weightKg, setWeightKg] = useState("2.36");
-  const [packagingWeightKg, setPackagingWeightKg] = useState("0.10");
+  const [weightKg, setWeightKg] = useState(DEFAULT_WEIGHT_KG);
+  const [packagingWeightKg, setPackagingWeightKg] = useState(
+    DEFAULT_PACKAGING_WEIGHT_KG,
+  );
 
   const [province, setProvince] = useState(DEFAULT_PROVINCE);
   const [city, setCity] = useState(DEFAULT_CITY);
@@ -110,6 +114,41 @@ export function useShipmentCockpitController() {
     !!city.trim() &&
     !!district.trim() &&
     !confirming;
+
+  function clearPreparedOrderFacts() {
+    setPreparedRef(null);
+    setPreparedOrderId(null);
+    setPreparedItems([]);
+    setPreparedTotalQty(0);
+    setPreparedTraceId(null);
+
+    setReceiverName("");
+    setReceiverPhone("");
+    setAddressDetail("");
+
+    setCandidateWarehouses([]);
+    setScanRows([]);
+    setFulfillmentStatus(null);
+    setWarehouseReason(null);
+    setSelectedWarehouseId(null);
+
+    setQuotes([]);
+    setRecommendedSchemeId(null);
+    setSelectedSchemeId(null);
+  }
+
+  function resetCockpitAfterShip() {
+    setOrderRef("");
+    setWeightKg(DEFAULT_WEIGHT_KG);
+    setPackagingWeightKg(DEFAULT_PACKAGING_WEIGHT_KG);
+
+    setProvince(DEFAULT_PROVINCE);
+    setCity(DEFAULT_CITY);
+    setDistrict(DEFAULT_DISTRICT);
+
+    clearPreparedOrderFacts();
+    setError(null);
+  }
 
   useEffect(() => {
     if (quotes.length > 0) {
@@ -217,19 +256,7 @@ export function useShipmentCockpitController() {
       }
     } catch (e: unknown) {
       setError(toHumanError(e, "prepare 失败"));
-      setPreparedRef(null);
-      setPreparedOrderId(null);
-      setPreparedItems([]);
-      setPreparedTotalQty(0);
-      setPreparedTraceId(null);
-      setReceiverName("");
-      setReceiverPhone("");
-      setAddressDetail("");
-      setCandidateWarehouses([]);
-      setScanRows([]);
-      setFulfillmentStatus(null);
-      setWarehouseReason(null);
-      setSelectedWarehouseId(null);
+      clearPreparedOrderFacts();
     } finally {
       setPreparing(false);
     }
@@ -346,12 +373,12 @@ export function useShipmentCockpitController() {
       return;
     }
 
-    const { platform, shopId, extOrderNo } = parseOrderRef(orderRef.trim());
-
     setConfirming(true);
     setError(null);
 
     try {
+      const { platform, shopId, extOrderNo } = parseOrderRef(orderRef.trim());
+
       const snapshot = buildQuoteSnapshot(
         {
           dest: { province, city, district },
@@ -394,6 +421,7 @@ export function useShipmentCockpitController() {
       });
 
       alert(`已生成运单号：${res.tracking_no}`);
+      resetCockpitAfterShip();
     } catch (e: unknown) {
       setError(toHumanError(e, "发货失败"));
     } finally {

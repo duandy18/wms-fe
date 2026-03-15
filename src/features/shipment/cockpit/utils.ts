@@ -9,15 +9,35 @@ export function parseOrderRef(ref: string): {
   shopId: string;
   extOrderNo: string;
 } {
-  const parts = ref.split(":");
-  if (parts.length >= 4 && parts[0] === "ORD") {
-    return {
-      platform: parts[1] || "PDD",
-      shopId: parts[2] || "1",
-      extOrderNo: parts.slice(3).join(":"),
-    };
+  const raw = String(ref ?? "").trim();
+  if (!raw) {
+    throw new Error("订单号 / 业务引用不能为空");
   }
-  return { platform: "PDD", shopId: "1", extOrderNo: ref };
+
+  const parts = raw.split(":");
+  if (parts.length < 4 || parts[0] !== "ORD") {
+    throw new Error(
+      "订单号格式不正确，请使用 ORD:平台:店铺:外部单号，例如 ORD:PDD:1:EXT123",
+    );
+  }
+
+  const platform = (parts[1] ?? "").trim();
+  const shopId = (parts[2] ?? "").trim();
+  const extOrderNo = parts.slice(3).join(":").trim();
+
+  if (!platform) {
+    throw new Error("订单号格式不正确：缺少平台，请使用 ORD:平台:店铺:外部单号");
+  }
+
+  if (!shopId) {
+    throw new Error("订单号格式不正确：缺少店铺，请使用 ORD:平台:店铺:外部单号");
+  }
+
+  if (!extOrderNo) {
+    throw new Error("订单号格式不正确：缺少外部单号，请使用 ORD:平台:店铺:外部单号");
+  }
+
+  return { platform, shopId, extOrderNo };
 }
 
 export function buildQuoteSnapshot(

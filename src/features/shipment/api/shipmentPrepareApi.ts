@@ -4,6 +4,10 @@ import { apiPost } from "../../../lib/api";
 export interface ShipPrepareItem {
   item_id: number;
   qty: number;
+  sku?: string | null;
+  title?: string | null;
+  unit_weight_kg?: number | null;
+  line_weight_kg?: number | null;
 }
 
 export interface ShipPrepareRequest {
@@ -58,6 +62,9 @@ export interface ShipPrepareResponse {
   weight_kg?: number | null;
 
   trace_id?: string | null;
+  execution_stage?: string | null;
+  ship_committed_at?: string | null;
+  shipped_at?: string | null;
 
   /**
    * ✅ 不预设：warehouse_id 通常为 null，让操作员选择

@@ -16,17 +16,17 @@ import * as P from "./lazyPages";
 /* ✅ 兼容入口：统一收敛到“编辑网点”唯一入口 */
 function RedirectToProviderEdit() {
   const { providerId } = useParams();
-  if (!providerId) return <Navigate to="/admin/shipping-providers" replace />;
+  if (!providerId) return <Navigate to="/tms/providers" replace />;
   return (
-    <Navigate to={`/admin/shipping-providers/${providerId}/edit`} replace />
+    <Navigate to={`/tms/providers/${providerId}/edit`} replace />
   );
 }
 
 function RedirectToProviderEditFromSchemes() {
   const { providerId } = useParams();
-  if (!providerId) return <Navigate to="/admin/shipping-providers" replace />;
+  if (!providerId) return <Navigate to="/tms/providers" replace />;
   return (
-    <Navigate to={`/admin/shipping-providers/${providerId}/edit`} replace />
+    <Navigate to={`/tms/providers/${providerId}/edit`} replace />
   );
 }
 
@@ -488,13 +488,13 @@ const AppRouter: React.FC = () => {
             path="logistics/providers"
             element={
               <RequirePermission permission="config.store.write">
-                <Navigate to="/admin/shipping-providers" replace />
+                <Navigate to="/tms/providers" replace />
               </RequirePermission>
             }
           />
 
           <Route
-            path="admin/shipping-providers"
+            path="tms/providers"
             element={
               <RequirePermission permission="config.store.write">
                 <P.ShippingProvidersListPage />
@@ -503,7 +503,7 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="admin/shipping-providers/:providerId"
+            path="tms/providers/:providerId"
             element={
               <RequirePermission permission="config.store.write">
                 <RedirectToProviderEdit />
@@ -511,7 +511,7 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="admin/shipping-providers/:providerId/schemes"
+            path="tms/providers/:providerId/schemes"
             element={
               <RequirePermission permission="config.store.write">
                 <RedirectToProviderEditFromSchemes />
@@ -520,7 +520,7 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="admin/shipping-providers/new"
+            path="tms/providers/new"
             element={
               <RequirePermission permission="config.store.write">
                 <P.ShippingProviderEditPage />
@@ -529,7 +529,7 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="admin/shipping-providers/:providerId/edit"
+            path="tms/providers/:providerId/edit"
             element={
               <RequirePermission permission="config.store.write">
                 <P.ShippingProviderEditPage />
@@ -537,7 +537,7 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="admin/shipping-providers/schemes/:schemeId/workbench-flow"
+            path="tms/providers/schemes/:schemeId/workbench-flow"
             element={
               <RequirePermission permission="config.store.write">
                 <P.SchemeWorkbenchFlowPage />
