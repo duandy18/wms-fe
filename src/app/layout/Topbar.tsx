@@ -81,10 +81,8 @@ export function Topbar() {
       { prefix: "/admin/items", value: { section: "主数据", page: "商品主数据" } },
       { prefix: "/admin/suppliers", value: { section: "主数据", page: "供应商主数据" } },
 
-      // ✅ 快递网点（主数据归位）
-      { prefix: "/admin/shipping-providers", value: { section: "主数据", page: "快递网点" } },
-      // ✅ 别名入口（兼容）：保持同一面包屑语义
-      { prefix: "/logistics/providers", value: { section: "主数据", page: "快递网点" } },
+      // 运输
+      { prefix: "/tms/providers", value: { section: "运输", page: "快递网点" } },
 
       { prefix: "/warehouses", value: { section: "主数据", page: "仓库管理" } },
       { prefix: "/stores", value: { section: "主数据", page: "店铺管理" } },

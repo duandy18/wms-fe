@@ -131,7 +131,7 @@ export const ShipmentInputPanel: React.FC<Props> = ({
 
   return (
     <section className={UI.card}>
-      <h2 className={UI.h2}>订单 / 重量</h2>
+      <h2 className={UI.h2}>订单 / 发货重量</h2>
 
       <div className="mt-3 space-y-3">
         <div className="flex flex-col">
@@ -271,13 +271,16 @@ export const ShipmentInputPanel: React.FC<Props> = ({
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col">
-            <label className={UI.label}>包裹毛重(kg)</label>
+            <label className={UI.label}>发货毛重(kg)</label>
             <input
               className={UI.inputMono}
               value={weightKg}
               onChange={(e) => onWeightChange(e.target.value)}
               disabled={preparing || loadingCalc}
             />
+            <div className="mt-1 text-xs text-slate-500">
+              该值将作为报价输入重量，并在发货提交时作为包裹发货毛重写入账本。
+            </div>
           </div>
 
           <div className="flex flex-col">
@@ -288,6 +291,9 @@ export const ShipmentInputPanel: React.FC<Props> = ({
               onChange={(e) => onPackagingWeightChange(e.target.value)}
               disabled={preparing || loadingCalc}
             />
+            <div className="mt-1 text-xs text-slate-500">
+              当前仅作为执行记录与快照辅助信息，不单独作为发货主重量。
+            </div>
           </div>
         </div>
 
@@ -339,7 +345,7 @@ export const ShipmentInputPanel: React.FC<Props> = ({
           <br />
           · 若所有候选仓均缺货：建议退货/取消（不自动拆单、不自动跨仓）。
           <br />
-          · 修改重量或地址将使旧报价失效，需要重新算价。
+          · 修改发货毛重或地址将使旧报价失效，需要重新算价。
         </p>
       </div>
     </section>

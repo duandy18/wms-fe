@@ -5,13 +5,13 @@
 // - 旧 bracket 覆盖/空洞/重叠扫描已退场，因为主域不再输出 zone.brackets
 
 import React, { useMemo, useState } from "react";
-import { fetchPricingSchemeDetail } from "../../../admin/shipping-providers/api";
+import { fetchPricingSchemeDetail } from "../../../tms/providers/api";
 import type {
   PricingSchemeDetail,
   PricingSchemeDestinationGroup,
   PricingSchemeZone,
   PricingSchemeZoneMember,
-} from "../../../admin/shipping-providers/api";
+} from "../../../tms/providers/api";
 import { safeJson } from "../labUtils";
 
 type ZoneIssueReport = {

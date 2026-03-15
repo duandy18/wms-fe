@@ -150,22 +150,22 @@ export const SuppliersListPage = lazy(
 
 // 物流 / 快递公司主数据
 export const ShippingProvidersListPage = lazy(
-  () => import("../../features/admin/shipping-providers/ShippingProvidersListPage"),
+  () => import("../../features/tms/providers/ShippingProvidersListPage"),
 );
 
 // ✅ 快递网点编辑页（两页模型）
 export const ShippingProviderEditPage = lazy(
-  () => import("../../features/admin/shipping-providers/pages/ShippingProviderEditPage"),
+  () => import("../../features/tms/providers/pages/ShippingProviderEditPage"),
 );
 
 // ✅ 快递公司详情页（Provider 维度：Tab → 子页面）
 export const ShippingProviderDetailPage = lazy(
-  () => import("../../features/admin/shipping-providers/pages/ShippingProviderDetailPage"),
+  () => import("../../features/tms/providers/pages/ShippingProviderDetailPage"),
 );
 
 // ✅ 运价方案工作台（纵向主线页：包含所有内容，从上到下））
 export const SchemeWorkbenchFlowPage = lazy(
-  () => import("../../features/admin/shipping-providers/scheme/SchemeWorkbenchFlowPage"),
+  () => import("../../features/tms/providers/scheme/SchemeWorkbenchFlowPage"),
 );
 
 // 采购系统

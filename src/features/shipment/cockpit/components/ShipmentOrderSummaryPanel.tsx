@@ -19,14 +19,25 @@ type Props = {
   packagingWeightKg: number;
 };
 
-function safeKg(v: number, digits = 3) {
-  if (!Number.isFinite(v)) return "-";
+function safeKg(v: number | null | undefined, digits = 3) {
+  if (v == null || !Number.isFinite(v)) return "-";
   return v.toFixed(digits);
 }
 
 function safeText(v: string | null | undefined): string {
   const s = String(v ?? "").trim();
   return s || "—";
+}
+
+function formatTitle(item: ShipPrepareItem): string {
+  const title = String(item.title ?? "").trim();
+  if (title) return title;
+  return `ITEM-${item.item_id}`;
+}
+
+function formatSku(item: ShipPrepareItem): string {
+  const sku = String(item.sku ?? "").trim();
+  return sku || "—";
 }
 
 export const ShipmentOrderSummaryPanel: React.FC<Props> = ({
@@ -92,7 +103,7 @@ export const ShipmentOrderSummaryPanel: React.FC<Props> = ({
               <span className="ml-2 font-mono">{totalQty}</span>
             </div>
             <div>
-              <span className="font-semibold">当前毛重：</span>
+              <span className="font-semibold">发货毛重：</span>
               <span className="ml-2 font-mono">
                 {safeKg(totalWeightKg, 3)} kg
               </span>
@@ -119,27 +130,59 @@ export const ShipmentOrderSummaryPanel: React.FC<Props> = ({
                 行号
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                item_id
+                商品 / 标题
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                SKU
               </th>
               <th className="px-4 py-3 text-right font-semibold text-slate-600">
                 数量
+              </th>
+              <th className="px-4 py-3 text-right font-semibold text-slate-600">
+                单件重量(kg)
+              </th>
+              <th className="px-4 py-3 text-right font-semibold text-slate-600">
+                行小计重量(kg)
               </th>
             </tr>
           </thead>
           <tbody>
             {hasItems ? (
               items.map((item, idx) => (
-                <tr key={`${item.item_id}-${idx}`} className="border-t border-slate-100">
+                <tr
+                  key={`${item.item_id}-${idx}`}
+                  className="border-t border-slate-100"
+                >
                   <td className="px-4 py-3 font-mono text-slate-500">
                     {idx + 1}
                   </td>
-                  <td className="px-4 py-3 font-mono">{item.item_id}</td>
-                  <td className="px-4 py-3 text-right font-mono">{item.qty}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-slate-800">
+                        {formatTitle(item)}
+                      </span>
+                      <span className="text-xs font-mono text-slate-500">
+                        item_id={item.item_id}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-slate-700">
+                    {formatSku(item)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    {item.qty}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    {safeKg(item.unit_weight_kg, 3)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    {safeKg(item.line_weight_kg, 3)}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr className="border-t border-slate-100">
-                <td colSpan={3} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
                   暂无订单明细。请先执行“准备订单（候选仓扫描）”。
                 </td>
               </tr>
@@ -153,8 +196,21 @@ export const ShipmentOrderSummaryPanel: React.FC<Props> = ({
               <td className="px-4 py-3 text-sm text-slate-500">
                 {hasItems ? `${items.length} 行` : "—"}
               </td>
+              <td />
               <td className="px-4 py-3 text-right font-mono text-sm font-semibold">
                 {totalQty}
+              </td>
+              <td />
+              <td className="px-4 py-3 text-right font-mono text-sm font-semibold">
+                {hasItems
+                  ? safeKg(
+                      items.reduce(
+                        (sum, item) => sum + (Number(item.line_weight_kg) || 0),
+                        0,
+                      ),
+                      3,
+                    )
+                  : "-"}
               </td>
             </tr>
           </tfoot>
@@ -162,7 +218,7 @@ export const ShipmentOrderSummaryPanel: React.FC<Props> = ({
       </div>
 
       <div className="mt-3 text-sm text-slate-500">
-        当前摘要直接使用 prepare-from-order 返回的订单事实，不再展示示例占位数据。
+        当前摘要直接使用 prepare-from-order 返回的真实订单行信息，便于作业员核对商品、SKU 与重量。
       </div>
     </section>
   );
