@@ -93,7 +93,7 @@ const AppRouter: React.FC = () => {
             path="outbound/ship"
             element={
               <RequirePermission permission="operations.outbound">
-                <P.ShipmentCockpitPage />
+                <Navigate to="/shipping/dispatch" replace />
               </RequirePermission>
             }
           />
@@ -136,6 +136,14 @@ const AppRouter: React.FC = () => {
             }
           />
 
+          <Route
+            path="shipping/dispatch"
+            element={
+              <RequirePermission permission="operations.outbound">
+                <P.ShipmentCockpitPage />
+              </RequirePermission>
+            }
+          />
           <Route
             path="shipping/reports"
             element={

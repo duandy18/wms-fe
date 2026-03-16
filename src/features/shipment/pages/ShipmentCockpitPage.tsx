@@ -1,6 +1,6 @@
 // src/features/shipment/pages/ShipmentCockpitPage.tsx
 //
-// 发货 Shipment Cockpit（作业台）
+// 发货作业 Shipment Cockpit（物流执行台）
 // - 左：ShipmentInputPanel（订单 / 重量 / 地址 / 电子称 + prepare + 候选仓扫描 + 人工裁决）
 // - 中：ShipmentOrderSummaryPanel（prepare 返回的真实订单摘要）
 // - 右：ShipmentQuoteComparePanel（报价对比）
@@ -20,7 +20,7 @@ const ShipmentCockpitPage: React.FC = () => {
 
   return (
     <div className={UI.page}>
-      <PageTitle title="发货" description="不可误操作的运输执行工作台" />
+      <PageTitle title="发货作业" description="不可误操作的物流执行工作台" />
 
       {c.error && <div className={UI.errorBox}>{c.error}</div>}
 

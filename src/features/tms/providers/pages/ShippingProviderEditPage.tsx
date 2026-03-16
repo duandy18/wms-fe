@@ -1,9 +1,18 @@
 // src/features/tms/providers/pages/ShippingProviderEditPage.tsx
 //
-// 快递网点编辑页（唯一入口）
+// 快递网点配置页（唯一业务容器）
 // - 页面只负责编排（Orchestrator）
 // - 状态/取数：useShippingProviderEditModel
 // - UI：拆成 ProviderBasicInfoCard / ContactsSectionCard / WarehouseBindingsCard / SchemesSectionCard
+//
+// 当前页定位：
+// - 这是“快递网点”业务的主容器，不再拆出第三入口页面。
+// - 列表页只负责进入这里；真正配置在本页内完成。
+// - 页面内统一维护：
+//   1) 基础信息
+//   2) 联系人
+//   3) 仓库绑定
+//   4) 运价方案
 //
 // Phase 6 收尾裁决：
 // - 不引入第三入口（SchemesPage/DetailPage 仅兼容重定向）
@@ -268,10 +277,25 @@ const ShippingProviderEditPage: React.FC = () => {
         </button>
       </div>
 
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+        <div className="text-sm text-slate-700">
+          本页是“快递网点”配置主容器，统一维护
+          <span className="font-semibold text-slate-900">
+            基础信息、联系人、仓库绑定、运价方案
+          </span>
+          四块内容。
+        </div>
+        <div className="mt-2 text-sm text-slate-500">
+          其中“运价方案”负责进入深度工作台；创建方案前，必须先在“仓库绑定”中完成至少一个启用绑定。
+        </div>
+      </div>
+
       {!canWrite && (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
           <div className="font-semibold">当前为只读模式</div>
-          <div className="text-sm opacity-80">你没有该页面的写权限（config.store.write）。可查看配置与事实，但不能保存修改。</div>
+          <div className="text-sm opacity-80">
+            你没有该页面的写权限（config.store.write）。可查看配置与事实，但不能保存修改。
+          </div>
         </div>
       )}
 

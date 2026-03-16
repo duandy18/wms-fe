@@ -64,11 +64,6 @@ export const menuSections: RouteSection[] = [
         requiredPermissions: ["operations.outbound"],
       },
       {
-        path: "/outbound/ship",
-        label: "发货",
-        requiredPermissions: ["operations.outbound"],
-      },
-      {
         path: "/outbound/dashboard",
         label: "出库看板",
         requiredPermissions: ["report.outbound"],
@@ -85,6 +80,11 @@ export const menuSections: RouteSection[] = [
         path: "/tms/providers",
         label: "快递网点",
         requiredPermissions: ["config.store.write"],
+      },
+      {
+        path: "/shipping/dispatch",
+        label: "发货作业",
+        requiredPermissions: ["operations.outbound"],
       },
       {
         path: "/shipping/reports",

@@ -78,10 +78,6 @@ export function Topbar() {
         value: { section: "订单出库", page: "拣货" },
       },
       {
-        prefix: "/outbound/ship",
-        value: { section: "订单出库", page: "发货" },
-      },
-      {
         prefix: "/outbound/dashboard",
         value: { section: "订单出库", page: "出库看板" },
       },
@@ -98,6 +94,10 @@ export function Topbar() {
       {
         prefix: "/tms/providers",
         value: { section: "物流", page: "快递网点" },
+      },
+      {
+        prefix: "/shipping/dispatch",
+        value: { section: "物流", page: "发货作业" },
       },
       {
         prefix: "/shipping/reports",
