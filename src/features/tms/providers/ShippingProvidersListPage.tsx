@@ -1,14 +1,23 @@
 // src/features/tms/providers/ShippingProvidersListPage.tsx
 //
-// 仓库可用快递网点（列表页）
+// 快递网点列表页（物流配置入口）
 // 语义说明：
-// - 本页面中的每一行，表示「一个服务某仓库区域、参与运费比价的快递网点」
+// - 本页面是“快递网点”业务的入口页，不承担联系人 / 仓库绑定 / 运价方案的深度编辑。
+// - 点击“编辑网点”后进入网点配置容器页，在同一页面内维护：
+//   1) 基础信息
+//   2) 联系人
+//   3) 仓库绑定
+//   4) 运价方案
+// - 运价方案的深度编辑继续进入 workbench-flow 工作台。
 // - 当前阶段：快递网点与快递品牌共表存储（不单独拆 Account）
 // - 后续可平滑演进为 carrier_accounts
 //
-// ✅ Phase 6 第二刀：前端直读仓库事实
-// - 所属仓库：直读 shipping_providers.warehouse_id（事实）
-// - 仓库名称：仅做字典翻译（fetchWarehouses），不做跨表推导 / 聚合 / N+1
+// ✅ 当前页面只做两件事：
+// - 列表展示
+// - 进入“新建 / 编辑网点”主容器
+//
+// ✅ 仓库字典用途：
+// - 这里只做“id -> 展示名称”的翻译，不做任何跨表推导 / 聚合 / 归属裁决。
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +37,6 @@ import { useAuth } from "../../../shared/useAuth";
 function warehouseLabel(w: WarehouseListItem): string {
   const code = w.code ? String(w.code).trim() : "";
   const name = w.name ? String(w.name).trim() : "";
-  // 展示规范：B-01 河北一仓
   return code && name ? `${code} ${name}` : code || name || `WH-${w.id}`;
 }
 
@@ -77,14 +85,24 @@ const ShippingProvidersListPage: React.FC = () => {
 
   return (
     <div className={UI.page}>
-      <PageTitle title="仓库可用快递网点" />
+      <PageTitle title="快递网点" />
 
-      <div className="mb-4 text-sm text-slate-600">参与指定仓库区域运费比价的快递网点配置（最小参与单元）</div>
+      <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+        <div className="text-sm text-slate-700">
+          本页是物流配置入口：先选择或新建快递网点，再进入网点配置页维护
+          <span className="font-semibold text-slate-900">基础信息、联系人、仓库绑定、运价方案</span> 四块内容。
+        </div>
+        <div className="mt-2 text-sm text-slate-500">
+          这里展示的是网点列表；深度编辑不在列表页完成，而在“编辑网点”页面内收口。
+        </div>
+      </div>
 
       {!canWrite && (
         <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
           <div className="font-semibold">当前为只读模式</div>
-          <div className="text-sm opacity-80">你没有该页面的写权限（config.store.write）。可查看配置与事实，但不能新建/编辑/启停。</div>
+          <div className="text-sm opacity-80">
+            你没有该页面的写权限（config.store.write）。可查看配置与事实，但不能新建/编辑/启停。
+          </div>
         </div>
       )}
 
