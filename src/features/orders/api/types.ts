@@ -89,7 +89,6 @@ export type PlatformOrder = {
   address?: PlatformOrderAddress | null;
   items: PlatformOrderLine[];
 
-  // ✅ 后端 /orders/.../view 返回：orders/order_items/order_address 的 json-friendly bundle
   raw?: Record<string, unknown> | null;
 };
 
@@ -111,6 +110,11 @@ export type OrderFactItem = {
 
 export type OrderFacts = {
   ok: boolean;
+  order_id: number;
+  platform: string;
+  shop_id: string;
+  ext_order_no: string;
+  issues: string[];
   items: OrderFactItem[];
 };
 

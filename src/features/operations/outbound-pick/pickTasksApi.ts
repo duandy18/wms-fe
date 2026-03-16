@@ -124,7 +124,7 @@ export async function commitPickTask(taskId: number, payload: PickTaskCommitPayl
   return apiPost<PickTaskCommitResult>(`/pick-tasks/${taskId}/commit`, payload);
 }
 
-// 从订单创建拣货任务（用于 Cockpit & DevConsole PickTask 调试）
+// 从订单创建拣货任务（用于拣货工作台创建作业）
 export interface PickTaskCreateFromOrderPayload {
   // Phase 2：不再由前端选择仓库；后端解析执行仓
   warehouse_id?: number | null;

@@ -1,16 +1,30 @@
 // src/features/diagnostics/order-lifecycle/OrderLifecycleView.tsx
 //
 // 订单生命周期诊断视图（Lifecycle v2, trace_id 驱动）
-// - 由 TraceStudio / 独立页面共用
+// - 由 Trace 页面 / 独立页面共用
 // - 接收 traceId / onChangeTraceId 作为 props，不直接读 URL
 
 import React, { useState } from "react";
 import { SectionCard } from "../../../components/wmsdu/SectionCard";
 import { apiGet } from "../../../lib/api";
-import type {
-  OrderLifecycleStageV2,
-  OrderLifecycleSummaryV2,
-} from "../../dev/orders/api/index";
+
+type OrderLifecycleHealth = "OK" | "WARN" | "BAD";
+
+type OrderLifecycleStageV2 = {
+  key: string;
+  label: string;
+  ts: string | null;
+  present: boolean;
+  sla_bucket: "ok" | "warn" | "breach" | null;
+  evidence_type: string | null;
+  source: string | null;
+  ref: string | null;
+};
+
+type OrderLifecycleSummaryV2 = {
+  health: OrderLifecycleHealth;
+  issues: string[];
+};
 
 type LifecycleV2Response = {
   ok: boolean;
@@ -66,12 +80,11 @@ export const OrderLifecycleView: React.FC<Props> = ({
   const summary = data?.summary;
 
   return (
-    <div className="px-6 lg:px-10 space-y-8">
+    <div className="space-y-8 px-6 lg:px-10">
       <SectionCard
         title="订单生命周期诊断（Lifecycle v2 / trace_id）"
-        className="p-6 space-y-4"
+        className="space-y-4 p-6"
       >
-        {/* 输入区 */}
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col">
             <label className="text-xs font-medium text-slate-600">
@@ -87,20 +100,18 @@ export const OrderLifecycleView: React.FC<Props> = ({
           <button
             onClick={load}
             disabled={loading || !traceId.trim()}
-            className="h-9 px-6 rounded bg-slate-900 text-xs font-medium text-white disabled:opacity-60"
+            className="h-9 rounded bg-slate-900 px-6 text-xs font-medium text-white disabled:opacity-60"
           >
             {loading ? "加载中…" : "加载生命周期"}
           </button>
         </div>
 
-        {/* 错误信息 */}
         {error && (
           <div className="mt-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {error}
           </div>
         )}
 
-        {/* 概览 + 健康状态 */}
         {data && (
           <div className="mt-3 space-y-2 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-700">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -119,17 +130,17 @@ export const OrderLifecycleView: React.FC<Props> = ({
                 <div>
                   总体健康：
                   {summary.health === "OK" && (
-                    <span className="ml-1 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-200">
+                    <span className="ml-1 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
                       OK
                     </span>
                   )}
                   {summary.health === "WARN" && (
-                    <span className="ml-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 border border-amber-200">
+                    <span className="ml-1 inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
                       WARN
                     </span>
                   )}
                   {summary.health === "BAD" && (
-                    <span className="ml-1 inline-flex rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700 border border-red-200">
+                    <span className="ml-1 inline-flex rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">
                       BAD
                     </span>
                   )}
@@ -143,7 +154,7 @@ export const OrderLifecycleView: React.FC<Props> = ({
             )}
             {summary && summary.issues && summary.issues.length > 0 && (
               <ul className="mt-1 list-disc pl-5 text-[11px] text-slate-700">
-                {summary.issues.map((iss, idx) => (
+                {summary.issues.map((iss: string, idx: number) => (
                   <li key={idx}>{iss}</li>
                 ))}
               </ul>
@@ -151,7 +162,6 @@ export const OrderLifecycleView: React.FC<Props> = ({
           </div>
         )}
 
-        {/* 阶段表格视图 */}
         {stages.length > 0 ? (
           <div className="mt-4 overflow-x-auto rounded border border-slate-200">
             <table className="min-w-full border-collapse text-[11px] text-slate-800">
@@ -188,8 +198,8 @@ export const OrderLifecycleView: React.FC<Props> = ({
                         className={
                           "inline-flex rounded-full px-2 py-0.5 text-[10px] " +
                           (s.present
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : "bg-slate-50 text-slate-400 border border-slate-200")
+                            ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border border-slate-200 bg-slate-50 text-slate-400")
                         }
                       >
                         {s.present ? "已发生" : "暂无记录"}
@@ -197,17 +207,17 @@ export const OrderLifecycleView: React.FC<Props> = ({
                     </td>
                     <td className="px-2 py-1 text-[10px]">
                       {s.sla_bucket === "ok" && (
-                        <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-700 border border-emerald-200">
+                        <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-700">
                           正常
                         </span>
                       )}
                       {s.sla_bucket === "warn" && (
-                        <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] text-amber-700 border border-amber-200">
+                        <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] text-amber-700">
                           接近超时
                         </span>
                       )}
                       {s.sla_bucket === "breach" && (
-                        <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-[10px] text-red-700 border border-red-200">
+                        <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] text-red-700">
                           已超时
                         </span>
                       )}
@@ -222,7 +232,7 @@ export const OrderLifecycleView: React.FC<Props> = ({
                       {s.source ?? "-"}
                     </td>
                     <td className="px-2 py-1 text-[10px] text-slate-600">
-                      <span className="font-mono break-all">
+                      <span className="break-all font-mono">
                         {s.ref ?? "-"}
                       </span>
                     </td>
@@ -240,11 +250,10 @@ export const OrderLifecycleView: React.FC<Props> = ({
           )
         )}
 
-        {/* 原始 JSON 视图 */}
         {data && (
           <div className="mt-4">
             <div className="mb-1 text-[11px] font-semibold text-slate-700">
-              原始响应（RAW, 调试用）
+              原始响应（RAW）
             </div>
             <pre className="max-h-[60vh] overflow-auto rounded bg-slate-50 p-3 text-[11px] text-slate-700">
               {JSON.stringify(data, null, 2)}

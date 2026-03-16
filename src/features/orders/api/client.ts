@@ -56,7 +56,6 @@ export async function fetchOrdersList(
   return r.data;
 }
 
-// ✅ 平台订单镜像：使用 orders 域权威只读接口（不要复用 DevConsole）
 export async function fetchOrderView(params: {
   platform: string;
   shopId: string;
@@ -79,6 +78,14 @@ export async function fetchOrderFacts(params: {
   )}/${encodeURIComponent(params.extOrderNo)}/facts`;
 
   return apiGet<OrderFacts>(path);
+}
+
+export async function fetchOrderViewById(orderId: number): Promise<OrderView> {
+  return apiGet<OrderView>(`/orders/${encodeURIComponent(String(orderId))}/view`);
+}
+
+export async function fetchOrderFactsById(orderId: number): Promise<OrderFacts> {
+  return apiGet<OrderFacts>(`/orders/${encodeURIComponent(String(orderId))}/facts`);
 }
 
 export async function manualAssignFulfillmentWarehouse(args: {

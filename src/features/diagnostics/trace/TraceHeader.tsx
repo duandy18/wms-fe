@@ -1,7 +1,7 @@
 // src/features/diagnostics/trace/TraceHeader.tsx
 //
-// Trace Studio 顶部说明区域（事件视图专用）
-// 原先的 "Trace 链路 + ApiBadge" 属于调试台风格，这里改成更贴合 Studio 的文案。
+// Trace 页面顶部说明区域（事件视图专用）
+// 顶部说明文案：面向正式排查场景，不再使用旧调试台措辞。
 
 import React from "react";
 
@@ -20,7 +20,7 @@ export const TraceHeader: React.FC = () => {
       <div className="hidden text-[11px] text-slate-500 md:block">
         <div>使用说明：</div>
         <ul className="mt-1 list-disc pl-4 space-y-0.5">
-          <li>先在上方输入 trace_id，可从 DevConsole / 订单详情 / Ledger 中复制。</li>
+          <li>先在上方输入 trace_id，可从订单详情 / 台账中复制。</li>
           <li>可选指定仓库 ID，用于过滤多仓环境下的事件。</li>
           <li>查询后可在「操作」列跳转到 Ledger / 库存 / 批次生命周期等工具。</li>
         </ul>

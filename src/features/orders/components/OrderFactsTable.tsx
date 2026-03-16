@@ -1,7 +1,6 @@
 // src/features/orders/components/OrderFactsTable.tsx
 import React from "react";
 import type { OrderFacts } from "../api/index";
-import type { DevOrderReconcileResult } from "../../dev/orders/api/index";
 
 type Totals = {
   ordered: number;
@@ -10,10 +9,14 @@ type Totals = {
   remaining: number;
 };
 
+type OrderReconcileResult = {
+  issues: string[];
+} | null;
+
 export const OrderFactsTable: React.FC<{
   facts: OrderFacts;
   totals: Totals;
-  reconcile: DevOrderReconcileResult | null;
+  reconcile: OrderReconcileResult;
   onViewStock: (itemId: number) => void;
   onViewLedger: () => void;
 }> = ({ facts, totals, reconcile, onViewStock, onViewLedger }) => {
@@ -48,7 +51,7 @@ export const OrderFactsTable: React.FC<{
           <tbody>
             {facts.items.map((f) => (
               <tr key={f.item_id} className="border-t border-slate-100">
-                <td className="px-2 py-1 font-mono text-[11px]">{f.item_id}</td>
+                <td className="font-mono text-[11px] px-2 py-1">{f.item_id}</td>
                 <td className="px-2 py-1">{f.title ?? f.sku_id ?? "-"}</td>
                 <td className="px-2 py-1 text-right">{f.qty_ordered}</td>
                 <td className="px-2 py-1 text-right">{f.qty_shipped}</td>
@@ -98,8 +101,8 @@ export const OrderFactsTable: React.FC<{
                 对账发现 {reconcile.issues.length} 条异常：
               </div>
               <ul className="mt-1 list-disc pl-4">
-                {reconcile.issues.map((s, idx) => (
-                  <li key={idx}>{s}</li>
+                {reconcile.issues.map((issue: string, idx: number) => (
+                  <li key={idx}>{issue}</li>
                 ))}
               </ul>
             </>
