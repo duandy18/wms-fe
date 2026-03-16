@@ -163,7 +163,7 @@ export const LedgerFilters: React.FC<Props> = ({
           <span className="text-xs font-semibold text-slate-700">ref</span>
           <input
             className="h-11 px-3 border rounded text-sm disabled:bg-slate-100 disabled:text-slate-400"
-            placeholder="scan_ref / 订单 ref，从 Trace / DevConsole 带入"
+            placeholder="scan_ref / 订单 ref，可从 Trace / 订单详情带入"
             value={ref}
             onChange={(e) => setRef(e.target.value)}
             disabled={isBook}

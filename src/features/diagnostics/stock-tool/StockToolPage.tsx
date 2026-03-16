@@ -26,7 +26,7 @@ const StockToolPage: React.FC<Props> = ({
   initialBatchCode,
 }) => {
   // 注意：这里不再从 useSearchParams 读 URL，
-  // URL 已由 InventoryStudio 中控解析并通过 props 传入。
+  // URL 参数已由上层页面解析并通过 props 传入。
 
   const [itemId, setItemId] = useState(
     initialItemId !== undefined ? String(initialItemId) : "",

@@ -33,81 +33,21 @@ export const SnapshotPage = lazy(
   () => import("../../features/inventory/snapshot/SnapshotPage"),
 );
 export const OutboundDashboardPage = lazy(
-  () => import("../../features/inventory/outbound-dashboard/OutboundDashboardPage"),
+  () =>
+    import("../../features/inventory/outbound-dashboard/OutboundDashboardPage"),
 );
 
-// ✅ 库存台账（业务页）
+// 库存台账（业务页）
 export const StockLedgerPage = lazy(
   () => import("../../features/inventory/ledger/StockLedgerPage"),
 );
 
-// 发货成本报表 / 发货账本详情
+// 物流：发货成本报表 / 发货账本详情
 export const ShippingReportsPage = lazy(
   () => import("../../features/shipment/pages/ShipmentReportsPage"),
 );
 export const ShippingRecordDetailPage = lazy(
   () => import("../../features/shipment/pages/ShipmentRecordDetailPage"),
-);
-
-// 诊断 & 工具（Studio）
-export const TraceStudioPage = lazy(
-  () => import("../../features/diagnostics/trace/TraceStudioPage"),
-);
-export const InventoryStudioPage = lazy(
-  () => import("../../features/diagnostics/stock-tool/InventoryStudioPage"),
-);
-export const LedgerStudioPage = lazy(
-  () => import("../../features/diagnostics/ledger-tool/LedgerStudioPage"),
-);
-export const DevConsolePage = lazy(
-  () => import("../../features/dev/DevConsolePage"),
-);
-
-// ✅ 运维中心（新）
-export const OpsOverviewPage = lazy(
-  () => import("../../features/ops/OpsOverviewPage"),
-);
-export const OpsHealthPage = lazy(
-  () => import("../../features/ops/OpsHealthPage"),
-);
-export const OpsTasksPage = lazy(
-  () => import("../../features/ops/OpsTasksPage"),
-);
-
-// ✅ 系统治理：商铺商品组合（FSKU）
-export const ShopProductBundlesPage = lazy(
-  () => import("../../features/admin/shop-bundles/ShopProductBundlesPage"),
-);
-
-// ✅ 运维中心 / 后端调试台（Tab → 页面化）
-export const OpsDevOrdersPage = lazy(
-  () => import("../../features/ops/dev/OpsDevOrdersPage"),
-);
-export const OpsDevPickPage = lazy(
-  () => import("../../features/ops/dev/OpsDevPickPage"),
-);
-export const OpsDevInboundPage = lazy(
-  () => import("../../features/ops/dev/OpsDevInboundPage"),
-);
-export const OpsDevCountPage = lazy(
-  () => import("../../features/ops/dev/OpsDevCountPage"),
-);
-export const OpsDevPlatformPage = lazy(
-  () => import("../../features/ops/dev/OpsDevPlatformPage"),
-);
-export const OpsDevOrderParseSimulatorPage = lazy(
-  () => import("../../features/ops/dev/OpsDevOrderParseSimulatorPage"),
-);
-
-// ✅ 运价运维中心（治理 / 修复 / 清理）
-export const PricingOpsCenterPage = lazy(
-  () => import("../../features/ops/pricing-ops/PricingOpsCenterPage"),
-);
-export const PricingOpsSchemeDetailPage = lazy(
-  () => import("../../features/ops/pricing-ops/PricingOpsSchemeDetailPage"),
-);
-export const PricingOpsCleanupPage = lazy(
-  () => import("../../features/ops/pricing-ops/PricingOpsCleanupPage"),
 );
 
 // 主数据
@@ -121,7 +61,12 @@ export const ItemsPage = lazy(
   () => import("../../features/admin/items/ItemsPage"),
 );
 
-// ✅ 权限与账号：3 个子页面（/iam/*）
+// 主数据：商铺商品组合（FSKU）
+export const ShopProductBundlesPage = lazy(
+  () => import("../../features/admin/shop-bundles/ShopProductBundlesPage"),
+);
+
+// 权限与账号：3 个子页面（/iam/*）
 export const UsersManagePage = lazy(
   () => import("../../features/admin/users/iam/UsersManagePage"),
 );
@@ -148,22 +93,22 @@ export const SuppliersListPage = lazy(
   () => import("../../features/admin/suppliers/SuppliersListPage"),
 );
 
-// 物流 / 快递公司主数据
+// 物流 / 快递网点
 export const ShippingProvidersListPage = lazy(
   () => import("../../features/tms/providers/ShippingProvidersListPage"),
 );
 
-// ✅ 快递网点编辑页（两页模型）
+// 快递网点编辑页（页面中承载网点基本信息 / 联系人 / 仓库绑定 / 运价方案）
 export const ShippingProviderEditPage = lazy(
   () => import("../../features/tms/providers/pages/ShippingProviderEditPage"),
 );
 
-// ✅ 快递公司详情页（Provider 维度：Tab → 子页面）
+// 快递网点详情页（当前收敛到编辑页入口）
 export const ShippingProviderDetailPage = lazy(
   () => import("../../features/tms/providers/pages/ShippingProviderDetailPage"),
 );
 
-// ✅ 运价方案工作台（纵向主线页：包含所有内容，从上到下））
+// 运价方案工作台（纵向主线页）
 export const SchemeWorkbenchFlowPage = lazy(
   () => import("../../features/tms/providers/scheme/SchemeWorkbenchFlowPage"),
 );

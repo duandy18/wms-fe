@@ -1,10 +1,10 @@
 // src/features/diagnostics/trace/TracePage.tsx
 //
-// 旧 Trace 页面壳（兼容用）
+// Trace 页面壳
 // - 主入口 /trace 已由 TraceStudioPage 接管
-// - 本组件仅用于可能存在的旧路由或开发调试
+// - 本组件保留为轻量页面壳
 //
-// 如果你不再需要独立的 TracePage，可以在路由中移除对它的引用。
+// 如后续完成统一路由收口，可再评估是否移除该页面壳。
 
 import React, { useState } from "react";
 import { TraceEventsView } from "./TraceEventsView";

@@ -199,7 +199,7 @@ const ShipmentRecordDetailPage: React.FC = () => {
               </button>
             </div>
             <p className="text-[11px] text-slate-500">
-              ID 可从 dev 调试工具或数据库中获取，用于精准定位某一条记录。
+              ID 可从报表列表、详情跳转参数或数据库中获取，用于精准定位某一条记录。
             </p>
           </div>
         </div>

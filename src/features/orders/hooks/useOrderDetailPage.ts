@@ -2,8 +2,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import { fetchOrderFacts, fetchOrderView, type OrderFacts, type OrderView } from "../api/index";
-import { reconcileOrderById, type DevOrderReconcileResult } from "../../dev/orders/api/index";
+import {
+  fetchOrderFactsById,
+  fetchOrderViewById,
+  type OrderFacts,
+  type OrderView,
+} from "../api/index";
 import { createReceiveTaskFromOrder } from "../../receive-tasks/api";
 import { getErrorMessage } from "../ui/errors";
 
@@ -16,6 +20,10 @@ type NavState =
       extOrderNo?: string;
     };
 
+type OrderReconcileResult = {
+  issues: string[];
+} | null;
+
 export function useOrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const location = useLocation();
@@ -26,7 +34,7 @@ export function useOrderDetailPage() {
 
   const [orderView, setOrderView] = useState<OrderView | null>(null);
   const [facts, setFacts] = useState<OrderFacts | null>(null);
-  const [reconcile, setReconcile] = useState<DevOrderReconcileResult | null>(null);
+  const [reconcile, setReconcile] = useState<OrderReconcileResult>(null);
 
   const [loading, setLoading] = useState(false);
   const [reconcileLoading, setReconcileLoading] = useState(false);
@@ -35,8 +43,7 @@ export function useOrderDetailPage() {
 
   const order = orderView?.order ?? null;
 
-  // ✅ PlatformOrder（平台订单镜像）不携带 trace_id；OrderFacts 也不携带 order 字段
-  // ✅ 这里先降级为 null（后续若后端补齐合同字段，再做“合同驱动化”的接入）
+  // 先保持 null；后续若正式合同补 trace_id，再接入
   const traceId: string | null = null;
 
   const hasRemainingRefundable = useMemo(() => {
@@ -61,34 +68,22 @@ export function useOrderDetailPage() {
   }, [facts]);
 
   const load = useCallback(async () => {
-    if (!Number.isFinite(orderIdNum)) {
+    if (!Number.isFinite(orderIdNum) || orderIdNum <= 0) {
       setError("URL 中的 orderId 无效。");
       return;
     }
 
     setLoading(true);
     setError(null);
+    setReconcile(null);
 
     try {
-      let plat = navState.platform;
-      let shop = navState.shopId;
-      let ext = navState.extOrderNo;
+      const [ov, of] = await Promise.all([
+        fetchOrderViewById(orderIdNum),
+        fetchOrderFactsById(orderIdNum),
+      ]);
 
-      if (!plat || !shop || !ext) {
-        const recon = await reconcileOrderById(orderIdNum);
-        plat = recon.platform;
-        shop = recon.shop_id;
-        ext = recon.ext_order_no;
-      }
-
-      if (!plat || !shop || !ext) {
-        throw new Error("缺少平台/店铺/外部订单号信息。");
-      }
-
-      const ov = await fetchOrderView({ platform: plat, shopId: shop, extOrderNo: ext });
       setOrderView(ov);
-
-      const of = await fetchOrderFacts({ platform: plat, shopId: shop, extOrderNo: ext });
       setFacts(of);
     } catch (err: unknown) {
       console.error("load order detail failed", err);
@@ -98,7 +93,7 @@ export function useOrderDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [orderIdNum, navState.platform, navState.shopId, navState.extOrderNo]);
+  }, [orderIdNum]);
 
   useEffect(() => {
     void load();
@@ -109,16 +104,17 @@ export function useOrderDetailPage() {
     setReconcileLoading(true);
     setError(null);
     try {
-      const res = await reconcileOrderById(orderIdNum);
-      setReconcile(res);
+      setReconcile({
+        issues: facts?.issues ?? [],
+      });
     } catch (err: unknown) {
-      console.error("reconcileOrderById failed", err);
+      console.error("handleReconcile failed", err);
       setError(getErrorMessage(err, "对账失败"));
       setReconcile(null);
     } finally {
       setReconcileLoading(false);
     }
-  }, [orderIdNum]);
+  }, [orderIdNum, facts]);
 
   const handleCreateRma = useCallback(async () => {
     if (!order || !facts || !facts.items?.length) return;
@@ -133,8 +129,6 @@ export function useOrderDetailPage() {
     setError(null);
     try {
       const payload = {
-        // ✅ PlatformOrder 不提供 warehouse_id；这里保留原先默认值
-        // TODO: 后端若提供“执行仓/服务仓/默认仓”等合同字段，再改为合同驱动
         warehouse_id: 1,
         lines: candidates.map((f) => ({
           item_id: f.item_id,
@@ -162,13 +156,11 @@ export function useOrderDetailPage() {
 
   const handleViewStock = useCallback(
     (itemId: number) => {
-      if (!order) return;
       const qs = new URLSearchParams();
       qs.set("item_id", String(itemId));
-      // ✅ 不再附带 warehouse_id：PlatformOrder 不提供该字段
       navigate(`/tools/stocks?${qs.toString()}`);
     },
-    [order, navigate],
+    [navigate],
   );
 
   const handleViewLedger = useCallback(() => {
@@ -181,7 +173,10 @@ export function useOrderDetailPage() {
   }, [makeOrderRef, traceId, navigate]);
 
   const handleViewTrace = useCallback(() => {
-    if (!traceId) return;
+    if (!traceId) {
+      setError("当前订单详情未提供 trace_id，无法打开 Trace 视图。");
+      return;
+    }
     const qs = new URLSearchParams();
     qs.set("trace_id", traceId);
     navigate(`/trace?${qs.toString()}`);
@@ -211,6 +206,6 @@ export function useOrderDetailPage() {
     handleViewStock,
     handleViewLedger,
     handleViewTrace,
-    backToList: () => navigate("/orders"),
+    backToList: () => navigate(navState.orderId ? "/orders" : "/orders"),
   };
 }

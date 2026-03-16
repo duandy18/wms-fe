@@ -237,9 +237,6 @@ export async function receivePurchaseOrderLine(
   return apiPost<PurchaseOrderDetail>(`/purchase-orders/${poId}/receive-line`, payload);
 }
 
-export async function createDemoPurchaseOrder(): Promise<PurchaseOrderDetail> {
-  return apiPost<PurchaseOrderDetail>("/purchase-orders/dev-demo", {});
-}
 
 // ----------------------
 // Receipts（事实历史）

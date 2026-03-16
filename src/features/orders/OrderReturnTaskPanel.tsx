@@ -3,28 +3,36 @@
 // 订单退货 → 生成收货任务（ReceiveTask, source_type=ORDER）面板
 //
 
-import React, { useEffect, useState } from "react";
-import { apiGet, apiPost } from "../../lib/api";
+import React, { useEffect, useMemo, useState } from "react";
+
+import {
+  fetchOrderFactsById,
+  fetchOrderViewById,
+} from "./api/client";
+import type { OrderFacts, OrderView } from "./api/types";
+import { apiPost } from "../../lib/api";
 
 type Props = {
   orderId: number;
 };
 
-type OrderLine = {
-  id: number;
-  item_id: number;
-  item_name?: string | null;
-  sku?: string | null;
-  qty?: number | null;
-};
-
-type OrderDetail = {
-  id: number;
-  warehouse_id?: number | null;
-  lines?: OrderLine[];
-};
-
 type QtyInputMap = Record<number, string>;
+
+type ReturnLineRow = {
+  row_key: number;
+  item_id: number;
+  item_name: string | null;
+  sku: string | null;
+  qty_ordered: number;
+  qty_remaining_refundable: number;
+};
+
+type ReturnLineDraft = {
+  item_id: number;
+  item_name?: string;
+  qty: number;
+  qty_remaining_refundable: number;
+};
 
 type ReceiveTaskFromOrderResponse = {
   id: number;
@@ -49,7 +57,8 @@ const getErrorMessage = (err: unknown, fallback: string): string => {
 };
 
 export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
-  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [orderView, setOrderView] = useState<OrderView | null>(null);
+  const [orderFacts, setOrderFacts] = useState<OrderFacts | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
 
@@ -61,30 +70,50 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
 
   const [warehouseIdInput, setWarehouseIdInput] = useState<string>("1");
 
+  const order = orderView?.order ?? null;
+
+  const lineRows = useMemo<ReturnLineRow[]>(() => {
+    const factItems = orderFacts?.items ?? [];
+    return factItems.map((item) => ({
+      row_key: item.item_id,
+      item_id: item.item_id,
+      item_name: item.title ?? null,
+      sku: item.sku_id ?? null,
+      qty_ordered: item.qty_ordered,
+      qty_remaining_refundable: item.qty_remaining_refundable,
+    }));
+  }, [orderFacts]);
+
   useEffect(() => {
     const loadOrder = async () => {
       if (!orderId || orderId <= 0) return;
+
       setLoadingOrder(true);
       setOrderError(null);
+      setCreatedTask(null);
+
       try {
-        const data = await apiGet<OrderDetail>(`/orders/${orderId}`);
-        setOrder(data);
-        if (data.warehouse_id != null) {
-          setWarehouseIdInput(String(data.warehouse_id));
-        }
-      } catch (err) {
+        const [view, facts] = await Promise.all([
+          fetchOrderViewById(orderId),
+          fetchOrderFactsById(orderId),
+        ]);
+        setOrderView(view);
+        setOrderFacts(facts);
+      } catch (err: unknown) {
         console.error("OrderReturnTaskPanel: load order failed", err);
-        setOrder(null);
+        setOrderView(null);
+        setOrderFacts(null);
         setOrderError(getErrorMessage(err, "加载订单详情失败"));
       } finally {
         setLoadingOrder(false);
       }
     };
+
     void loadOrder();
   }, [orderId]);
 
-  const handleQtyChange = (lineId: number, value: string) => {
-    setQtyInputs((prev) => ({ ...prev, [lineId]: value }));
+  const handleQtyChange = (itemId: number, value: string) => {
+    setQtyInputs((prev) => ({ ...prev, [itemId]: value }));
   };
 
   const handleCreateTask = async () => {
@@ -100,20 +129,29 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
       return;
     }
 
-    const lines = (order.lines || [])
-      .map((l) => {
-        const raw = (qtyInputs[l.id] ?? "").trim();
+    const lines: ReturnLineDraft[] = lineRows
+      .map((row) => {
+        const raw = (qtyInputs[row.item_id] ?? "").trim();
         const qty = raw ? Number(raw) : 0;
         return {
-          item_id: l.item_id,
-          item_name: l.item_name ?? undefined,
+          item_id: row.item_id,
+          item_name: row.item_name ?? undefined,
           qty,
+          qty_remaining_refundable: row.qty_remaining_refundable,
         };
       })
       .filter((x) => x.qty > 0);
 
     if (!lines.length) {
       setCreateError("请至少为一行输入大于 0 的退货数量");
+      return;
+    }
+
+    const overLine = lines.find((x) => x.qty > x.qty_remaining_refundable);
+    if (overLine) {
+      setCreateError(
+        `item_id=${overLine.item_id} 的退货数量超过剩余可退数量（${overLine.qty_remaining_refundable}）`,
+      );
       return;
     }
 
@@ -137,7 +175,7 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
         payload,
       );
       setCreatedTask(resp);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("OrderReturnTaskPanel: create return task failed", err);
       setCreateError(getErrorMessage(err, "创建退货收货任务失败"));
     } finally {
@@ -157,7 +195,7 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
         </h2>
         <span className="text-[11px] text-slate-500">
           根据本订单创建退货收货任务（ReceiveTask, source_type=ORDER），
-          后续在收货 Cockpit 的「订单退货」模式下按任务 ID 绑定并完成收货。
+          后续在收货页面的「订单退货」模式下按任务 ID 绑定并完成收货。
         </span>
       </div>
 
@@ -177,14 +215,15 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
         </div>
       )}
 
-      <div className="max-h-64 overflow-y-auto rounded bg-slate-50 border border-slate-100">
+      <div className="max-h-64 overflow-y-auto rounded border border-slate-100 bg-slate-50">
         <table className="min-w-full border-collapse text-[11px]">
           <thead>
             <tr className="bg-slate-100 text-slate-600">
-              <th className="px-2 py-1 text-right">行ID</th>
               <th className="px-2 py-1 text-right">Item</th>
               <th className="px-2 py-1 text-left">商品名</th>
-              <th className="px-2 py-1 text-right">原始数量</th>
+              <th className="px-2 py-1 text-left">SKU</th>
+              <th className="px-2 py-1 text-right">下单数量</th>
+              <th className="px-2 py-1 text-right">剩余可退</th>
               <th className="px-2 py-1 text-right">本次退货数量</th>
             </tr>
           </thead>
@@ -192,45 +231,50 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
             {loadingOrder ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-2 py-2 text-center text-slate-500"
                 >
                   订单加载中…
                 </td>
               </tr>
-            ) : !order || !order.lines || order.lines.length === 0 ? (
+            ) : !order || lineRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-2 py-2 text-center text-slate-500"
                 >
-                  该订单没有行，无法创建退货任务。
+                  该订单没有可用行，无法创建退货任务。
                 </td>
               </tr>
             ) : (
-              order.lines.map((l) => (
+              lineRows.map((row) => (
                 <tr
-                  key={l.id}
+                  key={row.row_key}
                   className="border-t border-slate-100 align-top"
                 >
                   <td className="px-2 py-1 text-right font-mono">
-                    {l.id}
-                  </td>
-                  <td className="px-2 py-1 text-right font-mono">
-                    {l.item_id}
+                    {row.item_id}
                   </td>
                   <td className="px-2 py-1">
-                    {l.item_name ?? "-"}
+                    {row.item_name ?? "-"}
+                  </td>
+                  <td className="px-2 py-1 font-mono">
+                    {row.sku ?? "-"}
                   </td>
                   <td className="px-2 py-1 text-right font-mono">
-                    {l.qty ?? "-"}
+                    {row.qty_ordered}
+                  </td>
+                  <td className="px-2 py-1 text-right font-mono">
+                    {row.qty_remaining_refundable}
                   </td>
                   <td className="px-2 py-1 text-right">
                     <input
                       className="w-20 rounded border border-slate-300 px-1 py-0.5 text-right font-mono"
                       placeholder="0"
-                      value={qtyInputs[l.id] ?? ""}
-                      onChange={(e) => handleQtyChange(l.id, e.target.value)}
+                      value={qtyInputs[row.item_id] ?? ""}
+                      onChange={(e) =>
+                        handleQtyChange(row.item_id, e.target.value)
+                      }
                     />
                   </td>
                 </tr>
@@ -257,8 +301,7 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
           <span className="text-[11px] text-emerald-700">
             已创建退货收货任务：任务 ID=
             <span className="font-mono">{createdTask.id}</span>{" "}
-            （source_type={createdTask.source_type}）。请前往收货 Cockpit →
-            订单退货模式，按任务 ID 绑定。
+            （source_type={createdTask.source_type}）。请前往收货页面的订单退货模式继续处理。
           </span>
         )}
       </div>

@@ -3,7 +3,7 @@
 // 算价预览（摘要）
 // - 调用后端：POST /shipping-quote/calc（单 scheme）
 // - Admin 只展示：结果摘要 + 对账摘要
-// - reasons/breakdown/raw 等解释能力：迁入 DevConsole → Shipping Pricing Lab
+// - reasons / breakdown / raw 等解释能力：统一在当前算价预览链路内呈现
 //
 // ✅ 合同：起运仓为必填前置
 // - 前端不得绕过仓库边界发起报价

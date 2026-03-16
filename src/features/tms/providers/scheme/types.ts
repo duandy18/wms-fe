@@ -3,7 +3,7 @@
 // ✅ Phase 4 裁决：
 // - 命中条件（Members）维护从 Admin 删除
 // - 健康度诊断（Health）从 Admin 删除
-// - 解释/实验/调试统一迁入 DevConsole → Shipping Pricing Lab
+// - 解释与试算能力统一收口到当前运价页面内
 //
 // ✅ Workbench Tabs（Admin 可用）：
 // - table：二维价格表工作台（当前保留为历史 tab key 名称，承载新四卡工作台）

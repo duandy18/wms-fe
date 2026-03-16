@@ -1,6 +1,6 @@
 // src/features/receive-tasks/api.ts
 //
-// 收货任务 API（含 dev demo）
+// 收货任务 API
 //
 
 import { apiGet, apiPost } from "../../lib/api";
@@ -171,15 +171,3 @@ export async function listReceiveTasks(
   return apiGet<ReceiveTask[]>(path);
 }
 
-/** Dev 场景：基于 PO 生成 demo 收货任务（normal / under / over） */
-export type ReceiveTaskDemoScenario = "normal" | "under" | "over";
-
-export async function createReceiveTaskDemoFromPo(
-  poId: number,
-  scenario: ReceiveTaskDemoScenario = "normal",
-): Promise<ReceiveTask> {
-  const qs = new URLSearchParams();
-  qs.set("scenario", scenario);
-  const path = `/receive-tasks/dev-demo/from-po/${poId}?${qs.toString()}`;
-  return apiPost<ReceiveTask>(path, {});
-}

@@ -2,7 +2,7 @@
 //
 // 批次生命周期（Batch Lifeline）
 // - 可以作为独立工具使用（手动输入 wh/item/batch）
-// - 也可以由 InventoryStudio 中控传入 initialXXX 参数自动加载
+// - 也可以由上层页面传入 initialXXX 参数自动加载
 
 import React, { useEffect, useState } from "react";
 import { SectionCard } from "../../../components/wmsdu/SectionCard";
@@ -149,7 +149,7 @@ export const BatchLifelinePage: React.FC<Props> = ({
     }
   }
 
-  // 当中控传入 initialXXX 时，自动加载一次
+  // 当上层传入 initialXXX 时，自动加载一次
   useEffect(() => {
     if (
       initialWarehouseId !== undefined &&

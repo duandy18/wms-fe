@@ -1,5 +1,5 @@
 // src/app/router/index.tsx
-// 应用路由总表：挂载所有页面，包括财务分析 / 诊断 / DevConsole 等
+// 应用路由总表：挂载业务页面与主数据页面
 
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
@@ -13,21 +13,17 @@ import {
 } from "./guards";
 import * as P from "./lazyPages";
 
-/* ✅ 兼容入口：统一收敛到“编辑网点”唯一入口 */
+/* 统一入口：收敛到“编辑快递网点”页 */
 function RedirectToProviderEdit() {
   const { providerId } = useParams();
   if (!providerId) return <Navigate to="/tms/providers" replace />;
-  return (
-    <Navigate to={`/tms/providers/${providerId}/edit`} replace />
-  );
+  return <Navigate to={`/tms/providers/${providerId}/edit`} replace />;
 }
 
 function RedirectToProviderEditFromSchemes() {
   const { providerId } = useParams();
   if (!providerId) return <Navigate to="/tms/providers" replace />;
-  return (
-    <Navigate to={`/tms/providers/${providerId}/edit`} replace />
-  );
+  return <Navigate to={`/tms/providers/${providerId}/edit`} replace />;
 }
 
 /* 路由入口 */
@@ -232,105 +228,6 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="ops"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.OpsOverviewPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="ops/health"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.OpsHealthPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="ops/tasks"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.OpsTasksPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="ops/shop-bundles"
-            element={
-              <RequirePermission permission="config.store.write">
-                <Navigate to="/admin/shop-bundles" replace />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="ops/pricing-ops"
-            element={
-              <RequirePermission permission="config.store.write">
-                <P.PricingOpsCenterPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="ops/pricing-ops/schemes/:schemeId"
-            element={
-              <RequirePermission permission="config.store.write">
-                <P.PricingOpsSchemeDetailPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="ops/pricing-ops/cleanup"
-            element={
-              <RequirePermission permission="config.store.write">
-                <P.PricingOpsCleanupPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="ops/dev/orders"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.OpsDevOrdersPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="ops/dev/pick"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.OpsDevPickPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="ops/dev/inbound"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.OpsDevInboundPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="ops/dev/count"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.OpsDevCountPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="ops/dev/platform"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.OpsDevPlatformPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
             path="purchase-orders/overview"
             element={
               <RequirePermission permission="purchase.manage">
@@ -377,40 +274,6 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="operations.outbound">
                 <P.ReturnTaskDetailPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="trace"
-            element={
-              <RequirePermission permission="diagnostics.trace">
-                <P.TraceStudioPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="tools/stocks"
-            element={
-              <RequirePermission permission="diagnostics.inventory">
-                <P.InventoryStudioPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="tools/ledger"
-            element={
-              <RequirePermission permission="diagnostics.ledger">
-                <P.LedgerStudioPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="dev"
-            element={
-              <RequirePermission permission="dev.tools.access">
-                <P.DevConsolePage />
               </RequirePermission>
             }
           />
@@ -485,15 +348,6 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="logistics/providers"
-            element={
-              <RequirePermission permission="config.store.write">
-                <Navigate to="/tms/providers" replace />
-              </RequirePermission>
-            }
-          />
-
-          <Route
             path="tms/providers"
             element={
               <RequirePermission permission="config.store.write">
@@ -536,6 +390,7 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+
           <Route
             path="tms/providers/schemes/:schemeId/workbench-flow"
             element={
@@ -545,14 +400,6 @@ const AppRouter: React.FC = () => {
             }
           />
         </Route>
-        <Route
-          path="ops/dev/order-parse-simulator"
-          element={
-            <RequirePermission permission="dev.tools.access">
-              <P.OpsDevOrderParseSimulatorPage />
-            </RequirePermission>
-          }
-        />
 
         <Route path="*" element={<Navigate to="/snapshot" replace />} />
       </Routes>
