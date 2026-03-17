@@ -93,7 +93,7 @@ const AppRouter: React.FC = () => {
             path="outbound/ship"
             element={
               <RequirePermission permission="operations.outbound">
-                <Navigate to="/shipping/dispatch" replace />
+                <Navigate to="/tms/dispatch" replace />
               </RequirePermission>
             }
           />
@@ -137,7 +137,7 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="shipping/dispatch"
+            path="tms/dispatch"
             element={
               <RequirePermission permission="operations.outbound">
                 <P.ShipmentCockpitPage />
@@ -145,18 +145,43 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="shipping/reports"
+            path="tms/reports"
             element={
               <RequirePermission permission="report.outbound">
-                <P.ShippingReportsPage />
+                <P.TransportReportsPage />
               </RequirePermission>
             }
           />
           <Route
-            path="shipping/record"
+            path="tms/records"
             element={
               <RequirePermission permission="report.outbound">
-                <P.ShippingRecordDetailPage />
+                <P.ShippingLedgerPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="tms/billing/import"
+            element={
+              <RequirePermission permission="report.outbound">
+                <P.BillingImportPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="tms/billing/items"
+            element={
+              <RequirePermission permission="report.outbound">
+                <P.BillingItemsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="tms/billing/reconcile"
+            element={
+              <RequirePermission permission="report.outbound">
+                <P.BillingReconcilePage />
               </RequirePermission>
             }
           />

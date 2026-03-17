@@ -19,13 +19,13 @@ export const PickTasksCockpitPage = lazy(
   () => import("../../features/operations/outbound-pick/PickTasksCockpitPage"),
 );
 export const ShipmentCockpitPage = lazy(
-  () => import("../../features/shipment/pages/ShipmentCockpitPage"),
+  () => import("../../features/tms/shipment/pages/ShipmentCockpitPage"),
 );
 export const InternalOutboundPage = lazy(
   () => import("../../features/internal-outbound/pages/InternalOutboundPage"),
 );
 export const ShippingLabelPrintPage = lazy(
-  () => import("../../features/shipment/pages/ShippingLabelPrintPage"),
+  () => import("../../features/tms/shipment/pages/ShippingLabelPrintPage"),
 );
 
 // 库存 & 报表
@@ -43,11 +43,21 @@ export const StockLedgerPage = lazy(
 );
 
 // 物流：发货成本报表 / 发货账本详情
-export const ShippingReportsPage = lazy(
-  () => import("../../features/shipment/pages/ShipmentReportsPage"),
+export const TransportReportsPage = lazy(
+  () => import("../../features/tms/reports/pages/TransportReportsPage"),
 );
-export const ShippingRecordDetailPage = lazy(
-  () => import("../../features/shipment/pages/ShipmentRecordDetailPage"),
+export const ShippingLedgerPage = lazy(
+  () => import("../../features/tms/records/pages/ShippingLedgerPage"),
+);
+
+export const BillingImportPage = lazy(
+  () => import("../../features/tms/billing/pages/BillingImportPage"),
+);
+export const BillingItemsPage = lazy(
+  () => import("../../features/tms/billing/pages/BillingItemsPage"),
+);
+export const BillingReconcilePage = lazy(
+  () => import("../../features/tms/billing/pages/BillingReconcilePage"),
 );
 
 // 主数据
