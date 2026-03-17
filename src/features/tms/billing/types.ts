@@ -7,6 +7,7 @@ export interface CarrierBillImportRowError {
 
 export interface CarrierBillImportResult {
   ok: boolean;
+  import_batch_id: number;
   carrier_code: string;
   import_batch_no: string;
   imported_count: number;
@@ -17,6 +18,7 @@ export interface CarrierBillImportResult {
 
 export interface CarrierBillItem {
   id: number;
+  import_batch_id: number;
   import_batch_no: string;
   carrier_code: string;
   bill_month: string | null;
@@ -45,6 +47,7 @@ export interface CarrierBillItemsResponse {
 }
 
 export interface CarrierBillItemsQuery {
+  import_batch_id?: number;
   import_batch_no?: string;
   carrier_code?: string;
   tracking_no?: string;
@@ -52,19 +55,10 @@ export interface CarrierBillItemsQuery {
   offset: number;
 }
 
-export interface ReconcileCarrierBillIn {
-  carrier_code: string;
+export interface CarrierBillBatchSummary {
+  import_batch_id: number;
   import_batch_no: string;
-}
-
-export interface ReconcileCarrierBillResult {
-  ok: boolean;
   carrier_code: string;
-  import_batch_no: string;
-  bill_item_count: number;
-  matched_count: number;
-  diff_count: number;
-  unmatched_count: number;
-  updated_count: number;
-  duplicate_bill_tracking_count: number;
+  bill_month: string | null;
+  item_count: number;
 }

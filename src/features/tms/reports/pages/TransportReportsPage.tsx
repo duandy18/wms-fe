@@ -36,8 +36,8 @@ const TransportReportsPage: React.FC = () => {
   return (
     <div className="space-y-4 p-6">
       <PageTitle
-        title="运输报表"
-        description="基于运输台帐进行聚合分析，展示承运商、仓库、省份、店铺与时间趋势。"
+        title="快递成本分析"
+        description="基于发货记录进行快递成本聚合分析，展示承运商、仓库、省份、店铺与时间趋势。"
       />
 
       <TransportReportsOverview

@@ -27,9 +27,9 @@ const BillingItemsTable: React.FC<Props> = ({ rows, loading, error }) => {
         </div>
       ) : null}
 
-      {!error && loading ? <div className="text-sm text-slate-500">正在加载账单明细…</div> : null}
+      {!error && loading ? <div className="text-sm text-slate-500">正在加载快递账单…</div> : null}
       {!error && !loading && rows.length === 0 ? (
-        <div className="text-sm text-slate-500">暂无账单明细。</div>
+        <div className="text-sm text-slate-500">暂无快递账单。</div>
       ) : null}
 
       {!error && rows.length > 0 ? (
@@ -37,7 +37,8 @@ const BillingItemsTable: React.FC<Props> = ({ rows, loading, error }) => {
           <table className="min-w-full border-collapse text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-3 py-2 text-left text-slate-600">批次</th>
+                <th className="px-3 py-2 text-left text-slate-600">批次 ID</th>
+                <th className="px-3 py-2 text-left text-slate-600">批次号</th>
                 <th className="px-3 py-2 text-left text-slate-600">承运商</th>
                 <th className="px-3 py-2 text-left text-slate-600">运单号</th>
                 <th className="px-3 py-2 text-left text-slate-600">业务时间</th>
@@ -52,6 +53,7 @@ const BillingItemsTable: React.FC<Props> = ({ rows, loading, error }) => {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-t border-slate-100">
+                  <td className="px-3 py-2 font-mono text-xs">{row.import_batch_id}</td>
                   <td className="px-3 py-2 text-xs">{row.import_batch_no}</td>
                   <td className="px-3 py-2 text-xs">{row.carrier_code}</td>
                   <td className="px-3 py-2 font-mono text-xs">{row.tracking_no}</td>

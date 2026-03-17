@@ -14,6 +14,15 @@ interface Props {
   onReset: () => void;
 }
 
+function parsePositiveInt(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
 const BillingItemsFilters: React.FC<Props> = ({
   query,
   loading,
@@ -23,9 +32,19 @@ const BillingItemsFilters: React.FC<Props> = ({
 }) => {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 text-sm font-semibold text-slate-800">账单明细筛选</div>
+      <div className="mb-3 text-sm font-semibold text-slate-800">快递账单筛选</div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <label className="space-y-1">
+          <div className="text-xs text-slate-600">批次 ID</div>
+          <input
+            value={query.import_batch_id ?? ""}
+            onChange={(e) => onChange("import_batch_id", parsePositiveInt(e.target.value))}
+            placeholder="如 123"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+        </label>
+
         <label className="space-y-1">
           <div className="text-xs text-slate-600">导入批次号</div>
           <input

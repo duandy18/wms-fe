@@ -21,11 +21,19 @@ const BillingImportPage: React.FC = () => {
     submit,
   } = useBillingImport();
 
+  const viewBatchHref = result
+    ? `/tms/billing/items?import_batch_id=${result.import_batch_id}`
+    : null;
+
+  const goReconcileHref = result
+    ? `/tms/reconciliation?import_batch_id=${result.import_batch_id}`
+    : null;
+
   return (
     <div className="space-y-4 p-6">
       <PageTitle
-        title="运输对账 / 账单导入"
-        description="导入承运商账单原始明细（.xlsx），生成对账批次。"
+        title="快递账单导入"
+        description="导入承运商账单原始明细（.xlsx）。导入成功后会形成一个账单批次，后续账单查看与对账都围绕该批次展开。"
       />
 
       <BillingImportCard
@@ -36,6 +44,8 @@ const BillingImportPage: React.FC = () => {
         loading={loading}
         error={error}
         result={result}
+        viewBatchHref={viewBatchHref}
+        goReconcileHref={goReconcileHref}
         onCarrierCodeChange={setCarrierCode}
         onImportBatchNoChange={setImportBatchNo}
         onBillMonthChange={setBillMonth}
