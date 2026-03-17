@@ -82,18 +82,24 @@ export const menuSections: RouteSection[] = [
         requiredPermissions: ["config.store.write"],
       },
       {
-        path: "/shipping/dispatch",
+        path: "/tms/dispatch",
         label: "发货作业",
         requiredPermissions: ["operations.outbound"],
       },
       {
-        path: "/shipping/reports",
-        label: "发货成本报表",
+        path: "/tms/reports",
+        label: "运输报表",
         requiredPermissions: ["report.outbound"],
       },
       {
-        path: "/shipping/record",
-        label: "发货账本详情",
+        path: "/tms/records",
+        label: "运输台帐",
+        requiredPermissions: ["report.outbound"],
+      },
+
+      {
+        path: "/tms/billing/import",
+        label: "运输对账",
         requiredPermissions: ["report.outbound"],
       },
 

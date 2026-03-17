@@ -96,16 +96,16 @@ export function Topbar() {
         value: { section: "物流", page: "快递网点" },
       },
       {
-        prefix: "/shipping/dispatch",
+        prefix: "/tms/dispatch",
         value: { section: "物流", page: "发货作业" },
       },
       {
-        prefix: "/shipping/reports",
-        value: { section: "物流", page: "发货成本报表" },
+        prefix: "/tms/reports",
+        value: { section: "物流", page: "运输报表" },
       },
       {
-        prefix: "/shipping/record",
-        value: { section: "物流", page: "发货账本详情" },
+        prefix: "/tms/records",
+        value: { section: "物流", page: "运输台帐" },
       },
 
       // 仓内作业
