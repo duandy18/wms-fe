@@ -77,30 +77,42 @@ export const menuSections: RouteSection[] = [
     label: "物流",
     items: [
       {
-        path: "/tms/providers",
-        label: "快递网点",
-        requiredPermissions: ["config.store.write"],
-      },
-      {
         path: "/tms/dispatch",
         label: "发货作业",
         requiredPermissions: ["operations.outbound"],
       },
       {
-        path: "/tms/reports",
-        label: "运输报表",
-        requiredPermissions: ["report.outbound"],
+        path: "/tms/providers",
+        label: "快递网点",
+        requiredPermissions: ["config.store.write"],
       },
       {
         path: "/tms/records",
-        label: "运输台帐",
+        label: "发货记录",
+        requiredPermissions: ["report.outbound"],
+      },
+      {
+        path: "/tms/billing/items",
+        label: "快递账单",
+        requiredPermissions: ["report.outbound"],
+      },
+      {
+        path: "/tms/reconciliation",
+        label: "对账",
+        requiredPermissions: ["report.outbound"],
+      },
+      {
+        path: "/tms/reports",
+        label: "快递成本分析",
         requiredPermissions: ["report.outbound"],
       },
 
+      // 深链：账单导入页（保留路由，不在侧边栏展示）
       {
         path: "/tms/billing/import",
-        label: "运输对账",
+        label: "快递账单导入",
         requiredPermissions: ["report.outbound"],
+        showInSidebar: false,
       },
 
       // 深链：快递网点编辑页（页面内部承载网点基本信息 / 联系人 / 仓库绑定 / 运价方案）
@@ -180,22 +192,7 @@ export const menuSections: RouteSection[] = [
     items: [
       {
         path: "/finance",
-        label: "收入 / 成本 / 毛利",
-        requiredPermissions: ["report.finance"],
-      },
-      {
-        path: "/finance/shop",
-        label: "店铺盈利能力",
-        requiredPermissions: ["report.finance"],
-      },
-      {
-        path: "/finance/sku",
-        label: "SKU 毛利榜",
-        requiredPermissions: ["report.finance"],
-      },
-      {
-        path: "/finance/order-unit",
-        label: "客单价 / 贡献度",
+        label: "财务概览",
         requiredPermissions: ["report.finance"],
       },
     ],
@@ -203,73 +200,49 @@ export const menuSections: RouteSection[] = [
 
   // 主数据
   {
-    id: "admin",
+    id: "master-data",
     label: "主数据",
     items: [
       {
         path: "/stores",
         label: "店铺管理",
-        requiredPermissions: ["config.store.write"],
+        requiredPermissions: ["config.store.read"],
       },
       {
-        path: "/stores/:storeId",
-        label: "店铺详情",
-        requiredPermissions: ["config.store.write"],
-        showInSidebar: false,
+        path: "/items",
+        label: "商品管理",
+        requiredPermissions: ["config.item.read"],
       },
-
       {
         path: "/warehouses",
         label: "仓库管理",
-        requiredPermissions: ["config.store.write"],
+        requiredPermissions: ["config.warehouse.read"],
       },
       {
-        path: "/warehouses/:warehouseId",
-        label: "仓库详情",
-        requiredPermissions: ["config.store.write"],
-        showInSidebar: false,
-      },
-
-      {
-        path: "/admin/shop-bundles",
-        label: "商铺商品组合",
-        requiredPermissions: ["config.store.write"],
-      },
-      {
-        path: "/admin/items",
-        label: "商品主数据",
-        requiredPermissions: ["config.store.write"],
-      },
-      {
-        path: "/admin/suppliers",
-        label: "供应商主数据",
-        requiredPermissions: ["config.store.write"],
+        path: "/suppliers",
+        label: "供应商管理",
+        requiredPermissions: ["config.supplier.read"],
       },
     ],
   },
 
-  // 权限与账号
+  // 系统管理
   {
-    id: "iam",
-    label: "权限与账号",
+    id: "system",
+    label: "系统管理",
     items: [
       {
-        path: "/iam/users",
+        path: "/users",
         label: "用户管理",
-        requiredPermissions: ["system.user.manage"],
+        requiredPermissions: ["system.user.read"],
       },
       {
-        path: "/iam/roles",
-        label: "角色管理",
-        requiredPermissions: ["system.role.manage"],
-      },
-      {
-        path: "/iam/perms",
-        label: "权限字典",
-        requiredPermissions: ["system.permission.manage"],
+        path: "/roles",
+        label: "角色权限",
+        requiredPermissions: ["system.role.read"],
       },
     ],
   },
 ];
 
-export const flatRoutes: RouteItem[] = menuSections.flatMap((s) => s.items);
+export const flatRoutes: RouteItem[] = menuSections.flatMap((section) => section.items);

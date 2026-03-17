@@ -1,24 +1,20 @@
-// src/features/tms/billing/components/BillingReconcileForm.tsx
+// src/features/tms/reconciliation/components/ReconciliationForm.tsx
 
 import React from "react";
 
 interface Props {
-  carrierCode: string;
-  importBatchNo: string;
+  importBatchId: string;
   loading: boolean;
   error: string;
-  onCarrierCodeChange: (value: string) => void;
-  onImportBatchNoChange: (value: string) => void;
+  onImportBatchIdChange: (value: string) => void;
   onSubmit: () => void;
 }
 
-const BillingReconcileForm: React.FC<Props> = ({
-  carrierCode,
-  importBatchNo,
+const ReconciliationForm: React.FC<Props> = ({
+  importBatchId,
   loading,
   error,
-  onCarrierCodeChange,
-  onImportBatchNoChange,
+  onImportBatchIdChange,
   onSubmit,
 }) => {
   return (
@@ -27,21 +23,16 @@ const BillingReconcileForm: React.FC<Props> = ({
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <label className="space-y-1">
-          <div className="text-xs text-slate-600">承运商代码</div>
+          <div className="text-xs text-slate-600">账单批次 ID</div>
           <input
-            value={carrierCode}
-            onChange={(e) => onCarrierCodeChange(e.target.value)}
+            value={importBatchId}
+            onChange={(e) => onImportBatchIdChange(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            placeholder="请输入 import_batch_id"
           />
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-xs text-slate-600">导入批次号</div>
-          <input
-            value={importBatchNo}
-            onChange={(e) => onImportBatchNoChange(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
+          <div className="text-xs text-slate-500">
+            对账主链以 import_batch_id 为准，不再通过承运商代码 + 导入批次号手工驱动。
+          </div>
         </label>
       </div>
 
@@ -65,4 +56,4 @@ const BillingReconcileForm: React.FC<Props> = ({
   );
 };
 
-export default BillingReconcileForm;
+export default ReconciliationForm;

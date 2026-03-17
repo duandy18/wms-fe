@@ -56,8 +56,8 @@ export const BillingImportPage = lazy(
 export const BillingItemsPage = lazy(
   () => import("../../features/tms/billing/pages/BillingItemsPage"),
 );
-export const BillingReconcilePage = lazy(
-  () => import("../../features/tms/billing/pages/BillingReconcilePage"),
+export const ReconciliationPage = lazy(
+  () => import("../../features/tms/reconciliation/pages/ReconciliationPage"),
 );
 
 // 主数据

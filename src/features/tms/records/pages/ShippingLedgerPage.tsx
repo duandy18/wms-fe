@@ -28,7 +28,7 @@ const ShippingLedgerPage: React.FC = () => {
   return (
     <div className="space-y-4 p-6">
       <PageTitle
-        title="运输台帐"
+        title="发货记录"
         description="基于运输事实账本浏览发货记录，不展示物流状态，不承载对账结果。"
       />
 

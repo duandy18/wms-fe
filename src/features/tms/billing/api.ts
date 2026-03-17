@@ -4,8 +4,6 @@ import type {
   CarrierBillImportResult,
   CarrierBillItemsQuery,
   CarrierBillItemsResponse,
-  ReconcileCarrierBillIn,
-  ReconcileCarrierBillResult,
 } from "./types";
 
 function appendIfPresent(
@@ -21,6 +19,7 @@ function appendIfPresent(
 
 function buildItemsQueryString(query: CarrierBillItemsQuery): string {
   const params = new URLSearchParams();
+  appendIfPresent(params, "import_batch_id", query.import_batch_id);
   appendIfPresent(params, "import_batch_no", query.import_batch_no);
   appendIfPresent(params, "carrier_code", query.carrier_code);
   appendIfPresent(params, "tracking_no", query.tracking_no);
@@ -74,21 +73,4 @@ export async function fetchCarrierBillItems(
 
   await ensureOk(response);
   return (await response.json()) as CarrierBillItemsResponse;
-}
-
-export async function reconcileCarrierBill(
-  payload: ReconcileCarrierBillIn,
-): Promise<ReconcileCarrierBillResult> {
-  const response = await fetch("/shipping-bills/reconcile", {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  await ensureOk(response);
-  return (await response.json()) as ReconcileCarrierBillResult;
 }

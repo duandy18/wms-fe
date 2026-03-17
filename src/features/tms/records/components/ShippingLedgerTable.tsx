@@ -33,11 +33,11 @@ const ShippingLedgerTable: React.FC<ShippingLedgerTableProps> = ({
       ) : null}
 
       {!error && loading ? (
-        <div className="text-sm text-slate-500">正在加载运输台帐…</div>
+        <div className="text-sm text-slate-500">正在加载发货记录…</div>
       ) : null}
 
       {!error && !loading && rows.length === 0 ? (
-        <div className="text-sm text-slate-500">暂无运输台帐记录。</div>
+        <div className="text-sm text-slate-500">暂无发货记录记录。</div>
       ) : null}
 
       {!error && rows.length > 0 ? (

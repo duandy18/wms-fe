@@ -109,7 +109,7 @@ export function useTransportReportsPage() {
       setDailyRows(daily.rows ?? []);
       setOptions(filterOptions);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "加载运输报表失败";
+      const message = err instanceof Error ? err.message : "加载快递成本分析失败";
       setError(message);
       setCarrierRows([]);
       setProvinceRows([]);

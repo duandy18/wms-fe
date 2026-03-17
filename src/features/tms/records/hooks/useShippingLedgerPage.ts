@@ -23,7 +23,7 @@ export function useShippingLedgerPage() {
       setRows(Array.isArray(res.rows) ? res.rows : []);
       setTotal(typeof res.total === "number" ? res.total : 0);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "加载运输台帐失败";
+      const message = err instanceof Error ? err.message : "加载发货记录失败";
       setError(message);
       setRows([]);
       setTotal(0);

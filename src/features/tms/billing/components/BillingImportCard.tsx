@@ -11,6 +11,8 @@ interface Props {
   loading: boolean;
   error: string;
   result: CarrierBillImportResult | null;
+  viewBatchHref: string | null;
+  goReconcileHref: string | null;
   onCarrierCodeChange: (value: string) => void;
   onImportBatchNoChange: (value: string) => void;
   onBillMonthChange: (value: string) => void;
@@ -26,6 +28,8 @@ const BillingImportCard: React.FC<Props> = ({
   loading,
   error,
   result,
+  viewBatchHref,
+  goReconcileHref,
   onCarrierCodeChange,
   onImportBatchNoChange,
   onBillMonthChange,
@@ -97,8 +101,31 @@ const BillingImportCard: React.FC<Props> = ({
       {result ? (
         <div className="mt-4 space-y-3">
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            导入完成：成功 {result.imported_count}，跳过 {result.skipped_count}，错误 {result.error_count}
+            导入完成：批次 #{result.import_batch_id}，成功 {result.imported_count}，跳过{" "}
+            {result.skipped_count}，错误 {result.error_count}
           </div>
+
+          {viewBatchHref || goReconcileHref ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {viewBatchHref ? (
+                <a
+                  href={viewBatchHref}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  查看该批次账单
+                </a>
+              ) : null}
+
+              {goReconcileHref ? (
+                <a
+                  href={goReconcileHref}
+                  className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800"
+                >
+                  去对账
+                </a>
+              ) : null}
+            </div>
+          ) : null}
 
           {result.errors.length > 0 ? (
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">

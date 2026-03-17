@@ -178,10 +178,10 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="tms/billing/reconcile"
+            path="tms/reconciliation"
             element={
               <RequirePermission permission="report.outbound">
-                <P.BillingReconcilePage />
+                <P.ReconciliationPage />
               </RequirePermission>
             }
           />
