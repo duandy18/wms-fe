@@ -26,10 +26,7 @@ export function useShippingLedgerQuery() {
     setQuery((prev) => {
       const next = { ...prev, [key]: value };
 
-      if (
-        key !== "limit" &&
-        key !== "offset"
-      ) {
+      if (key !== "limit" && key !== "offset") {
         next.offset = 0;
       }
 

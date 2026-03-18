@@ -6,6 +6,7 @@ import ShippingLedgerFilters from "../components/ShippingLedgerFilters";
 import ShippingLedgerPagination from "../components/ShippingLedgerPagination";
 import ShippingLedgerTable from "../components/ShippingLedgerTable";
 import ShippingLedgerToolbar from "../components/ShippingLedgerToolbar";
+import { useShippingLedgerOptions } from "../hooks/useShippingLedgerOptions";
 import { useShippingLedgerPage } from "../hooks/useShippingLedgerPage";
 
 const ShippingLedgerPage: React.FC = () => {
@@ -25,11 +26,18 @@ const ShippingLedgerPage: React.FC = () => {
     exportCsv,
   } = useShippingLedgerPage();
 
+  const {
+    providers,
+    warehouses,
+    loading: optionsLoading,
+    error: optionsError,
+  } = useShippingLedgerOptions();
+
   return (
     <div className="space-y-4 p-6">
       <PageTitle
         title="发货记录"
-        description="基于运输事实账本浏览发货记录，不展示物流状态，不承载对账结果。"
+        description="基于运输事实台帐浏览发货记录，展示快递网点、仓库、预估费用结构、尺寸与寄件人，不承载状态和对账结果。"
       />
 
       <ShippingLedgerToolbar
@@ -43,6 +51,10 @@ const ShippingLedgerPage: React.FC = () => {
       <ShippingLedgerFilters
         query={query}
         loading={loading}
+        providers={providers}
+        warehouses={warehouses}
+        optionsLoading={optionsLoading}
+        optionsError={optionsError}
         onChange={setField}
         onApply={() => void reload()}
         onReset={reset}
@@ -50,8 +62,10 @@ const ShippingLedgerPage: React.FC = () => {
 
       <ShippingLedgerTable
         rows={rows}
+        warehouses={warehouses}
         loading={loading}
         error={error}
+        offset={query.offset}
       />
 
       <ShippingLedgerPagination

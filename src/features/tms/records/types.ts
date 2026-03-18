@@ -8,8 +8,14 @@ export interface ShippingLedgerRow {
   carrier_code: string | null;
   carrier_name: string | null;
   tracking_no: string | null;
-  gross_weight_kg: number | null;
+  freight_estimated: number | null;
+  surcharge_estimated: number | null;
   cost_estimated: number | null;
+  gross_weight_kg: number | null;
+  length_cm: number | null;
+  width_cm: number | null;
+  height_cm: number | null;
+  sender: string | null;
   dest_province: string | null;
   dest_city: string | null;
   created_at: string;
@@ -27,6 +33,7 @@ export interface ShippingLedgerQuery {
   order_ref?: string;
   tracking_no?: string;
   carrier_code?: string;
+  shipping_provider_id?: number;
   province?: string;
   city?: string;
   warehouse_id?: number;
