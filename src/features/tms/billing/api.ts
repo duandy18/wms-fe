@@ -10,7 +10,7 @@ import type {
 export async function importCarrierBill(
   formData: FormData,
 ): Promise<CarrierBillImportResult> {
-  return await apiRequest<CarrierBillImportResult>("/shipping-bills/import", {
+  return await apiRequest<CarrierBillImportResult>("/tms/billing/import", {
     method: "POST",
     body: formData,
   });
@@ -19,5 +19,5 @@ export async function importCarrierBill(
 export async function fetchCarrierBillItems(
   query: CarrierBillItemsQuery,
 ): Promise<CarrierBillItemsResponse> {
-  return await apiGet<CarrierBillItemsResponse>("/shipping-bills/items", query);
+  return await apiGet<CarrierBillItemsResponse>("/tms/billing/items", query);
 }

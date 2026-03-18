@@ -3,28 +3,32 @@
 import React from "react";
 
 interface TransportReportsOverviewProps {
-  totalShipCnt: number;
+  modeLabel: string;
+  ticketCount: number;
   totalCostText: string;
   error: string;
 }
 
 const TransportReportsOverview: React.FC<TransportReportsOverviewProps> = ({
-  totalShipCnt,
+  modeLabel,
+  ticketCount,
   totalCostText,
   error,
 }) => {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-4 text-sm text-slate-600">当前口径：{modeLabel}</div>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <div className="text-xs text-slate-500">发货单量</div>
+          <div className="text-xs text-slate-500">票数</div>
           <div className="mt-1 text-2xl font-semibold text-slate-900">
-            {totalShipCnt}
+            {ticketCount}
           </div>
         </div>
 
         <div>
-          <div className="text-xs text-slate-500">总预估费用</div>
+          <div className="text-xs text-slate-500">总成本</div>
           <div className="mt-1 text-2xl font-semibold text-slate-900">
             {totalCostText}
           </div>

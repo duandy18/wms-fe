@@ -1,14 +1,14 @@
 // src/features/tms/reports/components/TransportReportsByCarrierTable.tsx
 
 import React from "react";
-import type { ShippingByCarrierRow } from "../types";
+import type { CostAnalysisByCarrierRow } from "../types";
 
 function formatMoney(value: number): string {
   return `￥${value.toFixed(2)}`;
 }
 
 interface Props {
-  rows: ShippingByCarrierRow[];
+  rows: CostAnalysisByCarrierRow[];
 }
 
 const TransportReportsByCarrierTable: React.FC<Props> = ({ rows }) => {
@@ -20,22 +20,38 @@ const TransportReportsByCarrierTable: React.FC<Props> = ({ rows }) => {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-3 py-2 text-left text-slate-600">代码</th>
-              <th className="px-3 py-2 text-left text-slate-600">名称</th>
-              <th className="px-3 py-2 text-right text-slate-600">单量</th>
-              <th className="px-3 py-2 text-right text-slate-600">总费用</th>
-              <th className="px-3 py-2 text-right text-slate-600">均单费用</th>
+              <th className="px-3 py-2 text-right text-slate-600">票数</th>
+              <th className="px-3 py-2 text-right text-slate-600">总成本</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, idx) => (
-              <tr key={`${row.carrier_code ?? "null"}-${idx}`} className="border-t border-slate-100">
-                <td className="px-3 py-2 font-mono text-xs">{row.carrier_code ?? "-"}</td>
-                <td className="px-3 py-2 text-xs">{row.carrier_name ?? "-"}</td>
-                <td className="px-3 py-2 text-right font-mono text-xs">{row.ship_cnt}</td>
-                <td className="px-3 py-2 text-right font-mono text-xs">{formatMoney(row.total_cost)}</td>
-                <td className="px-3 py-2 text-right font-mono text-xs">{formatMoney(row.avg_cost)}</td>
+            {rows.length > 0 ? (
+              rows.map((row, idx) => (
+                <tr
+                  key={`${row.carrier_code ?? "null"}-${idx}`}
+                  className="border-t border-slate-100"
+                >
+                  <td className="px-3 py-2 font-mono text-xs">
+                    {row.carrier_code ?? "-"}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-xs">
+                    {row.ticket_count}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-xs">
+                    {formatMoney(row.total_cost)}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr className="border-t border-slate-100">
+                <td
+                  colSpan={3}
+                  className="px-3 py-6 text-center text-sm text-slate-500"
+                >
+                  暂无数据
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

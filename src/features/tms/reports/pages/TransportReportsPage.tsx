@@ -3,9 +3,6 @@
 import React from "react";
 import PageTitle from "../../../../components/ui/PageTitle";
 import TransportReportsByCarrierTable from "../components/TransportReportsByCarrierTable";
-import TransportReportsByProvinceTable from "../components/TransportReportsByProvinceTable";
-import TransportReportsByShopTable from "../components/TransportReportsByShopTable";
-import TransportReportsByWarehouseTable from "../components/TransportReportsByWarehouseTable";
 import TransportReportsDailyTable from "../components/TransportReportsDailyTable";
 import TransportReportsFilters from "../components/TransportReportsFilters";
 import TransportReportsOverview from "../components/TransportReportsOverview";
@@ -18,16 +15,13 @@ function formatMoney(value: number): string {
 const TransportReportsPage: React.FC = () => {
   const {
     query,
+    summary,
     carrierRows,
-    provinceRows,
-    shopRows,
-    warehouseRows,
-    dailyRows,
-    options,
+    timeRows,
     loading,
     error,
-    totalShipCnt,
-    totalCost,
+    modeLabel,
+    carrierOptions,
     setField,
     reset,
     reload,
@@ -37,21 +31,22 @@ const TransportReportsPage: React.FC = () => {
     <div className="space-y-4 p-6">
       <PageTitle
         title="快递成本分析"
-        description="基于发货记录进行快递成本聚合分析，展示承运商、仓库、省份、店铺与时间趋势。"
+        description="按账单成本或台帐预估成本进行轻量分析，展示承运商分布与按天趋势。"
       />
 
       <TransportReportsOverview
-        totalShipCnt={totalShipCnt}
-        totalCostText={formatMoney(totalCost)}
+        modeLabel={modeLabel}
+        ticketCount={summary.ticket_count}
+        totalCostText={formatMoney(summary.total_cost)}
         error={error}
       />
 
       <TransportReportsFilters
         query={query}
-        options={options}
         loading={loading}
-        totalShipCnt={totalShipCnt}
-        totalCostText={formatMoney(totalCost)}
+        ticketCount={summary.ticket_count}
+        totalCostText={formatMoney(summary.total_cost)}
+        carrierOptions={carrierOptions}
         onChange={setField}
         onApply={() => void reload()}
         onReset={reset}
@@ -59,12 +54,8 @@ const TransportReportsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <TransportReportsByCarrierTable rows={carrierRows} />
-        <TransportReportsByProvinceTable rows={provinceRows} />
-        <TransportReportsByShopTable rows={shopRows} />
-        <TransportReportsByWarehouseTable rows={warehouseRows} />
+        <TransportReportsDailyTable rows={timeRows} />
       </div>
-
-      <TransportReportsDailyTable rows={dailyRows} />
     </div>
   );
 };
