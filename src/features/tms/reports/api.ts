@@ -2,59 +2,20 @@
 
 import { apiGet } from "../../../lib/api";
 import type {
-  ShippingByCarrierResponse,
-  ShippingByProvinceResponse,
-  ShippingByShopResponse,
-  ShippingByWarehouseResponse,
-  ShippingDailyResponse,
-  ShippingReportFilterOptions,
+  CostAnalysisResponse,
+  TransportReportsMode,
   TransportReportsQuery,
 } from "./types";
 
-export async function fetchShippingByCarrier(
-  query: TransportReportsQuery,
-): Promise<ShippingByCarrierResponse> {
-  return await apiGet<ShippingByCarrierResponse>(
-    "/shipping-reports/by-carrier",
-    query,
-  );
+function buildCostAnalysisPath(mode: TransportReportsMode): string {
+  return mode === "bill"
+    ? "/tms/billing/cost-analysis"
+    : "/tms/records/cost-analysis";
 }
 
-export async function fetchShippingByProvince(
+export async function fetchCostAnalysis(
   query: TransportReportsQuery,
-): Promise<ShippingByProvinceResponse> {
-  return await apiGet<ShippingByProvinceResponse>(
-    "/shipping-reports/by-province",
-    query,
-  );
-}
-
-export async function fetchShippingByShop(
-  query: TransportReportsQuery,
-): Promise<ShippingByShopResponse> {
-  return await apiGet<ShippingByShopResponse>("/shipping-reports/by-shop", query);
-}
-
-export async function fetchShippingByWarehouse(
-  query: TransportReportsQuery,
-): Promise<ShippingByWarehouseResponse> {
-  return await apiGet<ShippingByWarehouseResponse>(
-    "/shipping-reports/by-warehouse",
-    query,
-  );
-}
-
-export async function fetchShippingDaily(
-  query: TransportReportsQuery,
-): Promise<ShippingDailyResponse> {
-  return await apiGet<ShippingDailyResponse>("/shipping-reports/daily", query);
-}
-
-export async function fetchShippingReportOptions(
-  query: Pick<TransportReportsQuery, "from_date" | "to_date" | "warehouse_id">,
-): Promise<ShippingReportFilterOptions> {
-  return await apiGet<ShippingReportFilterOptions>(
-    "/shipping-reports/options",
-    query,
-  );
+): Promise<CostAnalysisResponse> {
+  const { mode, ...rest } = query;
+  return await apiGet<CostAnalysisResponse>(buildCostAnalysisPath(mode), rest);
 }

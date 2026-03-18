@@ -1,64 +1,64 @@
 // src/features/tms/reports/hooks/useTransportReportsPage.ts
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  fetchShippingByCarrier,
-  fetchShippingByProvince,
-  fetchShippingByShop,
-  fetchShippingByWarehouse,
-  fetchShippingDaily,
-  fetchShippingReportOptions,
-} from "../api";
+import { fetchCostAnalysis } from "../api";
 import type {
-  ShippingByCarrierRow,
-  ShippingByProvinceRow,
-  ShippingByShopRow,
-  ShippingByWarehouseRow,
-  ShippingDailyRow,
-  ShippingReportFilterOptions,
+  CostAnalysisByCarrierRow,
+  CostAnalysisByTimeRow,
+  CostAnalysisSummary,
+  TransportReportsMode,
   TransportReportsQuery,
 } from "../types";
 
 type DateRange = {
-  from_date: string;
-  to_date: string;
+  start_date: string;
+  end_date: string;
 };
 
-function getDefaultDateRange(): DateRange {
+type CarrierOption = {
+  value: string;
+  label: string;
+};
+
+function getDefaultRecordDateRange(): DateRange {
   const today = new Date();
-  const to = today.toISOString().slice(0, 10);
-  const d7 = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
-  const from = d7.toISOString().slice(0, 10);
-  return { from_date: from, to_date: to };
+  const endDate = today.toISOString().slice(0, 10);
+  const start = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
+  const startDate = start.toISOString().slice(0, 10);
+  return { start_date: startDate, end_date: endDate };
 }
 
-export function useTransportReportsPage() {
-  const defaultRange = getDefaultDateRange();
+function createDefaultQuery(mode: TransportReportsMode): TransportReportsQuery {
+  if (mode === "bill") {
+    return {
+      mode: "bill",
+      carrier_code: "",
+      start_date: "",
+      end_date: "",
+    };
+  }
 
-  const [query, setQuery] = useState<TransportReportsQuery>({
-    from_date: defaultRange.from_date,
-    to_date: defaultRange.to_date,
-    platform: "",
-    shop_id: "",
+  const range = getDefaultRecordDateRange();
+  return {
+    mode: "record",
     carrier_code: "",
-    province: "",
-    warehouse_id: undefined,
-    city: "",
-  });
+    start_date: range.start_date,
+    end_date: range.end_date,
+  };
+}
 
-  const [carrierRows, setCarrierRows] = useState<ShippingByCarrierRow[]>([]);
-  const [provinceRows, setProvinceRows] = useState<ShippingByProvinceRow[]>([]);
-  const [shopRows, setShopRows] = useState<ShippingByShopRow[]>([]);
-  const [warehouseRows, setWarehouseRows] = useState<ShippingByWarehouseRow[]>([]);
-  const [dailyRows, setDailyRows] = useState<ShippingDailyRow[]>([]);
+const EMPTY_SUMMARY: CostAnalysisSummary = {
+  ticket_count: 0,
+  total_cost: 0,
+};
 
-  const [options, setOptions] = useState<ShippingReportFilterOptions>({
-    platforms: [],
-    shop_ids: [],
-    provinces: [],
-    cities: [],
-  });
-
+export function useTransportReportsPage() {
+  const [query, setQuery] = useState<TransportReportsQuery>(
+    createDefaultQuery("bill"),
+  );
+  const [summary, setSummary] = useState<CostAnalysisSummary>(EMPTY_SUMMARY);
+  const [carrierRows, setCarrierRows] = useState<CostAnalysisByCarrierRow[]>([]);
+  const [timeRows, setTimeRows] = useState<CostAnalysisByTimeRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -66,21 +66,16 @@ export function useTransportReportsPage() {
     key: K,
     value: TransportReportsQuery[K],
   ): void {
-    setQuery((prev) => ({ ...prev, [key]: value }));
+    setQuery((prev) => {
+      if (key === "mode") {
+        return createDefaultQuery(value as TransportReportsMode);
+      }
+      return { ...prev, [key]: value };
+    });
   }
 
   function reset(): void {
-    const next = getDefaultDateRange();
-    setQuery({
-      from_date: next.from_date,
-      to_date: next.to_date,
-      platform: "",
-      shop_id: "",
-      carrier_code: "",
-      province: "",
-      warehouse_id: undefined,
-      city: "",
-    });
+    setQuery(createDefaultQuery(query.mode));
   }
 
   const reload = useCallback(async (): Promise<void> => {
@@ -88,40 +83,16 @@ export function useTransportReportsPage() {
     setError("");
 
     try {
-      const [byCarrier, byProvince, byShop, byWarehouse, daily, filterOptions] =
-        await Promise.all([
-          fetchShippingByCarrier(query),
-          fetchShippingByProvince(query),
-          fetchShippingByShop(query),
-          fetchShippingByWarehouse(query),
-          fetchShippingDaily(query),
-          fetchShippingReportOptions({
-            from_date: query.from_date,
-            to_date: query.to_date,
-            warehouse_id: query.warehouse_id,
-          }),
-        ]);
-
-      setCarrierRows(byCarrier.rows ?? []);
-      setProvinceRows(byProvince.rows ?? []);
-      setShopRows(byShop.rows ?? []);
-      setWarehouseRows(byWarehouse.rows ?? []);
-      setDailyRows(daily.rows ?? []);
-      setOptions(filterOptions);
+      const data = await fetchCostAnalysis(query);
+      setSummary(data.summary ?? EMPTY_SUMMARY);
+      setCarrierRows(data.by_carrier ?? []);
+      setTimeRows(data.by_time ?? []);
     } catch (err) {
       const message = err instanceof Error ? err.message : "加载快递成本分析失败";
       setError(message);
+      setSummary(EMPTY_SUMMARY);
       setCarrierRows([]);
-      setProvinceRows([]);
-      setShopRows([]);
-      setWarehouseRows([]);
-      setDailyRows([]);
-      setOptions({
-        platforms: [],
-        shop_ids: [],
-        provinces: [],
-        cities: [],
-      });
+      setTimeRows([]);
     } finally {
       setLoading(false);
     }
@@ -131,28 +102,32 @@ export function useTransportReportsPage() {
     void reload();
   }, [reload]);
 
-  const totalShipCnt = useMemo(
-    () => carrierRows.reduce((sum, row) => sum + row.ship_cnt, 0),
-    [carrierRows],
+  const modeLabel = useMemo(
+    () => (query.mode === "bill" ? "账单成本" : "台帐预估成本"),
+    [query.mode],
   );
 
-  const totalCost = useMemo(
-    () => carrierRows.reduce((sum, row) => sum + row.total_cost, 0),
-    [carrierRows],
-  );
+  const carrierOptions = useMemo<CarrierOption[]>(() => {
+    return carrierRows
+      .filter((row) => (row.carrier_code ?? "").trim() !== "")
+      .map((row) => {
+        const code = row.carrier_code ?? "";
+        return {
+          value: code,
+          label: code,
+        };
+      });
+  }, [carrierRows]);
 
   return {
     query,
+    summary,
     carrierRows,
-    provinceRows,
-    shopRows,
-    warehouseRows,
-    dailyRows,
-    options,
+    timeRows,
     loading,
     error,
-    totalShipCnt,
-    totalCost,
+    modeLabel,
+    carrierOptions,
     setField,
     reset,
     reload,

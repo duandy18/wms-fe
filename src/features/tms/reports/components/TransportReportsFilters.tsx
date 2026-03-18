@@ -1,17 +1,19 @@
 // src/features/tms/reports/components/TransportReportsFilters.tsx
 
 import React from "react";
-import type {
-  ShippingReportFilterOptions,
-  TransportReportsQuery,
-} from "../types";
+import type { TransportReportsQuery } from "../types";
+
+type CarrierOption = {
+  value: string;
+  label: string;
+};
 
 interface TransportReportsFiltersProps {
   query: TransportReportsQuery;
-  options: ShippingReportFilterOptions;
   loading: boolean;
-  totalShipCnt: number;
+  ticketCount: number;
   totalCostText: string;
+  carrierOptions: CarrierOption[];
   onChange: <K extends keyof TransportReportsQuery>(
     key: K,
     value: TransportReportsQuery[K],
@@ -22,10 +24,10 @@ interface TransportReportsFiltersProps {
 
 const TransportReportsFilters: React.FC<TransportReportsFiltersProps> = ({
   query,
-  options,
   loading,
-  totalShipCnt,
+  ticketCount,
   totalCostText,
+  carrierOptions,
   onChange,
   onApply,
   onReset,
@@ -35,115 +37,57 @@ const TransportReportsFilters: React.FC<TransportReportsFiltersProps> = ({
       <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div className="text-sm font-semibold text-slate-800">报表筛选</div>
         <div className="text-xs text-slate-500">
-          发货单量 {totalShipCnt} · 总预估费用 {totalCostText}
+          票数 {ticketCount} · 总成本 {totalCostText}
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
         <label className="space-y-1">
-          <div className="text-xs text-slate-600">发货日期从</div>
-          <input
-            type="date"
-            value={query.from_date ?? ""}
-            onChange={(e) => onChange("from_date", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-xs text-slate-600">发货日期至</div>
-          <input
-            type="date"
-            value={query.to_date ?? ""}
-            onChange={(e) => onChange("to_date", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-xs text-slate-600">平台</div>
+          <div className="text-xs text-slate-600">分析口径</div>
           <select
-            value={query.platform ?? ""}
-            onChange={(e) => onChange("platform", e.target.value)}
+            value={query.mode}
+            onChange={(e) =>
+              onChange("mode", e.target.value as TransportReportsQuery["mode"])
+            }
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
-            <option value="">全部</option>
-            {options.platforms.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-xs text-slate-600">店铺</div>
-          <select
-            value={query.shop_id ?? ""}
-            onChange={(e) => onChange("shop_id", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="">全部</option>
-            {options.shop_ids.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
+            <option value="bill">账单成本</option>
+            <option value="record">台帐预估成本</option>
           </select>
         </label>
 
         <label className="space-y-1">
           <div className="text-xs text-slate-600">承运商代码</div>
-          <input
+          <select
             value={query.carrier_code ?? ""}
             onChange={(e) => onChange("carrier_code", e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            <option value="">全部</option>
+            {carrierOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="space-y-1">
+          <div className="text-xs text-slate-600">开始日期</div>
+          <input
+            type="date"
+            value={query.start_date ?? ""}
+            onChange={(e) => onChange("start_date", e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
         </label>
 
         <label className="space-y-1">
-          <div className="text-xs text-slate-600">目的省</div>
-          <select
-            value={query.province ?? ""}
-            onChange={(e) => onChange("province", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="">全部</option>
-            {options.provinces.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-xs text-slate-600">目的市</div>
-          <select
-            value={query.city ?? ""}
-            onChange={(e) => onChange("city", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="">全部</option>
-            {options.cities.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-xs text-slate-600">仓库 ID</div>
+          <div className="text-xs text-slate-600">结束日期</div>
           <input
-            type="number"
-            value={query.warehouse_id ?? ""}
-            onChange={(e) =>
-              onChange(
-                "warehouse_id",
-                e.target.value ? Number(e.target.value) : undefined,
-              )
-            }
+            type="date"
+            value={query.end_date ?? ""}
+            onChange={(e) => onChange("end_date", e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
         </label>
@@ -156,7 +100,7 @@ const TransportReportsFilters: React.FC<TransportReportsFiltersProps> = ({
           onClick={onApply}
           disabled={loading}
         >
-          {loading ? "加载中…" : "刷新报表"}
+          {loading ? "加载中…" : "查询"}
         </button>
 
         <button

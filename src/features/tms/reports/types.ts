@@ -1,81 +1,34 @@
 // src/features/tms/reports/types.ts
 
-export interface ShippingByCarrierRow {
+export type TransportReportsMode = "bill" | "record";
+
+export interface CostAnalysisSummary {
+  ticket_count: number;
+  total_cost: number;
+}
+
+export interface CostAnalysisByCarrierRow {
   carrier_code: string | null;
-  carrier_name: string | null;
-  ship_cnt: number;
+  ticket_count: number;
   total_cost: number;
-  avg_cost: number;
 }
 
-export interface ShippingByProvinceRow {
-  province: string | null;
-  ship_cnt: number;
+export interface CostAnalysisByTimeRow {
+  bucket: string;
+  ticket_count: number;
   total_cost: number;
-  avg_cost: number;
 }
 
-export interface ShippingByShopRow {
-  platform: string;
-  shop_id: string;
-  ship_cnt: number;
-  total_cost: number;
-  avg_cost: number;
-}
-
-export interface ShippingByWarehouseRow {
-  warehouse_id: number | null;
-  ship_cnt: number;
-  total_cost: number;
-  avg_cost: number;
-}
-
-export interface ShippingDailyRow {
-  stat_date: string;
-  ship_cnt: number;
-  total_cost: number;
-  avg_cost: number;
-}
-
-export interface ShippingByCarrierResponse {
+export interface CostAnalysisResponse {
   ok: boolean;
-  rows: ShippingByCarrierRow[];
-}
-
-export interface ShippingByProvinceResponse {
-  ok: boolean;
-  rows: ShippingByProvinceRow[];
-}
-
-export interface ShippingByShopResponse {
-  ok: boolean;
-  rows: ShippingByShopRow[];
-}
-
-export interface ShippingByWarehouseResponse {
-  ok: boolean;
-  rows: ShippingByWarehouseRow[];
-}
-
-export interface ShippingDailyResponse {
-  ok: boolean;
-  rows: ShippingDailyRow[];
-}
-
-export interface ShippingReportFilterOptions {
-  platforms: string[];
-  shop_ids: string[];
-  provinces: string[];
-  cities: string[];
+  summary: CostAnalysisSummary;
+  by_carrier: CostAnalysisByCarrierRow[];
+  by_time: CostAnalysisByTimeRow[];
 }
 
 export interface TransportReportsQuery {
-  from_date?: string;
-  to_date?: string;
-  platform?: string;
-  shop_id?: string;
+  mode: TransportReportsMode;
   carrier_code?: string;
-  province?: string;
-  warehouse_id?: number;
-  city?: string;
+  start_date?: string;
+  end_date?: string;
 }

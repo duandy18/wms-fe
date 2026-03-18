@@ -11,7 +11,7 @@ export async function fetchShippingBillReconciliations(
   query: ShippingBillReconciliationsQuery,
 ): Promise<ShippingBillReconciliationsResponse> {
   return await apiGet<ShippingBillReconciliationsResponse>(
-    "/shipping-bills/reconciliations",
+    "/tms/billing/reconciliations",
     query,
   );
 }
@@ -20,6 +20,6 @@ export async function fetchShippingBillReconciliationDetail(
   reconciliationId: number,
 ): Promise<ShippingBillReconciliationDetailResponse> {
   return await apiGet<ShippingBillReconciliationDetailResponse>(
-    `/shipping-bills/reconciliations/${reconciliationId}`,
+    `/tms/billing/reconciliations/${reconciliationId}`,
   );
 }
