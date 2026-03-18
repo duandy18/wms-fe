@@ -1,39 +1,25 @@
 // src/features/tms/reconciliation/api.ts
 
+import { apiGet } from "../../../lib/api";
 import type {
-  ReconcileCarrierBillIn,
-  ReconcileCarrierBillResult,
+  ShippingBillReconciliationDetailResponse,
+  ShippingBillReconciliationsQuery,
+  ShippingBillReconciliationsResponse,
 } from "./types";
 
-async function ensureOk(response: Response): Promise<Response> {
-  if (response.ok) {
-    return response;
-  }
-
-  let message = `HTTP ${response.status}`;
-  try {
-    const data = (await response.json()) as { detail?: string; message?: string };
-    message = data.detail ?? data.message ?? message;
-  } catch {
-    // ignore
-  }
-
-  throw new Error(message);
+export async function fetchShippingBillReconciliations(
+  query: ShippingBillReconciliationsQuery,
+): Promise<ShippingBillReconciliationsResponse> {
+  return await apiGet<ShippingBillReconciliationsResponse>(
+    "/shipping-bills/reconciliations",
+    query,
+  );
 }
 
-export async function reconcileCarrierBill(
-  payload: ReconcileCarrierBillIn,
-): Promise<ReconcileCarrierBillResult> {
-  const response = await fetch("/shipping-bills/reconcile", {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  await ensureOk(response);
-  return (await response.json()) as ReconcileCarrierBillResult;
+export async function fetchShippingBillReconciliationDetail(
+  reconciliationId: number,
+): Promise<ShippingBillReconciliationDetailResponse> {
+  return await apiGet<ShippingBillReconciliationDetailResponse>(
+    `/shipping-bills/reconciliations/${reconciliationId}`,
+  );
 }

@@ -1,20 +1,20 @@
-// src/features/tms/billing/components/BillingItemsFilters.tsx
+// src/features/tms/reconciliation/components/ReconciliationFilters.tsx
 
 import React from "react";
-import type { CarrierBillItemsQuery } from "../types";
+import type { ShippingBillReconciliationsQuery } from "../types";
 
 interface Props {
-  query: CarrierBillItemsQuery;
+  query: ShippingBillReconciliationsQuery;
   loading: boolean;
-  onChange: <K extends keyof CarrierBillItemsQuery>(
+  onChange: <K extends keyof ShippingBillReconciliationsQuery>(
     key: K,
-    value: CarrierBillItemsQuery[K],
+    value: ShippingBillReconciliationsQuery[K],
   ) => void;
   onApply: () => void;
   onReset: () => void;
 }
 
-const BillingItemsFilters: React.FC<Props> = ({
+const ReconciliationFilters: React.FC<Props> = ({
   query,
   loading,
   onChange,
@@ -23,9 +23,9 @@ const BillingItemsFilters: React.FC<Props> = ({
 }) => {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 text-sm font-semibold text-slate-800">快递账单筛选</div>
+      <div className="mb-3 text-sm font-semibold text-slate-800">异常筛选</div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <label className="space-y-1">
           <div className="text-xs text-slate-600">承运商代码</div>
           <input
@@ -42,6 +42,20 @@ const BillingItemsFilters: React.FC<Props> = ({
             onChange={(e) => onChange("tracking_no", e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
+        </label>
+
+        <label className="space-y-1">
+          <div className="text-xs text-slate-600">异常状态</div>
+          <select
+            value={query.status ?? ""}
+            onChange={(e) => onChange("status", e.target.value as ShippingBillReconciliationsQuery["status"])}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            <option value="">全部</option>
+            <option value="diff">diff</option>
+            <option value="bill_only">bill_only</option>
+            <option value="record_only">record_only</option>
+          </select>
         </label>
       </div>
 
@@ -67,4 +81,4 @@ const BillingItemsFilters: React.FC<Props> = ({
   );
 };
 
-export default BillingItemsFilters;
+export default ReconciliationFilters;

@@ -1,64 +1,91 @@
 // src/features/tms/reconciliation/pages/ReconciliationPage.tsx
 
 import React from "react";
-import { Link } from "react-router-dom";
 import PageTitle from "../../../../components/ui/PageTitle";
-import ReconciliationForm from "../components/ReconciliationForm";
-import ReconciliationResultCard from "../components/ReconciliationResultCard";
-import { useReconciliationPage } from "../hooks/useReconciliationPage";
+import ReconciliationDetailCard from "../components/ReconciliationDetailCard";
+import ReconciliationFilters from "../components/ReconciliationFilters";
+import ReconciliationTable from "../components/ReconciliationTable";
+import { useReconciliationList } from "../hooks/useReconciliationList";
 
 const ReconciliationPage: React.FC = () => {
   const {
-    importBatchId,
+    query,
+    rows,
+    total,
     loading,
     error,
-    result,
-    hasPresetBatch,
-    setImportBatchId,
-    submit,
-  } = useReconciliationPage();
-
-  const batchIdText = importBatchId.trim();
+    currentPage,
+    totalPages,
+    selectedId,
+    detail,
+    detailLoading,
+    detailError,
+    setField,
+    reset,
+    setOffset,
+    reload,
+    loadDetail,
+    clearDetail,
+  } = useReconciliationList();
 
   return (
     <div className="space-y-4 p-6">
       <PageTitle
-        title="对账"
-        description="按账单批次 ID 触发自动对账，生成差异汇总结果。对账主链使用 import_batch_id，而不是 carrier_code + import_batch_no。"
+        title="对账异常"
+        description="基于当前账单与物流台账计算的异常列表（diff / bill_only / record_only）。"
       />
 
-      {hasPresetBatch ? (
-        <section className="rounded-2xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-sm font-semibold text-sky-900">已带入账单批次</div>
-              <div className="mt-1 text-sm text-sky-800">
-                当前批次 ID：<span className="font-mono font-semibold">{batchIdText}</span>
-                。你可以直接开始自动对账，或返回账单页继续查看该批次明细。
-              </div>
-            </div>
+      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+        <div className="text-sm font-semibold text-slate-900">异常列表</div>
+        <div className="mt-1 text-sm text-slate-600">
+          当前结果 {total} 条异常，第 {currentPage} / {totalPages || 1} 页。
+        </div>
+      </section>
 
-            <div className="flex items-center gap-2">
-              <Link
-                to={`/tms/billing/items?import_batch_id=${batchIdText}`}
-                className="rounded-lg border border-sky-300 px-3 py-2 text-sm text-sky-900 hover:bg-white"
-              >
-                返回该批次账单
-              </Link>
-            </div>
-          </div>
-        </section>
-      ) : null}
+      <ReconciliationFilters
+        query={query}
+        loading={loading}
+        onChange={setField}
+        onApply={() => void reload()}
+        onReset={reset}
+      />
 
-      <ReconciliationForm
-        importBatchId={importBatchId}
+      <ReconciliationTable
+        rows={rows}
         loading={loading}
         error={error}
-        onImportBatchIdChange={setImportBatchId}
-        onSubmit={() => void submit()}
+        selectedId={selectedId}
+        onSelect={(id) => void loadDetail(id)}
       />
 
-      <ReconciliationResultCard result={result} />
+      <ReconciliationDetailCard
+        detail={detail}
+        loading={detailLoading}
+        error={detailError}
+        onClose={clearDetail}
+      />
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            onClick={() => setOffset(Math.max(0, query.offset - query.limit))}
+            disabled={query.offset <= 0}
+          >
+            上一页
+          </button>
+
+          <button
+            type="button"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            onClick={() => setOffset(query.offset + query.limit)}
+            disabled={query.offset + query.limit >= total}
+          >
+            下一页
+          </button>
+        </div>
+      </section>
     </div>
   );
 };

@@ -162,14 +162,6 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="tms/billing/import"
-            element={
-              <RequirePermission permission="report.outbound">
-                <P.BillingImportPage />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="tms/billing/items"
             element={
               <RequirePermission permission="report.outbound">

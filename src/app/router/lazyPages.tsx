@@ -50,9 +50,6 @@ export const ShippingLedgerPage = lazy(
   () => import("../../features/tms/records/pages/ShippingLedgerPage"),
 );
 
-export const BillingImportPage = lazy(
-  () => import("../../features/tms/billing/pages/BillingImportPage"),
-);
 export const BillingItemsPage = lazy(
   () => import("../../features/tms/billing/pages/BillingItemsPage"),
 );
