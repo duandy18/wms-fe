@@ -126,6 +126,57 @@ function looksLikeRequestInit(x: unknown): x is RequestInit {
   return false;
 }
 
+function buildAuthHeaders(
+  extraHeaders?: HeadersInit,
+  body?: unknown,
+): Headers {
+  const headers = new Headers(extraHeaders);
+  const token = getAccessToken();
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  if (
+    body !== undefined &&
+    body !== null &&
+    !(body instanceof FormData) &&
+    !headers.has("Content-Type")
+  ) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  return headers;
+}
+
+async function parseErrorBody(resp: Response): Promise<unknown> {
+  try {
+    return await resp.json();
+  } catch {
+    try {
+      return await resp.text();
+    } catch {
+      return null;
+    }
+  }
+}
+
+function stringifyErrorBody(body: unknown, fallback: string): string {
+  if (body == null || body === "") {
+    return fallback;
+  }
+
+  if (typeof body === "string") {
+    return body;
+  }
+
+  try {
+    return JSON.stringify(body);
+  } catch {
+    return fallback;
+  }
+}
+
 // ============================================================================
 // 核心 request 封装
 // ============================================================================
@@ -133,46 +184,30 @@ async function request<T>(
   method: HttpMethod,
   path: string,
   body?: unknown,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
-  const token = getAccessToken();
-
-  const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string> | undefined),
-  };
-
-  if (body !== undefined && body !== null) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
+  const headers = buildAuthHeaders(options.headers, body);
   const url = path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
 
   const resp = await fetch(url, {
     method,
     headers,
     body:
-      body !== undefined && body !== null ? JSON.stringify(body) : undefined,
+      body !== undefined && body !== null
+        ? body instanceof FormData
+          ? body
+          : JSON.stringify(body)
+        : undefined,
     credentials: "include",
     ...options,
   });
 
   if (!resp.ok) {
-    let errBody: unknown = null;
-    try {
-      errBody = await resp.json();
-    } catch {
-      // ignore parse error，直接用 statusText
-    }
+    const errBody = await parseErrorBody(resp);
     throw new ApiError(
-      `HTTP ${resp.status}: ${
-        errBody ? JSON.stringify(errBody) : resp.statusText
-      }`,
+      `HTTP ${resp.status}: ${stringifyErrorBody(errBody, resp.statusText)}`,
       resp.status,
-      errBody
+      errBody,
     );
   }
 
@@ -184,8 +219,66 @@ async function request<T>(
   }
 }
 
+async function requestBlob(
+  method: HttpMethod,
+  path: string,
+  body?: unknown,
+  options: RequestInit = {},
+): Promise<Blob> {
+  const headers = buildAuthHeaders(options.headers, body);
+  const url = path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
+
+  const resp = await fetch(url, {
+    method,
+    headers,
+    body:
+      body !== undefined && body !== null
+        ? body instanceof FormData
+          ? body
+          : JSON.stringify(body)
+        : undefined,
+    credentials: "include",
+    ...options,
+  });
+
+  if (!resp.ok) {
+    const errBody = await parseErrorBody(resp);
+    throw new ApiError(
+      `HTTP ${resp.status}: ${stringifyErrorBody(errBody, resp.statusText)}`,
+      resp.status,
+      errBody,
+    );
+  }
+
+  return await resp.blob();
+}
+
+export async function apiRequest<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const method = ((options.method ?? "GET").toUpperCase() as HttpMethod) || "GET";
+  const body = options.body;
+  const restOptions: RequestInit = { ...options };
+  delete restOptions.body;
+
+  return request<T>(method, path, body, restOptions);
+}
+
+export async function apiRequestBlob(
+  path: string,
+  options: RequestInit = {},
+): Promise<Blob> {
+  const method = ((options.method ?? "GET").toUpperCase() as HttpMethod) || "GET";
+  const body = options.body;
+  const restOptions: RequestInit = { ...options };
+  delete restOptions.body;
+
+  return requestBlob(method, path, body, restOptions);
+}
+
 // ============================================================================
-// 对外暴露的四个标准方法
+// 对外暴露的五个标准方法
 // ============================================================================
 /**
  * GET 请求：
@@ -197,7 +290,7 @@ async function request<T>(
 export async function apiGet<T>(
   path: string,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit
+  maybeOptions?: RequestInit,
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -226,7 +319,7 @@ export async function apiPost<T>(
   path: string,
   body: unknown,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit
+  maybeOptions?: RequestInit,
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -255,7 +348,7 @@ export async function apiPut<T>(
   path: string,
   body: unknown,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit
+  maybeOptions?: RequestInit,
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -284,7 +377,7 @@ export async function apiPatch<T>(
   path: string,
   body: unknown,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit
+  maybeOptions?: RequestInit,
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};
@@ -312,7 +405,7 @@ export async function apiPatch<T>(
 export async function apiDelete<T>(
   path: string,
   paramsOrOptions?: unknown,
-  maybeOptions?: RequestInit
+  maybeOptions?: RequestInit,
 ): Promise<T> {
   let params: QueryParams | undefined;
   let options: RequestInit = {};

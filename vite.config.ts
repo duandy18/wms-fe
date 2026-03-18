@@ -65,6 +65,10 @@ export default defineConfig({
         target: "http://127.0.0.1:8000",
         changeOrigin: true,
       },
+      "/shipping-bills": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
       "/debug": {
         target: "http://127.0.0.1:8000",
         changeOrigin: true,

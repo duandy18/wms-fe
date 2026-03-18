@@ -107,14 +107,6 @@ export const menuSections: RouteSection[] = [
         requiredPermissions: ["report.outbound"],
       },
 
-      // 深链：账单导入页（保留路由，不在侧边栏展示）
-      {
-        path: "/tms/billing/import",
-        label: "快递账单导入",
-        requiredPermissions: ["report.outbound"],
-        showInSidebar: false,
-      },
-
       // 深链：快递网点编辑页（页面内部承载网点基本信息 / 联系人 / 仓库绑定 / 运价方案）
       {
         path: "/tms/providers/new",
