@@ -1,53 +1,54 @@
-// src/features/tms/reconciliation/hooks/useReconciliationList.ts
+// src/features/tms/reconciliation/hooks/useReconciliationHistoryList.ts
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchShippingBillReconciliations } from "../api";
+import { fetchShippingBillReconciliationHistories } from "../api";
 import type {
-  ShippingBillReconciliationsQuery,
-  ShippingBillReconciliationRow,
+  ShippingBillReconciliationHistoriesQuery,
+  ShippingBillReconciliationHistoryRow,
+  ReconciliationHistoryResultStatus,
 } from "../types";
 
-const DEFAULT_QUERY: ShippingBillReconciliationsQuery = {
+const DEFAULT_QUERY: ShippingBillReconciliationHistoriesQuery = {
   carrier_code: "",
   tracking_no: "",
-  status: "",
+  result_status: "",
   limit: 50,
   offset: 0,
 };
 
-function getInitialQuery(): ShippingBillReconciliationsQuery {
+function getInitialQuery(): ShippingBillReconciliationHistoriesQuery {
   if (typeof window === "undefined") {
     return DEFAULT_QUERY;
   }
 
   const params = new URLSearchParams(window.location.search);
-  const status = (params.get("status") ?? "").trim();
+  const resultStatus = (params.get("history_result_status") ?? "").trim();
+
+  const normalizedResultStatus: ReconciliationHistoryResultStatus | "" =
+    resultStatus === "matched" ||
+    resultStatus === "approved_bill_only" ||
+    resultStatus === "resolved"
+      ? resultStatus
+      : "";
 
   return {
     ...DEFAULT_QUERY,
-    carrier_code: params.get("carrier_code") ?? "",
-    tracking_no: params.get("tracking_no") ?? "",
-    status: status === "diff" || status === "bill_only" ? status : "",
+    carrier_code: params.get("history_carrier_code") ?? "",
+    tracking_no: params.get("history_tracking_no") ?? "",
+    result_status: normalizedResultStatus,
   };
 }
 
-export function useReconciliationList(initialCarrierCode?: string) {
-  const [query, setQuery] = useState<ShippingBillReconciliationsQuery>(() => {
-    const initial = getInitialQuery();
-    if (initialCarrierCode && !initial.carrier_code) {
-      return { ...initial, carrier_code: initialCarrierCode };
-    }
-    return initial;
-  });
-
-  const [rows, setRows] = useState<ShippingBillReconciliationRow[]>([]);
+export function useReconciliationHistoryList() {
+  const [query, setQuery] = useState<ShippingBillReconciliationHistoriesQuery>(getInitialQuery);
+  const [rows, setRows] = useState<ShippingBillReconciliationHistoryRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function setField<K extends keyof ShippingBillReconciliationsQuery>(
+  function setField<K extends keyof ShippingBillReconciliationHistoriesQuery>(
     key: K,
-    value: ShippingBillReconciliationsQuery[K],
+    value: ShippingBillReconciliationHistoriesQuery[K],
   ): void {
     setQuery((prev) => {
       const next = { ...prev, [key]: value };
@@ -61,19 +62,8 @@ export function useReconciliationList(initialCarrierCode?: string) {
     });
   }
 
-  function setCarrierCode(carrierCode: string): void {
-    setQuery((prev) => ({
-      ...prev,
-      carrier_code: carrierCode,
-      offset: 0,
-    }));
-  }
-
   function reset(): void {
-    setQuery({
-      ...DEFAULT_QUERY,
-      carrier_code: initialCarrierCode ?? "",
-    });
+    setQuery(DEFAULT_QUERY);
   }
 
   function setOffset(offset: number): void {
@@ -85,11 +75,11 @@ export function useReconciliationList(initialCarrierCode?: string) {
     setError("");
 
     try {
-      const res = await fetchShippingBillReconciliations(query);
+      const res = await fetchShippingBillReconciliationHistories(query);
       setRows(res.rows ?? []);
       setTotal(res.total ?? 0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载对账表失败");
+      setError(err instanceof Error ? err.message : "加载对账历史表失败");
       setRows([]);
       setTotal(0);
     } finally {
@@ -119,7 +109,6 @@ export function useReconciliationList(initialCarrierCode?: string) {
     currentPage,
     totalPages,
     setField,
-    setCarrierCode,
     reset,
     setOffset,
     reload,

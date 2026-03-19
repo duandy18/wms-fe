@@ -1,42 +1,38 @@
-// src/features/tms/reconciliation/components/ReconciliationFilters.tsx
+// src/features/tms/reconciliation/components/ReconciliationHistoryFilters.tsx
 
 import React from "react";
-import type { ReconciliationCarrierOption, ShippingBillReconciliationsQuery } from "../types";
+import type {
+  ReconciliationCarrierOption,
+  ShippingBillReconciliationHistoriesQuery,
+} from "../types";
 
 interface Props {
-  query: ShippingBillReconciliationsQuery;
+  query: ShippingBillReconciliationHistoriesQuery;
   loading: boolean;
   carrierOptions: ReconciliationCarrierOption[];
   carrierOptionsLoading: boolean;
   carrierOptionsError: string;
-  reconciling: boolean;
-  onChange: <K extends keyof ShippingBillReconciliationsQuery>(
+  onChange: <K extends keyof ShippingBillReconciliationHistoriesQuery>(
     key: K,
-    value: ShippingBillReconciliationsQuery[K],
+    value: ShippingBillReconciliationHistoriesQuery[K],
   ) => void;
   onApply: () => void;
   onReset: () => void;
-  onReconcile: () => void | Promise<void>;
 }
 
-const ReconciliationFilters: React.FC<Props> = ({
+const ReconciliationHistoryFilters: React.FC<Props> = ({
   query,
   loading,
   carrierOptions,
   carrierOptionsLoading,
   carrierOptionsError,
-  reconciling,
   onChange,
   onApply,
   onReset,
-  onReconcile,
 }) => {
-  const reconcileDisabled =
-    reconciling || carrierOptionsLoading || !String(query.carrier_code ?? "").trim();
-
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 text-sm font-semibold text-slate-800">对账表筛选</div>
+      <div className="mb-3 text-sm font-semibold text-slate-800">历史表筛选</div>
 
       {carrierOptionsError ? (
         <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
@@ -54,7 +50,7 @@ const ReconciliationFilters: React.FC<Props> = ({
             disabled={carrierOptionsLoading}
           >
             <option value="">
-              {carrierOptionsLoading ? "快递公司加载中…" : "请选择快递公司"}
+              {carrierOptionsLoading ? "快递公司加载中…" : "全部快递公司"}
             </option>
             {carrierOptions.map((option) => (
               <option key={option.code} value={option.code}>
@@ -74,31 +70,26 @@ const ReconciliationFilters: React.FC<Props> = ({
         </label>
 
         <label className="space-y-1">
-          <div className="text-xs text-slate-600">状态</div>
+          <div className="text-xs text-slate-600">归档结果</div>
           <select
-            value={query.status ?? ""}
+            value={query.result_status ?? ""}
             onChange={(e) =>
-              onChange("status", e.target.value as ShippingBillReconciliationsQuery["status"])
+              onChange(
+                "result_status",
+                e.target.value as ShippingBillReconciliationHistoriesQuery["result_status"],
+              )
             }
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
             <option value="">全部</option>
-            <option value="diff">差异</option>
-            <option value="bill_only">账单上有，我方缺记录</option>
+            <option value="matched">已平</option>
+            <option value="approved_bill_only">我方缺记录</option>
+            <option value="resolved">已解决差异</option>
           </select>
         </label>
       </div>
 
       <div className="mt-4 flex items-center gap-2">
-        <button
-          type="button"
-          className="rounded-lg bg-sky-600 px-3 py-2 text-sm text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
-          onClick={() => void onReconcile()}
-          disabled={reconcileDisabled}
-        >
-          {reconciling ? "对账中…" : "对账"}
-        </button>
-
         <button
           type="button"
           className="rounded-lg bg-sky-600 px-3 py-2 text-sm text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
@@ -112,7 +103,6 @@ const ReconciliationFilters: React.FC<Props> = ({
           type="button"
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
           onClick={onReset}
-          disabled={loading || reconciling}
         >
           重置
         </button>
@@ -121,4 +111,4 @@ const ReconciliationFilters: React.FC<Props> = ({
   );
 };
 
-export default ReconciliationFilters;
+export default ReconciliationHistoryFilters;

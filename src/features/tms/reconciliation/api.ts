@@ -1,8 +1,13 @@
 // src/features/tms/reconciliation/api.ts
 
-import { apiGet } from "../../../lib/api";
+import { apiGet, apiPost } from "../../../lib/api";
 import type {
-  ShippingBillReconciliationDetailResponse,
+  ApproveShippingBillReconciliationIn,
+  ApproveShippingBillReconciliationOut,
+  ReconcileCarrierBillIn,
+  ReconcileCarrierBillResult,
+  ShippingBillReconciliationHistoriesQuery,
+  ShippingBillReconciliationHistoriesResponse,
   ShippingBillReconciliationsQuery,
   ShippingBillReconciliationsResponse,
 } from "./types";
@@ -16,10 +21,30 @@ export async function fetchShippingBillReconciliations(
   );
 }
 
-export async function fetchShippingBillReconciliationDetail(
+export async function fetchShippingBillReconciliationHistories(
+  query: ShippingBillReconciliationHistoriesQuery,
+): Promise<ShippingBillReconciliationHistoriesResponse> {
+  return await apiGet<ShippingBillReconciliationHistoriesResponse>(
+    "/tms/billing/reconciliation-histories",
+    query,
+  );
+}
+
+export async function reconcileShippingBill(
+  payload: ReconcileCarrierBillIn,
+): Promise<ReconcileCarrierBillResult> {
+  return await apiPost<ReconcileCarrierBillResult>(
+    "/tms/billing/reconcile",
+    payload,
+  );
+}
+
+export async function approveShippingBillReconciliation(
   reconciliationId: number,
-): Promise<ShippingBillReconciliationDetailResponse> {
-  return await apiGet<ShippingBillReconciliationDetailResponse>(
-    `/tms/billing/reconciliations/${reconciliationId}`,
+  payload: ApproveShippingBillReconciliationIn,
+): Promise<ApproveShippingBillReconciliationOut> {
+  return await apiPost<ApproveShippingBillReconciliationOut>(
+    `/tms/billing/reconciliations/${reconciliationId}/approve`,
+    payload,
   );
 }
