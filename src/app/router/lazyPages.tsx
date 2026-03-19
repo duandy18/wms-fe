@@ -42,7 +42,10 @@ export const StockLedgerPage = lazy(
   () => import("../../features/inventory/ledger/StockLedgerPage"),
 );
 
-// 物流：发货成本报表 / 发货账本详情
+// 物流：运价管理 / 发货成本报表 / 发货账本详情
+export const PricingPage = lazy(
+  () => import("../../features/tms/pricing/pages/PricingPage"),
+);
 export const TransportReportsPage = lazy(
   () => import("../../features/tms/reports/pages/TransportReportsPage"),
 );

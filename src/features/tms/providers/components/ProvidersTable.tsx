@@ -7,14 +7,17 @@ import { type ShippingProvider, type ShippingProviderContact } from "../api";
 function renderText(v: string | null | undefined) {
   return v && v.trim() ? v : "—";
 }
+
 function renderNumber(v: number | null | undefined) {
   return typeof v === "number" && !Number.isNaN(v) ? v : "—";
 }
+
 function pickPrimaryContact(provider: ShippingProvider): ShippingProviderContact | null {
   const list = provider.contacts ?? [];
   if (list.length === 0) return null;
   return list.find((c) => c.is_primary) ?? list[0] ?? null;
 }
+
 function getContactsCount(provider: ShippingProvider): number {
   return (provider.contacts ?? []).length;
 }
@@ -37,11 +40,6 @@ type Props = {
 
   onEditProvider: (p: ShippingProvider) => void;
   onToggleProviderActive: (p: ShippingProvider) => void;
-
-  // ✅ Phase 6：仓库字典翻译（id -> label）
-  warehouseLabelById: Record<number, string>;
-  warehousesLoading: boolean;
-  warehousesError: string | null;
 };
 
 export const ProvidersTable: React.FC<Props> = ({
@@ -51,18 +49,22 @@ export const ProvidersTable: React.FC<Props> = ({
   error,
   onlyActive,
   onOnlyActiveChange,
+  search,
+  onSearchChange,
   onRefresh,
   onCreateProvider,
   onEditProvider,
   onToggleProviderActive,
-  warehouseLabelById,
-  warehousesLoading,
-  warehousesError,
 }) => {
   return (
     <section className={UI.card}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h2 className={`${UI.h2} font-semibold text-slate-900`}>仓库可用快递网点列表</h2>
+        <div>
+          <h2 className={`${UI.h2} font-semibold text-slate-900`}>快递网点主数据列表</h2>
+          <div className="mt-1 text-sm text-slate-500">
+            本页只展示网点本体与主联系人信息；仓库绑定与运价方案请进入“编辑网点”页维护。
+          </div>
+        </div>
 
         <div className="flex items-center gap-3">
           <label className="inline-flex items-center gap-2">
@@ -86,8 +88,24 @@ export const ProvidersTable: React.FC<Props> = ({
         </div>
       </div>
 
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[minmax(260px,420px)_auto] md:items-end">
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-slate-600">关键字</span>
+          <input
+            type="text"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500"
+            placeholder="搜索网点名称 / 编码 / 联系人 / 电话"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </label>
+
+        <div className="text-sm text-slate-500">
+          当前结果 <span className="font-semibold text-slate-900">{providers.length}</span> 条
+        </div>
+      </div>
+
       {error && <div className={UI.error}>{error}</div>}
-      {warehousesError && <div className={UI.error}>{warehousesError}</div>}
 
       <div className={UI.tableWrap}>
         <table className={UI.table}>
@@ -96,8 +114,8 @@ export const ProvidersTable: React.FC<Props> = ({
               <th className={UI.th}>序号</th>
               <th className={UI.th}>网点名称</th>
               <th className={UI.th}>网点编号</th>
-              <th className={UI.th}>所属仓库</th>
-              <th className={UI.th}>联系人</th>
+              <th className={UI.th}>地址</th>
+              <th className={UI.th}>主联系人</th>
               <th className={UI.th}>电话</th>
               <th className={UI.th}>联系人数量</th>
               <th className={UI.th}>优先级</th>
@@ -110,26 +128,19 @@ export const ProvidersTable: React.FC<Props> = ({
             {providers.length === 0 ? (
               <tr>
                 <td colSpan={10} className={UI.empty}>
-                  暂无记录
+                  {loading ? "加载中…" : "暂无记录"}
                 </td>
               </tr>
             ) : (
               providers.map((p) => {
                 const primary = pickPrimaryContact(p);
 
-                // ✅ 关键修复：warehouse_id 兜底后再索引
-                const whId = p.warehouse_id ?? null;
-                const whLabel = whId != null ? warehouseLabelById[whId] ?? "—" : "—";
-
                 return (
                   <tr key={p.id} className={UI.tr}>
                     <td className={UI.tdMono}>{p.id}</td>
                     <td className={UI.td}>{renderText(p.name)}</td>
                     <td className={UI.tdMono}>{renderText(p.code ?? null)}</td>
-
-                    <td className={UI.td} title={whId != null ? `warehouse_id=${whId}` : undefined}>
-                      {warehousesLoading ? <span className="text-sm text-slate-500">加载中…</span> : whLabel}
-                    </td>
+                    <td className={UI.td}>{renderText(p.address ?? null)}</td>
 
                     <td className={UI.td}>{primary ? renderText(primary.name) : "未设置"}</td>
                     <td className={UI.tdMono}>{primary ? renderText(primary.phone ?? null) : "—"}</td>
@@ -169,7 +180,9 @@ export const ProvidersTable: React.FC<Props> = ({
         </table>
       </div>
 
-      <div className="mt-3 text-sm text-slate-500">说明：每一行表示一个服务某仓库区域、参与运费比价的快递网点，仅展示主联系人信息。</div>
+      <div className="mt-3 text-sm text-slate-500">
+        说明：每一行表示一个快递网点主数据，仅展示网点本体与主联系人；仓库绑定和运价方案请进入编辑页继续维护。
+      </div>
     </section>
   );
 };

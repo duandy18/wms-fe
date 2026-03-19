@@ -34,49 +34,49 @@ export function useProvidersList() {
   // Toggle active
   const [toggling, setToggling] = useState(false);
 
-  // ✅ 前端视图层过滤：onlyActive 为真时立即生效（不需要 reload）
+  // ✅ 前端视图层过滤：
+  // - onlyActive 与 search 可同时生效
+  // - 列表页始终拉全量，再做本地过滤
   const providers = useMemo(() => {
-    const base = onlyActive ? allProviders.filter((p) => !!p.active) : allProviders;
+    const q = search.trim().toLowerCase();
 
-    // 你要求 onlyActive=true 时搜索框无用，这里也就不做搜索过滤了
-    const q = search.trim();
-    if (!q || onlyActive) return base;
+    return allProviders.filter((p) => {
+      if (onlyActive && !p.active) {
+        return false;
+      }
 
-    const qq = q.toLowerCase();
-    return base.filter((p) => {
-      const nameHit = (p.name ?? "").toLowerCase().includes(qq);
-      const codeHit = (p.code ?? "").toLowerCase().includes(qq);
+      if (!q) {
+        return true;
+      }
+
+      const nameHit = (p.name ?? "").toLowerCase().includes(q);
+      const codeHit = (p.code ?? "").toLowerCase().includes(q);
+      const addressHit = (p.address ?? "").toLowerCase().includes(q);
       const contactHit = (p.contacts ?? []).some((c) => {
         const cn = (c.name ?? "").toLowerCase();
         const cp = (c.phone ?? "").toLowerCase();
-        return cn.includes(qq) || cp.includes(qq);
+        return cn.includes(q) || cp.includes(q);
       });
-      return nameHit || codeHit || contactHit;
+
+      return nameHit || codeHit || addressHit || contactHit;
     });
   }, [allProviders, onlyActive, search]);
 
-  // ✅ 永远拉全量（不传 active），避免后端默认只返回启用导致“勾选/不勾选一样”
+  // ✅ 永远拉全量，列表页不把过滤语义压给后端
   const loadProviders = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const q = onlyActive ? undefined : search.trim() || undefined;
-      const data = await fetchShippingProviders({ q }); // active 不传
+      const data = await fetchShippingProviders();
       setAllProviders(data);
       return data;
     } catch (err) {
-      setError(getErrorMessage(err, "加载物流/快递公司失败"));
+      setError(getErrorMessage(err, "加载快递网点失败"));
       setAllProviders([]);
       return [];
     } finally {
       setLoading(false);
     }
-  }, [onlyActive, search]);
-
-  // ✅ onlyActive=true 时，搜索框无用 → 自动清空搜索词
-  const setOnlyActiveSmart = useCallback((v: boolean) => {
-    setOnlyActive(v);
-    if (v) setSearch("");
   }, []);
 
   const handleCreateProvider = useCallback(
@@ -144,13 +144,13 @@ export function useProvidersList() {
   );
 
   return {
-    providers, // ✅ 视图层 providers
-    setProviders: setAllProviders, // 保持旧字段名，避免页面改动过大（不建议滥用）
+    providers,
+    setProviders: setAllProviders,
     loading,
     error,
 
     onlyActive,
-    setOnlyActive: setOnlyActiveSmart,
+    setOnlyActive,
     search,
     setSearch,
 

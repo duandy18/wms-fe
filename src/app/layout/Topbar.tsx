@@ -84,6 +84,10 @@ export function Topbar() {
 
       // 物流
       {
+        prefix: "/tms/pricing/workbench/",
+        value: { section: "物流", page: "运价方案工作台" },
+      },
+      {
         prefix: "/tms/providers/schemes/",
         value: { section: "物流", page: "运价方案工作台" },
       },
@@ -94,6 +98,10 @@ export function Topbar() {
       {
         prefix: "/tms/providers",
         value: { section: "物流", page: "快递网点" },
+      },
+      {
+        prefix: "/tms/pricing",
+        value: { section: "物流", page: "服务关系管理" },
       },
       {
         prefix: "/tms/dispatch",

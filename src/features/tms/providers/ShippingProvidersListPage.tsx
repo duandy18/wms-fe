@@ -16,10 +16,11 @@
 // - 列表展示
 // - 进入“新建 / 编辑网点”主容器
 //
-// ✅ 仓库字典用途：
-// - 这里只做“id -> 展示名称”的翻译，不做任何跨表推导 / 聚合 / 归属裁决。
+// ✅ 当前页刻意不展示“所属仓库”单值：
+// - 仓库关系应通过“仓库绑定”维护；
+// - 列表页不再使用历史 warehouse_id 伪装单仓归属，避免误导。
 
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
 import PageTitle from "../../../components/ui/PageTitle";
@@ -28,17 +29,7 @@ import { UI } from "./ui";
 import { ProvidersTable } from "./components/ProvidersTable";
 import { useShippingProvidersPage } from "./hooks/useShippingProvidersPage";
 
-// ✅ 复用仓库域现有事实接口：仅用于“id -> 展示名称”的翻译
-import { fetchWarehouses } from "../../admin/warehouses/api";
-import type { WarehouseListItem } from "../../admin/warehouses/types";
-
 import { useAuth } from "../../../shared/useAuth";
-
-function warehouseLabel(w: WarehouseListItem): string {
-  const code = w.code ? String(w.code).trim() : "";
-  const name = w.name ? String(w.name).trim() : "";
-  return code && name ? `${code} ${name}` : code || name || `WH-${w.id}`;
-}
 
 const ShippingProvidersListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,41 +39,6 @@ const ShippingProvidersListPage: React.FC = () => {
   const { can } = useAuth();
   const canWrite = can("config.store.write");
 
-  // ✅ 仓库字典（只做翻译，不做归属推导）
-  const [warehousesLoading, setWarehousesLoading] = useState(false);
-  const [warehousesError, setWarehousesError] = useState<string | null>(null);
-  const [warehouses, setWarehouses] = useState<WarehouseListItem[]>([]);
-
-  async function loadWarehouses() {
-    setWarehousesLoading(true);
-    setWarehousesError(null);
-    try {
-      const res = await fetchWarehouses();
-      const list = (res?.data ?? []) as WarehouseListItem[];
-      setWarehouses(list);
-      return list;
-    } catch (e) {
-      console.error("load warehouses failed", e);
-      setWarehouses([]);
-      setWarehousesError("加载仓库列表失败");
-      return [];
-    } finally {
-      setWarehousesLoading(false);
-    }
-  }
-
-  const warehouseLabelById = useMemo(() => {
-    const m: Record<number, string> = {};
-    for (const w of warehouses ?? []) {
-      m[w.id] = warehouseLabel(w);
-    }
-    return m;
-  }, [warehouses]);
-
-  useEffect(() => {
-    void loadWarehouses();
-  }, []);
-
   return (
     <div className={UI.page}>
       <PageTitle title="快递网点" />
@@ -90,10 +46,13 @@ const ShippingProvidersListPage: React.FC = () => {
       <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-5 py-4">
         <div className="text-sm text-slate-700">
           本页是物流配置入口：先选择或新建快递网点，再进入网点配置页维护
-          <span className="font-semibold text-slate-900">基础信息、联系人、仓库绑定、运价方案</span> 四块内容。
+          <span className="font-semibold text-slate-900">
+            基础信息、联系人、仓库绑定、运价方案
+          </span>
+          四块内容。
         </div>
         <div className="mt-2 text-sm text-slate-500">
-          这里展示的是网点列表；深度编辑不在列表页完成，而在“编辑网点”页面内收口。
+          这里展示的是网点主数据列表；运营层面的“网点 × 仓库 × 运价状态”总览，已经独立到“运价管理”页面。
         </div>
       </div>
 
@@ -117,7 +76,6 @@ const ShippingProvidersListPage: React.FC = () => {
         onSearchChange={vm.providersHook.setSearch}
         onRefresh={() => {
           void vm.providersHook.loadProviders();
-          void loadWarehouses();
         }}
         onCreateProvider={() => navigate("/tms/providers/new")}
         onEditProvider={(p) => navigate(`/tms/providers/${p.id}/edit`)}
@@ -125,9 +83,6 @@ const ShippingProvidersListPage: React.FC = () => {
           if (!canWrite) return;
           void vm.providersHook.toggleProviderActive(p);
         }}
-        warehouseLabelById={warehouseLabelById}
-        warehousesLoading={warehousesLoading}
-        warehousesError={warehousesError}
       />
     </div>
   );
