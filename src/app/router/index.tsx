@@ -145,6 +145,22 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
+            path="tms/pricing"
+            element={
+              <RequirePermission permission="report.outbound">
+                <P.PricingPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="tms/pricing/workbench/:schemeId"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.SchemeWorkbenchFlowPage />
+              </RequirePermission>
+            }
+          />
+          <Route
             path="tms/reports"
             element={
               <RequirePermission permission="report.outbound">
