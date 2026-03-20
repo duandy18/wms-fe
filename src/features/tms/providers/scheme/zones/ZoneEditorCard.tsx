@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { PricingSchemeZone } from "../../api";
 import { RegionSelector } from "../components/RegionSelector";
-import { UI } from "../ui";
+import { UI } from "../../../pricingTemplates/workbench/ui";
 import { buildProvinceOccupancy } from "./regionRules";
 import { buildNameFromProvinces, extractProvinceMembers, getErrorMessage } from "./zonesHelpers";
 import { ZoneList } from "./ZoneList";

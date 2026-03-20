@@ -7,7 +7,7 @@
 // - 支持“已占用省份禁用 + 显示占用原因（人话）”
 
 import React, { useMemo, useState } from "react";
-import { UI } from "../ui";
+import { UI } from "../../../pricingTemplates/workbench/ui";
 
 const CN_PROVINCES: string[] = [
   "北京市",

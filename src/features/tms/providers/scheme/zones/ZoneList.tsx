@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import type { PricingSchemeZone } from "../../api";
 import { ZoneRow } from "./ZoneRow";
-import { UI } from "../ui";
+import { UI } from "../../../pricingTemplates/workbench/ui";
 
 export const ZoneList: React.FC<{
   zones: PricingSchemeZone[];

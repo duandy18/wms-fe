@@ -42,9 +42,12 @@ export const StockLedgerPage = lazy(
   () => import("../../features/inventory/ledger/StockLedgerPage"),
 );
 
-// 物流：运价管理 / 发货成本报表 / 发货账本详情
+// 物流：运价管理 / 运价工作台 / 发货成本报表 / 发货账本详情
 export const PricingPage = lazy(
   () => import("../../features/tms/pricing/pages/PricingPage"),
+);
+export const PricingWorkbenchFlowPage = lazy(
+  () => import("../../features/tms/pricingTemplates/workbench/PricingWorkbenchFlowPage"),
 );
 export const TransportReportsPage = lazy(
   () => import("../../features/tms/reports/pages/TransportReportsPage"),
@@ -108,7 +111,7 @@ export const ShippingProvidersListPage = lazy(
   () => import("../../features/tms/providers/ShippingProvidersListPage"),
 );
 
-// 快递网点编辑页（页面中承载网点基本信息 / 联系人 / 仓库绑定 / 运价方案）
+// 快递网点编辑页（仅维护网点基本信息 / 联系人）
 export const ShippingProviderEditPage = lazy(
   () => import("../../features/tms/providers/pages/ShippingProviderEditPage"),
 );
@@ -116,11 +119,6 @@ export const ShippingProviderEditPage = lazy(
 // 快递网点详情页（当前收敛到编辑页入口）
 export const ShippingProviderDetailPage = lazy(
   () => import("../../features/tms/providers/pages/ShippingProviderDetailPage"),
-);
-
-// 运价方案工作台（纵向主线页）
-export const SchemeWorkbenchFlowPage = lazy(
-  () => import("../../features/tms/providers/scheme/SchemeWorkbenchFlowPage"),
 );
 
 // 采购系统

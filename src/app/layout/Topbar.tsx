@@ -84,12 +84,8 @@ export function Topbar() {
 
       // 物流
       {
-        prefix: "/tms/pricing/workbench/",
-        value: { section: "物流", page: "运价方案工作台" },
-      },
-      {
-        prefix: "/tms/providers/schemes/",
-        value: { section: "物流", page: "运价方案工作台" },
+        prefix: "/tms/pricing-templates/",
+        value: { section: "物流", page: "运价工作台" },
       },
       {
         prefix: "/tms/providers/new",

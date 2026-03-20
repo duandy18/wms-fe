@@ -2,7 +2,7 @@
 
 import React from "react";
 import type { PricingSchemeZone } from "../../api";
-import { UI } from "../ui";
+import { UI } from "../../../pricingTemplates/workbench/ui";
 
 export const ZoneRow: React.FC<{
   zone: PricingSchemeZone;
