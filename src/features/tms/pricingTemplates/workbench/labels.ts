@@ -1,0 +1,14 @@
+// src/features/tms/pricingTemplates/workbench/labels.ts
+
+export const L = {
+  loading: "加载中…",
+  empty: "暂无数据",
+  notSelected: "请先选择一个运价方案。",
+  loadFailed: "加载方案明细失败",
+
+  tabZones: "区域分类",
+  tabSegments: "重量段方案",
+  tabBrackets: "价格录入",
+  tabDestAdjustments: "目的地附加费",
+  tabPreview: "算价预览",
+};

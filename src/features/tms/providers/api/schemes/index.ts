@@ -1,5 +1,5 @@
 // src/features/tms/providers/api/schemes/index.ts
-import { apiGet, apiPost, apiPatch, apiDelete } from "../../../../../lib/api";
+import { apiGet, apiPost } from "../../../../../lib/api";
 import type {
   PricingScheme,
   PricingSchemeDetail,
@@ -9,13 +9,21 @@ import type {
 
 export async function fetchPricingSchemes(
   providerId: number,
-  params?: { active?: boolean; include_archived?: boolean; include_inactive?: boolean },
+  params?: {
+    active?: boolean;
+    include_archived?: boolean;
+    include_inactive?: boolean;
+  },
 ): Promise<PricingScheme[]> {
   const qs = new URLSearchParams();
 
   if (params?.active !== undefined) qs.set("active", String(params.active));
-  if (params?.include_archived !== undefined) qs.set("include_archived", String(params.include_archived));
-  if (params?.include_inactive !== undefined) qs.set("include_inactive", String(params.include_inactive));
+  if (params?.include_archived !== undefined) {
+    qs.set("include_archived", String(params.include_archived));
+  }
+  if (params?.include_inactive !== undefined) {
+    qs.set("include_inactive", String(params.include_inactive));
+  }
 
   const query = qs.toString();
   const path = query
@@ -26,11 +34,9 @@ export async function fetchPricingSchemes(
   return res.data;
 }
 
-export async function fetchPricingSchemeDetail(schemeId: number): Promise<PricingSchemeDetail> {
-  const res = await apiGet<SchemeDetailResponse>(`/pricing-schemes/${schemeId}`);
-  return res.data;
-}
-
+// 当前后端创建合同仍挂在 provider 路径上。
+// 这里暂保留给 provider 维度列表/过渡能力使用；
+// Pricing 主线页面应统一从 src/features/tms/pricing/api.ts 调用创建入口。
 export async function createPricingScheme(
   providerId: number,
   payload: {
@@ -47,38 +53,9 @@ export async function createPricingScheme(
     effective_to?: string | null;
   },
 ): Promise<PricingSchemeDetail> {
-  const res = await apiPost<SchemeDetailResponse>(`/shipping-providers/${providerId}/pricing-schemes`, payload);
+  const res = await apiPost<SchemeDetailResponse>(
+    `/shipping-providers/${providerId}/pricing-schemes`,
+    payload,
+  );
   return res.data;
-}
-
-export async function patchPricingScheme(
-  schemeId: number,
-  payload: Partial<{
-    name: string;
-    active: boolean;
-    archived_at: string | null;
-    priority: number;
-    currency: string;
-    effective_from: string | null;
-    effective_to: string | null;
-    billable_weight_rule: Record<string, unknown> | null;
-    default_pricing_mode: string;
-  }>,
-): Promise<PricingSchemeDetail> {
-  const res = await apiPatch<SchemeDetailResponse>(`/pricing-schemes/${schemeId}`, payload);
-  return res.data;
-}
-
-export async function publishPricingScheme(schemeId: number): Promise<PricingSchemeDetail> {
-  const res = await apiPost<SchemeDetailResponse>(`/pricing-schemes/${schemeId}/publish`, {});
-  return res.data;
-}
-
-export async function clonePricingScheme(schemeId: number): Promise<PricingSchemeDetail> {
-  const res = await apiPost<SchemeDetailResponse>(`/pricing-schemes/${schemeId}/clone`, {});
-  return res.data;
-}
-
-export async function deletePricingScheme(schemeId: number): Promise<{ ok: boolean }> {
-  return apiDelete<{ ok: boolean }>(`/pricing-schemes/${schemeId}`);
 }

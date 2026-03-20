@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchShippingProviders, type ShippingProvider } from "../../providers/api";
+import { fetchShippingProviders } from "../../providers/api/providers";
+import type { ShippingProvider } from "../../providers/api/types";
 import type { ReconciliationCarrierOption } from "../types";
 
-function toCarrierOption(provider: ShippingProvider): ReconciliationCarrierOption | null {
+function toCarrierOption(
+  provider: ShippingProvider,
+): ReconciliationCarrierOption | null {
   const code = String(provider.code ?? "").trim();
   const name = String(provider.name ?? "").trim();
   if (!code || !name) return null;
@@ -20,9 +23,14 @@ export function useReconciliationCarrierOptions() {
     try {
       const providers = await fetchShippingProviders({});
       const next = providers
-        .map((provider) => toCarrierOption(provider))
-        .filter((item): item is ReconciliationCarrierOption => item !== null)
-        .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+        .map((provider: ShippingProvider) => toCarrierOption(provider))
+        .filter(
+          (item: ReconciliationCarrierOption | null): item is ReconciliationCarrierOption =>
+            item !== null,
+        )
+        .sort((a: ReconciliationCarrierOption, b: ReconciliationCarrierOption) =>
+          a.name.localeCompare(b.name, "zh-CN"),
+        );
       setOptions(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载快递公司失败");

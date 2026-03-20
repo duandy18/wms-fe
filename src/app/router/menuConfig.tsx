@@ -6,7 +6,7 @@
 //
 // 本轮收口：
 // - “物流”从主数据中独立出来，作为一级业务分区
-// - 快递网点、运价方案、发货成本报表、发货账本详情统一归入“物流”
+// - 快递网点、运价管理、发货成本报表、发货账本详情统一归入“物流”
 // - 不再保留 /logistics/providers 之类的别名兼容入口
 // - 菜单仅保留当前正式业务入口，调试工具不出现在侧边栏
 
@@ -112,7 +112,7 @@ export const menuSections: RouteSection[] = [
         requiredPermissions: ["report.outbound"],
       },
 
-      // 深链：快递网点编辑页（页面内部承载网点基本信息 / 联系人 / 仓库绑定 / 运价方案）
+      // 深链：快递网点主数据编辑页（仅维护基础信息 / 联系人）
       {
         path: "/tms/providers/new",
         label: "新建快递网点",
@@ -128,18 +128,6 @@ export const menuSections: RouteSection[] = [
       {
         path: "/tms/providers/:providerId/edit",
         label: "编辑快递网点",
-        requiredPermissions: ["config.store.write"],
-        showInSidebar: false,
-      },
-      {
-        path: "/tms/providers/:providerId/schemes",
-        label: "快递网点运价方案",
-        requiredPermissions: ["config.store.write"],
-        showInSidebar: false,
-      },
-      {
-        path: "/tms/providers/schemes/:schemeId/workbench-flow",
-        label: "运价方案工作台",
         requiredPermissions: ["config.store.write"],
         showInSidebar: false,
       },

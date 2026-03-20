@@ -2,18 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  fetchPricingList,
   bindPricing,
-  updatePricingBinding,
+  fetchPricingList,
+  fetchPricingProviderOptions,
+  setPricingBindingActive,
+  type PricingProviderOption,
 } from "../api";
-import { createPricingScheme } from "../../providers/api/schemes";
 import type {
   PricingFiltersState,
   PricingListRow,
   PricingStatus,
 } from "../types";
 
-type WarehouseOption = {
+export type WarehouseOption = {
   warehouse_id: number;
   warehouse_name: string;
 };
@@ -32,7 +33,7 @@ const DEFAULT_FILTERS: PricingFiltersState = {
 const STATUS_OPTIONS: StatusOption[] = [
   { value: "ready", label: "已就绪" },
   { value: "no_active_scheme", label: "缺启用运价" },
-  { value: "binding_disabled", label: "仓库绑定停用" },
+  { value: "binding_disabled", label: "关系停用" },
   { value: "provider_disabled", label: "网点停用" },
 ];
 
@@ -51,15 +52,24 @@ function includesKeyword(row: PricingListRow, keyword: string): boolean {
     .includes(text);
 }
 
-function buildDefaultSchemeName(row: PricingListRow): string {
-  return `${row.provider_name}-${row.warehouse_name}-基础运价`;
-}
-
 export function usePricingPage() {
   const [rows, setRows] = useState<PricingListRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [providersLoading, setProvidersLoading] = useState(false);
+  const [providersError, setProvidersError] = useState("");
+  const [providerOptions, setProviderOptions] = useState<PricingProviderOption[]>([]);
+
   const [filters, setFilters] = useState<PricingFiltersState>(DEFAULT_FILTERS);
+
+  // ===== 绑定仓库卡 =====
+  const [bindProviderId, setBindProviderId] = useState("");
+  const [bindWarehouseId, setBindWarehouseId] = useState("");
+  const [bindActive, setBindActive] = useState(true);
+  const [bindingSubmitting, setBindingSubmitting] = useState(false);
+  const [bindingError, setBindingError] = useState("");
+  const [bindingOk, setBindingOk] = useState("");
 
   const reload = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -76,9 +86,27 @@ export function usePricingPage() {
     }
   }, []);
 
+  const reloadProviders = useCallback(async (): Promise<void> => {
+    setProvidersLoading(true);
+    setProvidersError("");
+
+    try {
+      const list = await fetchPricingProviderOptions();
+      setProviderOptions(list);
+    } catch (err) {
+      setProviderOptions([]);
+      setProvidersError(
+        err instanceof Error ? err.message : "加载快递网点选项失败",
+      );
+    } finally {
+      setProvidersLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void reload();
-  }, [reload]);
+    void reloadProviders();
+  }, [reload, reloadProviders]);
 
   const bindRow = useCallback(
     async (row: PricingListRow) => {
@@ -90,36 +118,12 @@ export function usePricingPage() {
 
   const toggleBinding = useCallback(
     async (row: PricingListRow) => {
-      await updatePricingBinding(row.provider_id, row.warehouse_id, {
-        active: !row.binding_active,
-      });
+      await setPricingBindingActive(
+        row.provider_id,
+        row.warehouse_id,
+        !row.binding_active,
+      );
       await reload();
-    },
-    [reload],
-  );
-
-  const updatePriority = useCallback(
-    async (row: PricingListRow, priority: number) => {
-      await updatePricingBinding(row.provider_id, row.warehouse_id, {
-        priority,
-      });
-      await reload();
-    },
-    [reload],
-  );
-
-  const createSchemeRow = useCallback(
-    async (row: PricingListRow) => {
-      const detail = await createPricingScheme(row.provider_id, {
-        warehouse_id: row.warehouse_id,
-        name: buildDefaultSchemeName(row),
-        currency: "CNY",
-        default_pricing_mode: "linear_total",
-        billable_weight_strategy: "actual_only",
-        rounding_mode: "none",
-      });
-      await reload();
-      return detail.id;
     },
     [reload],
   );
@@ -205,21 +209,75 @@ export function usePricingPage() {
     };
   }, [filteredRows]);
 
+  useEffect(() => {
+    setBindingError("");
+    setBindingOk("");
+  }, [bindProviderId, bindWarehouseId, bindActive]);
+
+  const submitBindCard = useCallback(async (): Promise<void> => {
+    setBindingError("");
+    setBindingOk("");
+
+    const providerIdNum = Number(bindProviderId);
+    const warehouseIdNum = Number(bindWarehouseId);
+
+    if (!Number.isFinite(providerIdNum) || providerIdNum <= 0) {
+      setBindingError("请选择快递网点");
+      return;
+    }
+
+    if (!Number.isFinite(warehouseIdNum) || warehouseIdNum <= 0) {
+      setBindingError("请选择仓库");
+      return;
+    }
+
+    setBindingSubmitting(true);
+    try {
+      await bindPricing(providerIdNum, warehouseIdNum);
+
+      if (!bindActive) {
+        await setPricingBindingActive(providerIdNum, warehouseIdNum, false);
+      }
+
+      await reload();
+      setBindingOk("已完成仓库绑定");
+    } catch (err) {
+      setBindingError(err instanceof Error ? err.message : "绑定仓库失败");
+    } finally {
+      setBindingSubmitting(false);
+    }
+  }, [bindActive, bindProviderId, bindWarehouseId, reload]);
+
   return {
     rows: filteredRows,
     rawRows: rows,
     loading,
     error,
+
+    providersLoading,
+    providersError,
+    providerOptions,
+
     filters,
     warehouseOptions,
     statusOptions: STATUS_OPTIONS,
     summary,
+
     setField,
     reset,
     reload,
     bindRow,
     toggleBinding,
-    updatePriority,
-    createSchemeRow,
+
+    bindProviderId,
+    bindWarehouseId,
+    bindActive,
+    bindingSubmitting,
+    bindingError,
+    bindingOk,
+    setBindProviderId,
+    setBindWarehouseId,
+    setBindActive,
+    submitBindCard,
   };
 }

@@ -1,23 +1,22 @@
 // src/features/tms/providers/ShippingProvidersListPage.tsx
 //
-// 快递网点列表页（物流配置入口）
+// 快递网点列表页（主数据入口）
+//
 // 语义说明：
-// - 本页面是“快递网点”业务的入口页，不承担联系人 / 仓库绑定 / 运价方案的深度编辑。
-// - 点击“编辑网点”后进入网点配置容器页，在同一页面内维护：
+// - 本页面只负责“快递网点”主数据管理。
+// - 列表页只做两件事：
+//   1) 列表展示
+//   2) 进入“新建 / 编辑网点”页面
+// - 网点编辑页只维护：
 //   1) 基础信息
 //   2) 联系人
-//   3) 仓库绑定
-//   4) 运价方案
-// - 运价方案的深度编辑继续进入 workbench-flow 工作台。
+// - 仓库绑定、运价创建、工作台入口，统一收敛到 Pricing 页。
 // - 当前阶段：快递网点与快递品牌共表存储（不单独拆 Account）
 // - 后续可平滑演进为 carrier_accounts
 //
-// ✅ 当前页面只做两件事：
-// - 列表展示
-// - 进入“新建 / 编辑网点”主容器
-//
-// ✅ 当前页刻意不展示“所属仓库”单值：
-// - 仓库关系应通过“仓库绑定”维护；
+// 真相优先：
+// - 这里展示的是网点主数据列表；
+// - 运营层面的“网点 × 仓库 × 运价状态”总览，统一在“运价管理”页面处理。
 // - 列表页不再使用历史 warehouse_id 伪装单仓归属，避免误导。
 
 import React from "react";
@@ -35,7 +34,6 @@ const ShippingProvidersListPage: React.FC = () => {
   const navigate = useNavigate();
   const vm = useShippingProvidersPage();
 
-  // ✅ 合同：配置域写权限统一用 config.store.write
   const { can } = useAuth();
   const canWrite = can("config.store.write");
 
@@ -45,14 +43,14 @@ const ShippingProvidersListPage: React.FC = () => {
 
       <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-5 py-4">
         <div className="text-sm text-slate-700">
-          本页是物流配置入口：先选择或新建快递网点，再进入网点配置页维护
+          本页维护快递网点主数据。进入编辑页后，只维护
           <span className="font-semibold text-slate-900">
-            基础信息、联系人、仓库绑定、运价方案
+            基础信息、联系人
           </span>
-          四块内容。
+          两块内容。
         </div>
         <div className="mt-2 text-sm text-slate-500">
-          这里展示的是网点主数据列表；运营层面的“网点 × 仓库 × 运价状态”总览，已经独立到“运价管理”页面。
+          仓库绑定、运价创建、运价工作台入口，已统一收敛到“运价管理”页面。
         </div>
       </div>
 

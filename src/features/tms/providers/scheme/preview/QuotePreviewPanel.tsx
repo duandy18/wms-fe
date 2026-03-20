@@ -11,10 +11,10 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../../../../../lib/api";
-import type { CalcOut, Dims } from "./types";
-import { normalizeAddrPart, toReasonsList } from "./utils";
-import { QuotePreviewForm, type GeoItem } from "./QuotePreviewForm";
-import { QuotePreviewResult } from "./QuotePreviewResult";
+import type { CalcOut, Dims } from "../../../pricingTemplates/workbench/explain/types";
+import { normalizeAddrPart, toReasonsList } from "../../../pricingTemplates/workbench/explain/utils";
+import { QuotePreviewForm, type GeoItem } from "../../../pricingTemplates/workbench/explain/QuotePreviewForm";
+import { QuotePreviewResult } from "../../../pricingTemplates/workbench/explain/QuotePreviewResult";
 
 // ✅ 复用仓库域现有接口：不引入新后端能力
 import { fetchActiveWarehouses } from "../../../../admin/warehouses/api";
@@ -310,7 +310,7 @@ export const QuotePreviewPanel: React.FC<{
         cities={cities}
         provinceCode={provinceCode}
         cityCode={cityCode}
-        onChangeProvinceCode={(v) => {
+        onChangeProvinceCode={(v: string) => {
           setProvinceCode(v);
           setCityCode("");
         }}

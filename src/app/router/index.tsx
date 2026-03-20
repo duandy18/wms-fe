@@ -20,12 +20,6 @@ function RedirectToProviderEdit() {
   return <Navigate to={`/tms/providers/${providerId}/edit`} replace />;
 }
 
-function RedirectToProviderEditFromSchemes() {
-  const { providerId } = useParams();
-  if (!providerId) return <Navigate to="/tms/providers" replace />;
-  return <Navigate to={`/tms/providers/${providerId}/edit`} replace />;
-}
-
 /* 路由入口 */
 const AppRouter: React.FC = () => {
   return (
@@ -153,10 +147,10 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="tms/pricing/workbench/:schemeId"
+            path="tms/pricing-templates/:schemeId"
             element={
               <RequirePermission permission="config.store.write">
-                <P.SchemeWorkbenchFlowPage />
+                <P.PricingWorkbenchFlowPage />
               </RequirePermission>
             }
           />
@@ -405,14 +399,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          <Route
-            path="tms/providers/:providerId/schemes"
-            element={
-              <RequirePermission permission="config.store.write">
-                <RedirectToProviderEditFromSchemes />
-              </RequirePermission>
-            }
-          />
 
           <Route
             path="tms/providers/new"
@@ -428,15 +414,6 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="config.store.write">
                 <P.ShippingProviderEditPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="tms/providers/schemes/:schemeId/workbench-flow"
-            element={
-              <RequirePermission permission="config.store.write">
-                <P.SchemeWorkbenchFlowPage />
               </RequirePermission>
             }
           />
