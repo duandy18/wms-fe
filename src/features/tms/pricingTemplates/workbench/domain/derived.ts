@@ -1,9 +1,9 @@
 // src/features/tms/pricingTemplates/workbench/domain/derived.ts
 //
-// 运价工作台（单 scheme 主线）纯函数与派生逻辑。
+// 运价工作台（单 template 主线）纯函数与派生逻辑。
 
 import type {
-  GroupProvinceRow,
+  GroupMemberRow,
   GroupRow,
   MatrixCellDraft,
   MatrixCellView,
@@ -40,8 +40,8 @@ export function summarizeProvinceNames(provinceNames: string[]): string {
   return cleaned.join(" / ");
 }
 
-export function buildGroupInternalName(provinces: GroupProvinceRow[], index: number): string {
-  const names = provinces.map((p) => p.provinceName.trim()).filter(Boolean);
+export function buildGroupInternalName(members: GroupMemberRow[], index: number): string {
+  const names = members.map((p) => p.provinceName.trim()).filter(Boolean);
   if (names.length === 0) return `区域组${index + 1}`;
   return summarizeProvinceNames(names);
 }
@@ -183,14 +183,14 @@ export function validateGroupRows(rows: GroupRow[]): string[] {
   const owner = new Map<string, string>();
 
   items.forEach((g, idx) => {
-    const provinces = (g.provinces ?? []).filter((p) => p.provinceName.trim() || p.provinceCode.trim());
-    if (provinces.length === 0) {
+    const members = (g.members ?? []).filter((p) => p.provinceName.trim() || p.provinceCode.trim());
+    if (members.length === 0) {
       errors.push(`第 ${idx + 1} 条区域行至少需要 1 个省份`);
       return;
     }
 
     const seen = new Set<string>();
-    provinces.forEach((p) => {
+    members.forEach((p) => {
       const key = `${p.provinceCode.trim()}::${p.provinceName.trim()}`;
       if (seen.has(key)) {
         errors.push(`区域行 ${idx + 1} 内存在重复省份：${p.provinceName || p.provinceCode}`);
@@ -293,7 +293,7 @@ export function deriveMatrixRows(args: {
     .filter((g) => !g.isDeleted && typeof g.id === "number")
     .map((g) => {
       const groupId = g.id as number;
-      const provinceNames = (g.provinces ?? []).map((p) => p.provinceName).filter(Boolean);
+      const provinceNames = (g.members ?? []).map((p) => p.provinceName).filter(Boolean);
 
       const cells: MatrixCellView[] = columns.map((col) => {
         const key = buildCellKey(groupId, col.moduleRangeId);
@@ -443,7 +443,7 @@ export function deriveWorkbenchState(args: {
     blockers.push({
       code: "UNSAVED_CHANGES",
       message: "当前存在未保存修改，请先保存后再发布。",
-      scope: "scheme",
+      scope: "template",
     });
   }
 

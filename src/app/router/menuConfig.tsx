@@ -6,7 +6,7 @@
 //
 // 本轮收口：
 // - “物流”从主数据中独立出来，作为一级业务分区
-// - 快递网点、运价管理、发货成本报表、发货账本详情统一归入“物流”
+// - 快递网点、运价管理、运价模板、发货成本报表、发货记录统一归入“物流”
 // - 不再保留 /logistics/providers 之类的别名兼容入口
 // - 菜单仅保留当前正式业务入口，调试工具不出现在侧边栏
 
@@ -90,6 +90,11 @@ export const menuSections: RouteSection[] = [
         path: "/tms/pricing",
         label: "运价管理",
         requiredPermissions: ["report.outbound"],
+      },
+      {
+        path: "/tms/templates",
+        label: "运价模板",
+        requiredPermissions: ["config.store.write"],
       },
       {
         path: "/tms/records",

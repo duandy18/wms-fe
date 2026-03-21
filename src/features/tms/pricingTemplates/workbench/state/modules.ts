@@ -2,8 +2,7 @@
 //
 // 分拆说明：
 // - 从 usePricingWorkbench.ts 中拆出。
-// - 当前只负责“单 scheme 资源数据加载”动作：loadAll。
-// - 历史上这里叫 modules.ts，但当前语义已不再是“双模块加载”。
+// - 当前只负责“单 template 资源数据加载”动作：loadAll。
 // - 当前不负责：
 //   1) 页面级状态装配
 //   2) ranges / groups / matrix / surcharges 的编辑动作
@@ -15,16 +14,16 @@
 
 import { useCallback } from "react";
 import {
-  fetchSchemeGroups,
-  fetchSchemeMatrixCells,
-  fetchSchemeRanges,
+  fetchTemplateGroups,
+  fetchTemplateMatrixCells,
+  fetchTemplateRanges,
 } from "../api/modules";
 import type { MatrixCellDraft, GroupRow, RangeRow } from "../domain/types";
 import { sortGroups, sortRanges } from "../domain/derived";
 import { mapCellApiToDraft, mapGroupApiToRow, mapRangeApiToRow } from "./mappers";
 
 type Args = {
-  schemeId: number;
+  templateId: number;
   setLoading: (updater: (prev: boolean) => boolean) => void;
   setRanges: (updater: (prev: RangeRow[]) => RangeRow[]) => void;
   setGroups: (updater: (prev: GroupRow[]) => GroupRow[]) => void;
@@ -33,7 +32,7 @@ type Args = {
 };
 
 export function useModuleLoadActions(args: Args) {
-  const { schemeId, setLoading, setRanges, setGroups, setCells, setLoadError } = args;
+  const { templateId, setLoading, setRanges, setGroups, setCells, setLoadError } = args;
 
   const loadAll = useCallback(async () => {
     setLoading(() => true);
@@ -41,9 +40,9 @@ export function useModuleLoadActions(args: Args) {
 
     try {
       const [rangesResp, groupsResp, cellsResp] = await Promise.all([
-        fetchSchemeRanges(schemeId),
-        fetchSchemeGroups(schemeId),
-        fetchSchemeMatrixCells(schemeId),
+        fetchTemplateRanges(templateId),
+        fetchTemplateGroups(templateId),
+        fetchTemplateMatrixCells(templateId),
       ]);
 
       const nextRanges = sortRanges((rangesResp.ranges ?? []).map(mapRangeApiToRow));
@@ -59,12 +58,12 @@ export function useModuleLoadActions(args: Args) {
       setGroups(() => nextGroups);
       setCells(() => nextCells);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "加载运价工作台失败";
+      const msg = e instanceof Error ? e.message : "加载运价模板工作台失败";
       setLoadError(msg);
     } finally {
       setLoading(() => false);
     }
-  }, [schemeId, setCells, setGroups, setLoadError, setLoading, setRanges]);
+  }, [templateId, setCells, setGroups, setLoadError, setLoading, setRanges]);
 
   return {
     loadAll,

@@ -1,95 +1,92 @@
 // src/features/tms/pricingTemplates/workbench/api/modules.ts
 //
-// 运价工作台（单 scheme 主线）接口封装。
-// 只使用后端终态合同：ranges / groups / matrix-cells。
+// 分拆说明：
+// - 本文件负责 workbench 下模块资源的 API 调用：
+//   - ranges
+//   - groups
+//   - matrix-cells
+// - 已统一走新后端前缀：/tms/pricing/templates
+// - 严禁再使用旧路径 /templates
 
-import { apiDelete, apiGet, apiPost, apiPut } from "../../../../../lib/api";
+import { apiGet, apiPost, apiPut, apiDelete } from "../../../../../lib/api";
 import type {
-  ModuleGroupApi,
-  ModuleGroupsResponse,
-  ModuleMatrixCellsPutPayload,
-  ModuleMatrixCellsResponse,
-  ModuleRangesPutPayload,
   ModuleRangesResponse,
+  ModuleGroupsResponse,
+  ModuleGroupSingleResponse,
+  ModuleGroupDeleteResponse,
+  ModuleMatrixCellsResponse,
 } from "./types";
 
-export interface ModuleGroupWritePayload {
-  sort_order?: number | null;
-  active?: boolean;
-  provinces: Array<{
-    province_code?: string | null;
-    province_name?: string | null;
-  }>;
+/* ==================== ranges ==================== */
+
+export async function fetchTemplateRanges(templateId: number) {
+  return apiGet<ModuleRangesResponse>(
+    `/tms/pricing/templates/${templateId}/ranges`,
+  );
 }
 
-export interface ModuleGroupSingleResponse {
-  ok: boolean;
-  group: ModuleGroupApi;
-}
-
-export interface ModuleGroupDeleteResponse {
-  ok: boolean;
-  deleted_group_id: number;
-}
-
-export async function fetchSchemeRanges(
-  schemeId: number,
-): Promise<ModuleRangesResponse> {
-  return apiGet<ModuleRangesResponse>(`/pricing-schemes/${schemeId}/ranges`);
-}
-
-export async function putSchemeRanges(
-  schemeId: number,
-  payload: ModuleRangesPutPayload,
-): Promise<ModuleRangesResponse> {
-  return apiPut<ModuleRangesResponse>(`/pricing-schemes/${schemeId}/ranges`, payload);
-}
-
-export async function fetchSchemeGroups(
-  schemeId: number,
-): Promise<ModuleGroupsResponse> {
-  return apiGet<ModuleGroupsResponse>(`/pricing-schemes/${schemeId}/groups`);
-}
-
-export async function createSchemeGroup(
-  schemeId: number,
-  payload: ModuleGroupWritePayload,
-): Promise<ModuleGroupSingleResponse> {
-  return apiPost<ModuleGroupSingleResponse>(`/pricing-schemes/${schemeId}/groups`, payload);
-}
-
-export async function updateSchemeGroup(
-  schemeId: number,
-  groupId: number,
-  payload: ModuleGroupWritePayload,
-): Promise<ModuleGroupSingleResponse> {
-  return apiPut<ModuleGroupSingleResponse>(
-    `/pricing-schemes/${schemeId}/groups/${groupId}`,
+export async function putTemplateRanges(
+  templateId: number,
+  payload: unknown,
+) {
+  return apiPut<ModuleRangesResponse>(
+    `/tms/pricing/templates/${templateId}/ranges`,
     payload,
   );
 }
 
-export async function deleteSchemeGroup(
-  schemeId: number,
-  groupId: number,
-): Promise<ModuleGroupDeleteResponse> {
-  return apiDelete<ModuleGroupDeleteResponse>(
-    `/pricing-schemes/${schemeId}/groups/${groupId}`,
+/* ==================== groups ==================== */
+
+export async function fetchTemplateGroups(templateId: number) {
+  return apiGet<ModuleGroupsResponse>(
+    `/tms/pricing/templates/${templateId}/groups`,
   );
 }
 
-export async function fetchSchemeMatrixCells(
-  schemeId: number,
-): Promise<ModuleMatrixCellsResponse> {
-  return apiGet<ModuleMatrixCellsResponse>(`/pricing-schemes/${schemeId}/matrix-cells`);
+export async function createTemplateGroup(
+  templateId: number,
+  payload: unknown,
+) {
+  return apiPost<ModuleGroupSingleResponse>(
+    `/tms/pricing/templates/${templateId}/groups`,
+    payload,
+  );
 }
 
-export async function putSchemeMatrixCells(
-  schemeId: number,
-  payload: ModuleMatrixCellsPutPayload,
-): Promise<ModuleMatrixCellsResponse> {
+export async function updateTemplateGroup(
+  templateId: number,
+  groupId: number,
+  payload: unknown,
+) {
+  return apiPut<ModuleGroupSingleResponse>(
+    `/tms/pricing/templates/${templateId}/groups/${groupId}`,
+    payload,
+  );
+}
+
+export async function deleteTemplateGroup(
+  templateId: number,
+  groupId: number,
+) {
+  return apiDelete<ModuleGroupDeleteResponse>(
+    `/tms/pricing/templates/${templateId}/groups/${groupId}`,
+  );
+}
+
+/* ==================== matrix ==================== */
+
+export async function fetchTemplateMatrixCells(templateId: number) {
+  return apiGet<ModuleMatrixCellsResponse>(
+    `/tms/pricing/templates/${templateId}/matrix-cells`,
+  );
+}
+
+export async function putTemplateMatrixCells(
+  templateId: number,
+  payload: unknown,
+) {
   return apiPut<ModuleMatrixCellsResponse>(
-    `/pricing-schemes/${schemeId}/matrix-cells`,
+    `/tms/pricing/templates/${templateId}/matrix-cells`,
     payload,
   );
 }

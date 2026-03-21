@@ -13,12 +13,12 @@
 
 import { useCallback } from "react";
 import {
-  batchCreateProvinceSurchargeConfigs,
-  createSurchargeConfig,
-  deleteSurchargeConfig,
-  patchSurchargeConfig,
-} from "../../../../providers/api/surcharges";
-import type { PricingSchemeSurchargeConfig } from "../../../../providers/api/types";
+  batchCreatePricingTemplateProvinceSurchargeConfigs,
+  createPricingTemplateSurchargeConfig,
+  deletePricingTemplateSurchargeConfig,
+  patchPricingTemplateSurchargeConfig,
+} from "../../../api";
+import type { PricingTemplateSurchargeConfig } from "../../../types";
 import type { SurchargeRuleRow } from "../../domain/types";
 import { mapSurchargeConfigApiToRow } from "../mappers";
 import type { ProvinceBatchDraft } from "./helpers";
@@ -32,7 +32,7 @@ import {
 } from "./helpers";
 
 type Args = {
-  schemeId: number;
+  templateId: number;
   disabled: boolean;
   surcharges: SurchargeRuleRow[];
   provinceDrafts: ProvinceBatchDraft[];
@@ -51,7 +51,7 @@ export type SurchargeSaveResult = {
 
 export function useSurchargeSaveActions(args: Args) {
   const {
-    schemeId,
+    templateId,
     disabled,
     surcharges,
     provinceDrafts,
@@ -109,12 +109,12 @@ export function useSurchargeSaveActions(args: Args) {
       const deletedRows = provinceRows.filter((x) => x.isDeleted && typeof x.id === "number");
 
       for (const row of deletedRows) {
-        await deleteSurchargeConfig(row.id as number);
+        await deletePricingTemplateSurchargeConfig(row.id as number);
       }
 
       let createdRows: SurchargeRuleRow[] = [];
       if (provinceDrafts.length > 0) {
-        const result = await batchCreateProvinceSurchargeConfigs(schemeId, {
+        const result = await batchCreatePricingTemplateProvinceSurchargeConfigs(templateId, {
           items: provinceDrafts.map((item) => ({
             province_code: trim(item.provinceCode),
             province_name: trim(item.provinceName) || null,
@@ -131,7 +131,7 @@ export function useSurchargeSaveActions(args: Args) {
       for (const row of aliveProvinceRows) {
         if (row.id == null || !row.isDirty) continue;
 
-        const updated = await patchSurchargeConfig(row.id, {
+        const updated = await patchPricingTemplateSurchargeConfig(row.id, {
           province_code: trim(row.provinceCode),
           province_name: trim(row.provinceName) || null,
           province_mode: "province",
@@ -162,7 +162,7 @@ export function useSurchargeSaveActions(args: Args) {
   }, [
     disabled,
     provinceDrafts,
-    schemeId,
+    templateId,
     setProvinceDrafts,
     setSavingSurcharges,
     setSurcharges,
@@ -186,10 +186,10 @@ export function useSurchargeSaveActions(args: Args) {
       setSavingSurcharges(true);
 
       try {
-        let saved: PricingSchemeSurchargeConfig;
+        let saved: PricingTemplateSurchargeConfig;
 
         if (target.id == null) {
-          saved = await createSurchargeConfig(schemeId, {
+          saved = await createPricingTemplateSurchargeConfig(templateId, {
             province_code: trim(target.provinceCode),
             province_name: trim(target.provinceName) || null,
             province_mode: "cities",
@@ -203,7 +203,7 @@ export function useSurchargeSaveActions(args: Args) {
             })),
           });
         } else {
-          saved = await patchSurchargeConfig(target.id, {
+          saved = await patchPricingTemplateSurchargeConfig(target.id, {
             province_code: trim(target.provinceCode),
             province_name: trim(target.provinceName) || null,
             province_mode: "cities",
@@ -237,7 +237,7 @@ export function useSurchargeSaveActions(args: Args) {
     },
     [
       disabled,
-      schemeId,
+      templateId,
       setSavingSurcharges,
       setSurcharges,
       surcharges,

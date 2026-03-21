@@ -14,9 +14,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  createSurchargeCityContainer,
-  deleteSurchargeConfig,
-} from "../../../../providers/api/surcharges";
+  createPricingTemplateSurchargeCityContainer,
+  deletePricingTemplateSurchargeConfig,
+} from "../../../api";
 import type {
   SurchargeConfigCityRow,
   SurchargeRuleRow,
@@ -29,7 +29,7 @@ import { sortRows, trim, type ProvinceBatchDraft, type ProvinceSelection } from 
 import { useSurchargeSaveActions } from "./save";
 
 type Args = {
-  schemeId: number;
+  templateId: number;
   disabled: boolean;
   surcharges: SurchargeRuleRow[];
   setSurcharges: React.Dispatch<React.SetStateAction<SurchargeRuleRow[]>>;
@@ -40,7 +40,7 @@ type Args = {
 
 export function useSurchargeActions(args: Args) {
   const {
-    schemeId,
+    templateId,
     disabled,
     surcharges,
     setSurcharges,
@@ -53,7 +53,7 @@ export function useSurchargeActions(args: Args) {
 
   useEffect(() => {
     setProvinceDrafts([]);
-  }, [schemeId]);
+  }, [templateId]);
 
   const addProvinceDraft = useCallback((item: ProvinceSelection) => {
     const provinceCode = trim(item.provinceCode);
@@ -119,7 +119,7 @@ export function useSurchargeActions(args: Args) {
       setSuccess(null);
 
       try {
-        const created = await createSurchargeCityContainer(schemeId, {
+        const created = await createPricingTemplateSurchargeCityContainer(templateId, {
           province_code: provinceCode,
           province_name: provinceName || null,
           active: true,
@@ -137,7 +137,7 @@ export function useSurchargeActions(args: Args) {
         setSavingSurcharges(false);
       }
     },
-    [disabled, schemeId, setError, setSavingSurcharges, setSuccess, setSurcharges],
+    [disabled, templateId, setError, setSavingSurcharges, setSuccess, setSurcharges],
   );
 
   const updateSurchargeRow = useCallback(
@@ -204,7 +204,7 @@ export function useSurchargeActions(args: Args) {
         setSuccess(null);
 
         try {
-          await deleteSurchargeConfig(target.id as number);
+          await deletePricingTemplateSurchargeConfig(target.id as number);
           setSurcharges((prev) => prev.filter((row) => row.clientId !== clientId));
           setSuccess(`${trim(target.provinceName) || trim(target.provinceCode)} 城市附加费已删除。`);
         } catch (e) {
@@ -282,7 +282,7 @@ export function useSurchargeActions(args: Args) {
   );
 
   const { saveProvinceWorkspace, saveCityRow } = useSurchargeSaveActions({
-    schemeId,
+    templateId,
     disabled,
     surcharges,
     provinceDrafts,

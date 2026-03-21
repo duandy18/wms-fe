@@ -22,13 +22,15 @@
 //   - 第五张卡“算价与解释”继续复用页面外层 ExplainSection，不在本文件扩张。
 //   - 省份选项拉取 effect 严禁依赖整个 wb 对象，避免因对象引用变化导致重复拉取与页面抖动。
 //   - 区域范围卡当前仍采用“单一省份面板 + 当前编辑行”模式，避免每新增一行就重复整套省份网格。
-//   - 第四刀后：区域范围改为“整体保存”，不再逐行提交。
+//   - 当前终态：区域范围按“逐行保存”收口，不再提供整卡统一保存。
 
 import React from "react";
-import type { PricingSchemeDetail } from "../../providers/api/types";
-import { fetchGeoProvinces, type GeoItem } from "../../providers/api/geo";
+import type { GeoItem } from "../../providers/api/geo";
+import { fetchGeoProvinces } from "../../providers/api/geo";
+import type { PricingTemplateDetail } from "../types";
 import { UI } from "./ui";
 import { deriveMatrixColumns, deriveMatrixRows } from "./domain/derived";
+import type { GroupRow } from "./domain/types";
 import { usePricingWorkbench } from "./usePricingWorkbench";
 import CellEditor from "./cards/CellEditor";
 import GroupsCard from "./cards/GroupsCard";
@@ -37,10 +39,14 @@ import RangesCard from "./cards/RangesCard";
 import SurchargesCard from "./cards/SurchargesCard";
 
 type Props = {
-  detail: PricingSchemeDetail;
+  detail: PricingTemplateDetail;
   disabled: boolean;
   onError: (msg: string) => void;
 };
+
+function isPersistedGroup(row: GroupRow): boolean {
+  return !row.isDeleted && typeof row.id === "number" && !row.isNew;
+}
 
 export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onError }) => {
   const wb = usePricingWorkbench({ detail, disabled });
@@ -49,7 +55,6 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
   const [provinceError, setProvinceError] = React.useState<string | null>(null);
   const [activeGroupClientId, setActiveGroupClientId] = React.useState<string | null>(null);
 
-  // 保存成功后，当前轮不自动回选首行；等用户主动点“编辑该行”后再恢复。
   const [suppressAutoPick, setSuppressAutoPick] = React.useState(false);
 
   const {
@@ -72,9 +77,9 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
     provinceLoading,
     setProvinceLoading,
     addGroup,
-    saveGroups,
+    saveGroupRow,
     removeGroup,
-    setGroupProvinces,
+    setGroupMembers,
     saveCells,
     updateCellMode,
     toggleCellActive,
@@ -175,9 +180,9 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
     const out = new Map<string, string>();
 
     moduleState.groups
-      .filter((g) => !g.isDeleted)
+      .filter(isPersistedGroup)
       .forEach((g) => {
-        g.provinces.forEach((p) => {
+        g.members.forEach((p) => {
           const code = p.provinceCode.trim();
           if (!code) return;
           if (!out.has(code)) {
@@ -189,14 +194,17 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
     return out;
   }, [moduleState.groups]);
 
-  const handleSaveGroups = React.useCallback(async () => {
-    const saved = await saveGroups();
-    if (saved) {
-      setSuppressAutoPick(true);
-      setActiveGroupClientId(null);
-    }
-    return saved;
-  }, [saveGroups]);
+  const handleSaveGroupRow = React.useCallback(
+    async (clientId: string) => {
+      const saved = await saveGroupRow(clientId);
+      if (saved) {
+        setSuppressAutoPick(false);
+        setActiveGroupClientId(null);
+      }
+      return saved;
+    },
+    [saveGroupRow],
+  );
 
   const cityErrorByClientId = React.useMemo(() => {
     const out: Record<string, string | null> = {};
@@ -324,7 +332,7 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
           const nextClientId = addGroup();
           setActiveGroupClientId(nextClientId);
         }}
-        onSaveGroups={handleSaveGroups}
+        onSaveGroupRow={handleSaveGroupRow}
         onRemoveGroup={(clientId) => {
           const nextGroups = aliveGroups.filter((g) => g.clientId !== clientId);
           if (activeGroupClientId === clientId) {
@@ -332,8 +340,8 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
           }
           void removeGroup(clientId);
         }}
-        onSetGroupProvinces={(clientId, provinces) =>
-          setGroupProvinces(clientId, provinces)
+        onSetGroupMembers={(clientId, members) =>
+          setGroupMembers(clientId, members)
         }
       />
 

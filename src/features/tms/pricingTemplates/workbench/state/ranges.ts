@@ -13,7 +13,7 @@
 //   - 本文件聚焦重量段，不要吸收别的子域动作。
 
 import { useCallback } from "react";
-import { fetchSchemeMatrixCells, putSchemeRanges } from "../api/modules";
+import { fetchTemplateMatrixCells, putTemplateRanges } from "../api/modules";
 import {
   newClientId,
   sortRanges,
@@ -28,7 +28,7 @@ import type {
 import { mapCellApiToDraft, mapRangeApiToRow } from "./mappers";
 
 type Args = {
-  schemeId: number;
+  templateId: number;
   disabled: boolean;
   ranges: RangeRow[];
   setRanges: (updater: (prev: RangeRow[]) => RangeRow[]) => void;
@@ -44,7 +44,7 @@ function nextDefaultPricingMode(rows: RangeRow[]): PricingMode {
 
 export function useRangesActions(args: Args) {
   const {
-    schemeId,
+    templateId,
     disabled,
     ranges,
     setRanges,
@@ -156,11 +156,11 @@ export function useRangesActions(args: Args) {
         })),
       };
 
-      const resp = await putSchemeRanges(schemeId, payload);
+      const resp = await putTemplateRanges(templateId, payload);
 
       setRanges(() => sortRanges((resp.ranges ?? []).map(mapRangeApiToRow)));
 
-      const cellsResp = await fetchSchemeMatrixCells(schemeId);
+      const cellsResp = await fetchTemplateMatrixCells(templateId);
       const nextCells: Record<string, MatrixCellDraft> = {};
       (cellsResp.cells ?? []).forEach((cellRow) => {
         const draft = mapCellApiToDraft(cellRow);
@@ -183,7 +183,7 @@ export function useRangesActions(args: Args) {
     } finally {
       setSavingRanges(() => false);
     }
-  }, [disabled, ranges, schemeId, setCells, setRanges, setRangesFeedback, setSavingRanges]);
+  }, [disabled, ranges, templateId, setCells, setRanges, setRangesFeedback, setSavingRanges]);
 
   return {
     addRange,

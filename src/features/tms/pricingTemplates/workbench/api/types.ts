@@ -1,9 +1,10 @@
 // src/features/tms/pricingTemplates/workbench/api/types.ts
 //
-// 运价工作台（单 scheme 主线）API 类型：
+// 运价工作台（单 template 主线）API 类型：
 // - 严格对应后端终态合同：ranges / groups / matrix-cells
 // - 不再暴露 standard / other / moduleCode
-// - 命名历史上保留 Module* 前缀以减少本轮连带改动，但语义已是单 scheme 资源
+// - 命名历史上保留 Module* 前缀以减少本轮连带改动，但语义已是单 template 资源
+// - 本文件补齐 group 单条返回与删除返回，供 modules.ts 直接复用
 
 export type PricingMode = "flat" | "linear_total" | "step_over" | "manual_quote";
 
@@ -41,7 +42,7 @@ export interface ModuleGroupProvinceApi {
 
 export interface ModuleGroupApi {
   id: number;
-  scheme_id: number;
+  template_id: number;
   name: string;
   sort_order: number;
   active: boolean;
@@ -53,7 +54,17 @@ export interface ModuleGroupsResponse {
   groups: ModuleGroupApi[];
 }
 
-export interface ModuleGroupProvincePutItem {
+export interface ModuleGroupSingleResponse {
+  ok: boolean;
+  group: ModuleGroupApi;
+}
+
+export interface ModuleGroupDeleteResponse {
+  ok: boolean;
+  deleted_group_id: number;
+}
+
+export interface ModuleGroupProvinceWriteIn {
   province_code?: string | null;
   province_name?: string | null;
 }

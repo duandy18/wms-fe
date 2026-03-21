@@ -1,6 +1,6 @@
 // src/features/tms/pricingTemplates/workbench/domain/types.ts
 //
-// 运价工作台（单 scheme 主线）领域类型。
+// 运价工作台（单 template 主线）领域类型。
 // 说明：
 // - 输入态金额/重量统一用 string，提交前再 parse
 // - matrix 只使用后端真实 id，不依赖未保存 group/range 临时键
@@ -33,7 +33,7 @@ export type RangeRow = {
   isDeleted: boolean;
 };
 
-export type GroupProvinceRow = {
+export type GroupMemberRow = {
   provinceCode: string;
   provinceName: string;
 };
@@ -43,7 +43,7 @@ export type GroupRow = {
   clientId: string;
 
   name: string;
-  provinces: GroupProvinceRow[];
+  members: GroupMemberRow[];
 
   sortOrder: number;
   active: boolean;
@@ -162,13 +162,13 @@ export type ModuleEditorState = {
 export type WorkbenchBlocker = {
   code: string;
   message: string;
-  scope: "scheme" | "ranges" | "groups" | "matrix" | "surcharges";
+  scope: "template" | "ranges" | "groups" | "matrix" | "surcharges";
 };
 
 export type WorkbenchWarning = {
   code: string;
   message: string;
-  scope: "scheme" | "matrix" | "quote-explain";
+  scope: "template" | "matrix" | "quote-explain";
 };
 
 export type WorkbenchDerivedState = {

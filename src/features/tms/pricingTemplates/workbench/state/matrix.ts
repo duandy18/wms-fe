@@ -17,7 +17,7 @@
 //   - 单元格状态真相收口在这里；不要把 matrix 保存逻辑散回 UI 组件。
 
 import { useCallback } from "react";
-import { putSchemeMatrixCells } from "../api/modules";
+import { putTemplateMatrixCells } from "../api/modules";
 import {
   buildCellKey,
   createEmptyCellDraft,
@@ -37,7 +37,7 @@ import type {
 import { mapCellApiToDraft } from "./mappers";
 
 type Args = {
-  schemeId: number;
+  templateId: number;
   disabled: boolean;
   ranges: RangeRow[];
   groups: GroupRow[];
@@ -62,7 +62,7 @@ function clearFeedbackIfNeeded(
 
 export function useMatrixActions(args: Args) {
   const {
-    schemeId,
+    templateId,
     disabled,
     ranges,
     groups,
@@ -222,7 +222,7 @@ export function useMatrixActions(args: Args) {
     });
 
     try {
-      const resp = await putSchemeMatrixCells(schemeId, {
+      const resp = await putTemplateMatrixCells(templateId, {
         cells: cellsPayload,
       });
 
@@ -249,7 +249,7 @@ export function useMatrixActions(args: Args) {
     } finally {
       setSavingCells(() => false);
     }
-  }, [cells, disabled, groups, ranges, schemeId, setCells, setMatrixFeedback, setSavingCells]);
+  }, [cells, disabled, groups, ranges, templateId, setCells, setMatrixFeedback, setSavingCells]);
 
   return {
     updateCellMode,

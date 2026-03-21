@@ -1,7 +1,7 @@
 // src/features/tms/pricingTemplates/workbench/usePricingWorkbench.ts
 //
 // 分拆说明：
-// - 本文件是“运价工作台主 hook 装配层”，由原先超长单文件状态总控继续收口而来。
+// - 本文件是“运价模板工作台主 hook 装配层”，由原先超长单文件状态总控继续收口而来。
 // - 当前只负责：
 //   1) 挂接 React 状态
 //   2) 装配 ranges / groups / matrix / surcharge_configs 四块状态
@@ -23,7 +23,7 @@
 //   - 本文件应保持“装配层”定位，而不是重新膨胀为杂货铺。
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { PricingSchemeDetail } from "../../providers/api/types";
+import type { PricingTemplateDetail } from "../types";
 import { deriveWorkbenchState } from "./domain/derived";
 import type {
   CitySaveFeedbackMap,
@@ -42,7 +42,7 @@ import { useMatrixActions } from "./state/matrix";
 import { useSurchargeActions } from "./state/surcharges";
 
 export function usePricingWorkbench(args: {
-  detail: PricingSchemeDetail;
+  detail: PricingTemplateDetail;
   disabled?: boolean;
 }) {
   const { detail, disabled = false } = args;
@@ -83,7 +83,7 @@ export function usePricingWorkbench(args: {
     useState<CitySaveFeedbackMap>({});
 
   const { loadAll } = useModuleLoadActions({
-    schemeId: detail.id,
+    templateId: detail.id,
     setLoading,
     setRanges,
     setGroups,
@@ -107,7 +107,7 @@ export function usePricingWorkbench(args: {
     removeRange,
     saveRanges,
   } = useRangesActions({
-    schemeId: detail.id,
+    templateId: detail.id,
     disabled,
     ranges,
     setRanges,
@@ -122,10 +122,10 @@ export function usePricingWorkbench(args: {
     addProvinceMember,
     removeProvinceMember,
     updateProvinceMember,
-    setGroupProvinces,
-    saveGroups,
+    setGroupMembers,
+    saveGroupRow,
   } = useGroupsActions({
-    schemeId: detail.id,
+    templateId: detail.id,
     disabled,
     groups,
     setGroups,
@@ -140,7 +140,7 @@ export function usePricingWorkbench(args: {
     toggleCellActive,
     saveCells,
   } = useMatrixActions({
-    schemeId: detail.id,
+    templateId: detail.id,
     disabled,
     ranges,
     groups,
@@ -165,7 +165,7 @@ export function usePricingWorkbench(args: {
     saveProvinceWorkspace: rawSaveProvinceWorkspace,
     saveCityRow: rawSaveCityRow,
   } = useSurchargeActions({
-    schemeId: detail.id,
+    templateId: detail.id,
     disabled,
     surcharges,
     setSurcharges,
@@ -280,8 +280,8 @@ export function usePricingWorkbench(args: {
     addProvinceMember,
     removeProvinceMember,
     updateProvinceMember,
-    setGroupProvinces,
-    saveGroups,
+    setGroupMembers,
+    saveGroupRow,
 
     updateCellMode,
     updateCellField,

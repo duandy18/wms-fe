@@ -1,10 +1,11 @@
 // src/features/tms/pricing/types.ts
 
 export type PricingStatus =
-  | "provider_disabled"
+  | "ready"
+  | "no_active_template"
   | "binding_disabled"
-  | "no_active_scheme"
-  | "ready";
+  | "provider_disabled"
+  | "template_archived";
 
 export interface PricingListRow {
   provider_id: number;
@@ -17,9 +18,8 @@ export interface PricingListRow {
 
   binding_active: boolean;
 
-  active_scheme_id: number | null;
-  active_scheme_name: string | null;
-  active_scheme_status: string | null;
+  active_template_id: number | null;
+  active_template_name: string | null;
 
   pricing_status: PricingStatus;
 }

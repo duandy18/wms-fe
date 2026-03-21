@@ -33,16 +33,16 @@ function mapCalcErrorToCn(e: unknown, fallback: string): string {
 
   const m = raw.toLowerCase();
 
-  if (m.includes("scheme not found")) {
-    return "未找到该收费标准，请刷新页面后重试。";
+  if (m.includes("template not found")) {
+    return "未找到该运价模板，请刷新页面后重试。";
   }
 
-  if (m.includes("scheme archived")) {
-    return "该收费标准已归档，不能用于试算；请改用其他方案或先克隆为草稿。";
+  if (m.includes("template archived")) {
+    return "该运价模板已归档，不能用于试算；请改用其他模板或先克隆为草稿。";
   }
 
-  if (m.includes("scheme not effective")) {
-    return "该收费标准当前未生效或不在有效期内，不能用于试算。";
+  if (m.includes("template not effective")) {
+    return "该运价模板当前未生效或不在有效期内，不能用于试算。";
   }
 
   if (
@@ -56,18 +56,18 @@ function mapCalcErrorToCn(e: unknown, fallback: string): string {
     return "当前计费重未命中任何价格矩阵单元格，请先检查重量段与矩阵配置。";
   }
 
-  if (m.includes("only draft scheme can be modified")) {
-    return "当前方案不是草稿，不能直接修改；如需编辑，请先克隆为新的草稿方案。";
+  if (m.includes("only draft template can be modified")) {
+    return "当前模板不是草稿，不能直接修改；如需编辑，请先克隆为新的草稿模板。";
   }
 
   return raw;
 }
 
 export const QuoteExplainCard: React.FC<{
-  schemeId: number;
+  templateId: number;
   disabled: boolean;
   onError: (msg: string) => void;
-}> = ({ schemeId, disabled, onError }) => {
+}> = ({ templateId, disabled, onError }) => {
   // ===== 起运仓（必填前置）=====
   const wh = useQuoteExplainWarehouses({ onError });
 
@@ -122,8 +122,8 @@ export const QuoteExplainCard: React.FC<{
   const [result, setResult] = useState<CalcOut | null>(null);
 
   const handleCalc = async () => {
-    if (!schemeId || schemeId <= 0) {
-      onError("缺少 scheme_id");
+    if (!templateId || templateId <= 0) {
+      onError("缺少模板 ID");
       return;
     }
     if (
@@ -152,10 +152,11 @@ export const QuoteExplainCard: React.FC<{
 
     setLoading(true);
     setResult(null);
+    onError("");
 
     try {
       const body: Record<string, unknown> = {
-        scheme_id: schemeId,
+        template_id: templateId,
         warehouse_id: wh.parsedWarehouseId,
 
         dest: {
@@ -180,6 +181,7 @@ export const QuoteExplainCard: React.FC<{
       const res = await apiPost<CalcOut>("/shipping-quote/calc", body);
       toReasonsList(res);
       setResult(res);
+      onError("");
     } catch (e: unknown) {
       onError(mapCalcErrorToCn(e, "算价失败，请稍后重试。"));
       setResult(null);
