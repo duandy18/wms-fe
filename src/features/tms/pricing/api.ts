@@ -1,20 +1,11 @@
 // src/features/tms/pricing/api.ts
 
-import { apiDelete, apiGet, apiPatch, apiPost } from "../../../lib/api";
-import type {
-  PricingSchemeDetail,
-  SchemeDetailResponse,
-} from "../providers/api/types";
+import { apiGet, apiPatch, apiPost } from "../../../lib/api";
 import type { PricingListResponse } from "./types";
 
 type ListResponse<T> = {
   ok: boolean;
   data: T[];
-};
-
-type OneResponse<T> = {
-  ok: boolean;
-  data: T;
 };
 
 type ShippingProviderLite = {
@@ -29,14 +20,6 @@ export type PricingProviderOption = {
   provider_name: string;
   provider_code: string;
   provider_active: boolean;
-};
-
-export type PricingSchemeCreateResult = {
-  id: number;
-  shipping_provider_id: number;
-  warehouse_id?: number;
-  name: string;
-  status?: string;
 };
 
 export async function fetchPricingList(): Promise<PricingListResponse> {
@@ -91,79 +74,4 @@ export async function setPricingBindingActive(
   await apiPatch(`/tms/pricing/bindings/${providerId}/${warehouseId}`, {
     active,
   });
-}
-
-// 当前后端创建合同仍挂在 provider 路径上；
-// 这里统一封装到 pricing 主线，页面层不再直接依赖 providers/api/schemes。
-export async function createPricingSchemeForBinding(args: {
-  providerId: number;
-  warehouseId: number;
-  name: string;
-  currency?: string;
-}): Promise<PricingSchemeCreateResult> {
-  const res = await apiPost<OneResponse<PricingSchemeCreateResult>>(
-    `/shipping-providers/${args.providerId}/pricing-schemes`,
-    {
-      warehouse_id: args.warehouseId,
-      name: args.name,
-      currency: args.currency ?? "CNY",
-    },
-  );
-  return res.data;
-}
-
-// ===== Scheme by id：统一收口到 Pricing 主线 =====
-
-export async function fetchPricingSchemeDetail(
-  schemeId: number,
-): Promise<PricingSchemeDetail> {
-  const res = await apiGet<SchemeDetailResponse>(`/pricing-schemes/${schemeId}`);
-  return res.data;
-}
-
-export async function patchPricingScheme(
-  schemeId: number,
-  payload: Partial<{
-    name: string;
-    active: boolean;
-    archived_at: string | null;
-    priority: number;
-    currency: string;
-    effective_from: string | null;
-    effective_to: string | null;
-    billable_weight_rule: Record<string, unknown> | null;
-    default_pricing_mode: string;
-  }>,
-): Promise<PricingSchemeDetail> {
-  const res = await apiPatch<SchemeDetailResponse>(
-    `/pricing-schemes/${schemeId}`,
-    payload,
-  );
-  return res.data;
-}
-
-export async function publishPricingScheme(
-  schemeId: number,
-): Promise<PricingSchemeDetail> {
-  const res = await apiPost<SchemeDetailResponse>(
-    `/pricing-schemes/${schemeId}/publish`,
-    {},
-  );
-  return res.data;
-}
-
-export async function clonePricingScheme(
-  schemeId: number,
-): Promise<PricingSchemeDetail> {
-  const res = await apiPost<SchemeDetailResponse>(
-    `/pricing-schemes/${schemeId}/clone`,
-    {},
-  );
-  return res.data;
-}
-
-export async function deletePricingScheme(
-  schemeId: number,
-): Promise<{ ok: boolean }> {
-  return apiDelete<{ ok: boolean }>(`/pricing-schemes/${schemeId}`);
 }

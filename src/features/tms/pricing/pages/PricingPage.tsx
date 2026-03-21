@@ -40,12 +40,16 @@ const PricingPage: React.FC = () => {
   } = usePricingPage();
 
   const actionDisabled = providersLoading || loading;
+  const abnormalCount =
+    summary.bindingDisabledCount +
+    summary.providerDisabledCount +
+    summary.templateArchivedCount;
 
   return (
     <div className="space-y-4 p-6">
       <PageTitle
-        title="服务关系管理"
-        description={`当前 ${summary.total} 行，已就绪 ${summary.readyCount}，缺运价 ${summary.noActiveSchemeCount}，关系停用 ${summary.bindingDisabledCount}，网点停用 ${summary.providerDisabledCount}`}
+        title="运价管理"
+        description={`当前 ${summary.total} 行，已就绪 ${summary.readyCount}，未挂模板 ${summary.noActiveTemplateCount}，异常 ${abnormalCount}`}
       />
 
       {providersError ? (
@@ -54,7 +58,7 @@ const PricingPage: React.FC = () => {
         </div>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-5">
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
           <div className="text-sm text-emerald-700">已就绪</div>
           <div className="mt-2 text-2xl font-semibold text-emerald-900">
@@ -63,23 +67,30 @@ const PricingPage: React.FC = () => {
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
-          <div className="text-sm text-amber-700">缺运价</div>
+          <div className="text-sm text-amber-700">未挂模板</div>
           <div className="mt-2 text-2xl font-semibold text-amber-900">
-            {summary.noActiveSchemeCount}
+            {summary.noActiveTemplateCount}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4">
-          <div className="text-sm text-orange-700">关系停用</div>
-          <div className="mt-2 text-2xl font-semibold text-orange-900">
+        <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
+          <div className="text-sm text-slate-700">绑定停用</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">
             {summary.bindingDisabledCount}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
-          <div className="text-sm text-rose-700">网点停用</div>
-          <div className="mt-2 text-2xl font-semibold text-rose-900">
+        <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
+          <div className="text-sm text-slate-700">网点停用</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">
             {summary.providerDisabledCount}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
+          <div className="text-sm text-slate-700">模板已归档</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">
+            {summary.templateArchivedCount}
           </div>
         </div>
       </section>

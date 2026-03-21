@@ -32,9 +32,10 @@ const DEFAULT_FILTERS: PricingFiltersState = {
 
 const STATUS_OPTIONS: StatusOption[] = [
   { value: "ready", label: "已就绪" },
-  { value: "no_active_scheme", label: "缺启用运价" },
-  { value: "binding_disabled", label: "关系停用" },
+  { value: "no_active_template", label: "未挂模板" },
+  { value: "binding_disabled", label: "绑定停用" },
   { value: "provider_disabled", label: "网点停用" },
+  { value: "template_archived", label: "模板已归档" },
 ];
 
 function includesKeyword(row: PricingListRow, keyword: string): boolean {
@@ -46,6 +47,7 @@ function includesKeyword(row: PricingListRow, keyword: string): boolean {
     row.provider_name,
     row.warehouse_name,
     String(row.warehouse_id),
+    row.active_template_name ?? "",
   ]
     .join(" ")
     .toLowerCase()
@@ -190,8 +192,8 @@ export function usePricingPage() {
     const readyCount = filteredRows.filter(
       (x) => x.pricing_status === "ready",
     ).length;
-    const noActiveSchemeCount = filteredRows.filter(
-      (x) => x.pricing_status === "no_active_scheme",
+    const noActiveTemplateCount = filteredRows.filter(
+      (x) => x.pricing_status === "no_active_template",
     ).length;
     const bindingDisabledCount = filteredRows.filter(
       (x) => x.pricing_status === "binding_disabled",
@@ -199,13 +201,17 @@ export function usePricingPage() {
     const providerDisabledCount = filteredRows.filter(
       (x) => x.pricing_status === "provider_disabled",
     ).length;
+    const templateArchivedCount = filteredRows.filter(
+      (x) => x.pricing_status === "template_archived",
+    ).length;
 
     return {
       total: filteredRows.length,
       readyCount,
-      noActiveSchemeCount,
+      noActiveTemplateCount,
       bindingDisabledCount,
       providerDisabledCount,
+      templateArchivedCount,
     };
   }, [filteredRows]);
 

@@ -84,8 +84,8 @@ export function Topbar() {
 
       // 物流
       {
-        prefix: "/tms/pricing-templates/",
-        value: { section: "物流", page: "运价工作台" },
+        prefix: "/tms/templates",
+        value: { section: "物流", page: "运价模板" },
       },
       {
         prefix: "/tms/providers/new",
@@ -97,7 +97,7 @@ export function Topbar() {
       },
       {
         prefix: "/tms/pricing",
-        value: { section: "物流", page: "服务关系管理" },
+        value: { section: "物流", page: "运价管理" },
       },
       {
         prefix: "/tms/dispatch",
@@ -105,11 +105,11 @@ export function Topbar() {
       },
       {
         prefix: "/tms/reports",
-        value: { section: "物流", page: "运输报表" },
+        value: { section: "物流", page: "快递成本分析" },
       },
       {
         prefix: "/tms/records",
-        value: { section: "物流", page: "运输台帐" },
+        value: { section: "物流", page: "发货记录" },
       },
 
       // 仓内作业

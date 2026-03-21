@@ -2,11 +2,11 @@
 
 import React from "react";
 import FlowSectionCard from "../FlowSectionCard";
-import type { PricingSchemeDetail } from "../../../../providers/api/types";
+import type { PricingTemplateDetail } from "../../../../pricingTemplates/types";
 import PricingWorkbenchPanel from "../../PricingWorkbenchPanel";
 
 type Props = {
-  detail: PricingSchemeDetail;
+  detail: PricingTemplateDetail;
   disabled: boolean;
   onError: (msg: string) => void;
 };

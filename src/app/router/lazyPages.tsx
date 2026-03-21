@@ -42,12 +42,15 @@ export const StockLedgerPage = lazy(
   () => import("../../features/inventory/ledger/StockLedgerPage"),
 );
 
-// 物流：运价管理 / 运价工作台 / 发货成本报表 / 发货账本详情
+// 物流：运价管理 / 运价模板 / 发货成本报表 / 发货账本详情
 export const PricingPage = lazy(
   () => import("../../features/tms/pricing/pages/PricingPage"),
 );
-export const PricingWorkbenchFlowPage = lazy(
-  () => import("../../features/tms/pricingTemplates/workbench/PricingWorkbenchFlowPage"),
+export const TemplatesPage = lazy(
+  () => import("../../features/tms/pricingTemplates/pages/TemplatesPage"),
+);
+export const TemplateWorkbenchPage = lazy(
+  () => import("../../features/tms/pricingTemplates/workbench/TemplateWorkbenchPage"),
 );
 export const TransportReportsPage = lazy(
   () => import("../../features/tms/reports/pages/TransportReportsPage"),

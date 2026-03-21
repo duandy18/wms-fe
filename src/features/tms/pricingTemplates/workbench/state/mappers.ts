@@ -14,7 +14,7 @@
 // - 维护约束：
 //   - 本文件只放纯函数；不要引入 useState/useEffect 等 React 逻辑。
 
-import type { PricingSchemeSurchargeConfig } from "../../../providers/api/types";
+import type { PricingTemplateSurchargeConfig } from "../../types";
 import type {
   ModuleGroupApi,
   ModuleMatrixCellApi,
@@ -52,7 +52,7 @@ export function mapGroupApiToRow(row: ModuleGroupApi): GroupRow {
     id: row.id,
     clientId: `group:${row.id}`,
     name: row.name,
-    provinces: (row.provinces ?? []).map((p) => ({
+    members: (row.provinces ?? []).map((p) => ({
       provinceCode: p.province_code ?? "",
       provinceName: p.province_name ?? "",
     })),
@@ -92,7 +92,7 @@ function sortCityLike(a: SurchargeConfigCityRow, b: SurchargeConfigCityRow): num
   return ak.localeCompare(bk, "zh-CN");
 }
 
-export function mapSurchargeConfigApiToRow(row: PricingSchemeSurchargeConfig): SurchargeRuleRow {
+export function mapSurchargeConfigApiToRow(row: PricingTemplateSurchargeConfig): SurchargeRuleRow {
   return {
     id: row.id,
     clientId: `surcharge-config:${row.id}`,
@@ -102,7 +102,7 @@ export function mapSurchargeConfigApiToRow(row: PricingSchemeSurchargeConfig): S
     fixedAmount: textFromNumber(row.fixed_amount),
     active: row.active ?? true,
     cities: (row.cities ?? [])
-      .map((city: { id: number; city_code: string; city_name: string | null; fixed_amount: number; active: boolean }) => ({
+      .map((city) => ({
         id: city.id,
         clientId: `surcharge-config-city:${city.id}`,
         cityCode: city.city_code ?? "",
@@ -121,7 +121,7 @@ export function mapSurchargeConfigApiToRow(row: PricingSchemeSurchargeConfig): S
 }
 
 export function mapSurchargeConfigApiListToRows(
-  rows: PricingSchemeSurchargeConfig[],
+  rows: PricingTemplateSurchargeConfig[],
 ): SurchargeRuleRow[] {
   return [...rows].map(mapSurchargeConfigApiToRow).sort(sortProvinceLike);
 }

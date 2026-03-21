@@ -147,10 +147,18 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="tms/pricing-templates/:schemeId"
+            path="tms/templates"
             element={
               <RequirePermission permission="config.store.write">
-                <P.PricingWorkbenchFlowPage />
+                <P.TemplatesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="tms/templates/:templateId"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.TemplateWorkbenchPage />
               </RequirePermission>
             }
           />

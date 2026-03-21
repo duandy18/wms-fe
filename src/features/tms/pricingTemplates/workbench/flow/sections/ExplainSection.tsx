@@ -5,13 +5,13 @@ import FlowSectionCard from "../FlowSectionCard";
 import QuoteExplainCard from "../../explain/QuoteExplainCard";
 
 type Props = {
-  schemeId: number;
+  templateId: number;
   disabled: boolean;
   onError: (msg: string) => void;
 };
 
 const ExplainSection: React.FC<Props> = ({
-  schemeId,
+  templateId,
   disabled,
   onError,
 }) => {
@@ -21,7 +21,7 @@ const ExplainSection: React.FC<Props> = ({
       hint="这里用于试算与解释当前已保存版本的运价结果，不参与未保存草稿推导。"
     >
       <QuoteExplainCard
-        schemeId={schemeId}
+        templateId={templateId}
         disabled={disabled}
         onError={onError}
       />

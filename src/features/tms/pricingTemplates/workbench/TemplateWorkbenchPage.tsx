@@ -1,26 +1,18 @@
-// src/features/tms/pricingTemplates/workbench/PricingWorkbenchFlowPage.tsx
+// src/features/tms/pricingTemplates/workbench/TemplateWorkbenchPage.tsx
 //
-// ✅ 运价工作台（Pricing 主线）
-// - 正式入口：/tms/pricingTemplates/workbench/:schemeId
+// ✅ 运价模板详情页（Template 主线）
+// - 正式入口：/tms/templates/:templateId
 // - 页面顺序：
-//   1) 运价编辑工作台（四卡：重量段 / 区域范围 / 价格矩阵 / 附加费）
+//   1) 模板编辑工作台（四卡：重量段 / 区域范围 / 价格矩阵 / 附加费）
 //   2) 算价解释（只读）
 //
-// 当前页面只承载三阶段模块模型：
-// - modules
-// - ranges
-// - groups
-// - matrix_cells
-// - surcharges
-//
-// 历史旧矩阵整表链路已退出主线页，不再参与渲染。
-// 说明：当前工作台入口壳已迁入 pricingTemplates/workbench；
-// 深层编辑子模块仍暂存于 providers/scheme，下轮继续迁移。
+// 当前页面只负责把“模板页外壳”扶正；
+// 内部四块编辑器继续使用当前 workbench 结构。
 
 import React from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { UI } from "./ui";
-import { useSchemeWorkbench } from "./useSchemeWorkbench";
+import { useTemplateWorkbench } from "./useTemplateWorkbench";
 
 import { WorkbenchHeaderCard } from "./components/WorkbenchHeaderCard";
 import SuccessBar from "./SuccessBar";
@@ -33,13 +25,13 @@ type WorkbenchLocationState = {
   from?: string;
 };
 
-export const PricingWorkbenchFlowPage: React.FC = () => {
+export const TemplateWorkbenchPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const params = useParams<{ schemeId: string }>();
-  const schemeId = params.schemeId ? Number(params.schemeId) : null;
+  const params = useParams<{ templateId: string }>();
+  const templateId = params.templateId ? Number(params.templateId) : null;
 
-  const wb = useSchemeWorkbench({ open: true, schemeId });
+  const wb = useTemplateWorkbench({ open: true, templateId });
   const pageDisabled = wb.loading || wb.refreshing || wb.mutating;
 
   const { okMsg, flashOk, clearOk } = useFlashOkBar({ autoHideMs: 2500 });
@@ -51,7 +43,7 @@ export const PricingWorkbenchFlowPage: React.FC = () => {
       return;
     }
 
-    navigate("/tms/pricing", { replace: true });
+    navigate("/tms/templates", { replace: true });
   };
 
   const draftOnlyDisabled =
@@ -60,10 +52,10 @@ export const PricingWorkbenchFlowPage: React.FC = () => {
   return (
     <div className={UI.page}>
       <WorkbenchHeaderCard
-        schemeId={schemeId}
+        templateId={templateId}
         loading={wb.loading}
         mutating={wb.mutating}
-        summary={wb.summary ? { id: wb.summary.id, name: wb.summary.name } : null}
+        summary={wb.summary}
         providerName={wb.providerName}
         onBack={onBack}
       />
@@ -86,9 +78,9 @@ export const PricingWorkbenchFlowPage: React.FC = () => {
           <>
             {wb.detail.status !== "draft" ? (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                当前方案状态为{" "}
+                当前模板状态为{" "}
                 <span className="font-semibold">{wb.detail.status}</span>
-                ，前端已切为只读。 如需修改，请先克隆为新的 draft，再进入编辑。
+                ，前端已切为只读。如需修改，请先克隆为新的 draft，再进入编辑。
               </div>
             ) : null}
 
@@ -104,7 +96,7 @@ export const PricingWorkbenchFlowPage: React.FC = () => {
             </div>
 
             <ExplainSection
-              schemeId={wb.detail.id}
+              templateId={wb.detail.id}
               disabled={pageDisabled}
               onError={(msg) => {
                 wb.setError(msg);
@@ -118,4 +110,4 @@ export const PricingWorkbenchFlowPage: React.FC = () => {
   );
 };
 
-export default PricingWorkbenchFlowPage;
+export default TemplateWorkbenchPage;

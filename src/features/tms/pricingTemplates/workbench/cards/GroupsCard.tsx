@@ -17,14 +17,14 @@
 // - 维护约束：
 //   - 后续若调整省份选择交互，应继续在本文件内收口；不要再把区域范围 JSX 塞回页面壳。
 //   - 已被其他组占用的省份禁用逻辑，保持在展示层消费父层传入的 provinceOwnerMap。
-//   - 第四刀后：区域范围改为“整体保存”，不再逐行提交。
+//   - 当前终态：区域范围按“逐行保存”收口，不再提供整卡统一保存按钮。
 
 import React from "react";
 import type { GeoItem } from "../../../providers/api/geo";
 import { UI } from "../ui";
 import SuccessBar from "../SuccessBar";
 import { summarizeProvinceNames } from "../domain/derived";
-import type { GroupProvinceRow, GroupRow, ModuleEditorState } from "../domain/types";
+import type { GroupMemberRow, GroupRow, ModuleEditorState } from "../domain/types";
 
 type Props = {
   disabled: boolean;
@@ -39,20 +39,20 @@ type Props = {
   provinceOwnerMap: Map<string, string>;
   onSetActiveGroup: (clientId: string | null) => void;
   onAddGroup: () => void;
-  onSaveGroups: () => Promise<boolean>;
+  onSaveGroupRow: (clientId: string) => Promise<boolean>;
   onRemoveGroup: (clientId: string) => void;
-  onSetGroupProvinces: (clientId: string, provinces: GroupProvinceRow[]) => void;
+  onSetGroupMembers: (clientId: string, members: GroupMemberRow[]) => void;
 };
 
 function normalizeProvinceName(code: string, provinceNameByCode: Map<string, string>): string {
   return provinceNameByCode.get(code) ?? "";
 }
 
-function sortSelectedProvinces(
-  provinces: GroupProvinceRow[],
+function sortSelectedMembers(
+  members: GroupMemberRow[],
   provinceOrder: Map<string, number>,
-): GroupProvinceRow[] {
-  return provinces
+): GroupMemberRow[] {
+  return members
     .slice()
     .sort((a, b) => {
       const ap = provinceOrder.get(a.provinceCode) ?? Number.MAX_SAFE_INTEGER;
@@ -68,10 +68,23 @@ function buildSelectedSummary(
   provinceNameByCode: Map<string, string>,
 ): string {
   return summarizeProvinceNames(
-    sortSelectedProvinces(group.provinces, provinceOrder)
+    sortSelectedMembers(group.members, provinceOrder)
       .map((p) => normalizeProvinceName(p.provinceCode, provinceNameByCode) || p.provinceCode)
       .filter((x) => x.trim().length > 0),
   );
+}
+
+function buildRowStateLabel(group: GroupRow): string {
+  if (group.isNew) return "未保存";
+  if (group.isDirty) return "待保存";
+  return "已保存";
+}
+
+function buildRowStateClass(group: GroupRow): string {
+  if (group.isNew || group.isDirty) {
+    return "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200";
+  }
+  return "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200";
 }
 
 export const GroupsCard: React.FC<Props> = ({
@@ -87,14 +100,14 @@ export const GroupsCard: React.FC<Props> = ({
   provinceOwnerMap,
   onSetActiveGroup,
   onAddGroup,
-  onSaveGroups,
+  onSaveGroupRow,
   onRemoveGroup,
-  onSetGroupProvinces,
+  onSetGroupMembers,
 }) => {
   const aliveGroups = moduleState.groups.filter((g) => !g.isDeleted);
   const activeGroup = aliveGroups.find((g) => g.clientId === activeGroupClientId) ?? null;
   const activeSelectedCodes = new Set(
-    (activeGroup?.provinces ?? []).map((p) => p.provinceCode.trim()).filter((x) => x.length > 0),
+    (activeGroup?.members ?? []).map((p) => p.provinceCode.trim()).filter((x) => x.length > 0),
   );
 
   return (
@@ -103,7 +116,7 @@ export const GroupsCard: React.FC<Props> = ({
         <div>
           <div className={UI.panelTitle}>2）区域范围</div>
           <div className={UI.panelHint}>
-            当前编辑仍按单行切换，但提交改为整卡统一保存。先在下方逐行调整，再统一保存区域范围。
+            现在按“逐行保存”处理。先选择当前行的省份，再在该行点击保存；顶部不再做整卡统一保存。
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -114,14 +127,6 @@ export const GroupsCard: React.FC<Props> = ({
             disabled={disabled || moduleState.savingGroups}
           >
             新增区域行
-          </button>
-          <button
-            type="button"
-            className={UI.btnPrimaryGreen}
-            onClick={() => void onSaveGroups()}
-            disabled={disabled || moduleState.savingGroups}
-          >
-            {moduleState.savingGroups ? "保存中…" : "保存区域范围"}
           </button>
         </div>
       </div>
@@ -149,7 +154,7 @@ export const GroupsCard: React.FC<Props> = ({
               <div className="mt-1 text-xs text-slate-500">
                 {activeGroup
                   ? `已选：${buildSelectedSummary(activeGroup, provinceOrder, provinceNameByCode) || "未选择省份"}`
-                  : "请选择下方某一行进入编辑。所有改动先留在本地，点击右上角统一保存。"}
+                  : "请选择下方某一行进入编辑。当前只保存单行，不再整卡统一保存。"}
               </div>
             </div>
           </div>
@@ -189,11 +194,11 @@ export const GroupsCard: React.FC<Props> = ({
                       onChange={(e) => {
                         const nextChecked = e.target.checked;
 
-                        let nextProvinces: GroupProvinceRow[];
+                        let nextMembers: GroupMemberRow[];
                         if (nextChecked) {
-                          nextProvinces = sortSelectedProvinces(
+                          nextMembers = sortSelectedMembers(
                             [
-                              ...(activeGroup.provinces ?? []).filter((p) => p.provinceCode.trim()),
+                              ...(activeGroup.members ?? []).filter((p) => p.provinceCode.trim()),
                               { provinceCode: code, provinceName: name },
                             ].filter(
                               (p, index, arr) =>
@@ -202,13 +207,13 @@ export const GroupsCard: React.FC<Props> = ({
                             provinceOrder,
                           );
                         } else {
-                          nextProvinces = sortSelectedProvinces(
-                            (activeGroup.provinces ?? []).filter((p) => p.provinceCode !== code),
+                          nextMembers = sortSelectedMembers(
+                            (activeGroup.members ?? []).filter((p) => p.provinceCode !== code),
                             provinceOrder,
                           );
                         }
 
-                        onSetGroupProvinces(activeGroup.clientId, nextProvinces);
+                        onSetGroupMembers(activeGroup.clientId, nextMembers);
                       }}
                     />
                     <span className="truncate">{name}</span>
@@ -238,8 +243,19 @@ export const GroupsCard: React.FC<Props> = ({
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <div className="text-sm font-semibold text-slate-800">第 {idx + 1} 行地区范围</div>
-                    <div className="mt-1 text-xs text-slate-500">已选：{selectedSummary || "未选择省份"}</div>
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-800">
+                      <span>第 {idx + 1} 行地区范围</span>
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${buildRowStateClass(
+                          g,
+                        )}`}
+                      >
+                        {buildRowStateLabel(g)}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      已选：{selectedSummary || "未选择省份"}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
@@ -250,6 +266,15 @@ export const GroupsCard: React.FC<Props> = ({
                       disabled={disabled || moduleState.savingGroups}
                     >
                       {isActive ? "当前编辑中" : "编辑该行"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className={UI.btnNeutralSm}
+                      onClick={() => void onSaveGroupRow(g.clientId)}
+                      disabled={disabled || moduleState.savingGroups}
+                    >
+                      {moduleState.savingGroups ? "保存中…" : "保存该行"}
                     </button>
 
                     <button
