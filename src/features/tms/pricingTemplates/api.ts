@@ -3,12 +3,14 @@
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "../../../lib/api";
 import type {
   PricingTemplate,
+  PricingTemplateCapabilities,
   PricingTemplateCloneInput,
   PricingTemplateCreateInput,
   PricingTemplateDetail,
   PricingTemplateDetailResponse,
   PricingTemplateListQuery,
   PricingTemplateListResponse,
+  PricingTemplateReadonlyReason,
   PricingTemplateSurchargeConfig,
   PricingTemplateStatus,
   PricingTemplateValidationStatus,
@@ -196,11 +198,47 @@ function normalizeConfigStatus(value: unknown): PricingTemplateConfigStatus {
   return "empty";
 }
 
+function normalizeReadonlyReason(
+  value: unknown,
+): PricingTemplateReadonlyReason {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "validated_template") {
+    return "validated_template";
+  }
+  if (normalized === "archived_template") {
+    return "archived_template";
+  }
+  if (normalized === "cloned_template_structure_locked") {
+    return "cloned_template_structure_locked";
+  }
+  return null;
+}
+
+function normalizeCapabilities(
+  value: unknown,
+): PricingTemplateCapabilities {
+  const row =
+    value && typeof value === "object"
+      ? (value as Partial<PricingTemplateCapabilities>)
+      : {};
+
+  return {
+    can_edit_structure: Boolean(row.can_edit_structure),
+    can_submit_validation: Boolean(row.can_submit_validation),
+    can_clone: typeof row.can_clone === "boolean" ? row.can_clone : true,
+    can_archive: Boolean(row.can_archive),
+    can_bind: Boolean(row.can_bind),
+    readonly_reason: normalizeReadonlyReason(row.readonly_reason),
+  };
+}
+
 function normalizePricingTemplateRow(row: PricingTemplate): PricingTemplate {
   return {
     id: Number(row.id),
     shipping_provider_id: Number(row.shipping_provider_id),
     shipping_provider_name: String(row.shipping_provider_name || ""),
+    source_template_id:
+      row.source_template_id == null ? null : Number(row.source_template_id),
     name: String(row.name || ""),
     status: normalizeTemplateStatus(row.status),
     archived_at: row.archived_at ?? null,
@@ -212,6 +250,7 @@ function normalizePricingTemplateRow(row: PricingTemplate): PricingTemplate {
     ranges_count: Number(row.ranges_count ?? 0),
     groups_count: Number(row.groups_count ?? 0),
     matrix_cells_count: Number(row.matrix_cells_count ?? 0),
+    capabilities: normalizeCapabilities(row.capabilities),
   };
 }
 
@@ -250,6 +289,8 @@ function normalizeCreateInput(
   return {
     shipping_provider_id: Number(payload.shipping_provider_id),
     name: String(payload.name || "").trim(),
+    expected_ranges_count: Number(payload.expected_ranges_count),
+    expected_groups_count: Number(payload.expected_groups_count),
   };
 }
 
@@ -359,6 +400,26 @@ export async function fetchPricingTemplateDetail(
 ): Promise<PricingTemplateDetail> {
   const res = await apiGet<PricingTemplateDetailResponse>(
     `/tms/pricing/templates/${templateId}`,
+  );
+  return normalizePricingTemplateDetail(res.data);
+}
+
+export async function submitPricingTemplateValidation(
+  templateId: number,
+): Promise<PricingTemplateDetail> {
+  const res = await apiPost<PricingTemplateDetailResponse>(
+    `/tms/pricing/templates/${templateId}/submit-validation`,
+    { confirm_validated: true },
+  );
+  return normalizePricingTemplateDetail(res.data);
+}
+
+export async function archivePricingTemplate(
+  templateId: number,
+): Promise<PricingTemplateDetail> {
+  const res = await apiPatch<PricingTemplateDetailResponse>(
+    `/tms/pricing/templates/${templateId}`,
+    { status: "archived" },
   );
   return normalizePricingTemplateDetail(res.data);
 }

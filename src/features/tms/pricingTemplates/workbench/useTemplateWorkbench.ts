@@ -145,7 +145,7 @@ export function useTemplateWorkbench(params: {
       configStatus: detail.config_status,
       validationStatus: detail.validation_status,
       usedBindingCount: detail.used_binding_count,
-      archived: String(detail.status || "").toLowerCase() === "archived",
+      capabilities: detail.capabilities,
       zonesCount: detail.destination_groups?.length ?? 0,
     };
   }, [detail]);

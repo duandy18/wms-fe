@@ -52,6 +52,23 @@ export const RangesCard: React.FC<Props> = ({
 }) => {
   const aliveRanges = moduleState.ranges.filter((r) => !r.isDeleted);
 
+  const hasPendingRangeChanges = moduleState.ranges.some(
+    (r) => r.isNew || r.isDirty || r.isDeleted,
+  );
+
+  const saveButtonLabel = moduleState.savingRanges
+    ? "保存中…"
+    : hasPendingRangeChanges
+      ? "保存重量段"
+      : "已保存";
+
+  const saveButtonClass = hasPendingRangeChanges
+    ? UI.btnPrimaryGreen
+    : UI.btnNeutralSm;
+
+  const saveButtonDisabled =
+    disabled || moduleState.savingRanges || !hasPendingRangeChanges;
+
   return (
     <div className={UI.cardTight}>
       <div className={UI.headerRow}>
@@ -72,11 +89,11 @@ export const RangesCard: React.FC<Props> = ({
           </button>
           <button
             type="button"
-            className={UI.btnPrimaryGreen}
+            className={saveButtonClass}
             onClick={() => void onSaveRanges()}
-            disabled={disabled || moduleState.savingRanges}
+            disabled={saveButtonDisabled}
           >
-            {moduleState.savingRanges ? "保存中…" : "保存重量段"}
+            {saveButtonLabel}
           </button>
         </div>
       </div>
@@ -128,7 +145,9 @@ export const RangesCard: React.FC<Props> = ({
                 className={UI.inputBase}
                 value={r.defaultPricingMode}
                 disabled={disabled || moduleState.savingRanges}
-                onChange={(e) => onUpdateRangeField(r.clientId, "defaultPricingMode", e.target.value)}
+                onChange={(e) =>
+                  onUpdateRangeField(r.clientId, "defaultPricingMode", e.target.value)
+                }
               >
                 {PRICING_MODE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>

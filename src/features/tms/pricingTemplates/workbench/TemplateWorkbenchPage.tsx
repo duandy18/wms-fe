@@ -11,6 +11,7 @@
 
 import React from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { submitPricingTemplateValidation } from "../api";
 import { UI } from "./ui";
 import { useTemplateWorkbench } from "./useTemplateWorkbench";
 
@@ -24,6 +25,8 @@ import ExplainSection from "./flow/sections/ExplainSection";
 type WorkbenchLocationState = {
   from?: string;
 };
+
+
 
 export const TemplateWorkbenchPage: React.FC = () => {
   const navigate = useNavigate();
@@ -46,8 +49,22 @@ export const TemplateWorkbenchPage: React.FC = () => {
     navigate("/tms/templates", { replace: true });
   };
 
-  const draftOnlyDisabled =
-    pageDisabled || (wb.detail?.status ?? "draft") !== "draft";
+  const handleSubmitValidation = React.useCallback(() => {
+    if (!templateId) return;
+    void wb.mutate(async () => {
+      await submitPricingTemplateValidation(templateId);
+      flashOk("已提交人工验证");
+    });
+  }, [flashOk, templateId, wb]);
+
+  const readonlyReason = wb.detail?.capabilities?.readonly_reason ?? null;
+  const pageReadonly =
+    readonlyReason === "validated_template" ||
+    readonlyReason === "archived_template";
+
+  const workbenchDisabled = pageDisabled || pageReadonly;
+
+  
 
   return (
     <div className={UI.page}>
@@ -55,9 +72,11 @@ export const TemplateWorkbenchPage: React.FC = () => {
         templateId={templateId}
         loading={wb.loading}
         mutating={wb.mutating}
+        actionLoading={wb.mutating}
         summary={wb.summary}
         providerName={wb.providerName}
         onBack={onBack}
+        onSubmitValidation={handleSubmitValidation}
       />
 
       {wb.refreshing ? (
@@ -76,17 +95,11 @@ export const TemplateWorkbenchPage: React.FC = () => {
           </div>
         ) : (
           <>
-            {wb.detail.status !== "draft" ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                当前模板状态为{" "}
-                <span className="font-semibold">{wb.detail.status}</span>
-                ，前端已切为只读。如需修改，请先克隆为新的 draft，再进入编辑。
-              </div>
-            ) : null}
+            
 
             <PricingSection
               detail={wb.detail}
-              disabled={draftOnlyDisabled}
+              disabled={workbenchDisabled}
               onError={(msg) => wb.setError(msg)}
             />
 

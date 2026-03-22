@@ -5,8 +5,9 @@
 // - 负责：
 //   1) 创建方式切换（新建 / 基于模板创建）
 //   2) provider / 基础模板 / 模板名称表单
-//   3) 成功提示与进入收费表编辑页面按钮
-//   4) 刷新列表 / 返回运价管理按钮
+//   3) 重量段数量 / 区域数量输入
+//   4) 成功提示
+//   5) 刷新列表 / 返回运价管理按钮
 // - 不负责：
 //   1) API 调用
 //   2) 页面级状态持有
@@ -37,7 +38,6 @@ type Props = {
   ) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onReset: () => void;
-  onOpenWorkbench: (templateId: number) => void;
 };
 
 const CreateTemplateCard: React.FC<Props> = ({
@@ -54,17 +54,21 @@ const CreateTemplateCard: React.FC<Props> = ({
   onChangeField,
   onSubmit,
   onReset,
-  onOpenWorkbench,
 }) => {
+  const cloneMode = createForm.mode === "clone";
+  const noProviderSelected =
+    cloneMode && !createForm.shipping_provider_id.trim();
+  const noCloneableTemplates =
+    cloneMode &&
+    !noProviderSelected &&
+    visibleSourceTemplates.length === 0;
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="text-base font-semibold text-slate-900">
-            创建模板
-          </div>
-          <div className="mt-1 text-sm leading-6 text-slate-600">
-            这里只创建模板资产。创建后停留当前页，再决定是否进入收费表编辑页面继续配置。
+            创建收费表
           </div>
         </div>
 
@@ -92,7 +96,7 @@ const CreateTemplateCard: React.FC<Props> = ({
         onSubmit={onSubmit}
         className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <label className="block">
             <div className="mb-1 text-sm font-medium text-slate-700">
               创建方式
@@ -105,8 +109,8 @@ const CreateTemplateCard: React.FC<Props> = ({
               disabled={submitting}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-0 focus:border-slate-500 disabled:cursor-not-allowed disabled:bg-slate-100"
             >
-              <option value="create">新建模板</option>
-              <option value="clone">基于模板创建</option>
+              <option value="create">新建</option>
+              <option value="clone">用模板创建</option>
             </select>
           </label>
 
@@ -136,7 +140,7 @@ const CreateTemplateCard: React.FC<Props> = ({
             </select>
           </label>
 
-          {createForm.mode === "clone" ? (
+          {cloneMode ? (
             <label className="block">
               <div className="mb-1 text-sm font-medium text-slate-700">
                 基础模板
@@ -146,13 +150,19 @@ const CreateTemplateCard: React.FC<Props> = ({
                 onChange={(e) =>
                   onChangeField("source_template_id", e.target.value)
                 }
-                disabled={submitting}
+                disabled={submitting || noProviderSelected || noCloneableTemplates}
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-0 focus:border-slate-500 disabled:cursor-not-allowed disabled:bg-slate-100"
               >
-                <option value="">请选择基础模板</option>
+                <option value="">
+                  {noProviderSelected
+                    ? "请先选择快递公司"
+                    : noCloneableTemplates
+                      ? "当前快递公司下没有可克隆模板"
+                      : "请选择基础模板"}
+                </option>
                 {visibleSourceTemplates.map((item) => (
                   <option key={item.id} value={String(item.id)}>
-                    {item.name}（{item.shipping_provider_name || "未命名快递公司"}）
+                    {item.name}
                   </option>
                 ))}
               </select>
@@ -172,19 +182,72 @@ const CreateTemplateCard: React.FC<Props> = ({
               placeholder="例如：申通-江浙沪模板"
             />
           </label>
+
+          <label className="block">
+            <div className="mb-1 text-sm font-medium text-slate-700">
+              重量段数量
+            </div>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              inputMode="numeric"
+              value={createForm.ranges_count}
+              onChange={(e) => onChangeField("ranges_count", e.target.value)}
+              disabled={submitting || cloneMode}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-0 focus:border-slate-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+              placeholder={cloneMode ? "选择基础模板后自动带出" : "例如：5"}
+            />
+          </label>
+
+          <label className="block">
+            <div className="mb-1 text-sm font-medium text-slate-700">
+              区域数量
+            </div>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              inputMode="numeric"
+              value={createForm.groups_count}
+              onChange={(e) => onChangeField("groups_count", e.target.value)}
+              disabled={submitting || cloneMode}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-0 focus:border-slate-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+              placeholder={cloneMode ? "选择基础模板后自动带出" : "例如：3"}
+            />
+          </label>
         </div>
+
+        {cloneMode && noProviderSelected ? (
+          <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+            请先选择快递公司，再选择基础模板。
+          </div>
+        ) : null}
+
+        {cloneMode && noCloneableTemplates ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            当前快递公司下没有可克隆模板。基础模板来源以后端 capabilities 为准；
+            只有后端判定 can_clone=true 的模板才会出现在这里。
+          </div>
+        ) : null}
+
 
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="submit"
-            disabled={submitting || providersLoading}
+            disabled={
+              submitting ||
+              providersLoading ||
+              noProviderSelected ||
+              noCloneableTemplates
+            }
             className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting
               ? "处理中..."
               : createForm.mode === "create"
-                ? "创建模板"
-                : "基于模板创建"}
+                ? "创建收费表"
+                : "用模板创建"}
           </button>
 
           <button
@@ -201,17 +264,11 @@ const CreateTemplateCard: React.FC<Props> = ({
       {successState ? (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
           <div className="font-medium">
-            {successState.action === "create" ? "模板创建成功" : "模板克隆成功"}：
+            {successState.action === "create" ? "收费表创建成功" : "收费表克隆成功"}：
             {successState.templateName}
           </div>
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => onOpenWorkbench(successState.templateId)}
-              className="inline-flex items-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
-            >
-              进入收费表编辑页面
-            </button>
+          <div className="mt-1 text-sm text-emerald-700">
+            请在下方列表进入收费表编辑页面。
           </div>
         </div>
       ) : null}

@@ -20,6 +20,7 @@ import PageTitle from "../../../../components/ui/PageTitle";
 import type { PricingProviderOption } from "../../pricing/api";
 import { fetchPricingProviderOptions } from "../../pricing/api";
 import {
+  archivePricingTemplate,
   clonePricingTemplate,
   createPricingTemplate,
   fetchPricingTemplates,
@@ -31,7 +32,22 @@ import type {
   CreateFormState,
   SuccessState,
 } from "./templatesPage/types";
-import { DEFAULT_CREATE_FORM, findTemplateProviderId } from "./templatesPage/types";
+import { DEFAULT_CREATE_FORM } from "./templatesPage/types";
+
+function parsePositiveInteger(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    return null;
+  }
+  const parsed = Number(trimmed);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+}
 
 const TemplatesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,6 +66,7 @@ const TemplatesPage: React.FC = () => {
     React.useState<CreateFormState>(DEFAULT_CREATE_FORM);
   const [submitting, setSubmitting] = React.useState(false);
   const [successState, setSuccessState] = React.useState<SuccessState>(null);
+  const [actingTemplateId, setActingTemplateId] = React.useState<number | null>(null);
 
   const loadTemplates = React.useCallback(async () => {
     setLoading(true);
@@ -59,7 +76,7 @@ const TemplatesPage: React.FC = () => {
       setRows(data);
     } catch (err) {
       setRows([]);
-      setError(err instanceof Error ? err.message : "模板列表加载失败");
+      setError(err instanceof Error ? err.message : "收费表列表加载失败");
     } finally {
       setLoading(false);
     }
@@ -95,21 +112,35 @@ const TemplatesPage: React.FC = () => {
           if (value === "create") {
             next.source_template_id = "";
           } else {
-            next.shipping_provider_id = "";
+            next.source_template_id = "";
+            next.ranges_count = "";
+            next.groups_count = "";
+          }
+        }
+
+        if (key === "shipping_provider_id") {
+          if (next.mode === "create") {
+            next.source_template_id = "";
+          } else {
+            next.source_template_id = "";
+            next.ranges_count = "";
+            next.groups_count = "";
           }
         }
 
         if (key === "source_template_id") {
           const templateId = Number(value);
           if (Number.isFinite(templateId) && templateId > 0) {
-            const providerId = findTemplateProviderId(rows, templateId);
-            next.shipping_provider_id =
-              providerId == null ? "" : String(providerId);
+            const sourceTemplate = rows.find((item) => item.id === templateId);
+            if (sourceTemplate) {
+              next.shipping_provider_id = String(sourceTemplate.shipping_provider_id);
+              next.ranges_count = String(sourceTemplate.ranges_count);
+              next.groups_count = String(sourceTemplate.groups_count);
+            }
+          } else {
+            next.ranges_count = "";
+            next.groups_count = "";
           }
-        }
-
-        if (key === "shipping_provider_id" && next.mode === "create") {
-          next.source_template_id = "";
         }
 
         return next;
@@ -123,20 +154,36 @@ const TemplatesPage: React.FC = () => {
   }, []);
 
   const visibleSourceTemplates = React.useMemo(() => {
+    const cloneableRows = rows.filter((row) => row.capabilities.can_clone);
     const providerId = Number(createForm.shipping_provider_id);
+
     if (!Number.isFinite(providerId) || providerId <= 0) {
-      return rows;
+      return [];
     }
-    return rows.filter(
+
+    return cloneableRows.filter(
       (row) => Number(row.shipping_provider_id) === Number(providerId),
     );
   }, [createForm.shipping_provider_id, rows]);
 
   const buildCreatePayload = React.useCallback(
     (form: CreateFormState): PricingTemplateCreateInput => {
+      const expectedRangesCount = parsePositiveInteger(form.ranges_count);
+      const expectedGroupsCount = parsePositiveInteger(form.groups_count);
+
+      if (expectedRangesCount == null) {
+        throw new Error("请填写正确的重量段数量");
+      }
+
+      if (expectedGroupsCount == null) {
+        throw new Error("请填写正确的区域数量");
+      }
+
       return {
         shipping_provider_id: Number(form.shipping_provider_id),
         name: form.name.trim(),
+        expected_ranges_count: expectedRangesCount,
+        expected_groups_count: expectedGroupsCount,
       };
     },
     [],
@@ -149,7 +196,7 @@ const TemplatesPage: React.FC = () => {
       setSuccessState(null);
 
       if (!createForm.name.trim()) {
-        setError("请填写模板名称");
+        setError("请填写收费表名称");
         return;
       }
 
@@ -158,12 +205,23 @@ const TemplatesPage: React.FC = () => {
         return;
       }
 
-      if (
-        createForm.mode === "clone" &&
-        !createForm.source_template_id.trim()
-      ) {
-        setError("请选择基于哪个模板创建");
-        return;
+      if (createForm.mode === "create") {
+        if (parsePositiveInteger(createForm.ranges_count) == null) {
+          setError("请填写正确的重量段数量");
+          return;
+        }
+
+        if (parsePositiveInteger(createForm.groups_count) == null) {
+          setError("请填写正确的区域数量");
+          return;
+        }
+      }
+
+      if (createForm.mode === "clone") {
+        if (!createForm.source_template_id.trim()) {
+          setError("请选择基础模板");
+          return;
+        }
       }
 
       setSubmitting(true);
@@ -192,7 +250,7 @@ const TemplatesPage: React.FC = () => {
         resetCreateForm();
         await loadTemplates();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "模板操作失败");
+        setError(err instanceof Error ? err.message : "收费表操作失败");
       } finally {
         setSubmitting(false);
       }
@@ -200,11 +258,28 @@ const TemplatesPage: React.FC = () => {
     [buildCreatePayload, createForm, loadTemplates, resetCreateForm],
   );
 
+  const handleListArchive = React.useCallback(
+    async (templateId: number) => {
+      setError("");
+      setSuccessState(null);
+      setActingTemplateId(templateId);
+      try {
+        await archivePricingTemplate(templateId);
+        await loadTemplates();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "归档收费表失败");
+      } finally {
+        setActingTemplateId(null);
+      }
+    },
+    [loadTemplates],
+  );
+
   return (
     <div className="space-y-4 p-6">
       <PageTitle
-        title="运价模板"
-        description="模板页只负责模板资产本身：创建、克隆、列表查看与进入收费表编辑页面；运行态绑定统一在运价管理页完成。"
+        title="收费表"
+        description=""
       />
 
       {providersError ? (
@@ -231,10 +306,16 @@ const TemplatesPage: React.FC = () => {
           setError("");
           setSuccessState(null);
         }}
-        onOpenWorkbench={(templateId) => navigate(`/tms/templates/${templateId}`)}
       />
 
-      <TemplatesListCard rows={rows} loading={loading} />
+      <TemplatesListCard
+        rows={rows}
+        loading={loading}
+        actingTemplateId={actingTemplateId}
+        highlightTemplateId={successState?.templateId ?? null}
+        onOpenWorkbench={(templateId) => navigate(`/tms/templates/${templateId}`)}
+        onArchive={handleListArchive}
+      />
     </div>
   );
 };

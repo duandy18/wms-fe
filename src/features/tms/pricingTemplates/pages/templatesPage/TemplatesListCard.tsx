@@ -1,25 +1,22 @@
 // src/features/tms/pricingTemplates/pages/templatesPage/TemplatesListCard.tsx
 //
 // 分拆说明：
-// - 本文件承接 TemplatesPage 的“下卡（模板列表）”。
+// - 本文件承接 TemplatesPage 的“下卡（收费表列表）”。
 // - 负责：
-//   1) 模板列表表格展示
-//   2) 状态 / 使用状态 / 配置状态 / 验证状态展示
-//   3) 单一入口动作：进入收费表编辑页面
+//   1) 收费表列表表格展示
+//   2) 状态 / 使用状态 / 重量段 / 区域数量 / 验证状态展示
+//   3) 单行收费表动作区（编辑 / 归档）
 // - 不负责：
 //   1) 列表数据加载
 //   2) create / clone 表单
 //   3) 页面级状态控制
 // - 维护约束：
-//   - 当前只保留一个操作按钮
-//   - 不把 clone / delete / binding 操作塞回这里
+//   - 动作裁决统一以后端 capabilities 为准
+//   - status / validation_status / used_binding_count / ranges_count / groups_count 只做展示
 
 import React from "react";
-import { Link } from "react-router-dom";
 import type { PricingTemplate } from "../../types";
 import {
-  configStatusBadgeClass,
-  formatConfigStatusLabel,
   formatDateTime,
   formatTemplateStatusLabel,
   formatUsageStatusLabel,
@@ -32,21 +29,40 @@ import {
 type Props = {
   rows: PricingTemplate[];
   loading: boolean;
+  actingTemplateId: number | null;
+  highlightTemplateId?: number | null;
+  onOpenWorkbench: (templateId: number) => void;
+  onArchive: (templateId: number) => void;
 };
 
-const TemplatesListCard: React.FC<Props> = ({ rows, loading }) => {
+function buildReadonlyReasonText(row: PricingTemplate): string | null {
+  const reason = row.capabilities.readonly_reason;
+  if (reason === "validated_template") {
+    return "已人工验证通过，当前只读";
+  }
+  if (reason === "archived_template") {
+    return "已归档，当前只读";
+  }
+  return null;
+}
+
+const TemplatesListCard: React.FC<Props> = ({
+  rows,
+  loading,
+  actingTemplateId,
+  highlightTemplateId,
+  onOpenWorkbench,
+  onArchive,
+}) => {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="text-base font-semibold text-slate-900">
-            模板列表
-          </div>
-          <div className="mt-1 text-sm leading-6 text-slate-600">
-            列表直接展示模板资产状态、使用状态、配置状态和验证状态，不承载绑定或运行态操作。
+            收费标准列表
           </div>
         </div>
-        <div className="text-sm text-slate-500">共 {rows.length} 个模板</div>
+        <div className="text-sm text-slate-500">共 {rows.length} 个收费表</div>
       </div>
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
@@ -54,11 +70,12 @@ const TemplatesListCard: React.FC<Props> = ({ rows, loading }) => {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr className="text-left text-slate-700">
-                <th className="px-4 py-3 font-semibold">模板名称</th>
+                <th className="px-4 py-3 font-semibold">收费表名称</th>
                 <th className="px-4 py-3 font-semibold">快递公司</th>
                 <th className="px-4 py-3 font-semibold">状态</th>
                 <th className="px-4 py-3 font-semibold">使用状态</th>
-                <th className="px-4 py-3 font-semibold">配置状态</th>
+                <th className="px-4 py-3 font-semibold">重量段</th>
+                <th className="px-4 py-3 font-semibold">区域数量</th>
                 <th className="px-4 py-3 font-semibold">验证状态</th>
                 <th className="px-4 py-3 font-semibold">创建时间</th>
                 <th className="px-4 py-3 font-semibold">操作</th>
@@ -68,25 +85,38 @@ const TemplatesListCard: React.FC<Props> = ({ rows, loading }) => {
             <tbody className="divide-y divide-slate-200 bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-slate-500">
-                    模板列表加载中...
+                  <td colSpan={9} className="px-4 py-10 text-center text-slate-500">
+                    收费标准加载中...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-slate-500">
-                    暂无模板，先创建一个模板。
+                  <td colSpan={9} className="px-4 py-10 text-center text-slate-500">
+                    暂无收费表，先创建一个收费表。
                   </td>
                 </tr>
               ) : (
                 rows.map((row) => {
+                  const rowActing = actingTemplateId === row.id;
+                  const canArchive = row.capabilities.can_archive;
+                  const readonlyReasonText = buildReadonlyReasonText(row);
+                  const isHighlighted = highlightTemplateId === row.id;
+
                   return (
-                    <tr key={row.id} className="align-top">
+                    <tr
+                      key={row.id}
+                      className={`align-top ${isHighlighted ? "bg-emerald-50" : ""}`}
+                    >
                       <td className="px-4 py-3">
                         <div className="font-medium text-slate-900">{row.name}</div>
                         <div className="mt-1 text-xs text-slate-500">
                           ID: {row.id}
                         </div>
+                        {readonlyReasonText ? (
+                          <div className="mt-1 text-xs text-slate-500">
+                            {readonlyReasonText}
+                          </div>
+                        ) : null}
                       </td>
 
                       <td className="px-4 py-3 text-slate-700">
@@ -117,19 +147,11 @@ const TemplatesListCard: React.FC<Props> = ({ rows, loading }) => {
                       </td>
 
                       <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <span
-                            className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-medium ${configStatusBadgeClass(
-                              row.config_status,
-                            )}`}
-                          >
-                            {formatConfigStatusLabel(row.config_status)}
-                          </span>
-                          <div className="text-xs text-slate-500">
-                            ranges {row.ranges_count} / groups {row.groups_count} / cells{" "}
-                            {row.matrix_cells_count}
-                          </div>
-                        </div>
+                        <div className="text-slate-700">{row.ranges_count}</div>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <div className="text-slate-700">{row.groups_count}</div>
                       </td>
 
                       <td className="px-4 py-3">
@@ -148,12 +170,22 @@ const TemplatesListCard: React.FC<Props> = ({ rows, loading }) => {
 
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
-                          <Link
-                            to={`/tms/templates/${row.id}`}
+                          <button
+                            type="button"
+                            onClick={() => onOpenWorkbench(row.id)}
                             className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
                           >
-                            进入收费表编辑页面
-                          </Link>
+                            编辑
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onArchive(row.id)}
+                            disabled={rowActing || !canArchive}
+                            className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {rowActing ? "处理中..." : "归档"}
+                          </button>
                         </div>
                       </td>
                     </tr>

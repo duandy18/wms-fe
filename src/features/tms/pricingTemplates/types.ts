@@ -25,6 +25,21 @@ export type PricingTemplatePricingMode =
   | "step_over"
   | "manual_quote";
 
+export type PricingTemplateReadonlyReason =
+  | "validated_template"
+  | "archived_template"
+  | "cloned_template_structure_locked"
+  | null;
+
+export interface PricingTemplateCapabilities {
+  can_edit_structure: boolean;
+  can_submit_validation: boolean;
+  can_clone: boolean;
+  can_archive: boolean;
+  can_bind: boolean;
+  readonly_reason: PricingTemplateReadonlyReason;
+}
+
 export interface PricingTemplateRange {
   id: number;
   template_id: number;
@@ -88,6 +103,7 @@ export interface PricingTemplate {
   id: number;
   shipping_provider_id: number;
   shipping_provider_name: string;
+  source_template_id: number | null;
 
   name: string;
   status: PricingTemplateStatus;
@@ -102,6 +118,8 @@ export interface PricingTemplate {
   ranges_count: number;
   groups_count: number;
   matrix_cells_count: number;
+
+  capabilities: PricingTemplateCapabilities;
 }
 
 export interface PricingTemplateDetail extends PricingTemplate {
@@ -121,6 +139,8 @@ export interface PricingTemplateListQuery {
 export interface PricingTemplateCreateInput {
   shipping_provider_id: number;
   name: string;
+  expected_ranges_count: number;
+  expected_groups_count: number;
 }
 
 export interface PricingTemplateCloneInput {

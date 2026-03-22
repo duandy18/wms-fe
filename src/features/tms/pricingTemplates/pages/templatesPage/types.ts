@@ -29,6 +29,8 @@ export type CreateFormState = {
   shipping_provider_id: string;
   source_template_id: string;
   name: string;
+  ranges_count: string;
+  groups_count: string;
 };
 
 export type SuccessState = {
@@ -42,6 +44,8 @@ export const DEFAULT_CREATE_FORM: CreateFormState = {
   shipping_provider_id: "",
   source_template_id: "",
   name: "",
+  ranges_count: "",
+  groups_count: "",
 };
 
 export function formatTemplateStatusLabel(status: PricingTemplateStatus): string {
