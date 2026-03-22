@@ -48,8 +48,23 @@ function isPersistedGroup(row: GroupRow): boolean {
   return !row.isDeleted && typeof row.id === "number" && !row.isNew;
 }
 
+function buildReadonlyReasonText(detail: PricingTemplateDetail): string | null {
+  const reason = detail.capabilities?.readonly_reason ?? null;
+  if (reason === "validated_template") {
+    return "当前模板已人工验证通过，现已只读；如需修改，请克隆新 draft 后再编辑。";
+  }
+  if (reason === "archived_template") {
+    return "当前模板已归档，现已只读；如需修改，请克隆新 draft 后再编辑。";
+  }
+  return null;
+}
+
 export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onError }) => {
-  const wb = usePricingWorkbench({ detail, disabled });
+  const effectiveDisabled = disabled;
+  const readonlyReason = detail.capabilities?.readonly_reason ?? null;
+  const structureLocked = readonlyReason === "cloned_template_structure_locked";
+
+  const wb = usePricingWorkbench({ detail, disabled: effectiveDisabled });
 
   const [provinceOptions, setProvinceOptions] = React.useState<GeoItem[]>([]);
   const [provinceError, setProvinceError] = React.useState<string | null>(null);
@@ -215,6 +230,9 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
   }, [citySurchargeFeedbackByClientId, surcharges]);
 
   const generalError = loadError;
+  const readonlyReasonText = buildReadonlyReasonText(detail);
+  const canSubmitValidation = detail.capabilities?.can_submit_validation ?? false;
+  const canBind = detail.capabilities?.can_bind ?? false;
 
   return (
     <div className="space-y-4">
@@ -232,14 +250,14 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
               type="button"
               className={UI.btnNeutralSm}
               onClick={() => void loadAll()}
-              disabled={disabled || moduleState.loading}
+              disabled={effectiveDisabled || moduleState.loading}
             >
               刷新
             </button>
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
+        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-5">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             重量段：
             <span className="ml-1 font-semibold">
@@ -259,9 +277,15 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
             </span>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            发布状态：{" "}
-            <span className={derived.canPublish ? "font-semibold text-emerald-700" : "font-semibold text-amber-700"}>
-              {derived.canPublish ? "可发布" : "暂不可发布"}
+            人工验证：
+            <span className={canSubmitValidation ? "ml-1 font-semibold text-emerald-700" : "ml-1 font-semibold text-amber-700"}>
+              {canSubmitValidation ? "可提交" : "暂不可提交"}
+            </span>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            运行绑定：
+            <span className={canBind ? "ml-1 font-semibold text-sky-700" : "ml-1 font-semibold text-slate-600"}>
+              {canBind ? "可绑定运行" : "暂不可绑定"}
             </span>
           </div>
         </div>
@@ -277,6 +301,14 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
             {generalError}
           </div>
         ) : null}
+
+        {readonlyReasonText ? (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {readonlyReasonText}
+          </div>
+        ) : null}
+
+        
 
         {derived.blockers.length > 0 ? (
           <div className="mt-3 space-y-2">
@@ -300,7 +332,7 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
       </div>
 
       <RangesCard
-        disabled={disabled}
+        disabled={effectiveDisabled || structureLocked}
         moduleState={moduleState}
         errorMessage={rangesFeedback.error}
         successMessage={rangesFeedback.success}
@@ -313,7 +345,7 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
       />
 
       <GroupsCard
-        disabled={disabled}
+        disabled={effectiveDisabled || structureLocked}
         moduleState={moduleState}
         errorMessage={groupsFeedback.error}
         successMessage={groupsFeedback.success}
@@ -346,7 +378,7 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
       />
 
       <MatrixCard
-        disabled={disabled}
+        disabled={effectiveDisabled}
         moduleState={moduleState}
         errorMessage={matrixFeedback.error}
         successMessage={matrixFeedback.success}
@@ -357,7 +389,7 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
         renderCell={(cell) => (
           <CellEditor
             cell={cell}
-            disabled={disabled || moduleState.savingCells}
+            disabled={effectiveDisabled || moduleState.savingCells}
             onUpdateMode={(mode) => updateCellMode(cell.groupId, cell.moduleRangeId, mode)}
             onToggleActive={() => toggleCellActive(cell.groupId, cell.moduleRangeId)}
             onUpdateField={(field, value) =>
@@ -368,7 +400,7 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
       />
 
       <SurchargesCard
-        disabled={disabled}
+        disabled={effectiveDisabled}
         saving={savingSurcharges}
         rows={surcharges}
         provinceOptions={provinceOptions}

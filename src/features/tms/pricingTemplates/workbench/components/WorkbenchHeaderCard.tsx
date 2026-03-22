@@ -1,6 +1,7 @@
 // src/features/tms/pricingTemplates/workbench/components/WorkbenchHeaderCard.tsx
 
 import React, { useMemo } from "react";
+import type { PricingTemplateCapabilities } from "../../types";
 import { UI } from "../ui";
 
 type HeaderSummary = {
@@ -10,6 +11,7 @@ type HeaderSummary = {
   configStatus: "empty" | "incomplete" | "ready";
   validationStatus: "not_validated" | "passed" | "failed";
   usedBindingCount: number;
+  capabilities: PricingTemplateCapabilities;
 };
 
 function buildHeaderTitle(args: { templateName?: string | null }): string {
@@ -80,14 +82,26 @@ function buildBindingClass(usedBindingCount: number): string {
   return "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200";
 }
 
-export const WorkbenchHeaderCard: React.FC<{
+type Props = {
   templateId: number | null;
   loading?: boolean;
   mutating?: boolean;
+  actionLoading?: boolean;
   summary: HeaderSummary | null;
   providerName?: string | null;
   onBack: () => void;
-}> = ({ loading, mutating, summary, providerName, onBack }) => {
+  onSubmitValidation?: () => void;
+};
+
+export const WorkbenchHeaderCard: React.FC<Props> = ({
+  loading,
+  mutating,
+  actionLoading = false,
+  summary,
+  providerName,
+  onBack,
+  onSubmitValidation,
+}) => {
   const templateName = summary?.name ?? null;
 
   const title = useMemo(() => {
@@ -95,6 +109,11 @@ export const WorkbenchHeaderCard: React.FC<{
   }, [templateName]);
 
   const providerText = (providerName ?? "").trim() || "未识别快递公司";
+  const canSubmitValidation = summary?.capabilities.can_submit_validation ?? false;
+
+  const headerActionDisabled = Boolean(
+    loading || mutating || actionLoading || !summary,
+  );
 
   return (
     <div className={UI.card}>
@@ -155,17 +174,27 @@ export const WorkbenchHeaderCard: React.FC<{
           </div>
         </div>
 
-        <div className={UI.workbenchHeaderActions}>
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button type="button" className={UI.workbenchBackBtn} onClick={onBack}>
             返回
+          </button>
+
+          <button
+            type="button"
+            className={UI.btnNeutralSm}
+            onClick={onSubmitValidation}
+            disabled={headerActionDisabled || !canSubmitValidation}
+          >
+            提交人工验证
           </button>
         </div>
       </div>
 
-      {loading || mutating ? (
+      {loading || mutating || actionLoading ? (
         <div className="mt-3 text-sm text-slate-500">
           {loading ? "正在加载模板数据…" : null}
           {mutating ? "正在提交变更…" : null}
+          {actionLoading ? "正在执行模板操作…" : null}
         </div>
       ) : null}
     </div>
