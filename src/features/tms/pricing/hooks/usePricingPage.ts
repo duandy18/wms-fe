@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  activatePricingBinding,
   bindPricing,
+  deactivatePricingBinding,
+  fetchPricingBindingTemplateCandidates,
   fetchPricingList,
   fetchPricingProviderOptions,
-  setPricingBindingActive,
+  updatePricingBinding,
   type PricingProviderOption,
 } from "../api";
 import type {
-  PricingFiltersState,
+  PricingBindingTemplateCandidate,
   PricingListRow,
   PricingStatus,
 } from "../types";
@@ -24,34 +27,16 @@ type StatusOption = {
   label: string;
 };
 
-const DEFAULT_FILTERS: PricingFiltersState = {
-  keyword: "",
-  warehouse_id: "",
-  pricing_status: "",
-};
-
 const STATUS_OPTIONS: StatusOption[] = [
-  { value: "ready", label: "已就绪" },
-  { value: "no_active_template", label: "未挂模板" },
-  { value: "binding_disabled", label: "绑定停用" },
+  { value: "active", label: "已生效" },
+  { value: "scheduled", label: "待生效" },
+  { value: "no_active_template", label: "未挂收费表" },
+  { value: "binding_disabled", label: "已停止使用收费表" },
   { value: "provider_disabled", label: "网点停用" },
-  { value: "template_archived", label: "模板已归档" },
 ];
 
-function includesKeyword(row: PricingListRow, keyword: string): boolean {
-  const text = keyword.trim().toLowerCase();
-  if (!text) return true;
-
-  return [
-    row.provider_code,
-    row.provider_name,
-    row.warehouse_name,
-    String(row.warehouse_id),
-    row.active_template_name ?? "",
-  ]
-    .join(" ")
-    .toLowerCase()
-    .includes(text);
+function rowActionKey(row: PricingListRow): string {
+  return `${row.provider_id}-${row.warehouse_id}`;
 }
 
 export function usePricingPage() {
@@ -61,17 +46,23 @@ export function usePricingPage() {
 
   const [providersLoading, setProvidersLoading] = useState(false);
   const [providersError, setProvidersError] = useState("");
-  const [providerOptions, setProviderOptions] = useState<PricingProviderOption[]>([]);
+  const [providerOptions, setProviderOptions] = useState<PricingProviderOption[]>(
+    [],
+  );
 
-  const [filters, setFilters] = useState<PricingFiltersState>(DEFAULT_FILTERS);
-
-  // ===== 绑定仓库卡 =====
   const [bindProviderId, setBindProviderId] = useState("");
   const [bindWarehouseId, setBindWarehouseId] = useState("");
-  const [bindActive, setBindActive] = useState(true);
+  const [bindTemplateId, setBindTemplateId] = useState("");
+  const [bindTemplateOptions, setBindTemplateOptions] = useState<
+    PricingBindingTemplateCandidate[]
+  >([]);
+  const [bindTemplateLoading, setBindTemplateLoading] = useState(false);
+  const [bindTemplateError, setBindTemplateError] = useState("");
   const [bindingSubmitting, setBindingSubmitting] = useState(false);
   const [bindingError, setBindingError] = useState("");
   const [bindingOk, setBindingOk] = useState("");
+
+  const [actionKey, setActionKey] = useState("");
 
   const reload = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -110,42 +101,168 @@ export function usePricingPage() {
     void reloadProviders();
   }, [reload, reloadProviders]);
 
-  const bindRow = useCallback(
+  const existingBinding = useMemo(() => {
+    const providerIdNum = Number(bindProviderId);
+    const warehouseIdNum = Number(bindWarehouseId);
+
+    if (!Number.isFinite(providerIdNum) || providerIdNum <= 0) return null;
+    if (!Number.isFinite(warehouseIdNum) || warehouseIdNum <= 0) return null;
+
+    return (
+      rows.find(
+        (row) =>
+          row.provider_id === providerIdNum &&
+          row.warehouse_id === warehouseIdNum,
+      ) ?? null
+    );
+  }, [bindProviderId, bindWarehouseId, rows]);
+
+  useEffect(() => {
+    if (!bindProviderId || !bindWarehouseId) {
+      setBindTemplateOptions([]);
+      setBindTemplateId("");
+      setBindTemplateError("");
+      return;
+    }
+
+    setBindTemplateId(
+      existingBinding?.active_template_id != null
+        ? String(existingBinding.active_template_id)
+        : "",
+    );
+
+    let cancelled = false;
+
+    const load = async () => {
+      setBindTemplateLoading(true);
+      setBindTemplateError("");
+
+      try {
+        const providerIdNum = Number(bindProviderId);
+        const warehouseIdNum = Number(bindWarehouseId);
+
+        const list = await fetchPricingBindingTemplateCandidates({
+          warehouseId: warehouseIdNum,
+          providerId: providerIdNum,
+        });
+
+        if (cancelled) return;
+
+        let next = list;
+
+        if (
+          existingBinding?.active_template_id != null &&
+          !list.some((item) => item.id === existingBinding.active_template_id)
+        ) {
+          next = [
+            {
+              id: existingBinding.active_template_id,
+              shipping_provider_id: providerIdNum,
+              shipping_provider_name: "",
+              source_template_id: null,
+              name:
+                existingBinding.active_template_name ||
+                `收费表 #${existingBinding.active_template_id}`,
+              status: "draft",
+              archived_at: null,
+              validation_status: "passed",
+              created_at: "",
+              updated_at: "",
+              used_binding_count: 1,
+              config_status: "ready",
+              ranges_count: 0,
+              groups_count: 0,
+              matrix_cells_count: 0,
+            },
+            ...list,
+          ];
+        }
+
+        setBindTemplateOptions(next);
+      } catch (err) {
+        if (cancelled) return;
+        setBindTemplateOptions([]);
+        setBindTemplateError(
+          err instanceof Error ? err.message : "加载模板候选失败",
+        );
+      } finally {
+        if (!cancelled) {
+          setBindTemplateLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bindProviderId, bindWarehouseId, existingBinding]);
+
+  const activateNow = useCallback(
     async (row: PricingListRow) => {
-      await bindPricing(row.provider_id, row.warehouse_id);
-      await reload();
+      const key = rowActionKey(row);
+      setActionKey(key);
+      setError("");
+
+      try {
+        await activatePricingBinding({
+          warehouseId: row.warehouse_id,
+          providerId: row.provider_id,
+          effectiveFrom: null,
+        });
+        await reload();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "立即启用失败");
+      } finally {
+        setActionKey("");
+      }
     },
     [reload],
   );
 
-  const toggleBinding = useCallback(
-    async (row: PricingListRow) => {
-      await setPricingBindingActive(
-        row.provider_id,
-        row.warehouse_id,
-        !row.binding_active,
-      );
-      await reload();
+  const scheduleActivate = useCallback(
+    async (row: PricingListRow, effectiveFrom: string) => {
+      const key = rowActionKey(row);
+      setActionKey(key);
+      setError("");
+
+      try {
+        await activatePricingBinding({
+          warehouseId: row.warehouse_id,
+          providerId: row.provider_id,
+          effectiveFrom,
+        });
+        await reload();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "定时启用失败");
+      } finally {
+        setActionKey("");
+      }
     },
     [reload],
   );
 
-  const setField = useCallback(
-    <K extends keyof PricingFiltersState>(
-      key: K,
-      value: PricingFiltersState[K],
-    ): void => {
-      setFilters((prev) => ({
-        ...prev,
-        [key]: value,
-      }));
-    },
-    [],
-  );
+  const deactivateBinding = useCallback(
+    async (row: PricingListRow) => {
+      const key = rowActionKey(row);
+      setActionKey(key);
+      setError("");
 
-  const reset = useCallback((): void => {
-    setFilters(DEFAULT_FILTERS);
-  }, []);
+      try {
+        await deactivatePricingBinding({
+          warehouseId: row.warehouse_id,
+          providerId: row.provider_id,
+        });
+        await reload();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "停用失败");
+      } finally {
+        setActionKey("");
+      }
+    },
+    [reload],
+  );
 
   const warehouseOptions = useMemo<WarehouseOption[]>(() => {
     const map = new Map<number, string>();
@@ -166,59 +283,35 @@ export function usePricingPage() {
       );
   }, [rows]);
 
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      if (!includesKeyword(row, filters.keyword)) return false;
-
-      if (
-        filters.warehouse_id &&
-        String(row.warehouse_id) !== String(filters.warehouse_id)
-      ) {
-        return false;
-      }
-
-      if (
-        filters.pricing_status &&
-        row.pricing_status !== filters.pricing_status
-      ) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [rows, filters]);
-
   const summary = useMemo(() => {
-    const readyCount = filteredRows.filter(
-      (x) => x.pricing_status === "ready",
+    const activeCount = rows.filter((x) => x.pricing_status === "active").length;
+    const scheduledCount = rows.filter(
+      (x) => x.pricing_status === "scheduled",
     ).length;
-    const noActiveTemplateCount = filteredRows.filter(
+    const noActiveTemplateCount = rows.filter(
       (x) => x.pricing_status === "no_active_template",
     ).length;
-    const bindingDisabledCount = filteredRows.filter(
+    const bindingDisabledCount = rows.filter(
       (x) => x.pricing_status === "binding_disabled",
     ).length;
-    const providerDisabledCount = filteredRows.filter(
+    const providerDisabledCount = rows.filter(
       (x) => x.pricing_status === "provider_disabled",
-    ).length;
-    const templateArchivedCount = filteredRows.filter(
-      (x) => x.pricing_status === "template_archived",
     ).length;
 
     return {
-      total: filteredRows.length,
-      readyCount,
+      total: rows.length,
+      activeCount,
+      scheduledCount,
       noActiveTemplateCount,
       bindingDisabledCount,
       providerDisabledCount,
-      templateArchivedCount,
     };
-  }, [filteredRows]);
+  }, [rows]);
 
   useEffect(() => {
     setBindingError("");
     setBindingOk("");
-  }, [bindProviderId, bindWarehouseId, bindActive]);
+  }, [bindProviderId, bindWarehouseId, bindTemplateId]);
 
   const submitBindCard = useCallback(async (): Promise<void> => {
     setBindingError("");
@@ -226,6 +319,7 @@ export function usePricingPage() {
 
     const providerIdNum = Number(bindProviderId);
     const warehouseIdNum = Number(bindWarehouseId);
+    const templateIdNum = Number(bindTemplateId);
 
     if (!Number.isFinite(providerIdNum) || providerIdNum <= 0) {
       setBindingError("请选择快递网点");
@@ -237,25 +331,46 @@ export function usePricingPage() {
       return;
     }
 
+    if (!Number.isFinite(templateIdNum) || templateIdNum <= 0) {
+      setBindingError("请选择收费表");
+      return;
+    }
+
+    const exists = rows.some(
+      (row) =>
+        row.provider_id === providerIdNum &&
+        row.warehouse_id === warehouseIdNum,
+    );
+
     setBindingSubmitting(true);
     try {
-      await bindPricing(providerIdNum, warehouseIdNum);
-
-      if (!bindActive) {
-        await setPricingBindingActive(providerIdNum, warehouseIdNum, false);
+      if (exists) {
+        await updatePricingBinding({
+          warehouseId: warehouseIdNum,
+          providerId: providerIdNum,
+          activeTemplateId: templateIdNum,
+        });
+        setBindingOk("已保存关联");
+      } else {
+        await bindPricing({
+          warehouseId: warehouseIdNum,
+          providerId: providerIdNum,
+          active: false,
+          activeTemplateId: templateIdNum,
+        });
+        setBindingOk("已保存关联");
       }
 
       await reload();
-      setBindingOk("已完成仓库绑定");
     } catch (err) {
-      setBindingError(err instanceof Error ? err.message : "绑定仓库失败");
+      setBindingError(err instanceof Error ? err.message : "保存关联失败");
     } finally {
       setBindingSubmitting(false);
     }
-  }, [bindActive, bindProviderId, bindWarehouseId, reload]);
+  }, [bindProviderId, bindTemplateId, bindWarehouseId, reload, rows]);
 
   return {
-    rows: filteredRows,
+    rows,
     rawRows: rows,
     loading,
     error,
@@ -264,26 +379,27 @@ export function usePricingPage() {
     providersError,
     providerOptions,
 
-    filters,
     warehouseOptions,
     statusOptions: STATUS_OPTIONS,
     summary,
 
-    setField,
-    reset,
-    reload,
-    bindRow,
-    toggleBinding,
+    actionKey,
+    activateNow,
+    scheduleActivate,
+    deactivateBinding,
 
     bindProviderId,
     bindWarehouseId,
-    bindActive,
+    bindTemplateId,
+    bindTemplateOptions,
+    bindTemplateLoading,
+    bindTemplateError,
     bindingSubmitting,
     bindingError,
     bindingOk,
     setBindProviderId,
     setBindWarehouseId,
-    setBindActive,
+    setBindTemplateId,
     submitBindCard,
   };
 }

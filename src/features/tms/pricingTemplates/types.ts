@@ -36,7 +36,6 @@ export interface PricingTemplateCapabilities {
   can_submit_validation: boolean;
   can_clone: boolean;
   can_archive: boolean;
-  can_bind: boolean;
   readonly_reason: PricingTemplateReadonlyReason;
 }
 

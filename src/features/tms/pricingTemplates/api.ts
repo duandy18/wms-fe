@@ -227,7 +227,6 @@ function normalizeCapabilities(
     can_submit_validation: Boolean(row.can_submit_validation),
     can_clone: typeof row.can_clone === "boolean" ? row.can_clone : true,
     can_archive: Boolean(row.can_archive),
-    can_bind: Boolean(row.can_bind),
     readonly_reason: normalizeReadonlyReason(row.readonly_reason),
   };
 }

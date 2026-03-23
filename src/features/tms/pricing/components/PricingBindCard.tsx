@@ -3,43 +3,58 @@
 import React from "react";
 import { UI } from "../../providers/ui";
 import type { PricingProviderOption } from "../api";
+import type { PricingBindingTemplateCandidate } from "../types";
 import type { WarehouseOption } from "../hooks/usePricingPage";
 
 type Props = {
   providerOptions: PricingProviderOption[];
   warehouseOptions: WarehouseOption[];
+  templateOptions: PricingBindingTemplateCandidate[];
+
   providerId: string;
   warehouseId: string;
-  active: boolean;
+  templateId: string;
+
   submitting: boolean;
+  templateLoading: boolean;
   error: string;
   ok: string;
+  templateError: string;
+
   onChangeProviderId: (v: string) => void;
   onChangeWarehouseId: (v: string) => void;
-  onChangeActive: (v: boolean) => void;
+  onChangeTemplateId: (v: string) => void;
   onSubmit: () => void | Promise<void>;
 };
 
 const PricingBindCard: React.FC<Props> = ({
   providerOptions,
   warehouseOptions,
+  templateOptions,
   providerId,
   warehouseId,
-  active,
+  templateId,
   submitting,
+  templateLoading,
   error,
   ok,
+  templateError,
   onChangeProviderId,
   onChangeWarehouseId,
-  onChangeActive,
+  onChangeTemplateId,
   onSubmit,
 }) => {
+  const templateDisabled =
+    submitting || templateLoading || !providerId || !warehouseId;
+
   return (
     <section className={UI.card}>
       <div>
-        <div className={`${UI.h2} font-semibold text-slate-900`}>绑定仓库</div>
+        <div className={`${UI.h2} font-semibold text-slate-900`}>
+          配置关联
+        </div>
         <div className="mt-1 text-sm text-slate-600">
-          建立快递网点与仓库的服务关系。建立后，才能在这条关系下创建运价。
+          选择快递网点、仓库与收费表。若关联已存在，则直接更新当前收费表。
         </div>
       </div>
 
@@ -49,8 +64,9 @@ const PricingBindCard: React.FC<Props> = ({
           {ok}
         </div>
       ) : null}
+      {templateError ? <div className={UI.error}>{templateError}</div> : null}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <label className={UI.field}>
           <span className={UI.label}>快递网点</span>
           <select
@@ -81,23 +97,35 @@ const PricingBindCard: React.FC<Props> = ({
           >
             <option value="">请选择仓库</option>
             {warehouseOptions.map((item) => (
-              <option key={item.warehouse_id} value={String(item.warehouse_id)}>
+              <option
+                key={item.warehouse_id}
+                value={String(item.warehouse_id)}
+              >
                 {item.warehouse_name}
               </option>
             ))}
           </select>
         </label>
-      </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input
-          type="checkbox"
-          checked={active}
-          disabled={submitting}
-          onChange={(e) => onChangeActive(e.target.checked)}
-        />
-        绑定后立即启用关系
-      </label>
+        <label className={UI.field}>
+          <span className={UI.label}>收费表</span>
+          <select
+            className={UI.select}
+            value={templateId}
+            disabled={templateDisabled}
+            onChange={(e) => onChangeTemplateId(e.target.value)}
+          >
+            <option value="">
+              {templateLoading ? "收费表加载中…" : "请选择收费表"}
+            </option>
+            {templateOptions.map((item) => (
+              <option key={item.id} value={String(item.id)}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <div className="flex items-center gap-3">
         <button
@@ -106,7 +134,7 @@ const PricingBindCard: React.FC<Props> = ({
           disabled={submitting}
           onClick={() => void onSubmit()}
         >
-          {submitting ? "保存中…" : "绑定并保存"}
+          {submitting ? "保存中…" : "保存"}
         </button>
       </div>
     </section>
