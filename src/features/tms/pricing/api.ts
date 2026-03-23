@@ -1,7 +1,10 @@
 // src/features/tms/pricing/api.ts
 
 import { apiGet, apiPatch, apiPost } from "../../../lib/api";
-import type { PricingListResponse } from "./types";
+import type {
+  PricingBindingTemplateCandidate,
+  PricingListResponse,
+} from "./types";
 
 type ListResponse<T> = {
   ok: boolean;
@@ -20,6 +23,25 @@ export type PricingProviderOption = {
   provider_name: string;
   provider_code: string;
   provider_active: boolean;
+};
+
+export type PricingBindingRef = {
+  warehouseId: number;
+  providerId: number;
+};
+
+export type CreatePricingBindingInput = PricingBindingRef & {
+  active?: boolean;
+  activeTemplateId?: number;
+};
+
+export type PricingBindingUpdatePayload = PricingBindingRef & {
+  active?: boolean;
+  activeTemplateId?: number;
+};
+
+export type ActivatePricingBindingInput = PricingBindingRef & {
+  effectiveFrom?: string | null;
 };
 
 export async function fetchPricingList(): Promise<PricingListResponse> {
@@ -53,25 +75,73 @@ export async function fetchPricingProviderOptions(): Promise<
     });
 }
 
-// 建立 provider × warehouse 服务关系。
-// 当前后端合同仍接受 priority；这里只在 API 内部兼容，不向页面层暴露。
-export async function bindPricing(
-  providerId: number,
-  warehouseId: number,
-): Promise<void> {
-  await apiPost("/tms/pricing/bindings", {
-    provider_id: providerId,
-    warehouse_id: warehouseId,
+export async function bindPricing({
+  warehouseId,
+  providerId,
+  active = false,
+  activeTemplateId,
+}: CreatePricingBindingInput): Promise<void> {
+  await apiPost(`/tms/pricing/warehouses/${warehouseId}/bindings`, {
+    shipping_provider_id: providerId,
+    active,
     priority: 0,
+    active_template_id: activeTemplateId,
   });
 }
 
-export async function setPricingBindingActive(
-  providerId: number,
-  warehouseId: number,
-  active: boolean,
-): Promise<void> {
-  await apiPatch(`/tms/pricing/bindings/${providerId}/${warehouseId}`, {
-    active,
-  });
+export async function updatePricingBinding({
+  warehouseId,
+  providerId,
+  active,
+  activeTemplateId,
+}: PricingBindingUpdatePayload): Promise<void> {
+  const payload: {
+    active?: boolean;
+    active_template_id?: number;
+  } = {};
+
+  if (typeof active === "boolean") {
+    payload.active = active;
+  }
+  if (typeof activeTemplateId === "number") {
+    payload.active_template_id = activeTemplateId;
+  }
+
+  await apiPatch(
+    `/tms/pricing/warehouses/${warehouseId}/bindings/${providerId}`,
+    payload,
+  );
+}
+
+export async function activatePricingBinding({
+  warehouseId,
+  providerId,
+  effectiveFrom,
+}: ActivatePricingBindingInput): Promise<void> {
+  await apiPost(
+    `/tms/pricing/warehouses/${warehouseId}/bindings/${providerId}/activate`,
+    {
+      effective_from: effectiveFrom ?? null,
+    },
+  );
+}
+
+export async function deactivatePricingBinding({
+  warehouseId,
+  providerId,
+}: PricingBindingRef): Promise<void> {
+  await apiPost(
+    `/tms/pricing/warehouses/${warehouseId}/bindings/${providerId}/deactivate`,
+    {},
+  );
+}
+
+export async function fetchPricingBindingTemplateCandidates({
+  warehouseId,
+  providerId,
+}: PricingBindingRef): Promise<PricingBindingTemplateCandidate[]> {
+  const res = await apiGet<ListResponse<PricingBindingTemplateCandidate>>(
+    `/tms/pricing/warehouses/${warehouseId}/bindings/${providerId}/template-candidates`,
+  );
+  return Array.isArray(res?.data) ? res.data : [];
 }

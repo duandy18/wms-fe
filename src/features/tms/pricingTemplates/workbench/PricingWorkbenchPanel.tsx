@@ -232,7 +232,6 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
   const generalError = loadError;
   const readonlyReasonText = buildReadonlyReasonText(detail);
   const canSubmitValidation = detail.capabilities?.can_submit_validation ?? false;
-  const canBind = detail.capabilities?.can_bind ?? false;
 
   return (
     <div className="space-y-4">
@@ -284,9 +283,6 @@ export const PricingWorkbenchPanel: React.FC<Props> = ({ detail, disabled, onErr
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             运行绑定：
-            <span className={canBind ? "ml-1 font-semibold text-sky-700" : "ml-1 font-semibold text-slate-600"}>
-              {canBind ? "可绑定运行" : "暂不可绑定"}
-            </span>
           </div>
         </div>
 
