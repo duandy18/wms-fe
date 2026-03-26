@@ -55,10 +55,8 @@ const ShippingProviderEditPage: React.FC = () => {
   const { can } = useAuth();
   const canWrite = can("config.store.write");
 
-  // ===== 页面模型（联系人 / provider 拉取都在这里）=====
   const m = useShippingProviderEditModel(safePid);
 
-  // ===== 基础信息表单状态（沿用 ProviderForm 组件）=====
   const [savingProvider, setSavingProvider] = useState(false);
   const [providerError, setProviderError] = useState<string | null>(null);
   const [providerOk, setProviderOk] = useState<string | null>(null);
@@ -67,6 +65,8 @@ const ShippingProviderEditPage: React.FC = () => {
   const [state, setState] = useState<EditProviderFormState>({
     editName: "",
     editCode: "",
+    editCompanyCode: "",
+    editResourceCode: "",
     editAddress: "",
     editActive: true,
     editPriority: "0",
@@ -102,13 +102,14 @@ const ShippingProviderEditPage: React.FC = () => {
     [providerOk, clearOkTimer],
   );
 
-  // provider 变化时同步表单（编辑模式）
   useEffect(() => {
     if (!safePid) {
       setState((s) => ({
         ...s,
         editName: "",
         editCode: "",
+        editCompanyCode: "",
+        editResourceCode: "",
         editAddress: "",
         editPriority: "0",
         editActive: true,
@@ -123,6 +124,8 @@ const ShippingProviderEditPage: React.FC = () => {
       ...s,
       editName: p.name ?? "",
       editCode: p.code ?? "",
+      editCompanyCode: p.company_code ?? "",
+      editResourceCode: p.resource_code ?? "",
       editAddress: p.address ?? "",
       editPriority: String(p.priority ?? 0),
       editActive: Boolean(p.active),
@@ -139,17 +142,19 @@ const ShippingProviderEditPage: React.FC = () => {
     setProviderOk(null);
 
     const name = state.editName.trim();
+    const codeTrim = state.editCode.trim();
+
     if (!name) {
       setProviderError("网点名称不能为空");
       return;
     }
-
-    const codeTrim = state.editCode.trim();
-    if (isCreate && !codeTrim) {
+    if (!codeTrim) {
       setProviderError("网点编号不能为空");
       return;
     }
 
+    const companyCodeTrim = state.editCompanyCode.trim();
+    const resourceCodeTrim = state.editResourceCode.trim();
     const priorityNum = Number(state.editPriority || "0");
     const addrTrim = state.editAddress.trim();
 
@@ -159,6 +164,8 @@ const ShippingProviderEditPage: React.FC = () => {
         const created = await createShippingProvider({
           name,
           code: codeTrim,
+          company_code: companyCodeTrim ? companyCodeTrim : undefined,
+          resource_code: resourceCodeTrim ? resourceCodeTrim : undefined,
           address: addrTrim ? addrTrim : undefined,
           active: Boolean(state.editActive),
           priority: Number.isFinite(priorityNum) ? priorityNum : 0,
@@ -176,6 +183,9 @@ const ShippingProviderEditPage: React.FC = () => {
 
       await updateShippingProvider(safePid, {
         name,
+        code: codeTrim,
+        company_code: companyCodeTrim ? companyCodeTrim : null,
+        resource_code: resourceCodeTrim ? resourceCodeTrim : null,
         address: addrTrim ? addrTrim : null,
         active: Boolean(state.editActive),
         priority: Number.isFinite(priorityNum) ? priorityNum : 0,
@@ -203,8 +213,10 @@ const ShippingProviderEditPage: React.FC = () => {
     state.editActive,
     state.editAddress,
     state.editCode,
+    state.editCompanyCode,
     state.editName,
     state.editPriority,
+    state.editResourceCode,
   ]);
 
   const showErrors = useMemo(() => {
@@ -254,7 +266,6 @@ const ShippingProviderEditPage: React.FC = () => {
         <ProviderBasicInfoCard
           canWrite={canWrite}
           busy={busy}
-          isCreate={isCreate}
           state={state}
           onChange={patchState}
           savingProvider={savingProvider}

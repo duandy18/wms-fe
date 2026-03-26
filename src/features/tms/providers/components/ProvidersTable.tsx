@@ -114,6 +114,8 @@ export const ProvidersTable: React.FC<Props> = ({
               <th className={UI.th}>序号</th>
               <th className={UI.th}>网点名称</th>
               <th className={UI.th}>网点编号</th>
+              <th className={UI.th}>公司码</th>
+              <th className={UI.th}>资源码</th>
               <th className={UI.th}>地址</th>
               <th className={UI.th}>主联系人</th>
               <th className={UI.th}>电话</th>
@@ -127,7 +129,7 @@ export const ProvidersTable: React.FC<Props> = ({
           <tbody>
             {providers.length === 0 ? (
               <tr>
-                <td colSpan={10} className={UI.empty}>
+                <td colSpan={12} className={UI.empty}>
                   {loading ? "加载中…" : "暂无记录"}
                 </td>
               </tr>
@@ -140,6 +142,8 @@ export const ProvidersTable: React.FC<Props> = ({
                     <td className={UI.tdMono}>{p.id}</td>
                     <td className={UI.td}>{renderText(p.name)}</td>
                     <td className={UI.tdMono}>{renderText(p.code ?? null)}</td>
+                    <td className={UI.tdMono}>{renderText(p.company_code ?? null)}</td>
+                    <td className={UI.tdMono}>{renderText(p.resource_code ?? null)}</td>
                     <td className={UI.td}>{renderText(p.address ?? null)}</td>
 
                     <td className={UI.td}>{primary ? renderText(primary.name) : "未设置"}</td>

@@ -6,7 +6,6 @@ import { ProviderForm, type EditProviderFormState } from "../../edit-provider/Pr
 export const ProviderBasicInfoCard: React.FC<{
   canWrite: boolean;
   busy: boolean;
-  isCreate: boolean;
 
   state: EditProviderFormState;
   onChange: (patch: Partial<EditProviderFormState>) => void;
@@ -19,7 +18,6 @@ export const ProviderBasicInfoCard: React.FC<{
 }> = ({
   canWrite,
   busy,
-  isCreate,
   state,
   onChange,
   savingProvider,
@@ -39,7 +37,6 @@ export const ProviderBasicInfoCard: React.FC<{
       <ProviderForm
         state={state}
         busy={busy || !canWrite}
-        isCreate={isCreate}
         savingProvider={savingProvider}
         onChange={onChange}
         onSaveProvider={onSaveProvider}

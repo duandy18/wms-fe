@@ -77,6 +77,11 @@ export const menuSections: RouteSection[] = [
     label: "物流",
     items: [
       {
+        path: "/tms/shipment-prepare",
+        label: "发运准备",
+        requiredPermissions: ["operations.outbound"],
+      },
+      {
         path: "/tms/dispatch",
         label: "发货作业",
         requiredPermissions: ["operations.outbound"],
@@ -84,6 +89,11 @@ export const menuSections: RouteSection[] = [
       {
         path: "/tms/providers",
         label: "快递网点",
+        requiredPermissions: ["config.store.write"],
+      },
+      {
+        path: "/tms/waybill-configs",
+        label: "电子面单配置",
         requiredPermissions: ["config.store.write"],
       },
       {
