@@ -21,6 +21,8 @@ export async function fetchShippingProviderDetail(id: number): Promise<ShippingP
 export async function createShippingProvider(payload: {
   name: string;
   code: string;
+  company_code?: string;
+  resource_code?: string;
 
   // ✅ 网点地址（可选，与后端 address 字段对齐）
   address?: string;
@@ -34,6 +36,9 @@ export async function createShippingProvider(payload: {
 
 export type UpdateShippingProviderPayload = Partial<{
   name: string;
+  code: string;
+  company_code: string | null;
+  resource_code: string | null;
   address: string | null;
   active: boolean;
   priority: number;

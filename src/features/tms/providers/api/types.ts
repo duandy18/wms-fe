@@ -43,6 +43,8 @@ export interface ShippingProvider {
 
   // 历史 / UI 使用字段
   code?: string | null;
+  company_code?: string | null;
+  resource_code?: string | null;
   address?: string | null;
   warehouse_id?: number | null;
   priority?: number | null;

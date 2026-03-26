@@ -87,7 +87,7 @@ const AppRouter: React.FC = () => {
             path="outbound/ship"
             element={
               <RequirePermission permission="operations.outbound">
-                <Navigate to="/tms/dispatch" replace />
+                <Navigate to="/tms/shipment-prepare" replace />
               </RequirePermission>
             }
           />
@@ -130,6 +130,14 @@ const AppRouter: React.FC = () => {
             }
           />
 
+          <Route
+            path="tms/shipment-prepare"
+            element={
+              <RequirePermission permission="operations.outbound">
+                <P.ShipmentPreparePage />
+              </RequirePermission>
+            }
+          />
           <Route
             path="tms/dispatch"
             element={
@@ -395,6 +403,15 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="config.store.write">
                 <P.ShippingProvidersListPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="tms/waybill-configs"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.ElectronicWaybillConfigPage />
               </RequirePermission>
             }
           />

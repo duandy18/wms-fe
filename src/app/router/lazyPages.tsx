@@ -18,6 +18,9 @@ export const InboundCockpitPage = lazy(
 export const PickTasksCockpitPage = lazy(
   () => import("../../features/operations/outbound-pick/PickTasksCockpitPage"),
 );
+export const ShipmentPreparePage = lazy(
+  () => import("../../features/tms/shipment/pages/ShipmentPreparePage"),
+);
 export const ShipmentCockpitPage = lazy(
   () => import("../../features/tms/shipment/pages/ShipmentCockpitPage"),
 );
@@ -50,7 +53,8 @@ export const TemplatesPage = lazy(
   () => import("../../features/tms/pricingTemplates/pages/TemplatesPage"),
 );
 export const TemplateWorkbenchPage = lazy(
-  () => import("../../features/tms/pricingTemplates/workbench/TemplateWorkbenchPage"),
+  () =>
+    import("../../features/tms/pricingTemplates/workbench/TemplateWorkbenchPage"),
 );
 export const TransportReportsPage = lazy(
   () => import("../../features/tms/reports/pages/TransportReportsPage"),
@@ -122,6 +126,11 @@ export const ShippingProviderEditPage = lazy(
 // 快递网点详情页（当前收敛到编辑页入口）
 export const ShippingProviderDetailPage = lazy(
   () => import("../../features/tms/providers/pages/ShippingProviderDetailPage"),
+);
+
+// 电子面单配置
+export const ElectronicWaybillConfigPage = lazy(
+  () => import("../../features/tms/waybillConfigs/pages/ElectronicWaybillConfigPage"),
 );
 
 // 采购系统

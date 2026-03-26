@@ -3,8 +3,9 @@
 // 网点基础信息表单
 // 语义说明：
 // - 当前表单编辑对象为「快递网点本体」
-// - code 为内部业务键：仅创建时填写，创建后只读
+// - code 为内部业务键：创建/编辑都可填写，但保持唯一与规范化
 // - 仓库不属于本表单事实；仓库关系应走 warehouse_shipping_providers 绑定链路
+// - company_code / resource_code 为电子面单固定接入参数，不承载店铺维度配置
 
 import React from "react";
 import { UI } from "../ui";
@@ -12,6 +13,8 @@ import { UI } from "../ui";
 export type EditProviderFormState = {
   editName: string;
   editCode: string;
+  editCompanyCode: string;
+  editResourceCode: string;
   editAddress: string;
   editActive: boolean;
   editPriority: string;
@@ -27,11 +30,10 @@ export type EditProviderFormState = {
 export const ProviderForm: React.FC<{
   state: EditProviderFormState;
   busy: boolean;
-  isCreate: boolean;
   savingProvider: boolean;
   onChange: (patch: Partial<EditProviderFormState>) => void;
   onSaveProvider: () => void | Promise<void>;
-}> = ({ state, busy, isCreate, savingProvider, onChange, onSaveProvider }) => {
+}> = ({ state, busy, savingProvider, onChange, onSaveProvider }) => {
   return (
     <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4">
       <div className="md:col-span-2">
@@ -46,15 +48,15 @@ export const ProviderForm: React.FC<{
       </div>
 
       <div>
-        <label className={UI.label}>{isCreate ? "网点编号 *" : "网点编号"}</label>
+        <label className={UI.label}>网点编号 *</label>
         <input
           className={UI.inputMono}
           value={state.editCode}
-          disabled={busy || !isCreate}
+          disabled={busy}
           placeholder="例如：STO-SJZ-01"
           onChange={(e) => onChange({ editCode: e.target.value })}
         />
-        {!isCreate ? <div className="mt-2 text-xs text-slate-500">编号为内部业务键，创建后不可修改。</div> : null}
+        <div className="mt-2 text-xs text-slate-500">编号会按系统规则自动去空格并转为大写，且必须全局唯一。</div>
       </div>
 
       <div>
@@ -64,6 +66,28 @@ export const ProviderForm: React.FC<{
           value={state.editPriority}
           disabled={busy}
           onChange={(e) => onChange({ editPriority: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className={UI.label}>公司码</label>
+        <input
+          className={UI.inputMono}
+          value={state.editCompanyCode}
+          disabled={busy}
+          placeholder="电子面单公司码"
+          onChange={(e) => onChange({ editCompanyCode: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className={UI.label}>资源码</label>
+        <input
+          className={UI.inputMono}
+          value={state.editResourceCode}
+          disabled={busy}
+          placeholder="电子面单资源码"
+          onChange={(e) => onChange({ editResourceCode: e.target.value })}
         />
       </div>
 
