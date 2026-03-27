@@ -1,4 +1,4 @@
-// src/features/operations/outbound-pick/orderExplain/useOrderExplain.ts
+// src/features/oms/parsing/orderExplain/useOrderExplain.ts
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { OrderExplainCardInput, PlatformOrderReplayOut } from "./types";

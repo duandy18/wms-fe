@@ -1,9 +1,9 @@
 // src/features/admin/stores/components/storeMerchantCodeGovernance/useStoreMerchantCodeFskuGovernance.ts
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Fsku, MerchantCodeBindingRow } from "../../../shop-bundles/types";
-import { apiListStoreFskus } from "../../../shop-bundles/api_fsku";
-import { apiBindMerchantCode, apiListMerchantCodeBindings, apiUnbindMerchantCodeBinding } from "../../../shop-bundles/api_merchant_code_bindings";
+import type { Fsku, MerchantCodeBindingRow } from "../../../../admin/shop-bundles/types";
+import { apiListStoreFskus } from "../../../../admin/shop-bundles/api_fsku";
+import { apiBindMerchantCode, apiListMerchantCodeBindings, apiUnbindMerchantCodeBinding } from "../../../../admin/shop-bundles/api_merchant_code_bindings";
 import type { GovernanceActions, GovernanceProps, GovernanceState, RowState } from "./types";
 import { toMsg } from "./types";
 

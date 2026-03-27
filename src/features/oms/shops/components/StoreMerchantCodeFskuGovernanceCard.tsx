@@ -1,7 +1,7 @@
 // src/features/admin/stores/components/StoreMerchantCodeFskuGovernanceCard.tsx
 
 import React from "react";
-import type { Platform } from "../../shop-bundles/types";
+import type { Platform } from "../../../admin/shop-bundles/types";
 import { useStoreMerchantCodeFskuGovernance } from "./storeMerchantCodeGovernance/useStoreMerchantCodeFskuGovernance";
 import { StoreMerchantCodeFskuGovernanceTable } from "./storeMerchantCodeGovernance/StoreMerchantCodeFskuGovernanceTable";
 

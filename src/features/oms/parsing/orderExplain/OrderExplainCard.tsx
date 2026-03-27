@@ -1,4 +1,4 @@
-// src/features/operations/outbound-pick/orderExplain/OrderExplainCard.tsx
+// src/features/oms/parsing/orderExplain/OrderExplainCard.tsx
 
 import React, { useMemo } from "react";
 import type { OrderExplainCardInput, OrderResolveUnresolved, PlatformOrderReplayOut } from "./types";

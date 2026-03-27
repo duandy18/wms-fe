@@ -71,6 +71,29 @@ export const menuSections: RouteSection[] = [
     ],
   },
 
+  // 订单管理
+  {
+    id: "orders",
+    label: "订单管理",
+    items: [
+      {
+        path: "/shops",
+        label: "商铺管理",
+        requiredPermissions: ["config.store.read"],
+      },
+      {
+        path: "/parsing",
+        label: "订单解析",
+        requiredPermissions: ["operations.outbound"],
+      },
+      {
+        path: "/analytics",
+        label: "统计分析",
+        requiredPermissions: ["operations.outbound"],
+      },
+    ],
+  },
+
   // 物流
   {
     id: "logistics",

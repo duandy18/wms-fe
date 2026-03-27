@@ -1,8 +1,8 @@
 // src/features/admin/stores/StoreBindWarehouseForm.tsx
 
 import React, { useEffect, useState } from "react";
-import { fetchActiveWarehouses } from "../warehouses/api";
-import type { WarehouseListItem } from "../warehouses/types";
+import { fetchActiveWarehouses } from "../../admin/warehouses/api";
+import type { WarehouseListItem } from "../../admin/warehouses/types";
 import type { WarehouseRole } from "./types";
 
 type Props = {

@@ -82,6 +82,24 @@ export function Topbar() {
         value: { section: "订单出库", page: "出库看板" },
       },
 
+      // 订单管理
+      {
+        prefix: "/shops",
+        value: { section: "订单管理", page: "商铺管理" },
+      },
+      {
+        prefix: "/parsing",
+        value: { section: "订单管理", page: "订单解析" },
+      },
+      {
+        prefix: "/analytics",
+        value: { section: "订单管理", page: "统计分析" },
+      },
+      {
+        prefix: "/orders",
+        value: { section: "订单管理", page: "订单解析" },
+      },
+
       // 物流
       {
         prefix: "/tms/templates",

@@ -1,4 +1,4 @@
-// src/features/operations/outbound-pick/orderExplain/OrderExplainRightPanel.tsx
+// src/features/oms/parsing/orderExplain/OrderExplainRightPanel.tsx
 
 import React, { useMemo } from "react";
 import type { OrderSummary } from "../../../orders/api";

@@ -1,4 +1,4 @@
-// src/features/operations/outbound-pick/platformOrderMirror/RawJsonPanel.tsx
+// src/features/oms/parsing/platformOrderMirror/RawJsonPanel.tsx
 import React, { useMemo, useState } from "react";
 import { safeJson } from "./jsonPick";
 

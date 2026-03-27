@@ -1,4 +1,4 @@
-// src/features/operations/outbound-pick/platformOrderMirror/jsonPick.ts
+// src/features/oms/parsing/platformOrderMirror/jsonPick.ts
 
 export function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;

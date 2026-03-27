@@ -1,4 +1,4 @@
-// src/features/operations/outbound-pick/platformOrderMirror/OrderMirrorLinesTable.tsx
+// src/features/oms/parsing/platformOrderMirror/OrderMirrorLinesTable.tsx
 import React, { useMemo } from "react";
 import type { OrderView } from "../../../orders/api";
 import type { PlatformOrderReplayOut } from "../orderExplain/types";

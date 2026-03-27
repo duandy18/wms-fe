@@ -15,7 +15,7 @@ import type { OrderSummary, OrderView } from "../../orders/api";
 import { createPickTaskFromOrder, type PickTask } from "./pickTasksApi";
 
 import { useOrderInlineDetail } from "../../orders/hooks/useOrderInlineDetail";
-import { PlatformOrderMirrorPanel } from "./PlatformOrderMirrorPanel";
+import { PlatformOrderMirrorPanel } from "@/features/oms/parsing/PlatformOrderMirrorPanel";
 
 function normalizeOrderForMirror(input: unknown): OrderView["order"] | null {
   if (!input || typeof input !== "object") return null;

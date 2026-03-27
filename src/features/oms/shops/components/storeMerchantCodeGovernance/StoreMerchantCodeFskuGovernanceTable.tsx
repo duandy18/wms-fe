@@ -1,7 +1,7 @@
 // src/features/admin/stores/components/storeMerchantCodeGovernance/StoreMerchantCodeFskuGovernanceTable.tsx
 
 import React, { useMemo } from "react";
-import type { Fsku, MerchantCodeBindingRow } from "../../../shop-bundles/types";
+import type { Fsku, MerchantCodeBindingRow } from "../../../../admin/shop-bundles/types";
 import type { CurrentBindingsIndex, RowState } from "./types";
 
 function splitComponentsSummaryText(raw: string): string[] {

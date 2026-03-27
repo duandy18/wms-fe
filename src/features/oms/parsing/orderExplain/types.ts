@@ -1,4 +1,4 @@
-// src/features/operations/outbound-pick/orderExplain/types.ts
+// src/features/oms/parsing/orderExplain/types.ts
 
 export type PlatformOrderReplayIn = {
   platform: string; // 后端当前是大写也行：前端不推导不改写
