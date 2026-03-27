@@ -131,6 +131,34 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
+            path="orders"
+            element={<Navigate to="/parsing" replace />}
+          />
+          <Route
+            path="shops"
+            element={
+              <RequirePermission permission="config.store.read">
+                <P.StoresListPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="parsing"
+            element={
+              <RequirePermission permission="operations.outbound">
+                <P.OrdersPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="analytics"
+            element={
+              <RequirePermission permission="operations.outbound">
+                <P.AnalyticsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
             path="tms/shipment-prepare"
             element={
               <RequirePermission permission="operations.outbound">

@@ -15,8 +15,8 @@ import { CreatePickTaskCard } from "./orderPick/CreatePickTaskCard";
 import type { PickTask } from "./pickTasksApi";
 
 // 订单解析卡
-import { OrderExplainCard } from "./orderExplain/OrderExplainCard";
-import type { OrderExplainCardInput } from "./orderExplain/types";
+import { OrderExplainCard } from "@/features/oms/parsing/orderExplain/OrderExplainCard";
+import type { OrderExplainCardInput } from "@/features/oms/parsing/orderExplain/types";
 
 type Props = {
   selectedOrderId: number | null;

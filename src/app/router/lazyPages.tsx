@@ -72,13 +72,21 @@ export const ReconciliationPage = lazy(
 
 // 主数据
 export const StoresListPage = lazy(
-  () => import("../../features/admin/stores/StoresListPage"),
+  () => import("../../features/oms/shops/StoresListPage"),
 );
 export const StoreDetailPage = lazy(
-  () => import("../../features/admin/stores/StoreDetailPage"),
+  () => import("../../features/oms/shops/StoreDetailPage"),
 );
 export const ItemsPage = lazy(
   () => import("../../features/admin/items/ItemsPage"),
+);
+
+export const OrdersPage = lazy(
+  () => import("../../features/oms/parsing/OrdersPage"),
+);
+
+export const AnalyticsPage = lazy(
+  () => import("../../features/oms/analytics/AnalyticsPage"),
 );
 
 // 主数据：商铺商品组合（FSKU）
