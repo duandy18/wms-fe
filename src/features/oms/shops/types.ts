@@ -112,16 +112,6 @@ export interface DefaultWarehouseResponse {
   data: { warehouse_id: number | null };
 }
 
-// 平台授权
-export interface StorePlatformAuthStatus {
-  store_id: number;
-  platform: string;
-  shop_id: string;
-  auth_source: "NONE" | "MANUAL" | "OAUTH";
-  expires_at: string | null;
-  mall_id: string | null;
-}
-
 /* ============================================================
  * 商铺 SKU（store_items）—— 前端视图模型（后端接口未接入时允许为空）
  * ============================================================ */
@@ -136,6 +126,12 @@ export type StoreSkuListItem = {
 export type StoreSkuListOut = { ok: boolean; data: StoreSkuListItem[] };
 
 export type StoreSkuAddIn = { item_id: number };
-export type StoreSkuAddOut = { ok: boolean; data?: { store_id: number; item_id: number } | Record<string, unknown> };
+export type StoreSkuAddOut = {
+  ok: boolean;
+  data?: { store_id: number; item_id: number } | Record<string, unknown>;
+};
 
-export type StoreSkuRemoveOut = { ok: boolean; data?: { store_id: number; item_id: number } | Record<string, unknown> };
+export type StoreSkuRemoveOut = {
+  ok: boolean;
+  data?: { store_id: number; item_id: number } | Record<string, unknown>;
+};

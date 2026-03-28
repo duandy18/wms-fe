@@ -48,7 +48,6 @@ export function Topbar() {
     }
   }
 
-  // ===== 面包屑（分区 / 页面）=====
   const breadcrumb = useMemo<Breadcrumb>(() => {
     const p = location.pathname;
 
@@ -83,6 +82,10 @@ export function Topbar() {
       },
 
       // 订单管理
+      {
+        prefix: "/platforms",
+        value: { section: "订单管理", page: "平台接入" },
+      },
       {
         prefix: "/shops",
         value: { section: "订单管理", page: "商铺管理" },

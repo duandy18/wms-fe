@@ -70,28 +70,32 @@ export const ReconciliationPage = lazy(
   () => import("../../features/tms/reconciliation/pages/ReconciliationPage"),
 );
 
-// 主数据
+// OMS：平台接入 / 商铺管理 / 商铺商品组合 / 订单解析 / 统计分析
+export const PlatformIntegrationsListPage = lazy(
+  () => import("../../features/oms/platforms/PlatformIntegrationsListPage"),
+);
+export const PlatformIntegrationDetailPage = lazy(
+  () => import("../../features/oms/platforms/PlatformIntegrationDetailPage"),
+);
 export const StoresListPage = lazy(
   () => import("../../features/oms/shops/StoresListPage"),
 );
 export const StoreDetailPage = lazy(
   () => import("../../features/oms/shops/StoreDetailPage"),
 );
-export const ItemsPage = lazy(
-  () => import("../../features/admin/items/ItemsPage"),
+export const ShopProductBundlesPage = lazy(
+  () => import("../../features/oms/fsku/ShopProductBundlesPage"),
 );
-
 export const OrdersPage = lazy(
   () => import("../../features/oms/parsing/OrdersPage"),
 );
-
 export const AnalyticsPage = lazy(
   () => import("../../features/oms/analytics/AnalyticsPage"),
 );
 
-// 主数据：商铺商品组合（FSKU）
-export const ShopProductBundlesPage = lazy(
-  () => import("../../features/admin/shop-bundles/ShopProductBundlesPage"),
+// 主数据
+export const ItemsPage = lazy(
+  () => import("../../features/admin/items/ItemsPage"),
 );
 
 // 权限与账号：3 个子页面（/iam/*）
