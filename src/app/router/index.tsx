@@ -142,6 +142,31 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+
+          <Route
+            path="platforms"
+            element={
+              <RequirePermission permission="config.store.read">
+                <P.PlatformIntegrationsListPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="platforms/:storeId"
+            element={
+              <RequirePermission permission="config.store.read">
+                <P.PlatformIntegrationDetailPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="shop-bundles"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.ShopProductBundlesPage />
+              </RequirePermission>
+            }
+          />
           <Route
             path="parsing"
             element={
@@ -399,14 +424,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          <Route
-            path="admin/shop-bundles"
-            element={
-              <RequirePermission permission="config.store.write">
-                <P.ShopProductBundlesPage />
-              </RequirePermission>
-            }
-          />
 
           <Route
             path="admin/items"

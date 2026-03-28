@@ -21,6 +21,7 @@ type StoresTableProps = {
 
   onToggleActive: (store: StoreListItem) => void;
   onOpenDetail: (storeId: number) => void;
+  onOpenPlatformIntegration: (storeId: number) => void;
 };
 
 function SortHeader({
@@ -43,7 +44,10 @@ function SortHeader({
     <button
       type="button"
       onClick={() => onSort(columnKey)}
-      className={"inline-flex items-center gap-0.5 " + (isActive ? "text-slate-900 font-semibold" : "text-slate-700")}
+      className={
+        "inline-flex items-center gap-0.5 " +
+        (isActive ? "font-semibold text-slate-900" : "text-slate-700")
+      }
     >
       <span>{label}</span>
       {arrow && <span className="text-[11px]">{arrow}</span>}
@@ -80,10 +84,11 @@ export const StoresTable: React.FC<StoresTableProps> = ({
   onSort,
   onToggleActive,
   onOpenDetail,
+  onOpenPlatformIntegration,
 }) => {
   if (!canRead) {
     return (
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="px-4 py-6 text-base text-slate-500">你没有 admin.stores 权限。</div>
       </section>
     );
@@ -91,7 +96,7 @@ export const StoresTable: React.FC<StoresTableProps> = ({
 
   if (loading) {
     return (
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="px-4 py-6 text-base text-slate-600">加载中…</div>
       </section>
     );
@@ -99,50 +104,75 @@ export const StoresTable: React.FC<StoresTableProps> = ({
 
   if (visibleStores.length === 0) {
     return (
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-4 py-6 text-base text-slate-500">{showInactive ? "暂无店铺记录。" : "暂无启用的店铺。"}</div>
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="px-4 py-6 text-base text-slate-500">
+          {showInactive ? "暂无店铺记录。" : "暂无启用的店铺。"}
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      {/* 顶部工具条：显示停用店铺 */}
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="flex items-center justify-between px-4 pb-2 pt-3">
         <div className="text-sm text-slate-500">
           共 {visibleStores.length} 条（当前仅显示{showInactive ? "全部店铺" : "启用店铺"}）
         </div>
-        <label className="text-sm text-slate-600 flex items-center gap-2">
-          <input type="checkbox" checked={showInactive} onChange={(e) => onToggleShowInactive(e.target.checked)} />
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={(e) => onToggleShowInactive(e.target.checked)}
+          />
           显示停用店铺
         </label>
       </div>
 
       <table className="min-w-full text-sm">
-        <thead className="bg-slate-50 border-b border-slate-300">
+        <thead className="border-b border-slate-300 bg-slate-50">
           <tr>
-            <th className="px-4 py-3 text-left w-16">
-              <SortHeader label="ID" sortKey={sortKey} sortAsc={sortAsc} columnKey="id" onSort={onSort} />
+            <th className="w-16 px-4 py-3 text-left">
+              <SortHeader
+                label="ID"
+                sortKey={sortKey}
+                sortAsc={sortAsc}
+                columnKey="id"
+                onSort={onSort}
+              />
             </th>
-            <th className="px-4 py-3 text-left w-24">
-              <SortHeader label="platform" sortKey={sortKey} sortAsc={sortAsc} columnKey="platform" onSort={onSort} />
+            <th className="w-24 px-4 py-3 text-left">
+              <SortHeader
+                label="platform"
+                sortKey={sortKey}
+                sortAsc={sortAsc}
+                columnKey="platform"
+                onSort={onSort}
+              />
             </th>
-            <th className="px-4 py-3 text-left w-40">
-              <SortHeader label="shop_id" sortKey={sortKey} sortAsc={sortAsc} columnKey="shop_id" onSort={onSort} />
+            <th className="w-40 px-4 py-3 text-left">
+              <SortHeader
+                label="shop_id"
+                sortKey={sortKey}
+                sortAsc={sortAsc}
+                columnKey="shop_id"
+                onSort={onSort}
+              />
             </th>
-
-            {/* ✅ 店铺类型（测试宇宙显性化） */}
-            <th className="px-4 py-3 text-left w-24">类型</th>
-
-            <th className="px-4 py-3 text-left w-48">
-              <SortHeader label="名称" sortKey={sortKey} sortAsc={sortAsc} columnKey="name" onSort={onSort} />
+            <th className="w-24 px-4 py-3 text-left">类型</th>
+            <th className="w-48 px-4 py-3 text-left">
+              <SortHeader
+                label="名称"
+                sortKey={sortKey}
+                sortAsc={sortAsc}
+                columnKey="name"
+                onSort={onSort}
+              />
             </th>
-
-            <th className="px-4 py-3 text-left w-32">联系人</th>
-            <th className="px-4 py-3 text-left w-32">联系电话</th>
-            <th className="px-4 py-3 text-left w-56">Email</th>
-            <th className="px-4 py-3 text-left w-28">状态</th>
-            <th className="px-4 py-3 text-left w-32">操作</th>
+            <th className="w-32 px-4 py-3 text-left">联系人</th>
+            <th className="w-32 px-4 py-3 text-left">联系电话</th>
+            <th className="w-56 px-4 py-3 text-left">Email</th>
+            <th className="w-28 px-4 py-3 text-left">状态</th>
+            <th className="w-56 px-4 py-3 text-left">操作</th>
           </tr>
         </thead>
 
@@ -152,29 +182,34 @@ export const StoresTable: React.FC<StoresTableProps> = ({
             return (
               <tr
                 key={s.id}
-                className={"border-b border-slate-200 hover:bg-slate-50 " + (inactive ? "bg-slate-50 text-slate-400" : "")}
+                className={
+                  "border-b border-slate-200 hover:bg-slate-50 " +
+                  (inactive ? "bg-slate-50 text-slate-400" : "")
+                }
               >
-                <td className="px-4 py-3 font-medium text-sm">{s.id}</td>
+                <td className="px-4 py-3 text-sm font-medium">{s.id}</td>
                 <td className="px-4 py-3 text-sm">{s.platform}</td>
                 <td className="px-4 py-3 text-sm">{s.shop_id}</td>
-
-                {/* ✅ 类型：测试 / 实际 */}
                 <td className="px-4 py-3 text-sm">
                   <ShopTypeBadge shopType={s.shop_type} />
                 </td>
-
                 <td className="px-4 py-3 text-sm">{s.name}</td>
-
-                <td className="px-4 py-3 text-sm">{s.contact_name && s.contact_name.trim() ? s.contact_name : "—"}</td>
-                <td className="px-4 py-3 text-sm">{s.contact_phone && s.contact_phone.trim() ? s.contact_phone : "—"}</td>
-                <td className="px-4 py-3 text-sm">{s.email && s.email.trim() ? s.email : "—"}</td>
+                <td className="px-4 py-3 text-sm">
+                  {s.contact_name && s.contact_name.trim() ? s.contact_name : "—"}
+                </td>
+                <td className="px-4 py-3 text-sm">
+                  {s.contact_phone && s.contact_phone.trim() ? s.contact_phone : "—"}
+                </td>
+                <td className="px-4 py-3 text-sm">
+                  {s.email && s.email.trim() ? s.email : "—"}
+                </td>
 
                 <td className="px-4 py-3 text-sm">
                   {canWrite ? (
                     <button
                       onClick={() => onToggleActive(s)}
                       className={
-                        "px-3 py-1.5 rounded-lg border text-xs " +
+                        "rounded-lg border px-3 py-1.5 text-xs " +
                         (inactive
                           ? "border-emerald-400 text-emerald-700 hover:bg-emerald-50"
                           : "border-slate-400 text-slate-800 hover:bg-slate-100")
@@ -191,16 +226,33 @@ export const StoresTable: React.FC<StoresTableProps> = ({
                 </td>
 
                 <td className="px-4 py-3 text-sm">
-                  <button
-                    className={
-                      "px-3 py-1.5 rounded-lg border text-xs " +
-                      (inactive ? "border-slate-300 text-slate-400 cursor-not-allowed" : "border-slate-400 text-slate-800 hover:bg-slate-100")
-                    }
-                    onClick={() => !inactive && onOpenDetail(s.id)}
-                    disabled={inactive}
-                  >
-                    店铺详情
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      className={
+                        "rounded-lg border px-3 py-1.5 text-xs " +
+                        (inactive
+                          ? "cursor-not-allowed border-slate-300 text-slate-400"
+                          : "border-slate-400 text-slate-800 hover:bg-slate-100")
+                      }
+                      onClick={() => !inactive && onOpenDetail(s.id)}
+                      disabled={inactive}
+                    >
+                      店铺详情
+                    </button>
+
+                    <button
+                      className={
+                        "rounded-lg border px-3 py-1.5 text-xs " +
+                        (inactive
+                          ? "cursor-not-allowed border-slate-300 text-slate-400"
+                          : "border-slate-400 text-slate-800 hover:bg-slate-100")
+                      }
+                      onClick={() => !inactive && onOpenPlatformIntegration(s.id)}
+                      disabled={inactive}
+                    >
+                      平台接入
+                    </button>
+                  </div>
                 </td>
               </tr>
             );

@@ -4,12 +4,10 @@ import React, { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PageTitle from "../../../components/ui/PageTitle";
 
-import { StorePlatformAuthCard } from "./StorePlatformAuthCard";
 import { useStoreDetailPresenter } from "./useStoreDetailPresenter";
 
 import { useStoreMetaForm } from "./hooks/useStoreMetaForm";
 import { StoreMetaCard } from "./components/StoreMetaCard";
-import { StoreCredentialsPanel } from "./components/StoreCredentialsPanel";
 
 import StoreFulfillmentPolicyCard from "./components/StoreFulfillmentPolicyCard";
 import { StoreMerchantCodeFskuGovernanceCard } from "./components/StoreMerchantCodeFskuGovernanceCard";
@@ -58,6 +56,13 @@ export default function StoreDetailPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => navigate(`/platforms/${parsedId}`)}
+            className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+          >
+            前往平台接入详情
+          </button>
+          <button
+            type="button"
             onClick={() => navigate(-1)}
             className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100"
           >
@@ -66,25 +71,21 @@ export default function StoreDetailPage() {
         </div>
       </div>
 
-      {p.error && <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{p.error}</div>}
-
-      {meta.metaError && <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{meta.metaError}</div>}
-      {meta.metaJustSaved && !meta.metaError && (
-        <div className="rounded border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">店铺基础信息已保存。</div>
+      {p.error && (
+        <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
+          {p.error}
+        </div>
       )}
 
-      {p.credentialsOpen && p.detail && (
-        <StoreCredentialsPanel
-          platform={p.detail.platform}
-          shopId={p.detail.shop_id}
-          storeId={p.detail.store_id}
-          token={p.credentialsToken}
-          error={p.credentialsError}
-          saving={p.credentialsSaving}
-          onChangeToken={p.setCredentialsToken}
-          onClose={p.closeCredentials}
-          onSubmit={p.submitCredentials}
-        />
+      {meta.metaError && (
+        <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
+          {meta.metaError}
+        </div>
+      )}
+      {meta.metaJustSaved && !meta.metaError && (
+        <div className="rounded border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+          店铺基础信息已保存。
+        </div>
       )}
 
       {p.loading && !p.detail ? (
@@ -93,7 +94,7 @@ export default function StoreDetailPage() {
         <div className="text-sm text-slate-500">未找到店铺。</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4">
             <div className="min-w-0">
               <StoreMetaCard
                 detail={{
@@ -120,23 +121,14 @@ export default function StoreDetailPage() {
                 onSubmit={meta.save}
               />
             </div>
-
-            <div className="min-w-0">
-              <StorePlatformAuthCard
-                detailPlatform={p.detail.platform}
-                detailShopId={p.detail.shop_id}
-                detailStoreId={p.detail.store_id}
-                auth={p.platformAuth}
-                loading={p.authLoading}
-                onManualCredentialsClick={p.openCredentials}
-                onOAuthClick={p.startOAuth}
-                oauthStarting={p.oauthStarting}
-                oauthError={p.oauthError}
-              />
-            </div>
           </div>
 
-          <StoreFulfillmentPolicyCard storeId={p.detail.store_id} canWrite={p.canWrite} bindings={p.detail.bindings ?? []} onReload={p.reloadDetail} />
+          <StoreFulfillmentPolicyCard
+            storeId={p.detail.store_id}
+            canWrite={p.canWrite}
+            bindings={p.detail.bindings ?? []}
+            onReload={p.reloadDetail}
+          />
 
           <StoreMerchantCodeFskuGovernanceCard
             storeId={p.detail.store_id}
@@ -146,8 +138,12 @@ export default function StoreDetailPage() {
             canWrite={p.canWrite}
           />
 
-          {/* ✅ 订单模拟三张卡：只对测试店铺有效（enabled=false 时 DOM 不存在、也不会打接口） */}
-          <StoreOrderSimSection enabled={storeOrderGenEnabled && isTestStore} platform={String(p.detail.platform).toUpperCase()} shopId={String(p.detail.shop_id)} storeId={p.detail.store_id} />
+          <StoreOrderSimSection
+            enabled={storeOrderGenEnabled && isTestStore}
+            platform={String(p.detail.platform).toUpperCase()}
+            shopId={String(p.detail.shop_id)}
+            storeId={p.detail.store_id}
+          />
         </>
       )}
     </div>

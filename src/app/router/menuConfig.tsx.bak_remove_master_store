@@ -87,11 +87,6 @@ export const menuSections: RouteSection[] = [
         requiredPermissions: ["config.store.read"],
       },
       {
-        path: "/shop-bundles",
-        label: "商铺商品组合",
-        requiredPermissions: ["config.store.write"],
-      },
-      {
         path: "/parsing",
         label: "订单解析",
         requiredPermissions: ["operations.outbound"],
@@ -242,6 +237,11 @@ export const menuSections: RouteSection[] = [
     id: "master-data",
     label: "主数据",
     items: [
+      {
+        path: "/stores",
+        label: "店铺管理",
+        requiredPermissions: ["config.store.read"],
+      },
       {
         path: "/admin/items",
         label: "商品管理",

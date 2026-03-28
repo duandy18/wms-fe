@@ -15,14 +15,14 @@ export default function StoresListPage() {
       <header className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold">店铺管理</h1>
-          <p className="text-sm text-slate-600 mt-1">
+          <p className="mt-1 text-sm text-slate-600">
             管理平台店铺档案。店铺详情页以「SKU → 履约仓（唯一）」为主线配置入口。
           </p>
         </div>
       </header>
 
       {p.error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
           {p.error}
         </div>
       )}
@@ -55,6 +55,7 @@ export default function StoresListPage() {
         onSort={p.handleSort}
         onToggleActive={p.handleToggleActive}
         onOpenDetail={(id) => navigate(`/stores/${id}`)}
+        onOpenPlatformIntegration={(id) => navigate(`/platforms/${id}`)}
       />
     </div>
   );

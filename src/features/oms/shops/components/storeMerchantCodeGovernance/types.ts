@@ -1,6 +1,6 @@
-// src/features/admin/stores/components/storeMerchantCodeGovernance/types.ts
+// src/features/oms/shops/components/storeMerchantCodeGovernance/types.ts
 
-import type { Fsku, MerchantCodeBindingRow, Platform } from "../../../../admin/shop-bundles/types";
+import type { Fsku, MerchantCodeBindingRow, Platform } from "../../../fsku/types";
 
 export type Banner = { kind: "success" | "error"; message: string } | null;
 
