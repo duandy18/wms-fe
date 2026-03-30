@@ -77,35 +77,36 @@ export const menuSections: RouteSection[] = [
     label: "订单管理",
     items: [
       {
-        path: "/oms/pdd/stores",
-        label: "拼多多店铺接入",
+        path: "/platforms",
+        label: "平台接入",
         requiredPermissions: ["config.store.read"],
       },
       {
-        path: "/oms/pdd/orders",
-        label: "拼多多订单台账",
-        requiredPermissions: ["operations.outbound"],
-      },
-      {
-        path: "/oms/taobao/stores",
-        label: "淘宝店铺接入",
+        path: "/shops",
+        label: "商铺管理",
         requiredPermissions: ["config.store.read"],
       },
       {
-        path: "/oms/taobao/orders",
-        label: "淘宝订单台账",
+        path: "/shop-bundles",
+        label: "商铺商品组合",
+        requiredPermissions: ["config.store.write"],
+      },
+      {
+        path: "/parsing",
+        label: "订单解析",
         requiredPermissions: ["operations.outbound"],
       },
       {
-        path: "/oms/jd/stores",
-        label: "京东店铺接入",
+        path: "/analytics",
+        label: "统计分析",
+        requiredPermissions: ["operations.outbound"],
+      },
+      {
+        path: "/platforms/:storeId",
+        label: "平台接入详情",
         requiredPermissions: ["config.store.read"],
+        showInSidebar: false,
       },
-      {
-        path: "/oms/jd/orders",
-        label: "京东订单台账",
-        requiredPermissions: ["operations.outbound"],
-      }
     ],
   },
 
