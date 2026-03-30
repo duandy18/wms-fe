@@ -81,26 +81,17 @@ export const PddStoresPage = lazy(
 export const PddOrdersPage = lazy(
   () => import("../../features/oms/pdd/pages/PddOrdersPage"),
 );
-export const PddOrderDetailPage = lazy(
-  () => import("../../features/oms/pdd/pages/PddOrderDetailPage"),
-);
 export const TaobaoStoresPage = lazy(
   () => import("../../features/oms/taobao/pages/TaobaoStoresPage"),
 );
 export const TaobaoOrdersPage = lazy(
   () => import("../../features/oms/taobao/pages/TaobaoOrdersPage"),
 );
-export const TaobaoOrderDetailPage = lazy(
-  () => import("../../features/oms/taobao/pages/TaobaoOrderDetailPage"),
-);
 export const JdStoresPage = lazy(
   () => import("../../features/oms/jd/pages/JdStoresPage"),
 );
 export const JdOrdersPage = lazy(
   () => import("../../features/oms/jd/pages/JdOrdersPage"),
-);
-export const JdOrderDetailPage = lazy(
-  () => import("../../features/oms/jd/pages/JdOrderDetailPage"),
 );
 
 // 主数据

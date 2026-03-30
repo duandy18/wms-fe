@@ -181,14 +181,6 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="oms/pdd/orders/:pddOrderId"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.PddOrderDetailPage />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="oms/taobao/stores"
             element={
               <RequirePermission permission="config.store.read">
@@ -205,14 +197,6 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="oms/taobao/orders/:taobaoOrderId"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.TaobaoOrderDetailPage />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="oms/jd/stores"
             element={
               <RequirePermission permission="config.store.read">
@@ -225,14 +209,6 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="operations.outbound">
                 <P.JdOrdersPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/jd/orders/:jdOrderId"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.JdOrderDetailPage />
               </RequirePermission>
             }
           />

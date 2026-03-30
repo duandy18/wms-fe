@@ -132,107 +132,54 @@ const AppRouter: React.FC = () => {
 
           <Route
             path="orders"
-            element={<Navigate to="/oms/pdd/orders" replace />}
+            element={<Navigate to="/parsing" replace />}
           />
           <Route
             path="shops"
-            element={<Navigate to="/oms/pdd/stores" replace />}
+            element={
+              <RequirePermission permission="config.store.read">
+                <P.StoresListPage />
+              </RequirePermission>
+            }
           />
 
           <Route
             path="platforms"
-            element={<Navigate to="/oms/pdd/stores" replace />}
+            element={
+              <RequirePermission permission="config.store.read">
+                <P.PlatformIntegrationsListPage />
+              </RequirePermission>
+            }
           />
           <Route
             path="platforms/:storeId"
-            element={<Navigate to="/oms/pdd/stores" replace />}
+            element={
+              <RequirePermission permission="config.store.read">
+                <P.PlatformIntegrationDetailPage />
+              </RequirePermission>
+            }
           />
           <Route
             path="shop-bundles"
-            element={<Navigate to="/oms/pdd/orders" replace />}
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.ShopProductBundlesPage />
+              </RequirePermission>
+            }
           />
           <Route
             path="parsing"
-            element={<Navigate to="/oms/pdd/orders" replace />}
+            element={
+              <RequirePermission permission="operations.outbound">
+                <P.OrdersPage />
+              </RequirePermission>
+            }
           />
           <Route
             path="analytics"
             element={
               <RequirePermission permission="operations.outbound">
                 <P.AnalyticsPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="oms/pdd/stores"
-            element={
-              <RequirePermission permission="config.store.read">
-                <P.PddStoresPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/pdd/orders"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.PddOrdersPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/pdd/orders/:pddOrderId"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.PddOrderDetailPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/taobao/stores"
-            element={
-              <RequirePermission permission="config.store.read">
-                <P.TaobaoStoresPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/taobao/orders"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.TaobaoOrdersPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/taobao/orders/:taobaoOrderId"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.TaobaoOrderDetailPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/jd/stores"
-            element={
-              <RequirePermission permission="config.store.read">
-                <P.JdStoresPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/jd/orders"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.JdOrdersPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/jd/orders/:jdOrderId"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.JdOrderDetailPage />
               </RequirePermission>
             }
           />
@@ -435,6 +382,22 @@ const AppRouter: React.FC = () => {
             }
           />
 
+          <Route
+            path="stores"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.StoresListPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="stores/:storeId"
+            element={
+              <RequirePermission permission="config.store.write">
+                <P.StoreDetailPage />
+              </RequirePermission>
+            }
+          />
 
           <Route
             path="warehouses"

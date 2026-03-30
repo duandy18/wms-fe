@@ -71,36 +71,26 @@ export const ReconciliationPage = lazy(
 );
 
 // OMS：平台接入 / 商铺管理 / 商铺商品组合 / 订单解析 / 统计分析
+export const PlatformIntegrationsListPage = lazy(
+  () => import("../../features/oms/platforms/PlatformIntegrationsListPage"),
+);
+export const PlatformIntegrationDetailPage = lazy(
+  () => import("../../features/oms/platforms/PlatformIntegrationDetailPage"),
+);
+export const StoresListPage = lazy(
+  () => import("../../features/oms/shops/StoresListPage"),
+);
+export const StoreDetailPage = lazy(
+  () => import("../../features/oms/shops/StoreDetailPage"),
+);
+export const ShopProductBundlesPage = lazy(
+  () => import("../../features/oms/fsku/ShopProductBundlesPage"),
+);
+export const OrdersPage = lazy(
+  () => import("../../features/oms/parsing/OrdersPage"),
+);
 export const AnalyticsPage = lazy(
   () => import("../../features/oms/analytics/AnalyticsPage"),
-);
-
-export const PddStoresPage = lazy(
-  () => import("../../features/oms/pdd/pages/PddStoresPage"),
-);
-export const PddOrdersPage = lazy(
-  () => import("../../features/oms/pdd/pages/PddOrdersPage"),
-);
-export const PddOrderDetailPage = lazy(
-  () => import("../../features/oms/pdd/pages/PddOrderDetailPage"),
-);
-export const TaobaoStoresPage = lazy(
-  () => import("../../features/oms/taobao/pages/TaobaoStoresPage"),
-);
-export const TaobaoOrdersPage = lazy(
-  () => import("../../features/oms/taobao/pages/TaobaoOrdersPage"),
-);
-export const TaobaoOrderDetailPage = lazy(
-  () => import("../../features/oms/taobao/pages/TaobaoOrderDetailPage"),
-);
-export const JdStoresPage = lazy(
-  () => import("../../features/oms/jd/pages/JdStoresPage"),
-);
-export const JdOrdersPage = lazy(
-  () => import("../../features/oms/jd/pages/JdOrdersPage"),
-);
-export const JdOrderDetailPage = lazy(
-  () => import("../../features/oms/jd/pages/JdOrderDetailPage"),
 );
 
 // 主数据
