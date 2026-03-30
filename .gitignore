@@ -17,3 +17,9 @@ Thumbs.db
 .env.development
 .env.local
 .env.*.local
+
+# local backup files
+.backup/
+*.bak
+*.backup
+*~
