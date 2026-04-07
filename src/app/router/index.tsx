@@ -86,7 +86,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="outbound/ship"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <Navigate to="/tms/shipment-prepare" replace />
               </RequirePermission>
             }
@@ -167,7 +167,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="oms/pdd/stores"
             element={
-              <RequirePermission permission="page.wms.order_management.read">
+              <RequirePermission permission="page.oms.read">
                 <P.PddStoresPage />
               </RequirePermission>
             }
@@ -175,7 +175,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="oms/pdd/orders"
             element={
-              <RequirePermission permission="page.wms.order_management.read">
+              <RequirePermission permission="page.oms.read">
                 <P.PddOrdersPage />
               </RequirePermission>
             }
@@ -183,7 +183,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="oms/pdd/orders/:pddOrderId"
             element={
-              <RequirePermission permission="page.wms.order_management.read">
+              <RequirePermission permission="page.oms.read">
                 <P.PddOrderDetailPage />
               </RequirePermission>
             }
@@ -191,7 +191,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="oms/taobao/stores"
             element={
-              <RequirePermission permission="page.wms.order_management.read">
+              <RequirePermission permission="page.oms.read">
                 <P.TaobaoStoresPage />
               </RequirePermission>
             }
@@ -199,7 +199,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="oms/taobao/orders"
             element={
-              <RequirePermission permission="page.wms.order_management.read">
+              <RequirePermission permission="page.oms.read">
                 <P.TaobaoOrdersPage />
               </RequirePermission>
             }
@@ -207,7 +207,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="oms/taobao/orders/:taobaoOrderId"
             element={
-              <RequirePermission permission="page.wms.order_management.read">
+              <RequirePermission permission="page.oms.read">
                 <P.TaobaoOrderDetailPage />
               </RequirePermission>
             }
@@ -215,7 +215,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="oms/jd/stores"
             element={
-              <RequirePermission permission="page.wms.order_management.read">
+              <RequirePermission permission="page.oms.read">
                 <P.JdStoresPage />
               </RequirePermission>
             }
@@ -223,7 +223,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="oms/jd/orders"
             element={
-              <RequirePermission permission="page.wms.order_management.read">
+              <RequirePermission permission="page.oms.read">
                 <P.JdOrdersPage />
               </RequirePermission>
             }
@@ -231,7 +231,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="oms/jd/orders/:jdOrderId"
             element={
-              <RequirePermission permission="page.wms.order_management.read">
+              <RequirePermission permission="page.oms.read">
                 <P.JdOrderDetailPage />
               </RequirePermission>
             }
@@ -239,7 +239,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/shipment-prepare"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.ShipmentPreparePage />
               </RequirePermission>
             }
@@ -247,7 +247,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/dispatch"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.ShipmentCockpitPage />
               </RequirePermission>
             }
@@ -255,7 +255,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/pricing"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.PricingPage />
               </RequirePermission>
             }
@@ -263,7 +263,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/templates"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.TemplatesPage />
               </RequirePermission>
             }
@@ -271,7 +271,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/templates/:templateId"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.TemplateWorkbenchPage />
               </RequirePermission>
             }
@@ -279,7 +279,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/reports"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.TransportReportsPage />
               </RequirePermission>
             }
@@ -287,7 +287,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/records"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.ShippingLedgerPage />
               </RequirePermission>
             }
@@ -296,7 +296,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/billing/items"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.BillingItemsPage />
               </RequirePermission>
             }
@@ -304,7 +304,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/reconciliation"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.ReconciliationPage />
               </RequirePermission>
             }
@@ -313,7 +313,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="finance"
             element={
-              <RequirePermission permission="page.wms.analytics.read">
+              <RequirePermission permission="page.analytics.read">
                 <P.FinanceOverviewPage />
               </RequirePermission>
             }
@@ -321,7 +321,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="finance/overview"
             element={
-              <RequirePermission permission="page.wms.analytics.read">
+              <RequirePermission permission="page.analytics.read">
                 <P.FinanceOverviewPage />
               </RequirePermission>
             }
@@ -329,7 +329,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="finance/shop"
             element={
-              <RequirePermission permission="page.wms.analytics.read">
+              <RequirePermission permission="page.analytics.read">
                 <P.FinanceShopPage />
               </RequirePermission>
             }
@@ -337,7 +337,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="finance/sku"
             element={
-              <RequirePermission permission="page.wms.analytics.read">
+              <RequirePermission permission="page.analytics.read">
                 <P.FinanceSkuPage />
               </RequirePermission>
             }
@@ -345,7 +345,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="finance/order-unit"
             element={
-              <RequirePermission permission="page.wms.analytics.read">
+              <RequirePermission permission="page.analytics.read">
                 <P.FinanceOrderUnitPage />
               </RequirePermission>
             }
@@ -447,7 +447,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="items"
             element={
-              <RequirePermission permission="page.wms.masterdata.read">
+              <RequirePermission permission="page.pms.read">
                 <P.ItemsPage />
               </RequirePermission>
             }
@@ -456,7 +456,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="suppliers"
             element={
-              <RequirePermission permission="page.wms.masterdata.read">
+              <RequirePermission permission="page.pms.read">
                 <P.SuppliersListPage />
               </RequirePermission>
             }
@@ -465,7 +465,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/providers"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.ShippingProvidersListPage />
               </RequirePermission>
             }
@@ -474,7 +474,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/waybill-configs"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.ElectronicWaybillConfigPage />
               </RequirePermission>
             }
@@ -483,7 +483,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/providers/:providerId"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <RedirectToProviderEdit />
               </RequirePermission>
             }
@@ -492,7 +492,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/providers/new"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.ShippingProviderEditPage />
               </RequirePermission>
             }
@@ -501,7 +501,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="tms/providers/:providerId/edit"
             element={
-              <RequirePermission permission="page.wms.logistics.read">
+              <RequirePermission permission="page.tms.read">
                 <P.ShippingProviderEditPage />
               </RequirePermission>
             }
