@@ -8,7 +8,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import type { Item } from "@/contracts/item/contract";
-import { useItemsStore } from "@/features/wms/items/itemsStore";
+import { useItemsStore } from "@/features/pms/items/model/itemsStore";
 
 type Props = {
   open: boolean;
