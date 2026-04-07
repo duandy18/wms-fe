@@ -4,10 +4,11 @@
 // - 支持输入关键词（name / sku）本地过滤
 // - 使用简化表格
 // - 点击一行回调 (item)
+// - 打开时若本地无商品数据，则自动加载 items
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { Item } from "@/contracts/item/contract";
-import { useItemsStore } from "@/features/admin/items/itemsStore";
+import { useItemsStore } from "@/features/wms/items/itemsStore";
 
 type Props = {
   open: boolean;
@@ -22,8 +23,16 @@ export const ItemSelectorDialog: React.FC<Props> = ({
 }) => {
   const items = useItemsStore((s) => s.items);
   const loading = useItemsStore((s) => s.loading);
+  const loadItems = useItemsStore((s) => s.loadItems);
 
   const [keyword, setKeyword] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    if (loading) return;
+    if (items.length > 0) return;
+    void loadItems();
+  }, [open, loading, items.length, loadItems]);
 
   const filtered = useMemo(() => {
     const k = keyword.trim().toLowerCase();
@@ -41,7 +50,7 @@ export const ItemSelectorDialog: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30">
-      <div className="w-[720px] max-h-[80vh] rounded-xl bg-white shadow-2xl flex flex-col">
+      <div className="flex max-h-[80vh] w-[720px] flex-col rounded-xl bg-white shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2">
           <div>
@@ -82,7 +91,7 @@ export const ItemSelectorDialog: React.FC<Props> = ({
             </div>
           ) : (
             <table className="min-w-full border-collapse text-xs">
-              <thead className="sticky top-0 bg-slate-50 border-b border-slate-200">
+              <thead className="sticky top-0 border-b border-slate-200 bg-slate-50">
                 <tr>
                   <th className="px-3 py-2 text-left">ID</th>
                   <th className="px-3 py-2 text-left">SKU</th>
@@ -94,7 +103,7 @@ export const ItemSelectorDialog: React.FC<Props> = ({
                 {filtered.map((it) => (
                   <tr
                     key={it.id}
-                    className="border-b border-slate-100 hover:bg-sky-50 cursor-pointer"
+                    className="cursor-pointer border-b border-slate-100 hover:bg-sky-50"
                     onClick={() => {
                       onSelect(it);
                       onClose();

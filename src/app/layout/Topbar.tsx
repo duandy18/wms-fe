@@ -1,7 +1,12 @@
 // src/app/layout/Topbar.tsx
 import React, { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useAuth } from "../../shared/useAuth";
+import {
+  buildPageIndex,
+  resolvePageByPath,
+  useNavigationRuntime,
+  useSessionRuntime,
+} from "../../shared/runtime";
 import { apiPost } from "../../lib/api";
 
 type ChangePasswordErrorShape = {
@@ -12,7 +17,8 @@ type ChangePasswordErrorShape = {
 type Breadcrumb = { section: string; page: string };
 
 export function Topbar() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useSessionRuntime();
+  const { pages, routePrefixes } = useNavigationRuntime();
   const location = useLocation();
 
   const [showPwdModal, setShowPwdModal] = useState(false);
@@ -48,148 +54,31 @@ export function Topbar() {
     }
   }
 
+  const pageIndex = useMemo(() => buildPageIndex(pages), [pages]);
+
   const breadcrumb = useMemo<Breadcrumb>(() => {
-    const p = location.pathname;
+    const resolved = resolvePageByPath(
+      location.pathname,
+      routePrefixes,
+      pageIndex,
+    );
 
-    const rules: Array<{ prefix: string; value: Breadcrumb }> = [
-      // 入库
-      {
-        prefix: "/purchase-orders/new-v2",
-        value: { section: "入库", page: "采购单生成" },
-      },
-      {
-        prefix: "/purchase-orders/overview",
-        value: { section: "入库", page: "采购概览" },
-      },
-      {
-        prefix: "/purchase-orders",
-        value: { section: "入库", page: "采购概览" },
-      },
-      { prefix: "/inbound", value: { section: "入库", page: "收货入库" } },
-      {
-        prefix: "/purchase-orders/reports",
-        value: { section: "入库", page: "采购统计" },
-      },
+    if (!resolved) {
+      return { section: "首页", page: "概览" };
+    }
 
-      // 订单出库
-      {
-        prefix: "/outbound/pick-tasks",
-        value: { section: "订单出库", page: "拣货" },
-      },
-      {
-        prefix: "/outbound/dashboard",
-        value: { section: "订单出库", page: "出库看板" },
-      },
+    if (resolved.parentName) {
+      return {
+        section: resolved.parentName,
+        page: resolved.pageName,
+      };
+    }
 
-      // 订单管理
-      {
-        prefix: "/platforms",
-        value: { section: "订单管理", page: "平台接入" },
-      },
-      {
-        prefix: "/shops",
-        value: { section: "订单管理", page: "商铺管理" },
-      },
-      {
-        prefix: "/parsing",
-        value: { section: "订单管理", page: "订单解析" },
-      },
-      {
-        prefix: "/analytics",
-        value: { section: "订单管理", page: "统计分析" },
-      },
-      {
-        prefix: "/orders",
-        value: { section: "订单管理", page: "订单解析" },
-      },
-
-      // 物流
-      {
-        prefix: "/tms/templates",
-        value: { section: "物流", page: "运价模板" },
-      },
-      {
-        prefix: "/tms/providers/new",
-        value: { section: "物流", page: "新建快递网点" },
-      },
-      {
-        prefix: "/tms/providers",
-        value: { section: "物流", page: "快递网点" },
-      },
-      {
-        prefix: "/tms/pricing",
-        value: { section: "物流", page: "运价管理" },
-      },
-      {
-        prefix: "/tms/dispatch",
-        value: { section: "物流", page: "发货作业" },
-      },
-      {
-        prefix: "/tms/reports",
-        value: { section: "物流", page: "快递成本分析" },
-      },
-      {
-        prefix: "/tms/records",
-        value: { section: "物流", page: "发货记录" },
-      },
-
-      // 仓内作业
-      { prefix: "/count", value: { section: "仓内作业", page: "盘点" } },
-      {
-        prefix: "/outbound/internal-outbound",
-        value: { section: "仓内作业", page: "内部出库" },
-      },
-
-      // 库存
-      { prefix: "/snapshot", value: { section: "库存", page: "库存现状" } },
-      {
-        prefix: "/inventory/ledger",
-        value: { section: "库存", page: "库存台账" },
-      },
-
-      // 财务分析
-      { prefix: "/finance", value: { section: "财务分析", page: "财务分析" } },
-
-      // 主数据
-      {
-        prefix: "/admin/items",
-        value: { section: "主数据", page: "商品主数据" },
-      },
-      {
-        prefix: "/admin/suppliers",
-        value: { section: "主数据", page: "供应商主数据" },
-      },
-      {
-        prefix: "/warehouses",
-        value: { section: "主数据", page: "仓库管理" },
-      },
-      { prefix: "/stores", value: { section: "主数据", page: "店铺管理" } },
-
-      // 权限与账号
-      {
-        prefix: "/iam/users",
-        value: { section: "权限与账号", page: "用户管理" },
-      },
-      {
-        prefix: "/iam/roles",
-        value: { section: "权限与账号", page: "角色管理" },
-      },
-      {
-        prefix: "/iam/perms",
-        value: { section: "权限与账号", page: "权限字典" },
-      },
-      {
-        prefix: "/admin/users-admin",
-        value: { section: "权限与账号", page: "用户管理" },
-      },
-    ];
-
-    const hit = rules
-      .filter((r) => p === r.prefix || p.startsWith(r.prefix + "/"))
-      .sort((a, b) => b.prefix.length - a.prefix.length)[0]?.value;
-
-    return hit ?? { section: "首页", page: "概览" };
-  }, [location.pathname]);
+    return {
+      section: resolved.pageName,
+      page: "概览",
+    };
+  }, [location.pathname, routePrefixes, pageIndex]);
 
   return (
     <>

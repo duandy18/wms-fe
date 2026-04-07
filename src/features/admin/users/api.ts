@@ -1,15 +1,14 @@
 // src/features/admin/users/api.ts
 //
-// 【最终版】Users 专用 API 模块（RBAC 拆分版）
-// - 仅负责 /users 路由相关的交互：
+// Users API（用户直配权限版）
+// - 仅负责 /users 路由相关交互：
 //   * fetchUsers()
 //   * createUser()
 //   * updateUser()
+//   * setUserPermissions()
 //   * resetUserPassword()
-// - 角色 / 权限 API 由 roles/api.ts 和 permissions/api.ts 管理
-//
 
-import { apiGet, apiPost, apiPatch } from "../../../lib/api";
+import { apiGet, apiPatch, apiPost, apiPut } from "../../../lib/api";
 import type { UserDTO } from "./types";
 
 // ========================================================
@@ -17,41 +16,33 @@ import type { UserDTO } from "./types";
 // ========================================================
 
 /**
- * 用户列表（仅用于用户管理总控页）
- *
- * 说明：
- * - 后端正式接口是 GET /users/（带尾斜杠）
- * - 这里不做任何“解包/通杀”，直接按 UserDTO[] 约定使用。
- * - dev / pilot 统一使用同一套 contract。
+ * 用户列表
+ * - 后端正式接口：GET /users/
  */
 export async function fetchUsers(): Promise<UserDTO[]> {
-  // 关键点：路径和后端保持完全一致 → "/users/"
   return apiGet<UserDTO[]>("/users/");
 }
 
 /**
- * 创建用户（多角色 + 主角色）
+ * 创建用户（用户直配权限）
  */
 export async function createUser(payload: {
   username: string;
   password: string;
-  primary_role_id: number;
-  extra_role_ids: number[];
+  permission_ids: number[];
   full_name?: string | null;
   phone?: string | null;
   email?: string | null;
-}): Promise<void> {
-  return apiPost("/users/register", payload);
+}): Promise<UserDTO> {
+  return apiPost<UserDTO>("/users/register", payload);
 }
 
 /**
- * 更新用户（基础信息 + 主角色 + 多角色 + 启停用）
+ * 更新用户基础信息
  */
 export async function updateUser(
   userId: number,
   payload: {
-    primary_role_id?: number | null;
-    extra_role_ids?: number[] | null;
     full_name?: string | null;
     phone?: string | null;
     email?: string | null;
@@ -62,8 +53,20 @@ export async function updateUser(
 }
 
 /**
+ * 覆盖用户直配权限
+ */
+export async function setUserPermissions(
+  userId: number,
+  permissionIds: number[],
+): Promise<UserDTO> {
+  return apiPut<UserDTO>(`/users/${userId}/permissions`, {
+    permission_ids: permissionIds,
+  });
+}
+
+/**
  * 管理员重置用户密码（默认 000000）
  */
 export async function resetUserPassword(userId: number): Promise<void> {
-  return apiPost(`/users/${userId}/reset-password`, {});
+  await apiPost(`/users/${userId}/reset-password`, {});
 }

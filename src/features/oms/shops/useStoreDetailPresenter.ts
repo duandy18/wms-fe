@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchStoreDetail } from "./api";
 import type { StoreDetailData } from "./types";
-import { useAuth } from "../../../shared/useAuth";
+import { usePermissionRuntime } from "../../../shared/runtime";
 
 type ApiErrorShape = {
   message?: string;
@@ -14,7 +14,7 @@ export function useStoreDetailPresenter(storeId: number) {
 
   // ✅ 合同：店铺管理属于配置域，写权限必须来自 /users/me permissions[]
   // 与 menuConfig.tsx 保持一致：店铺管理 requiredPermissions = ["config.store.write"]
-  const { can } = useAuth();
+  const { can } = usePermissionRuntime();
   const canWrite = can("config.store.write");
 
   const [detail, setDetail] = useState<StoreDetailData | null>(null);

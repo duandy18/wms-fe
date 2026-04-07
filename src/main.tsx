@@ -8,7 +8,7 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 
 import AppRouter from "./app/router";
-import { AuthProvider } from "./shared/useAuth";
+import { AuthProvider } from "./shared/runtime";
 
 type PatchedConsoleError = typeof console.error & { __wms_safe_patched__?: boolean };
 

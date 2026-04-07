@@ -25,8 +25,8 @@
 //   - 包裹保存 与 承运商选择 仍按后端接口边界拆开
 
 import React, { useEffect, useMemo, useState } from "react";
-import { fetchActiveWarehouses } from "../../../../admin/warehouses/api";
-import type { WarehouseListItem } from "../../../../admin/warehouses/types";
+import { fetchActiveWarehouses } from "../../../../wms/warehouses/api";
+import type { WarehouseListItem } from "../../../../wms/warehouses/types";
 import { UI } from "../ui";
 import type {
   ShipmentPackagePlan,

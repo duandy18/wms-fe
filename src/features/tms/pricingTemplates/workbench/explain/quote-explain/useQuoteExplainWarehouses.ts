@@ -1,8 +1,8 @@
 // src/features/tms/providers/scheme/table/cards/quote-explain/useQuoteExplainWarehouses.ts
 
 import { useEffect, useMemo, useState } from "react";
-import { fetchActiveWarehouses } from "../../../../../admin/warehouses/api";
-import type { WarehouseListItem } from "../../../../../admin/warehouses/types";
+import { fetchActiveWarehouses } from "../../../../../wms/warehouses/api";
+import type { WarehouseListItem } from "../../../../../wms/warehouses/types";
 
 function toHumanError(e: unknown, fallback: string): string {
   if (!e) return fallback;

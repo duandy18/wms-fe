@@ -1,7 +1,7 @@
 // src/features/admin/stores/useStoresListPresenter.ts
 
 import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "../../../shared/useAuth";
+import { useSessionRuntime } from "../../../shared/runtime";
 import { fetchStores, updateStore, createStore } from "./api";
 import type { ShopType, StoreListItem } from "./types";
 
@@ -12,7 +12,7 @@ type ApiErrorShape = {
 };
 
 export function useStoresListPresenter() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useSessionRuntime();
 
   const [stores, setStores] = useState<StoreListItem[]>([]);
   const [loading, setLoading] = useState(false);

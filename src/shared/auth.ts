@@ -2,9 +2,9 @@
 //
 // Auth 只读接口层（Read-only Facade）
 // 目的：业务页面默认只拿“读权限/读状态”的接口，避免随手调用 login/logout 等副作用。
-// 可写能力（login/logout）只允许在特定页面/模块显式引入 src/shared/useAuth.tsx。
+// 可写能力（login/logout）不从 shared/runtime barrel 暴露；这里只在 facade 内部直连 runtime 内部总入口。
 
-import { useAuth } from "./useAuth";
+import { useAuth } from "./runtime/hooks";
 
 // 这里故意不 re-export useAuth，以免业务页面顺手拿到可写能力。
 export type AuthReadOnly = {
