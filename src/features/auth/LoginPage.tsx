@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../shared/useAuth";
+import { useSessionRuntime } from "../../shared/runtime";
 
 type ApiErrorShape = {
   message?: string;
@@ -16,7 +16,7 @@ type ApiErrorShape = {
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login } = useSessionRuntime();
 
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
@@ -63,7 +63,7 @@ const LoginPage: React.FC = () => {
     setSubmitting(true);
     try {
       await login({ username: username.trim(), password });
-      navigate("/", { replace: true });
+      navigate("/admin/users", { replace: true });
     } catch (err: unknown) {
       const e = err as ApiErrorShape | undefined;
       const msg =

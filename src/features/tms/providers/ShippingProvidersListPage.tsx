@@ -28,13 +28,13 @@ import { UI } from "./ui";
 import { ProvidersTable } from "./components/ProvidersTable";
 import { useShippingProvidersPage } from "./hooks/useShippingProvidersPage";
 
-import { useAuth } from "../../../shared/useAuth";
+import { usePermissionRuntime } from "../../../shared/runtime";
 
 const ShippingProvidersListPage: React.FC = () => {
   const navigate = useNavigate();
   const vm = useShippingProvidersPage();
 
-  const { can } = useAuth();
+  const { can } = usePermissionRuntime();
   const canWrite = can("config.store.write");
 
   return (

@@ -156,7 +156,7 @@ const ScanPickPage: React.FC = () => {
         );
         if (go) {
           navigate(
-            `/admin/items?barcode=${encodeURIComponent(barcode)}`,
+            `/items?barcode=${encodeURIComponent(barcode)}`,
           );
         }
       } else if (std.status === "ERROR" && std.message) {

@@ -7,7 +7,10 @@
 
 import React, { type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../../shared/useAuth";
+import {
+  usePermissionRuntime,
+  useSessionRuntime,
+} from "../../shared/runtime";
 
 /** 无权限页面（简单版） */
 export const ForbiddenPage: React.FC = () => (
@@ -59,7 +62,7 @@ function normalizePerms(permission: unknown): string[] {
 
 /* 登录守卫 */
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { authReady, isAuthenticated } = useAuth();
+  const { authReady, isAuthenticated } = useSessionRuntime();
 
   if (!authReady) return <AuthLoading />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -68,7 +71,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
 /* 通用权限守卫（硬防御版） */
 export function RequirePermission({ permission, children }: { permission: unknown; children: ReactNode }) {
-  const { authReady, isAuthenticated, can, permissions } = useAuth();
+  const { authReady, isAuthenticated } = useSessionRuntime();
+  const { can, permissions } = usePermissionRuntime();
 
   if (!authReady) return <AuthLoading />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;

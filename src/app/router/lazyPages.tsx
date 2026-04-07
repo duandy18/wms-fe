@@ -105,34 +105,31 @@ export const JdOrderDetailPage = lazy(
 
 // 主数据
 export const ItemsPage = lazy(
-  () => import("../../features/admin/items/ItemsPage"),
+  () => import("../../features/wms/items/ItemsPage"),
 );
 
-// 权限与账号：3 个子页面（/iam/*）
+// 系统管理：admin/users + admin/permissions
 export const UsersManagePage = lazy(
-  () => import("../../features/admin/users/iam/UsersManagePage"),
-);
-export const RolesManagePage = lazy(
-  () => import("../../features/admin/users/iam/RolesManagePage"),
+  () => import("../../features/admin/users/UsersManagePage"),
 );
 export const PermissionsDictPage = lazy(
-  () => import("../../features/admin/users/iam/PermissionsDictPage"),
+  () => import("../../features/admin/permissions/PermissionsDictPage"),
 );
 
 // 仓库管理
 export const WarehousesListPage = lazy(
-  () => import("../../features/admin/warehouses/WarehousesListPage"),
+  () => import("../../features/wms/warehouses/WarehousesListPage"),
 );
 export const WarehouseCreatePage = lazy(
-  () => import("../../features/admin/warehouses/WarehouseCreatePage"),
+  () => import("../../features/wms/warehouses/WarehouseCreatePage"),
 );
 export const WarehouseDetailPage = lazy(
-  () => import("../../features/admin/warehouses/WarehouseDetailPage"),
+  () => import("../../features/wms/warehouses/WarehouseDetailPage"),
 );
 
 // 供应商主数据
 export const SuppliersListPage = lazy(
-  () => import("../../features/admin/suppliers/SuppliersListPage"),
+  () => import("../../features/wms/suppliers/SuppliersListPage"),
 );
 
 // 物流 / 快递网点

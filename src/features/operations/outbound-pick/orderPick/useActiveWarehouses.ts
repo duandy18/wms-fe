@@ -1,8 +1,8 @@
 // src/features/operations/outbound-pick/orderPick/useActiveWarehouses.ts
 import { useCallback, useEffect, useState } from "react";
 
-import { fetchActiveWarehouses } from "../../../admin/warehouses/api";
-import type { WarehouseListItem } from "../../../admin/warehouses/types";
+import { fetchActiveWarehouses } from "../../../wms/warehouses/api";
+import type { WarehouseListItem } from "../../../wms/warehouses/types";
 
 export function useActiveWarehouses(args?: { preferredId?: number }) {
   const preferredId = args?.preferredId ?? 1;

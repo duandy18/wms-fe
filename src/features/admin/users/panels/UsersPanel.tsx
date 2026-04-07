@@ -1,54 +1,106 @@
 // src/features/admin/users/panels/UsersPanel.tsx
 //
-// 【最终版】用户管理面板（多角色 RBAC 完整版）
-// - 创建用户（主角色 + 多角色）
-// - 编辑用户（基础信息 + 主/多角色）
+// 用户管理面板（用户直配权限版）
+// - 创建用户（直配权限）
+// - 编辑用户基础信息 + 覆盖权限
 // - 启用 / 停用
 // - 重置密码
-//
 
-import React, { useState } from "react";
-import { useAuth } from "../../../../shared/useAuth";
+import React, { useMemo, useState } from "react";
+import { usePermissionRuntime } from "../../../../shared/runtime";
 import type { UsersPresenter } from "../hooks/useUsersPresenter";
-import type { UserDTO, RoleDTO } from "../types";
+import type { PermissionDTO, UserDTO } from "../types";
 
 type Props = {
   presenter: UsersPresenter;
-  roles: RoleDTO[]; // 来自来自调用方（角色列表）
 };
 
-export function UsersPanel({ presenter, roles }: Props) {
-  const { can } = useAuth();
+function PermissionChecklist(props: {
+  permissions: PermissionDTO[];
+  selected: Set<number>;
+  onToggle: (id: number) => void;
+}) {
+  const { permissions, selected, onToggle } = props;
+
+  if (permissions.length === 0) {
+    return (
+      <div className="text-xs text-slate-500 border rounded px-3 py-2">
+        权限字典未加载，当前无法配置用户权限。
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-h-56 overflow-auto border rounded-lg p-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs">
+        {permissions.map((p) => (
+          <label
+            key={p.id}
+            className="flex items-center gap-2 px-2 py-1 hover:bg-slate-50 cursor-pointer rounded"
+          >
+            <input
+              type="checkbox"
+              checked={selected.has(p.id)}
+              onChange={() => onToggle(p.id)}
+            />
+            <span className="font-mono text-[11px]">{p.name}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function UsersPanel({ presenter }: Props) {
+  const { can } = usePermissionRuntime();
 
   const {
     users,
+    permissions,
     loading,
     creating,
     mutating,
     error,
     createUser,
     updateUser,
+    setUserPermissions,
     resetPassword,
     setError,
   } = presenter;
 
-  // 权限控制
-  const canManageUser = can("system.user.manage");
+  const canReadAdmin = can("page.admin.read");
+  const canManageUser = can("page.admin.write");
 
-  // -------------------------------------------------------
-  // 创建用户字段
-  // -------------------------------------------------------
+  const permissionIdByName = useMemo(() => {
+    const map = new Map<string, number>();
+    permissions.forEach((p) => map.set(p.name, p.id));
+    return map;
+  }, [permissions]);
+
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("000000");
-  const [newPrimaryRoleId, setNewPrimaryRoleId] = useState<string>("");
-  const [newExtraRoleIds, setNewExtraRoleIds] = useState<Set<string>>(new Set());
-
   const [newFullName, setNewFullName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [newPermissionIds, setNewPermissionIds] = useState<Set<number>>(new Set());
 
-  function toggleNewExtraRole(id: string) {
-    setNewExtraRoleIds((prev) => {
+  const [editingUser, setEditingUser] = useState<UserDTO | null>(null);
+  const [editFullName, setEditFullName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPermissionIds, setEditPermissionIds] = useState<Set<number>>(new Set());
+
+  function toggleNewPermission(id: number) {
+    setNewPermissionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleEditPermission(id: number) {
+    setEditPermissionIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -60,89 +112,73 @@ export function UsersPanel({ presenter, roles }: Props) {
     e.preventDefault();
 
     if (!canManageUser) return;
-
-    if (!newUsername.trim() || !newPrimaryRoleId) {
-      setError("请填写用户名 + 主角色");
+    if (!newUsername.trim()) {
+      setError("请填写用户名");
+      return;
+    }
+    if (permissions.length === 0) {
+      setError("权限字典未加载，当前无法创建用户并配置权限");
       return;
     }
 
     await createUser({
       username: newUsername.trim(),
       password: newPassword,
-      primary_role_id: Number(newPrimaryRoleId),
-      extra_role_ids: Array.from(newExtraRoleIds).map((x) => Number(x)),
+      permission_ids: Array.from(newPermissionIds),
       full_name: newFullName || null,
       phone: newPhone || null,
       email: newEmail || null,
     });
 
-    // 清空
     setNewUsername("");
     setNewPassword("000000");
-    setNewPrimaryRoleId("");
-    setNewExtraRoleIds(new Set());
     setNewFullName("");
     setNewPhone("");
     setNewEmail("");
+    setNewPermissionIds(new Set());
   }
 
-  // -------------------------------------------------------
-  // 编辑用户字段
-  // -------------------------------------------------------
-  const [editingUser, setEditingUser] = useState<UserDTO | null>(null);
-  const [editFullName, setEditFullName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editEmail, setEditEmail] = useState("");
-
-  const [editPrimaryRoleId, setEditPrimaryRoleId] = useState<string>("");
-  const [editExtraRoleIds, setEditExtraRoleIds] = useState<Set<string>>(new Set());
-
   function openEdit(u: UserDTO) {
-    setEditingUser(u);
+    if (!canManageUser) return;
 
+    setEditingUser(u);
     setEditFullName(u.full_name || "");
     setEditPhone(u.phone || "");
     setEditEmail(u.email || "");
 
-    // 主角色
-    setEditPrimaryRoleId(u.role_id ? String(u.role_id) : "");
-
-    // 多角色（从 u.extra_roles 获取 — 稍后 presenter 会提供）
-    const extra = new Set<string>();
-    (u.extra_roles || []).forEach((rid) => extra.add(String(rid)));
-
-    setEditExtraRoleIds(extra);
-  }
-
-  function toggleEditExtraRole(id: string) {
-    setEditExtraRoleIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+    const selected = new Set<number>();
+    (u.permissions || []).forEach((name) => {
+      const pid = permissionIdByName.get(name);
+      if (pid != null) selected.add(pid);
     });
+    setEditPermissionIds(selected);
   }
 
   async function handleSaveEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editingUser) return;
+    if (!canManageUser) return;
 
     await updateUser(editingUser.id, {
       full_name: editFullName || null,
       phone: editPhone || null,
       email: editEmail || null,
-      primary_role_id: editPrimaryRoleId ? Number(editPrimaryRoleId) : null,
-      extra_role_ids: Array.from(editExtraRoleIds).map((x) => Number(x)),
     });
+
+    if (permissions.length > 0) {
+      await setUserPermissions(editingUser.id, Array.from(editPermissionIds));
+    }
 
     setEditingUser(null);
   }
 
   async function handleToggleActive(u: UserDTO) {
+    if (!canManageUser) return;
     await updateUser(u.id, { is_active: !u.is_active });
   }
 
   async function handleResetPassword(u: UserDTO) {
+    if (!canManageUser) return;
     if (!window.confirm(`确认将用户「${u.username}」密码重置为 000000？`)) {
       return;
     }
@@ -150,30 +186,33 @@ export function UsersPanel({ presenter, roles }: Props) {
     alert("密码已重置为 000000");
   }
 
-  function roleName(rid: number | null | undefined) {
-    const r = roles.find((x) => Number(x.id) === Number(rid));
-    return r?.name ?? (rid ? `#${rid}` : "-");
+  if (!canReadAdmin) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-slate-600">当前账号无系统管理页面访问权限。</p>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4 text-sm">
-      
       {error && (
         <div className="border border-red-200 bg-red-50 text-red-600 px-3 py-2 rounded">
           {error}
         </div>
       )}
 
-      {/* ===================== 创建用户 ===================== */}
+      {!canManageUser && (
+        <div className="border border-slate-200 bg-slate-50 text-slate-600 px-3 py-2 rounded">
+          当前为只读模式，不能创建、编辑、停用用户或重置密码。
+        </div>
+      )}
+
       {canManageUser && (
         <section className="bg-white border rounded-xl p-4 space-y-3">
           <h3 className="text-base font-semibold">创建用户</h3>
 
-          <form
-            className="grid grid-cols-1 md:grid-cols-3 gap-3"
-            onSubmit={handleCreate}
-          >
-            {/* 用户名 */}
+          <form className="grid grid-cols-1 md:grid-cols-3 gap-3" onSubmit={handleCreate}>
             <div>
               <label className="text-xs text-slate-600">登录名</label>
               <input
@@ -183,11 +222,8 @@ export function UsersPanel({ presenter, roles }: Props) {
               />
             </div>
 
-            {/* 密码 */}
             <div>
-              <label className="text-xs text-slate-600">
-                密码（默认 000000）
-              </label>
+              <label className="text-xs text-slate-600">密码（默认 000000）</label>
               <input
                 type="password"
                 className="border rounded px-3 py-2 w-full"
@@ -196,41 +232,6 @@ export function UsersPanel({ presenter, roles }: Props) {
               />
             </div>
 
-            {/* 主角色 */}
-            <div>
-              <label className="text-xs text-slate-600">主角色</label>
-              <select
-                className="border rounded px-3 py-2 w-full"
-                value={newPrimaryRoleId}
-                onChange={(e) => setNewPrimaryRoleId(e.target.value)}
-              >
-                <option value="">请选择主角色</option>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 多角色 */}
-            <div className="md:col-span-2">
-              <label className="text-xs text-slate-600">附加角色</label>
-              <div className="flex flex-wrap gap-2">
-                {roles.map((r) => (
-                  <label key={r.id} className="flex items-center gap-1">
-                    <input
-                      type="checkbox"
-                      checked={newExtraRoleIds.has(String(r.id))}
-                      onChange={() => toggleNewExtraRole(String(r.id))}
-                    />
-                    <span>{r.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* 真实信息 */}
             <div>
               <label className="text-xs text-slate-600">姓名</label>
               <input
@@ -258,7 +259,15 @@ export function UsersPanel({ presenter, roles }: Props) {
               />
             </div>
 
-            {/* 提交 */}
+            <div className="md:col-span-3">
+              <label className="text-xs text-slate-600 block mb-1">直配权限</label>
+              <PermissionChecklist
+                permissions={permissions}
+                selected={newPermissionIds}
+                onToggle={toggleNewPermission}
+              />
+            </div>
+
             <div className="flex items-end">
               <button
                 type="submit"
@@ -272,7 +281,6 @@ export function UsersPanel({ presenter, roles }: Props) {
         </section>
       )}
 
-      {/* ===================== 用户列表 ===================== */}
       <section className="border bg-white rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-4">加载中…</div>
@@ -287,8 +295,7 @@ export function UsersPanel({ presenter, roles }: Props) {
                 <th className="px-3 py-2 text-left">姓名</th>
                 <th className="px-3 py-2 text-left">电话</th>
                 <th className="px-3 py-2 text-left">邮箱</th>
-                <th className="px-3 py-2 text-left">主角色</th>
-                <th className="px-3 py-2 text-left">附加角色</th>
+                <th className="px-3 py-2 text-left">权限</th>
                 <th className="px-3 py-2 text-left w-28">状态</th>
                 <th className="px-3 py-2 text-left w-40">操作</th>
               </tr>
@@ -302,16 +309,19 @@ export function UsersPanel({ presenter, roles }: Props) {
                   <td className="px-3 py-2">{u.full_name || "-"}</td>
                   <td className="px-3 py-2">{u.phone || "-"}</td>
                   <td className="px-3 py-2">{u.email || "-"}</td>
-                  <td className="px-3 py-2">{roleName(u.role_id)}</td>
                   <td className="px-3 py-2">
-                    {(u.extra_roles || []).map((rid) => (
-                      <span
-                        key={rid}
-                        className="inline-block px-2 py-0.5 bg-slate-100 rounded text-xs mr-1"
-                      >
-                        {roleName(rid)}
-                      </span>
-                    ))}
+                    {u.permissions.length === 0 ? (
+                      <span className="text-slate-400">-</span>
+                    ) : (
+                      u.permissions.map((name) => (
+                        <span
+                          key={name}
+                          className="inline-block px-2 py-0.5 bg-slate-100 rounded text-xs mr-1 mb-1"
+                        >
+                          {name}
+                        </span>
+                      ))
+                    )}
                   </td>
 
                   <td className="px-3 py-2">
@@ -328,28 +338,25 @@ export function UsersPanel({ presenter, roles }: Props) {
 
                   <td className="px-3 py-2">
                     <div className="flex gap-2 text-xs">
-                      {/* 编辑 */}
                       <button
-                        className="px-2 py-1 border rounded hover:bg-slate-100"
-                        disabled={mutating}
+                        className="px-2 py-1 border rounded hover:bg-slate-100 disabled:opacity-50"
+                        disabled={mutating || !canManageUser}
                         onClick={() => openEdit(u)}
                       >
                         编辑
                       </button>
 
-                      {/* 启用/停用 */}
                       <button
-                        className="px-2 py-1 border rounded hover:bg-slate-100"
-                        disabled={mutating}
+                        className="px-2 py-1 border rounded hover:bg-slate-100 disabled:opacity-50"
+                        disabled={mutating || !canManageUser}
                         onClick={() => handleToggleActive(u)}
                       >
                         {u.is_active ? "停用" : "启用"}
                       </button>
 
-                      {/* 重置密码 */}
                       <button
-                        className="px-2 py-1 border border-amber-400 text-amber-700 rounded hover:bg-amber-50"
-                        disabled={mutating}
+                        className="px-2 py-1 border border-amber-400 text-amber-700 rounded hover:bg-amber-50 disabled:opacity-50"
+                        disabled={mutating || !canManageUser}
                         onClick={() => handleResetPassword(u)}
                       >
                         重置密码
@@ -363,17 +370,13 @@ export function UsersPanel({ presenter, roles }: Props) {
         )}
       </section>
 
-      {/* ===================== 编辑用户弹窗 ===================== */}
-      {editingUser && (
+      {editingUser && canManageUser && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[520px] shadow-xl space-y-4">
-            <h3 className="text-lg font-semibold">
-              编辑用户：{editingUser.username}
-            </h3>
+          <div className="bg-white rounded-xl p-6 w-[760px] shadow-xl space-y-4 max-h-[85vh] overflow-auto">
+            <h3 className="text-lg font-semibold">编辑用户：{editingUser.username}</h3>
 
             <form className="space-y-4" onSubmit={handleSaveEdit}>
               <div className="grid grid-cols-2 gap-3">
-                {/* 姓名 */}
                 <div>
                   <label className="text-xs text-slate-600">姓名</label>
                   <input
@@ -383,7 +386,6 @@ export function UsersPanel({ presenter, roles }: Props) {
                   />
                 </div>
 
-                {/* 电话 */}
                 <div>
                   <label className="text-xs text-slate-600">电话</label>
                   <input
@@ -393,7 +395,6 @@ export function UsersPanel({ presenter, roles }: Props) {
                   />
                 </div>
 
-                {/* 邮箱 */}
                 <div>
                   <label className="text-xs text-slate-600">邮箱</label>
                   <input
@@ -402,40 +403,15 @@ export function UsersPanel({ presenter, roles }: Props) {
                     onChange={(e) => setEditEmail(e.target.value)}
                   />
                 </div>
-
-                {/* 主角色 */}
-                <div>
-                  <label className="text-xs text-slate-600">主角色</label>
-                  <select
-                    className="border rounded px-3 py-2 w-full"
-                    value={editPrimaryRoleId}
-                    onChange={(e) => setEditPrimaryRoleId(e.target.value)}
-                  >
-                    <option value="">不变</option>
-                    {roles.map((r) => (
-                      <option key={r.id} value={String(r.id)}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
-              {/* 附加角色 */}
               <div>
-                <label className="text-xs text-slate-600">附加角色</label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {roles.map((r) => (
-                    <label key={r.id} className="flex items-center gap-1">
-                      <input
-                        type="checkbox"
-                        checked={editExtraRoleIds.has(String(r.id))}
-                        onChange={() => toggleEditExtraRole(String(r.id))}
-                      />
-                      <span>{r.name}</span>
-                    </label>
-                  ))}
-                </div>
+                <label className="text-xs text-slate-600 block mb-1">直配权限</label>
+                <PermissionChecklist
+                  permissions={permissions}
+                  selected={editPermissionIds}
+                  onToggle={toggleEditPermission}
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
@@ -447,7 +423,6 @@ export function UsersPanel({ presenter, roles }: Props) {
                 >
                   取消
                 </button>
-
                 <button
                   type="submit"
                   className="px-4 py-2 text-sm rounded-lg bg-sky-600 text-white disabled:opacity-50"

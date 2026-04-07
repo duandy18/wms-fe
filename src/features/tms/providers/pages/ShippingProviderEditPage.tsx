@@ -28,7 +28,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import PageTitle from "../../../../components/ui/PageTitle";
 import { UI } from "../ui";
 
-import { useAuth } from "../../../../shared/useAuth";
+import { usePermissionRuntime } from "../../../../shared/runtime";
 
 import type { EditProviderFormState } from "../edit-provider/ProviderForm";
 import type { ShippingProvider } from "../api/types";
@@ -52,7 +52,7 @@ const ShippingProviderEditPage: React.FC = () => {
   const safePid = Number.isFinite(pidNum) && pidNum > 0 ? pidNum : null;
   const isCreate = !safePid;
 
-  const { can } = useAuth();
+  const { can } = usePermissionRuntime();
   const canWrite = can("config.store.write");
 
   const m = useShippingProviderEditModel(safePid);

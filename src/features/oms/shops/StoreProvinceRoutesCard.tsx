@@ -1,8 +1,8 @@
 // src/features/admin/stores/StoreProvinceRoutesCard.tsx
 import React, { useEffect, useMemo, useState } from "react";
 
-import { fetchActiveWarehouses } from "../../admin/warehouses/api";
-import type { WarehouseListItem } from "../../admin/warehouses/types";
+import { fetchActiveWarehouses } from "../../wms/warehouses/api";
+import type { WarehouseListItem } from "../../wms/warehouses/types";
 
 import {
   createProvinceRoute,

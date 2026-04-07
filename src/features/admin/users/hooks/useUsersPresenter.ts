@@ -1,26 +1,28 @@
 // src/features/admin/users/hooks/useUsersPresenter.ts
 //
-// 多角色 RBAC Users Presenter（加固版）
-// - 对后端返回的 users / roles 做了数组防御，避免 null.map 报错
-// - 负责：加载用户 + 角色、创建 / 更新用户、重置密码
-//
+// 用户直配权限版 Users Presenter
+// - 加载：用户列表 + 权限字典
+// - 创建用户
+// - 更新用户基础信息
+// - 覆盖用户权限
+// - 重置密码
 
 import { useEffect, useState } from "react";
 import {
-  fetchUsers,
   createUser as apiCreateUser,
-  updateUser as apiUpdateUser,
+  fetchUsers,
   resetUserPassword,
+  setUserPermissions as apiSetUserPermissions,
+  updateUser as apiUpdateUser,
 } from "../api";
-
-import { fetchRoles } from "../../roles/api";
-import type { UserDTO, RoleDTO } from "../types";
+import { fetchPermissions } from "../../permissions/api";
+import type { PermissionDTO, UserDTO } from "../types";
 
 type ApiErrorShape = { message?: string };
 
 export function useUsersPresenter() {
   const [users, setUsers] = useState<UserDTO[]>([]);
-  const [roles, setRoles] = useState<RoleDTO[]>([]);
+  const [permissions, setPermissions] = useState<PermissionDTO[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -29,36 +31,43 @@ export function useUsersPresenter() {
   const [error, setError] = useState<string | null>(null);
 
   // ============================================================
-  // 加载用户列表 + 角色列表（加固版）
+  // 加载用户列表 + 权限字典
   // ============================================================
   async function load() {
     setLoading(true);
     setError(null);
 
     try {
-      const [userListRaw, roleListRaw] = await Promise.all([
+      const [userListResult, permissionsResult] = await Promise.allSettled([
         fetchUsers(),
-        fetchRoles(),
+        fetchPermissions(),
       ]);
 
-      // 后端如果返回 null / 非数组，这里统一防御
-      const userList: UserDTO[] = Array.isArray(userListRaw)
-        ? userListRaw
-        : [];
-      const roleList: RoleDTO[] = Array.isArray(roleListRaw)
-        ? roleListRaw
-        : [];
+      if (userListResult.status === "fulfilled") {
+        const userList: UserDTO[] = Array.isArray(userListResult.value)
+          ? userListResult.value
+          : [];
+        setUsers(userList);
+      } else {
+        const e = userListResult.reason as ApiErrorShape | undefined;
+        throw new Error(e?.message ?? "加载用户失败");
+      }
 
-      const normalized = userList.map((u) => ({
-        ...u,
-        extra_roles: u.extra_roles ?? [],
-      }));
-
-      setUsers(normalized);
-      setRoles(roleList);
+      if (permissionsResult.status === "fulfilled") {
+        const permissionList: PermissionDTO[] = Array.isArray(permissionsResult.value)
+          ? permissionsResult.value
+          : [];
+        setPermissions(permissionList);
+      } else {
+        setPermissions([]);
+        const e = permissionsResult.reason as ApiErrorShape | undefined;
+        setError(e?.message ?? "权限字典加载失败，当前无法创建或编辑用户权限");
+      }
     } catch (err) {
       const e = err as ApiErrorShape;
       setError(e?.message ?? "加载用户失败");
+      setUsers([]);
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
@@ -69,13 +78,12 @@ export function useUsersPresenter() {
   }, []);
 
   // ============================================================
-  // 创建用户（主角色 + 多角色）
+  // 创建用户（用户直配权限）
   // ============================================================
   async function createUser(payload: {
     username: string;
     password: string;
-    primary_role_id: number;
-    extra_role_ids: number[];
+    permission_ids: number[];
     full_name?: string | null;
     phone?: string | null;
     email?: string | null;
@@ -89,19 +97,18 @@ export function useUsersPresenter() {
     } catch (err) {
       const e = err as ApiErrorShape;
       setError(e?.message ?? "创建用户失败");
+      throw err;
     } finally {
       setCreating(false);
     }
   }
 
   // ============================================================
-  // 更新用户（基础信息 + 主角色 + 多角色 + 启停用）
+  // 更新用户基础信息
   // ============================================================
   async function updateUser(
     userId: number,
     payload: {
-      primary_role_id?: number | null;
-      extra_role_ids?: number[] | null;
       full_name?: string | null;
       phone?: string | null;
       email?: string | null;
@@ -117,6 +124,25 @@ export function useUsersPresenter() {
     } catch (err) {
       const e = err as ApiErrorShape;
       setError(e?.message ?? "更新用户失败");
+      throw err;
+    } finally {
+      setMutating(false);
+    }
+  }
+
+  // ============================================================
+  // 覆盖用户权限
+  // ============================================================
+  async function setUserPermissions(userId: number, permissionIds: number[]) {
+    setMutating(true);
+    setError(null);
+
+    try {
+      await apiSetUserPermissions(userId, permissionIds);
+      await load();
+    } catch (err) {
+      const e = err as ApiErrorShape;
+      setError(e?.message ?? "保存用户权限失败");
       throw err;
     } finally {
       setMutating(false);
@@ -144,7 +170,7 @@ export function useUsersPresenter() {
 
   return {
     users,
-    roles,
+    permissions,
     loading,
     creating,
     mutating,
@@ -153,6 +179,7 @@ export function useUsersPresenter() {
 
     createUser,
     updateUser,
+    setUserPermissions,
     resetPassword,
     setError,
   };

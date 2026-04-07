@@ -17,8 +17,8 @@ import { QuotePreviewForm, type GeoItem } from "../../../pricingTemplates/workbe
 import { QuotePreviewResult } from "../../../pricingTemplates/workbench/explain/QuotePreviewResult";
 
 // ✅ 复用仓库域现有接口：不引入新后端能力
-import { fetchActiveWarehouses } from "../../../../admin/warehouses/api";
-import type { WarehouseListItem } from "../../../../admin/warehouses/types";
+import { fetchActiveWarehouses } from "../../../../wms/warehouses/api";
+import type { WarehouseListItem } from "../../../../wms/warehouses/types";
 
 function toHumanError(e: unknown, fallback: string): string {
   if (!e) return fallback;
