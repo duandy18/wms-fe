@@ -105,7 +105,7 @@ export const JdOrderDetailPage = lazy(
 
 // 主数据
 export const ItemsPage = lazy(
-  () => import("../../features/wms/items/ItemsPage"),
+  () => import("../../features/pms/items/pages/ItemsPage"),
 );
 
 // 系统管理：admin/users + admin/permissions
@@ -129,7 +129,7 @@ export const WarehouseDetailPage = lazy(
 
 // 供应商主数据
 export const SuppliersListPage = lazy(
-  () => import("../../features/wms/suppliers/SuppliersListPage"),
+  () => import("../../features/pms/suppliers/pages/SuppliersListPage"),
 );
 
 // 物流 / 快递网点
