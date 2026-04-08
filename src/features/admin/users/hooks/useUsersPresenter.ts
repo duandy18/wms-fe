@@ -1,28 +1,37 @@
 // src/features/admin/users/hooks/useUsersPresenter.ts
 //
-// 用户直配权限版 Users Presenter
-// - 加载：用户列表 + 权限字典
-// - 创建用户
+// 用户一级页面权限矩阵版 Users Presenter
+// - 加载：权限矩阵（pages + rows）+ 用户基础资料
+// - 创建用户（默认不授予页面权限）
 // - 更新用户基础信息
-// - 覆盖用户权限
+// - 保存单个用户矩阵
+// - 删除用户
 // - 重置密码
 
 import { useEffect, useState } from "react";
 import {
   createUser as apiCreateUser,
+  deleteUser as apiDeleteUser,
+  fetchUserPermissionMatrix,
   fetchUsers,
   resetUserPassword,
-  setUserPermissions as apiSetUserPermissions,
   updateUser as apiUpdateUser,
+  updateUserPermissionMatrix as apiUpdateUserPermissionMatrix,
 } from "../api";
-import { fetchPermissions } from "../../permissions/api";
-import type { PermissionDTO, UserDTO } from "../types";
+import type {
+  PermissionMatrixPageDTO,
+  PermissionMatrixPagesDTO,
+  PermissionMatrixRowDTO,
+  UserDTO,
+} from "../types";
 
 type ApiErrorShape = { message?: string };
+type UserDetailsMap = Record<number, UserDTO>;
 
 export function useUsersPresenter() {
-  const [users, setUsers] = useState<UserDTO[]>([]);
-  const [permissions, setPermissions] = useState<PermissionDTO[]>([]);
+  const [matrixPages, setMatrixPages] = useState<PermissionMatrixPageDTO[]>([]);
+  const [matrixRows, setMatrixRows] = useState<PermissionMatrixRowDTO[]>([]);
+  const [userDetailsById, setUserDetailsById] = useState<UserDetailsMap>({});
 
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -31,43 +40,49 @@ export function useUsersPresenter() {
   const [error, setError] = useState<string | null>(null);
 
   // ============================================================
-  // 加载用户列表 + 权限字典
+  // 加载权限矩阵 + 用户基础资料
   // ============================================================
   async function load() {
     setLoading(true);
     setError(null);
 
     try {
-      const [userListResult, permissionsResult] = await Promise.allSettled([
+      const [matrixResult, usersResult] = await Promise.allSettled([
+        fetchUserPermissionMatrix(),
         fetchUsers(),
-        fetchPermissions(),
       ]);
 
-      if (userListResult.status === "fulfilled") {
-        const userList: UserDTO[] = Array.isArray(userListResult.value)
-          ? userListResult.value
-          : [];
-        setUsers(userList);
-      } else {
-        const e = userListResult.reason as ApiErrorShape | undefined;
-        throw new Error(e?.message ?? "加载用户失败");
+      if (matrixResult.status !== "fulfilled") {
+        const e = matrixResult.reason as ApiErrorShape | undefined;
+        throw new Error(e?.message ?? "加载用户权限矩阵失败");
       }
 
-      if (permissionsResult.status === "fulfilled") {
-        const permissionList: PermissionDTO[] = Array.isArray(permissionsResult.value)
-          ? permissionsResult.value
-          : [];
-        setPermissions(permissionList);
+      const pages: PermissionMatrixPageDTO[] = Array.isArray(matrixResult.value.pages)
+        ? matrixResult.value.pages
+        : [];
+      const rows: PermissionMatrixRowDTO[] = Array.isArray(matrixResult.value.rows)
+        ? matrixResult.value.rows
+        : [];
+
+      setMatrixPages(pages);
+      setMatrixRows(rows);
+
+      if (usersResult.status === "fulfilled") {
+        const list: UserDTO[] = Array.isArray(usersResult.value) ? usersResult.value : [];
+        const detailMap: UserDetailsMap = {};
+        list.forEach((user) => {
+          detailMap[user.id] = user;
+        });
+        setUserDetailsById(detailMap);
       } else {
-        setPermissions([]);
-        const e = permissionsResult.reason as ApiErrorShape | undefined;
-        setError(e?.message ?? "权限字典加载失败，当前无法创建或编辑用户权限");
+        setUserDetailsById({});
       }
     } catch (err) {
       const e = err as ApiErrorShape;
-      setError(e?.message ?? "加载用户失败");
-      setUsers([]);
-      setPermissions([]);
+      setError(e?.message ?? "加载用户权限矩阵失败");
+      setMatrixPages([]);
+      setMatrixRows([]);
+      setUserDetailsById({});
     } finally {
       setLoading(false);
     }
@@ -78,12 +93,11 @@ export function useUsersPresenter() {
   }, []);
 
   // ============================================================
-  // 创建用户（用户直配权限）
+  // 创建用户（默认不授予页面权限）
   // ============================================================
   async function createUser(payload: {
     username: string;
     password: string;
-    permission_ids: number[];
     full_name?: string | null;
     phone?: string | null;
     email?: string | null;
@@ -131,18 +145,40 @@ export function useUsersPresenter() {
   }
 
   // ============================================================
-  // 覆盖用户权限
+  // 保存单个用户矩阵
   // ============================================================
-  async function setUserPermissions(userId: number, permissionIds: number[]) {
+  async function saveUserPermissionMatrix(
+    userId: number,
+    pages: PermissionMatrixPagesDTO,
+  ) {
     setMutating(true);
     setError(null);
 
     try {
-      await apiSetUserPermissions(userId, permissionIds);
+      await apiUpdateUserPermissionMatrix(userId, pages);
       await load();
     } catch (err) {
       const e = err as ApiErrorShape;
       setError(e?.message ?? "保存用户权限失败");
+      throw err;
+    } finally {
+      setMutating(false);
+    }
+  }
+
+  // ============================================================
+  // 删除用户
+  // ============================================================
+  async function deleteUser(userId: number) {
+    setMutating(true);
+    setError(null);
+
+    try {
+      await apiDeleteUser(userId);
+      await load();
+    } catch (err) {
+      const e = err as ApiErrorShape;
+      setError(e?.message ?? "删除用户失败");
       throw err;
     } finally {
       setMutating(false);
@@ -169,8 +205,9 @@ export function useUsersPresenter() {
   }
 
   return {
-    users,
-    permissions,
+    matrixPages,
+    matrixRows,
+    userDetailsById,
     loading,
     creating,
     mutating,
@@ -179,7 +216,8 @@ export function useUsersPresenter() {
 
     createUser,
     updateUser,
-    setUserPermissions,
+    saveUserPermissionMatrix,
+    deleteUser,
     resetPassword,
     setError,
   };
