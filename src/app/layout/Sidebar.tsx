@@ -9,19 +9,21 @@ import {
   useNavigationRuntime,
   usePermissionRuntime,
 } from "../../shared/runtime";
+import type { NavigationPage } from "../../shared/runtime/types";
 
 type OpenState = Record<string, boolean>;
 
-type SidebarItemVM = {
+type SidebarNodeVM = {
   code: string;
   label: string;
-  path: string;
+  path: string | null;
+  children: SidebarNodeVM[];
 };
 
 type SidebarSectionVM = {
   code: string;
   label: string;
-  items: SidebarItemVM[];
+  items: SidebarNodeVM[];
 };
 
 function sortPages(
@@ -31,6 +33,72 @@ function sortPages(
   const sortDiff = a.sort_order - b.sort_order;
   if (sortDiff !== 0) return sortDiff;
   return a.name.localeCompare(b.name, "zh-CN");
+}
+
+function buildSidebarNodes(
+  nodes: NavigationPage[],
+  primaryPathByPageCode: Record<string, string>,
+  canFn: (perm: string) => boolean,
+): SidebarNodeVM[] {
+  const mapped: Array<SidebarNodeVM | null> = [...nodes]
+    .filter(
+      (page) =>
+        page.is_active &&
+        page.show_in_sidebar &&
+        canViewPage(page, canFn),
+    )
+    .sort(sortPages)
+    .map((page): SidebarNodeVM | null => {
+      const children = buildSidebarNodes(
+        page.children,
+        primaryPathByPageCode,
+        canFn,
+      );
+      const path: string | null = primaryPathByPageCode[page.code] ?? null;
+
+      if (!path && children.length === 0) {
+        return null;
+      }
+
+      return {
+        code: page.code,
+        label: page.name,
+        path,
+        children,
+      };
+    });
+
+  return mapped.filter((node): node is SidebarNodeVM => node !== null);
+}
+
+function buildActiveCodeSet(
+  activePageCode: string | null,
+  pageIndex: Record<string, NavigationPage>,
+): Set<string> {
+  const codes = new Set<string>();
+
+  let currentCode = activePageCode;
+  while (currentCode) {
+    codes.add(currentCode);
+    currentCode = pageIndex[currentCode]?.parent_code ?? null;
+  }
+
+  return codes;
+}
+
+function resolveRootSectionCode(
+  activePageCode: string | null,
+  pageIndex: Record<string, NavigationPage>,
+): string | null {
+  let currentCode = activePageCode;
+  let rootCode: string | null = null;
+
+  while (currentCode) {
+    rootCode = currentCode;
+    currentCode = pageIndex[currentCode]?.parent_code ?? null;
+  }
+
+  return rootCode;
 }
 
 export function Sidebar() {
@@ -46,36 +114,32 @@ export function Sidebar() {
     [routePrefixes],
   );
 
+  const resolvedPage = useMemo(
+    () => resolvePageByPath(location.pathname, routePrefixes, pageIndex),
+    [location.pathname, routePrefixes, pageIndex],
+  );
+
+  const activeCodeSet = useMemo(
+    () => buildActiveCodeSet(resolvedPage?.pageCode ?? null, pageIndex),
+    [resolvedPage, pageIndex],
+  );
+
   const visibleSections = useMemo<SidebarSectionVM[]>(() => {
     return [...pages]
       .filter((page) => page.is_active)
       .sort(sortPages)
-      .map((section) => {
-        const visibleChildren = [...section.children]
-          .filter(
-            (child) =>
-              child.is_active &&
-              child.show_in_sidebar &&
-              canViewPage(child, can),
-          )
-          .sort(sortPages)
-          .map((child) => {
-            const path = primaryPathByPageCode[child.code];
-            if (!path) return null;
+      .map((section): SidebarSectionVM | null => {
+        const items = buildSidebarNodes(
+          section.children,
+          primaryPathByPageCode,
+          can,
+        );
 
-            return {
-              code: child.code,
-              label: child.name,
-              path,
-            };
-          })
-          .filter((item): item is SidebarItemVM => item !== null);
-
-        if (visibleChildren.length > 0) {
+        if (items.length > 0) {
           return {
             code: section.code,
             label: section.name,
-            items: visibleChildren,
+            items,
           };
         }
 
@@ -93,6 +157,7 @@ export function Sidebar() {
                 code: section.code,
                 label: section.name,
                 path: sectionPath,
+                children: [],
               },
             ],
           };
@@ -104,23 +169,64 @@ export function Sidebar() {
       .filter((section) => section.items.length > 0);
   }, [pages, primaryPathByPageCode, can]);
 
-  const resolvedPage = useMemo(
-    () => resolvePageByPath(location.pathname, routePrefixes, pageIndex),
-    [location.pathname, routePrefixes, pageIndex],
-  );
-
   useEffect(() => {
-    const activeSectionCode = resolvedPage?.parentCode ?? resolvedPage?.pageCode ?? null;
+    const activeSectionCode = resolveRootSectionCode(
+      resolvedPage?.pageCode ?? null,
+      pageIndex,
+    );
     if (!activeSectionCode) return;
 
     setOpenSections((prev) => ({
       ...prev,
       [activeSectionCode]: true,
     }));
-  }, [resolvedPage]);
+  }, [resolvedPage, pageIndex]);
 
   const toggleSection = (id: string) =>
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  function renderNode(node: SidebarNodeVM, depth = 0): React.ReactNode {
+    const isActive = activeCodeSet.has(node.code);
+    const linkClass = [
+      "block rounded-lg px-4 py-3",
+      depth === 0 ? "text-xl" : "text-lg",
+      isActive
+        ? "bg-slate-800 text-white"
+        : "text-slate-300 hover:bg-slate-800/60 hover:text-white",
+    ].join(" ");
+
+    const groupClass = [
+      "block rounded-md px-4 py-2",
+      depth === 0 ? "text-xl font-semibold" : "text-lg font-semibold",
+      isActive ? "bg-slate-800/40 text-white" : "text-slate-200",
+    ].join(" ");
+
+    if (node.children.length === 0) {
+      if (!node.path) return null;
+
+      return (
+        <NavLink key={node.code} to={node.path} className={linkClass}>
+          {node.label}
+        </NavLink>
+      );
+    }
+
+    return (
+      <div key={node.code}>
+        {node.path ? (
+          <NavLink to={node.path} className={groupClass}>
+            {node.label}
+          </NavLink>
+        ) : (
+          <div className={groupClass}>{node.label}</div>
+        )}
+
+        <div className="mt-2 space-y-2 border-l border-slate-800 pl-4">
+          {node.children.map((child) => renderNode(child, depth + 1))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <aside className="flex w-72 flex-col bg-slate-900 text-slate-100">
@@ -151,22 +257,7 @@ export function Sidebar() {
 
               {isOpen && (
                 <div className="mb-3 mt-2 space-y-2 pl-4">
-                  {section.items.map((item) => (
-                    <NavLink
-                      key={item.code}
-                      to={item.path}
-                      className={({ isActive }) =>
-                        [
-                          "block rounded-lg px-4 py-3 text-xl",
-                          isActive
-                            ? "bg-slate-800 text-white"
-                            : "text-slate-300 hover:bg-slate-800/60 hover:text-white",
-                        ].join(" ")
-                      }
-                    >
-                      {item.label}
-                    </NavLink>
-                  ))}
+                  {section.items.map((item) => renderNode(item))}
                 </div>
               )}
             </div>

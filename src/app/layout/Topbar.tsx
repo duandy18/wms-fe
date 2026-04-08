@@ -7,6 +7,7 @@ import {
   useNavigationRuntime,
   useSessionRuntime,
 } from "../../shared/runtime";
+import type { NavigationPage } from "../../shared/runtime/types";
 import { apiPost } from "../../lib/api";
 
 type ChangePasswordErrorShape = {
@@ -14,7 +15,33 @@ type ChangePasswordErrorShape = {
   message?: string;
 };
 
-type Breadcrumb = { section: string; page: string };
+function buildBreadcrumbItems(
+  activePageCode: string | null,
+  pageIndex: Record<string, NavigationPage>,
+): string[] {
+  const items: string[] = [];
+
+  let currentCode = activePageCode;
+  while (currentCode) {
+    const page = pageIndex[currentCode];
+    if (!page) break;
+
+    items.push(page.name);
+    currentCode = page.parent_code ?? null;
+  }
+
+  items.reverse();
+
+  if (items.length === 0) {
+    return ["首页", "概览"];
+  }
+
+  if (items.length === 1) {
+    return [items[0], "概览"];
+  }
+
+  return items;
+}
 
 export function Topbar() {
   const { user, logout } = useSessionRuntime();
@@ -56,39 +83,44 @@ export function Topbar() {
 
   const pageIndex = useMemo(() => buildPageIndex(pages), [pages]);
 
-  const breadcrumb = useMemo<Breadcrumb>(() => {
-    const resolved = resolvePageByPath(
-      location.pathname,
-      routePrefixes,
-      pageIndex,
-    );
+  const resolvedPage = useMemo(
+    () => resolvePageByPath(location.pathname, routePrefixes, pageIndex),
+    [location.pathname, routePrefixes, pageIndex],
+  );
 
-    if (!resolved) {
-      return { section: "首页", page: "概览" };
-    }
-
-    if (resolved.parentName) {
-      return {
-        section: resolved.parentName,
-        page: resolved.pageName,
-      };
-    }
-
-    return {
-      section: resolved.pageName,
-      page: "概览",
-    };
-  }, [location.pathname, routePrefixes, pageIndex]);
+  const breadcrumbItems = useMemo(
+    () => buildBreadcrumbItems(resolvedPage?.pageCode ?? null, pageIndex),
+    [resolvedPage, pageIndex],
+  );
 
   return (
     <>
       <header className="flex h-16 items-center justify-between border-b bg-white px-6 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold text-slate-900">
-            {breadcrumb.section}
-          </span>
-          <span className="text-lg text-slate-400">/</span>
-          <span className="text-lg text-slate-700">{breadcrumb.page}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          {breadcrumbItems.map((item, index) => {
+            const isLast = index === breadcrumbItems.length - 1;
+            const isFirst = index === 0;
+
+            return (
+              <React.Fragment key={`${item}-${index}`}>
+                <span
+                  className={[
+                    "text-lg",
+                    isLast
+                      ? "font-semibold text-slate-900"
+                      : isFirst
+                        ? "font-semibold text-slate-900"
+                        : "text-slate-700",
+                  ].join(" ")}
+                >
+                  {item}
+                </span>
+                {!isLast ? (
+                  <span className="text-lg text-slate-400">/</span>
+                ) : null}
+              </React.Fragment>
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-6 text-slate-800">

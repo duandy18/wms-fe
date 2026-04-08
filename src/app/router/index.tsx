@@ -45,7 +45,7 @@ const AppRouter: React.FC = () => {
           <Route
             index
             element={
-              <RequirePermission permission="page.wms.inventory.read">
+              <RequirePermission permission="page.wms.read">
                 <P.SnapshotPage />
               </RequirePermission>
             }
@@ -54,7 +54,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="inbound"
             element={
-              <RequirePermission permission="page.wms.inbound.read">
+              <RequirePermission permission="page.wms.read">
                 <P.InboundCockpitPage />
               </RequirePermission>
             }
@@ -62,7 +62,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="inbound/cockpit"
             element={
-              <RequirePermission permission="page.wms.inbound.read">
+              <RequirePermission permission="page.wms.read">
                 <P.InboundCockpitPage />
               </RequirePermission>
             }
@@ -70,7 +70,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="count"
             element={
-              <RequirePermission permission="page.wms.internal_ops.read">
+              <RequirePermission permission="page.wms.read">
                 <P.CountCockpitPage />
               </RequirePermission>
             }
@@ -78,7 +78,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="outbound/pick-tasks"
             element={
-              <RequirePermission permission="page.wms.order_outbound.read">
+              <RequirePermission permission="page.wms.read">
                 <P.PickTasksCockpitPage />
               </RequirePermission>
             }
@@ -94,7 +94,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="outbound/internal-outbound"
             element={
-              <RequirePermission permission="page.wms.internal_ops.read">
+              <RequirePermission permission="page.wms.read">
                 <P.InternalOutboundPage />
               </RequirePermission>
             }
@@ -103,7 +103,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="outbound/dashboard"
             element={
-              <RequirePermission permission="page.wms.order_outbound.read">
+              <RequirePermission permission="page.wms.read">
                 <P.OutboundDashboardPage />
               </RequirePermission>
             }
@@ -116,7 +116,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="snapshot"
             element={
-              <RequirePermission permission="page.wms.inventory.read">
+              <RequirePermission permission="page.wms.read">
                 <P.SnapshotPage />
               </RequirePermission>
             }
@@ -124,7 +124,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="inventory/ledger"
             element={
-              <RequirePermission permission="page.wms.inventory.read">
+              <RequirePermission permission="page.wms.read">
                 <P.StockLedgerPage />
               </RequirePermission>
             }
@@ -371,7 +371,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="purchase-orders/overview"
             element={
-              <RequirePermission permission="page.wms.inbound.read">
+              <RequirePermission permission="page.wms.read">
                 <P.PurchaseOverviewPage />
               </RequirePermission>
             }
@@ -388,7 +388,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="purchase-orders/new-v2"
             element={
-              <RequirePermission permission="page.wms.inbound.read">
+              <RequirePermission permission="page.wms.read">
                 <P.PurchaseOrderCreateV2Page />
               </RequirePermission>
             }
@@ -396,7 +396,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="purchase-orders/:poId"
             element={
-              <RequirePermission permission="page.wms.inbound.read">
+              <RequirePermission permission="page.wms.read">
                 <P.PurchaseOrderDetailPage />
               </RequirePermission>
             }
@@ -405,7 +405,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="receive-tasks/:taskId"
             element={
-              <RequirePermission permission="operations.inbound">
+              <RequirePermission permission="page.wms.read">
                 <P.ReceiveTaskDetailPage />
               </RequirePermission>
             }
@@ -413,7 +413,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="return-tasks/:taskId"
             element={
-              <RequirePermission permission="operations.outbound">
+              <RequirePermission permission="page.wms.read">
                 <P.ReturnTaskDetailPage />
               </RequirePermission>
             }
@@ -422,7 +422,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="warehouses"
             element={
-              <RequirePermission permission="page.wms.masterdata.read">
+              <RequirePermission permission="page.wms.read">
                 <P.WarehousesListPage />
               </RequirePermission>
             }
@@ -430,7 +430,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="warehouses/new"
             element={
-              <RequirePermission permission="page.wms.masterdata.read">
+              <RequirePermission permission="page.wms.read">
                 <P.WarehouseCreatePage />
               </RequirePermission>
             }
@@ -438,7 +438,7 @@ const AppRouter: React.FC = () => {
           <Route
             path="warehouses/:warehouseId"
             element={
-              <RequirePermission permission="page.wms.masterdata.read">
+              <RequirePermission permission="page.wms.read">
                 <P.WarehouseDetailPage />
               </RequirePermission>
             }
