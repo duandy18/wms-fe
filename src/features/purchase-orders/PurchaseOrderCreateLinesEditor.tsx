@@ -6,11 +6,11 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import type { LineDraft } from "./usePurchaseOrderCreatePresenter";
-import type { ItemBasic } from "../../master-data/itemsApi";
+import type { ItemBasic } from "../../domains/pms/public/contracts/itemBasic";
 import { PurchaseOrderCreateLineRow } from "./createV2/linesEditor/LineRow";
 import { PurchaseOrderCreateLinesTableHead } from "./createV2/linesEditor/Columns";
 import { PO_CREATE_LINE_COLSPAN } from "./createV2/linesEditor/columns.def";
-import { fetchItemUomsByItems, type ItemUom } from "../../master-data/itemUomsApi";
+import { fetchItemUomsByItems, type ItemUom } from "../pms/items/api/itemUomsOwnerApi";
 
 interface PurchaseOrderCreateLinesEditorProps {
   lines: LineDraft[];

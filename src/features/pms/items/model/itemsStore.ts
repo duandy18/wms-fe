@@ -1,7 +1,7 @@
 // src/features/pms/items/itemsStore.ts
 import { create } from "zustand";
 import type { Item } from "@/contracts/item/contract";
-import { disableItemTest, enableItemTest, fetchItems } from "../api/itemsApi";
+import { disableItemTest, enableItemTest, fetchItems } from "../api/itemsOwnerApi";
 import type { ItemsState, ApiErrorShape } from "./types";
 import { buildBarcodeMaps } from "./buildBarcodeMaps";
 

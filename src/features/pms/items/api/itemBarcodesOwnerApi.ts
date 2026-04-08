@@ -1,5 +1,5 @@
-// src/master-data/itemBarcodesApi.ts
-// 公共条码 API（master-data 层，供采购/入库/主数据等共用）
+// src/features/pms/items/api/itemBarcodesOwnerApi.ts
+// PMS Items owner 条码 API（仅 owner/internal consumer 使用）
 //
 // 对应后端 app/api/routers/item_barcodes.py：
 //  - POST   /item-barcodes                   创建条码
@@ -8,7 +8,7 @@
 //  - POST   /item-barcodes/{id}/set-primary  设为主条码
 //  - DELETE /item-barcodes/{id}              删除条码
 
-import { apiDelete, apiGet, apiPost } from "../lib/api";
+import { apiDelete, apiGet, apiPost } from "../../../../lib/api";
 
 export interface ItemBarcode {
   id: number;

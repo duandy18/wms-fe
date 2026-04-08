@@ -1,28 +1,8 @@
-// src/master-data/itemsApi.ts
-import { apiGet } from "../lib/api";
-import { fetchBarcodesByItems, type ItemBarcode } from "./itemBarcodesApi";
-
-export interface ItemBasic {
-  id: number;
-  sku: string;
-  name: string;
-  spec: string | null;
-  uom: string | null;
-  enabled: boolean;
-
-  // ⭐
-  spec_family: string | null;
-
-  // ✅ 品牌 / 分类（展示用）
-  brand_name: string | null;
-  category_name: string | null;
-
-  /**
-   * ✅ 主条码（展示冗余）
-   * 终态合同：条码真相在 item_barcodes 子表。这里仅提供“主条码展示字段”。
-   */
-  main_barcode: string | null;
-}
+// src/domains/pms/public/itemsClient.ts
+import { apiGet } from "../../../lib/api";
+import type { ItemBasic } from "./contracts/itemBasic";
+import type { FetchItemsBasicParams } from "./contracts/itemsQuery";
+import { fetchBarcodesByItems, type ItemBarcode } from "../../../features/pms/items/api/itemBarcodesOwnerApi";
 
 type ItemsApiRow = {
   id: number;
@@ -69,36 +49,6 @@ function buildPrimaryBarcodeMap(all: ItemBarcode[]): Record<number, string> {
   }
   return m;
 }
-
-export type FetchItemsBasicParams = {
-  /**
-   * 供应商约束（采购单创建用）
-   * - 约定传给后端 query: supplier_id
-   * - 若后端暂未支持，该参数会被忽略（测试会暴露，我们再补后端）
-   */
-  supplierId?: number | null;
-
-  /**
-   * 只取启用商品（可选）
-   * - 约定传给后端 query: enabled=true
-   */
-  enabledOnly?: boolean;
-
-  /**
-   * 关键词搜索（主数据）
-   * - 约定传给后端 query: q
-   * - 命中：sku / name / barcode / id
-   *
-   * 注意：这里的 “barcode 命中” 属于后端搜索能力；前端不再依赖 items.barcode 字段。
-   */
-  keyword?: string;
-
-  /**
-   * 限制返回条数（可选）
-   * - 约定传给后端 query: limit
-   */
-  limit?: number;
-};
 
 export async function fetchItemsBasic(params: FetchItemsBasicParams = {}): Promise<ItemBasic[]> {
   const qs = new URLSearchParams();
@@ -163,7 +113,7 @@ export async function fetchItemsBasic(params: FetchItemsBasicParams = {}): Promi
       return bc ? { ...x, main_barcode: bc } : x;
     });
   } catch (err) {
-    // 条码补齐失败不应阻断采购单录入；保持 base 返回即可
+    // 条码补齐失败不应阻断读取；保持 base 返回即可
     console.error("fetchBarcodesByItems failed:", err);
     return base;
   }

@@ -1,4 +1,4 @@
-// src/features/pms/items/api.ts
+// src/features/pms/items/api/itemsOwnerApi.ts
 import { apiGet, apiPost, apiPatch } from "../../../../lib/api";
 import type { Item, ItemCreateInput, ItemUpdateInput } from "../../../../contracts/item/contract";
 

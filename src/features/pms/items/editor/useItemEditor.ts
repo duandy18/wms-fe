@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { Supplier } from "@/features/pms/suppliers/api/suppliersApi";
 import type { Item } from "../../../../contracts/item/contract";
-import { updateItem } from "../api/itemsApi";
+import { updateItem } from "../api/itemsOwnerApi";
 import { runCreateItem, runPostCreateWrites, submitCreateItem } from "../create/submit";
 import type { FormState, UomDraft } from "../create/types";
 import { errMsg } from "../utils/itemsHelpers";
 import { type Flash, type FieldErrors, validateCreate, validateEdit } from "./schema";
-import { fetchItemUoms } from "../../../../master-data/itemUomsApi";
+import { fetchItemUoms } from "../api/itemUomsOwnerApi";
 import { syncItemUomsForEdit } from "./syncItemUomsForEdit";
 import { syncItemBarcodesForEdit } from "./syncItemBarcodesForEdit";
 import { draftFromItemUom, pickBaseUom, pickPurchaseDefaultUom } from "./itemEditorUtils";

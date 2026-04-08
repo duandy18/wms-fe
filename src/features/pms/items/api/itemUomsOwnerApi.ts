@@ -1,5 +1,5 @@
-// src/master-data/itemUomsApi.ts
-import { apiGet, apiPost, apiPatch, apiDelete } from "../lib/api";
+// src/features/pms/items/api/itemUomsOwnerApi.ts
+import { apiGet, apiPost, apiPatch, apiDelete } from "../../../../lib/api";
 
 export type ItemUom = {
   id: number;

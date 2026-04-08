@@ -8,7 +8,7 @@ import {
   deleteItemBarcode,
   setPrimaryBarcode,
   type ItemBarcode,
-} from "../../../../master-data/itemBarcodesApi";
+} from "../api/itemBarcodesOwnerApi";
 import { getErrorMessage } from "./errors";
 
 export type BarcodeKind = "CUSTOM" | "EAN13" | "EAN8" | "UPC" | "INNER";

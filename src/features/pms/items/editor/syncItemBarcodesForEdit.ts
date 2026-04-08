@@ -6,7 +6,7 @@ import {
   createItemBarcode,
   setPrimaryBarcode,
   type ItemBarcode,
-} from "../../../../master-data/itemBarcodesApi";
+} from "../api/itemBarcodesOwnerApi";
 import { normalizeBarcode } from "./itemEditorUtils";
 
 /**

@@ -11,7 +11,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { PickTask } from "./pickTasksApi";
-import type { ItemBasic } from "../../../master-data/itemsApi";
+import type { ItemBasic } from "../../../domains/pms/public/contracts/itemBasic";
 import type { OrderView } from "../../orders/api";
 
 type Props = {

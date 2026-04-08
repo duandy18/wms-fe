@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect } from "react";
 import { useItemsStore } from "../model/itemsStore";
-import { useSuppliersOptions } from "../create/useSuppliersOptions";
+import { useSuppliersOptions } from "../hooks/useSuppliersOptions";
 import { EMPTY_FORM } from "../create/types";
 import useItemEditor from "./useItemEditor";
 import type { ItemEditorVm } from "./useItemEditor";
