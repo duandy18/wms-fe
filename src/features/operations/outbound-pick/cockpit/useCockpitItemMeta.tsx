@@ -1,8 +1,8 @@
 // src/features/operations/outbound-pick/cockpit/useCockpitItemMeta.tsx
 
 import { useEffect, useState } from "react";
-import { fetchItemsBasic } from "../../../../master-data/itemsApi";
-import type { ItemBasic } from "../../../pms/items/contracts/itemBasic";
+import { fetchItemsBasic } from "../../../../domains/pms/public/itemsClient";
+import type { ItemBasic } from "../../../../domains/pms/public/contracts/itemBasic";
 
 export function useCockpitItemMeta() {
   const [itemMetaMap, setItemMetaMap] = useState<Record<number, ItemBasic>>({});

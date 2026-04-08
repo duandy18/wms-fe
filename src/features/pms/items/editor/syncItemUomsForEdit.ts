@@ -6,7 +6,7 @@ import {
   fetchItemUoms,
   updateItemUom,
   type ItemUom,
-} from "../api/itemUomsApi";
+} from "../api/itemUomsOwnerApi";
 import {
   parsePositiveIntOrNull,
   pickBaseDraft,

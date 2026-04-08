@@ -1,4 +1,4 @@
-// src/features/pms/items/contracts/itemBasic.ts
+// src/domains/pms/public/contracts/itemBasic.ts
 
 export interface ItemBasic {
   id: number;

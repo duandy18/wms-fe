@@ -1,8 +1,8 @@
 // src/features/purchase-orders/createV2/presenter/useItemsLoader.ts
 
 import { useEffect, useState } from "react";
-import { fetchItemsBasic } from "../../../../master-data/itemsApi";
-import type { ItemBasic } from "../../../pms/items/contracts/itemBasic";
+import { fetchItemsBasic } from "../../../../domains/pms/public/itemsClient";
+import type { ItemBasic } from "../../../../domains/pms/public/contracts/itemBasic";
 import { getErrorMessage } from "../utils";
 
 export function useItemsLoader(args: {

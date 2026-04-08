@@ -2,10 +2,10 @@
 
 import type { Supplier } from "@/features/pms/suppliers/api/suppliersApi";
 import type { Item, ItemCreateInput } from "../../../../contracts/item/contract";
-import { createItem } from "../api/itemsApi";
+import { createItem } from "../api/itemsOwnerApi";
 import type { FormState } from "./types";
-import { createItemUom } from "../api/itemUomsApi";
-import { createItemBarcode, setPrimaryBarcode } from "../api/itemBarcodesApi";
+import { createItemUom } from "../api/itemUomsOwnerApi";
+import { createItemBarcode, setPrimaryBarcode } from "../api/itemBarcodesOwnerApi";
 
 export type SubmitResult =
   | { ok: true; created: { id: number; sku: string } }

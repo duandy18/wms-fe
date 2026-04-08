@@ -7,7 +7,7 @@ import { parseScanBarcode } from "../../scan/barcodeParser";
 
 import { scanPickTask, type PickTask } from "../pickTasksApi";
 import type { ApiErrorShape, ScanResponseExtended } from "../types_cockpit";
-import type { ItemBasic } from "../../../pms/items/contracts/itemBasic";
+import type { ItemBasic } from "../../../../domains/pms/public/contracts/itemBasic";
 
 const NO_BATCH_CODE = "NOEXP";
 

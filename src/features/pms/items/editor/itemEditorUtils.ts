@@ -1,7 +1,7 @@
 // src/features/pms/items/editor/itemEditorUtils.ts
 
 import type { UomDraft } from "../create/types";
-import type { ItemUom } from "../api/itemUomsApi";
+import type { ItemUom } from "../api/itemUomsOwnerApi";
 
 export type UnknownRecord = Record<string, unknown>;
 

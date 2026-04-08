@@ -1,4 +1,4 @@
-// src/features/pms/items/api/itemUomsApi.ts
+// src/features/pms/items/api/itemUomsOwnerApi.ts
 import { apiGet, apiPost, apiPatch, apiDelete } from "../../../../lib/api";
 
 export type ItemUom = {

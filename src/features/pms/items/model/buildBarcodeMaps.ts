@@ -1,8 +1,8 @@
 // src/features/pms/items/store/buildBarcodeMaps.ts
 
 import type { Item } from "../../../../contracts/item/contract";
-import type { ItemBarcode } from "../api/itemBarcodesApi";
-import { fetchBarcodesByItems } from "../api/itemBarcodesApi";
+import type { ItemBarcode } from "../api/itemBarcodesOwnerApi";
+import { fetchBarcodesByItems } from "../api/itemBarcodesOwnerApi";
 
 /**
  * 说明：

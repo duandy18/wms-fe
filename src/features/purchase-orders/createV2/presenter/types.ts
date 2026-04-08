@@ -2,7 +2,7 @@
 
 import type { PurchaseOrderDetail } from "../../api";
 import type { SupplierBasic } from "../../../../master-data/suppliersApi";
-import type { ItemBasic } from "../../../pms/items/contracts/itemBasic";
+import type { ItemBasic } from "../../../../domains/pms/public/contracts/itemBasic";
 import type { LineDraft } from "../lineDraft";
 
 export interface PurchaseOrderCreateState {

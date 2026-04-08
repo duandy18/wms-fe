@@ -10,7 +10,7 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { ScanConsole } from "../../../components/scan/ScanConsole";
 import type { PickTask } from "./pickTasksApi";
-import type { ItemBasic } from "../../pms/items/contracts/itemBasic";
+import type { ItemBasic } from "../../../domains/pms/public/contracts/itemBasic";
 
 const NO_BATCH_CODE = "NOEXP";
 
