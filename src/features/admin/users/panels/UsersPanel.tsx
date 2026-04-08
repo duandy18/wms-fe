@@ -1,69 +1,86 @@
 // src/features/admin/users/panels/UsersPanel.tsx
 //
-// 用户管理面板（用户直配权限版）
-// - 创建用户（直配权限）
-// - 编辑用户基础信息 + 覆盖权限
-// - 启用 / 停用
+// 用户管理面板（一级页面权限矩阵版）
+// - 创建用户（默认不授予页面权限）
+// - 编辑用户基础信息
+// - 一级页面矩阵读写
+// - 删除用户
 // - 重置密码
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePermissionRuntime } from "../../../../shared/runtime";
 import type { UsersPresenter } from "../hooks/useUsersPresenter";
-import type { PermissionDTO, UserDTO } from "../types";
+import type {
+  PermissionMatrixPageDTO,
+  PermissionMatrixPagesDTO,
+  PermissionMatrixRowDTO,
+  UserDTO,
+} from "../types";
 
 type Props = {
   presenter: UsersPresenter;
 };
 
-function PermissionChecklist(props: {
-  permissions: PermissionDTO[];
-  selected: Set<number>;
-  onToggle: (id: number) => void;
-}) {
-  const { permissions, selected, onToggle } = props;
+type MatrixDraftMap = Record<number, PermissionMatrixPagesDTO>;
 
-  if (permissions.length === 0) {
+function normalizePages(
+  source: PermissionMatrixPagesDTO | undefined,
+  pageDefs: PermissionMatrixPageDTO[],
+): PermissionMatrixPagesDTO {
+  const out: PermissionMatrixPagesDTO = {};
+
+  pageDefs.forEach((page) => {
+    const cell = source?.[page.page_code];
+    out[page.page_code] = {
+      read: Boolean(cell?.read),
+      write: Boolean(cell?.write),
+    };
+  });
+
+  return out;
+}
+
+function arePagesEqual(
+  left: PermissionMatrixPagesDTO,
+  right: PermissionMatrixPagesDTO,
+  pageDefs: PermissionMatrixPageDTO[],
+): boolean {
+  return pageDefs.every((page) => {
+    const leftCell = left[page.page_code];
+    const rightCell = right[page.page_code];
     return (
-      <div className="text-xs text-slate-500 border rounded px-3 py-2">
-        权限字典未加载，当前无法配置用户权限。
-      </div>
+      Boolean(leftCell?.read) === Boolean(rightCell?.read) &&
+      Boolean(leftCell?.write) === Boolean(rightCell?.write)
     );
-  }
+  });
+}
 
-  return (
-    <div className="max-h-56 overflow-auto border rounded-lg p-2">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs">
-        {permissions.map((p) => (
-          <label
-            key={p.id}
-            className="flex items-center gap-2 px-2 py-1 hover:bg-slate-50 cursor-pointer rounded"
-          >
-            <input
-              type="checkbox"
-              checked={selected.has(p.id)}
-              onChange={() => onToggle(p.id)}
-            />
-            <span className="font-mono text-[11px]">{p.name}</span>
-          </label>
-        ))}
-      </div>
-    </div>
-  );
+function getCell(
+  pages: PermissionMatrixPagesDTO | undefined,
+  pageCode: string,
+): { read: boolean; write: boolean } {
+  const cell = pages?.[pageCode];
+  return {
+    read: Boolean(cell?.read),
+    write: Boolean(cell?.write),
+  };
 }
 
 export function UsersPanel({ presenter }: Props) {
   const { can } = usePermissionRuntime();
 
   const {
-    users,
-    permissions,
+    matrixPages,
+    matrixRows,
+    userDetailsById,
     loading,
     creating,
     mutating,
     error,
     createUser,
     updateUser,
-    setUserPermissions,
+    saveUserPermissionMatrix,
+    deleteUser,
     resetPassword,
     setError,
   } = presenter;
@@ -71,41 +88,89 @@ export function UsersPanel({ presenter }: Props) {
   const canReadAdmin = can("page.admin.read");
   const canManageUser = can("page.admin.write");
 
-  const permissionIdByName = useMemo(() => {
-    const map = new Map<string, number>();
-    permissions.forEach((p) => map.set(p.name, p.id));
-    return map;
-  }, [permissions]);
-
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("000000");
   const [newFullName, setNewFullName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newPermissionIds, setNewPermissionIds] = useState<Set<number>>(new Set());
 
   const [editingUser, setEditingUser] = useState<UserDTO | null>(null);
   const [editFullName, setEditFullName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
-  const [editPermissionIds, setEditPermissionIds] = useState<Set<number>>(new Set());
 
-  function toggleNewPermission(id: number) {
-    setNewPermissionIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+  const [matrixDrafts, setMatrixDrafts] = useState<MatrixDraftMap>({});
+
+  useEffect(() => {
+    const next: MatrixDraftMap = {};
+    matrixRows.forEach((row) => {
+      next[row.user_id] = normalizePages(row.pages, matrixPages);
+    });
+    setMatrixDrafts(next);
+  }, [matrixPages, matrixRows]);
+
+  function openEdit(row: PermissionMatrixRowDTO) {
+    if (!canManageUser) return;
+
+    const detail = userDetailsById[row.user_id];
+
+    setEditingUser({
+      id: row.user_id,
+      username: row.username,
+      is_active: row.is_active,
+      full_name: detail?.full_name ?? row.full_name ?? null,
+      phone: detail?.phone ?? null,
+      email: detail?.email ?? null,
+      permissions: detail?.permissions ?? [],
+    });
+    setEditFullName(detail?.full_name ?? row.full_name ?? "");
+    setEditPhone(detail?.phone ?? "");
+    setEditEmail(detail?.email ?? "");
+  }
+
+  function toggleMatrixCell(
+    userId: number,
+    pageCode: string,
+    field: "read" | "write",
+  ) {
+    if (!canManageUser) return;
+
+    setMatrixDrafts((prev) => {
+      const currentPages = normalizePages(prev[userId], matrixPages);
+      const currentCell = getCell(currentPages, pageCode);
+
+      if (field === "write") {
+        const nextWrite = !currentCell.write;
+        currentPages[pageCode] = {
+          read: nextWrite ? true : currentCell.read,
+          write: nextWrite,
+        };
+      } else {
+        const nextRead = !currentCell.read;
+        currentPages[pageCode] = {
+          read: nextRead,
+          write: nextRead ? currentCell.write : false,
+        };
+      }
+
+      return {
+        ...prev,
+        [userId]: currentPages,
+      };
     });
   }
 
-  function toggleEditPermission(id: number) {
-    setEditPermissionIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function isRowDirty(row: PermissionMatrixRowDTO): boolean {
+    const draftPages = normalizePages(matrixDrafts[row.user_id], matrixPages);
+    const originalPages = normalizePages(row.pages, matrixPages);
+    return !arePagesEqual(draftPages, originalPages, matrixPages);
+  }
+
+  async function handleSaveMatrix(row: PermissionMatrixRowDTO) {
+    if (!canManageUser) return;
+
+    const draftPages = normalizePages(matrixDrafts[row.user_id], matrixPages);
+    await saveUserPermissionMatrix(row.user_id, draftPages);
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -116,15 +181,10 @@ export function UsersPanel({ presenter }: Props) {
       setError("请填写用户名");
       return;
     }
-    if (permissions.length === 0) {
-      setError("权限字典未加载，当前无法创建用户并配置权限");
-      return;
-    }
 
     await createUser({
       username: newUsername.trim(),
       password: newPassword,
-      permission_ids: Array.from(newPermissionIds),
       full_name: newFullName || null,
       phone: newPhone || null,
       email: newEmail || null,
@@ -135,23 +195,6 @@ export function UsersPanel({ presenter }: Props) {
     setNewFullName("");
     setNewPhone("");
     setNewEmail("");
-    setNewPermissionIds(new Set());
-  }
-
-  function openEdit(u: UserDTO) {
-    if (!canManageUser) return;
-
-    setEditingUser(u);
-    setEditFullName(u.full_name || "");
-    setEditPhone(u.phone || "");
-    setEditEmail(u.email || "");
-
-    const selected = new Set<number>();
-    (u.permissions || []).forEach((name) => {
-      const pid = permissionIdByName.get(name);
-      if (pid != null) selected.add(pid);
-    });
-    setEditPermissionIds(selected);
   }
 
   async function handleSaveEdit(e: React.FormEvent) {
@@ -165,24 +208,23 @@ export function UsersPanel({ presenter }: Props) {
       email: editEmail || null,
     });
 
-    if (permissions.length > 0) {
-      await setUserPermissions(editingUser.id, Array.from(editPermissionIds));
-    }
-
     setEditingUser(null);
   }
 
-  async function handleToggleActive(u: UserDTO) {
+  async function handleDeleteUser(row: PermissionMatrixRowDTO) {
     if (!canManageUser) return;
-    await updateUser(u.id, { is_active: !u.is_active });
-  }
-
-  async function handleResetPassword(u: UserDTO) {
-    if (!canManageUser) return;
-    if (!window.confirm(`确认将用户「${u.username}」密码重置为 000000？`)) {
+    if (!window.confirm(`确认删除用户「${row.username}」？删除后不可恢复。`)) {
       return;
     }
-    await resetPassword(u.id);
+    await deleteUser(row.user_id);
+  }
+
+  async function handleResetPassword(row: PermissionMatrixRowDTO) {
+    if (!canManageUser) return;
+    if (!window.confirm(`确认将用户「${row.username}」密码重置为 000000？`)) {
+      return;
+    }
+    await resetPassword(row.user_id);
     alert("密码已重置为 000000");
   }
 
@@ -204,13 +246,16 @@ export function UsersPanel({ presenter }: Props) {
 
       {!canManageUser && (
         <div className="border border-slate-200 bg-slate-50 text-slate-600 px-3 py-2 rounded">
-          当前为只读模式，不能创建、编辑、停用用户或重置密码。
+          当前为只读模式，不能创建、编辑、删除用户、重置密码或保存权限。
         </div>
       )}
 
       {canManageUser && (
         <section className="bg-white border rounded-xl p-4 space-y-3">
           <h3 className="text-base font-semibold">创建用户</h3>
+          <p className="text-xs text-slate-500">
+            新用户默认不授予任何一级页面权限。创建成功后，请在下方矩阵中勾选页面读写权限。
+          </p>
 
           <form className="grid grid-cols-1 md:grid-cols-3 gap-3" onSubmit={handleCreate}>
             <div>
@@ -259,15 +304,6 @@ export function UsersPanel({ presenter }: Props) {
               />
             </div>
 
-            <div className="md:col-span-3">
-              <label className="text-xs text-slate-600 block mb-1">直配权限</label>
-              <PermissionChecklist
-                permissions={permissions}
-                selected={newPermissionIds}
-                onToggle={toggleNewPermission}
-              />
-            </div>
-
             <div className="flex items-end">
               <button
                 type="submit"
@@ -284,95 +320,132 @@ export function UsersPanel({ presenter }: Props) {
       <section className="border bg-white rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-4">加载中…</div>
-        ) : users.length === 0 ? (
+        ) : matrixRows.length === 0 ? (
           <div className="p-4 text-slate-500">暂无用户。</div>
         ) : (
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 border-b">
-              <tr>
-                <th className="px-3 py-2 w-12 text-left">ID</th>
-                <th className="px-3 py-2 text-left">用户名</th>
-                <th className="px-3 py-2 text-left">姓名</th>
-                <th className="px-3 py-2 text-left">电话</th>
-                <th className="px-3 py-2 text-left">邮箱</th>
-                <th className="px-3 py-2 text-left">权限</th>
-                <th className="px-3 py-2 text-left w-28">状态</th>
-                <th className="px-3 py-2 text-left w-40">操作</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b hover:bg-slate-50">
-                  <td className="px-3 py-2">{u.id}</td>
-                  <td className="px-3 py-2">{u.username}</td>
-                  <td className="px-3 py-2">{u.full_name || "-"}</td>
-                  <td className="px-3 py-2">{u.phone || "-"}</td>
-                  <td className="px-3 py-2">{u.email || "-"}</td>
-                  <td className="px-3 py-2">
-                    {u.permissions.length === 0 ? (
-                      <span className="text-slate-400">-</span>
-                    ) : (
-                      u.permissions.map((name) => (
-                        <span
-                          key={name}
-                          className="inline-block px-2 py-0.5 bg-slate-100 rounded text-xs mr-1 mb-1"
-                        >
-                          {name}
-                        </span>
-                      ))
-                    )}
-                  </td>
-
-                  <td className="px-3 py-2">
-                    {u.is_active ? (
-                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs">
-                        启用
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-xs">
-                        停用
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="px-3 py-2">
-                    <div className="flex gap-2 text-xs">
-                      <button
-                        className="px-2 py-1 border rounded hover:bg-slate-100 disabled:opacity-50"
-                        disabled={mutating || !canManageUser}
-                        onClick={() => openEdit(u)}
-                      >
-                        编辑
-                      </button>
-
-                      <button
-                        className="px-2 py-1 border rounded hover:bg-slate-100 disabled:opacity-50"
-                        disabled={mutating || !canManageUser}
-                        onClick={() => handleToggleActive(u)}
-                      >
-                        {u.is_active ? "停用" : "启用"}
-                      </button>
-
-                      <button
-                        className="px-2 py-1 border border-amber-400 text-amber-700 rounded hover:bg-amber-50 disabled:opacity-50"
-                        disabled={mutating || !canManageUser}
-                        onClick={() => handleResetPassword(u)}
-                      >
-                        重置密码
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="px-3 py-2 w-12 text-left">ID</th>
+                  <th className="px-3 py-2 text-left">用户名</th>
+                  <th className="px-3 py-2 text-left">姓名</th>
+                  <th className="px-3 py-2 w-24 text-left">状态</th>
+                  {matrixPages.map((page) => (
+                    <th
+                      key={page.page_code}
+                      className="px-3 py-2 text-center min-w-[110px]"
+                    >
+                      <div className="font-medium">{page.page_name}</div>
+                      <div className="text-[11px] text-slate-400">{page.page_code}</div>
+                    </th>
+                  ))}
+                  <th className="px-3 py-2 text-left min-w-[220px]">操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {matrixRows.map((row) => (
+                  <tr key={row.user_id} className="border-b hover:bg-slate-50 align-top">
+                    <td className="px-3 py-2">{row.user_id}</td>
+                    <td className="px-3 py-2">{row.username}</td>
+                    <td className="px-3 py-2">{row.full_name || "-"}</td>
+                    <td className="px-3 py-2">
+                      {row.is_active ? (
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs">
+                          启用
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-xs">
+                          停用
+                        </span>
+                      )}
+                    </td>
+
+                    {matrixPages.map((page) => {
+                      const draftPages = normalizePages(matrixDrafts[row.user_id], matrixPages);
+                      const cell = getCell(draftPages, page.page_code);
+
+                      return (
+                        <td
+                          key={`${row.user_id}-${page.page_code}`}
+                          className="px-3 py-2 text-xs text-center"
+                        >
+                          <div className="inline-flex flex-col items-start gap-1">
+                            <label className="inline-flex items-center gap-1 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={cell.read}
+                                disabled={!canManageUser || mutating}
+                                onChange={() =>
+                                  toggleMatrixCell(row.user_id, page.page_code, "read")
+                                }
+                              />
+                              <span>读</span>
+                            </label>
+
+                            <label className="inline-flex items-center gap-1 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={cell.write}
+                                disabled={!canManageUser || mutating}
+                                onChange={() =>
+                                  toggleMatrixCell(row.user_id, page.page_code, "write")
+                                }
+                              />
+                              <span>写</span>
+                            </label>
+                          </div>
+                        </td>
+                      );
+                    })}
+
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <button
+                          className="px-2 py-1 border rounded hover:bg-slate-100 disabled:opacity-50"
+                          disabled={mutating || !canManageUser || !isRowDirty(row)}
+                          onClick={() => handleSaveMatrix(row)}
+                        >
+                          保存
+                        </button>
+
+                        <button
+                          className="px-2 py-1 border rounded hover:bg-slate-100 disabled:opacity-50"
+                          disabled={mutating || !canManageUser}
+                          onClick={() => openEdit(row)}
+                        >
+                          编辑资料
+                        </button>
+
+                        <button
+                          className="px-2 py-1 border border-red-300 text-red-700 rounded hover:bg-red-50 disabled:opacity-50"
+                          disabled={mutating || !canManageUser}
+                          onClick={() => handleDeleteUser(row)}
+                        >
+                          删除
+                        </button>
+
+                        <button
+                          className="px-2 py-1 border border-amber-400 text-amber-700 rounded hover:bg-amber-50 disabled:opacity-50"
+                          disabled={mutating || !canManageUser}
+                          onClick={() => handleResetPassword(row)}
+                        >
+                          重置密码
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
       {editingUser && canManageUser && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[760px] shadow-xl space-y-4 max-h-[85vh] overflow-auto">
+          <div className="bg-white rounded-xl p-6 w-[640px] shadow-xl space-y-4 max-h-[85vh] overflow-auto">
             <h3 className="text-lg font-semibold">编辑用户：{editingUser.username}</h3>
 
             <form className="space-y-4" onSubmit={handleSaveEdit}>
@@ -405,13 +478,8 @@ export function UsersPanel({ presenter }: Props) {
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs text-slate-600 block mb-1">直配权限</label>
-                <PermissionChecklist
-                  permissions={permissions}
-                  selected={editPermissionIds}
-                  onToggle={toggleEditPermission}
-                />
+              <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                页面权限已改为在下方矩阵中维护，这里只编辑用户基础资料。
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
@@ -428,7 +496,7 @@ export function UsersPanel({ presenter }: Props) {
                   className="px-4 py-2 text-sm rounded-lg bg-sky-600 text-white disabled:opacity-50"
                   disabled={mutating}
                 >
-                  {mutating ? "保存中…" : "保存"}
+                  {mutating ? "保存中…" : "保存资料"}
                 </button>
               </div>
             </form>

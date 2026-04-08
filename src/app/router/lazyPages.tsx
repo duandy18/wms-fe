@@ -108,12 +108,9 @@ export const ItemsPage = lazy(
   () => import("../../features/pms/items/pages/ItemsPage"),
 );
 
-// 系统管理：admin/users + admin/permissions
+// 系统管理：admin/users
 export const UsersManagePage = lazy(
   () => import("../../features/admin/users/UsersManagePage"),
-);
-export const PermissionsDictPage = lazy(
-  () => import("../../features/admin/permissions/PermissionsDictPage"),
 );
 
 // 仓库管理

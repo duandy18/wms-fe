@@ -359,14 +359,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          <Route
-            path="admin/permissions"
-            element={
-              <RequirePermission permission="page.admin.read">
-                <P.PermissionsDictPage />
-              </RequirePermission>
-            }
-          />
 
           <Route
             path="purchase-orders/overview"
