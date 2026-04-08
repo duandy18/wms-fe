@@ -42,12 +42,16 @@ export async function fetchUsers(): Promise<UserDTO[]> {
 /**
  * 保存单个用户的一级页面权限矩阵
  * - 后端正式接口：PUT /admin/users/{userId}/permission-matrix
+ * - 当前后端要求前端同时带回当前矩阵列集合 page_codes，
+ *   用于防止旧前端误清新增一级页面权限
  */
 export async function updateUserPermissionMatrix(
   userId: number,
+  pageCodes: string[],
   pages: PermissionMatrixPagesDTO,
 ): Promise<PermissionMatrixRowDTO> {
   return apiPut<PermissionMatrixRowDTO>(`/admin/users/${userId}/permission-matrix`, {
+    page_codes: pageCodes,
     pages,
   });
 }

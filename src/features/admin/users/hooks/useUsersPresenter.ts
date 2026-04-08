@@ -155,7 +155,8 @@ export function useUsersPresenter() {
     setError(null);
 
     try {
-      await apiUpdateUserPermissionMatrix(userId, pages);
+      const pageCodes = matrixPages.map((page) => page.page_code);
+      await apiUpdateUserPermissionMatrix(userId, pageCodes, pages);
       await load();
     } catch (err) {
       const e = err as ApiErrorShape;
