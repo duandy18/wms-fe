@@ -1,7 +1,7 @@
 // src/features/pms/items/barcodes-panel/BarcodesTable.tsx
 
 import React from "react";
-import type { ItemBarcode } from "../../../../master-data/itemBarcodesApi";
+import type { ItemBarcode } from "../api/itemBarcodesApi";
 
 export const BarcodesTable: React.FC<{
   barcodes: ItemBarcode[];

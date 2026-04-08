@@ -1,6 +1,6 @@
 // src/master-data/itemsApi.ts
 import { apiGet } from "../lib/api";
-import { fetchBarcodesByItems, type ItemBarcode } from "./itemBarcodesApi";
+import { fetchBarcodesByItems, type ItemBarcode } from "../features/pms/items/api/itemBarcodesApi";
 
 export interface ItemBasic {
   id: number;

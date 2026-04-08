@@ -8,7 +8,7 @@ import { runCreateItem, runPostCreateWrites, submitCreateItem } from "../create/
 import type { FormState, UomDraft } from "../create/types";
 import { errMsg } from "../utils/itemsHelpers";
 import { type Flash, type FieldErrors, validateCreate, validateEdit } from "./schema";
-import { fetchItemUoms } from "../../../../master-data/itemUomsApi";
+import { fetchItemUoms } from "../api/itemUomsApi";
 import { syncItemUomsForEdit } from "./syncItemUomsForEdit";
 import { syncItemBarcodesForEdit } from "./syncItemBarcodesForEdit";
 import { draftFromItemUom, pickBaseUom, pickPurchaseDefaultUom } from "./itemEditorUtils";

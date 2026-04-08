@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import type { Item } from "../../../../contracts/item/contract";
 import { useItemsStore } from "../model/itemsStore";
 import { computeItemQuality } from "../quality/itemQuality";
-import { fetchItemUomsByItems, type ItemUom } from "../../../../master-data/itemUomsApi";
+import { fetchItemUomsByItems, type ItemUom } from "../api/itemUomsApi";
 import {
   asRecord,
   getBoolean,

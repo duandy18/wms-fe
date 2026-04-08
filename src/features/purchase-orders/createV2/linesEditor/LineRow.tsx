@@ -7,7 +7,7 @@
 
 import React, { useEffect, useMemo } from "react";
 import type { ItemBasic } from "../../../../master-data/itemsApi";
-import type { ItemUom } from "../../../../master-data/itemUomsApi";
+import type { ItemUom } from "../../../pms/items/api/itemUomsApi";
 import type { LineDraft } from "../../usePurchaseOrderCreatePresenter";
 import { calcEstAmount } from "./calc";
 

@@ -1,7 +1,7 @@
 // src/features/pms/items/components/itemsListTableUom.tsx
 
 import React from "react";
-import type { ItemUom } from "../../../../master-data/itemUomsApi";
+import type { ItemUom } from "../api/itemUomsApi";
 
 function isLegacyCaseUom(uom: string): boolean {
   const s = (uom ?? "").trim().toUpperCase();
