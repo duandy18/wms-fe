@@ -34,7 +34,6 @@ export function PermissionsPanel({
   const mergedError = loadError || error;
 
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -48,11 +47,9 @@ export function PermissionsPanel({
 
     await createPermission({
       name: name.trim(),
-      description: description || null,
     });
 
     setName("");
-    setDescription("");
   }
 
   if (!canReadAdmin) {
@@ -82,7 +79,7 @@ export function PermissionsPanel({
           <h3 className="text-base font-semibold text-slate-800">创建权限</h3>
 
           <form
-            className="grid grid-cols-1 md:grid-cols-3 gap-3"
+            className="grid grid-cols-1 md:grid-cols-2 gap-3"
             onSubmit={handleCreate}
           >
             <div className="flex flex-col gap-1">
@@ -92,16 +89,6 @@ export function PermissionsPanel({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="如 operations.outbound"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1 md:col-span-2">
-              <label className="text-xs text-slate-600">描述</label>
-              <input
-                className="border rounded px-3 py-2 text-sm"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="权限说明（可选）"
               />
             </div>
 
@@ -128,8 +115,7 @@ export function PermissionsPanel({
             <thead className="bg-slate-50 border-b">
               <tr>
                 <th className="px-3 py-2 w-16 text-left">ID</th>
-                <th className="px-3 py-2 w-48 text-left">权限名</th>
-                <th className="px-3 py-2 text-left">描述</th>
+                <th className="px-3 py-2 text-left">权限名</th>
               </tr>
             </thead>
 
@@ -139,11 +125,6 @@ export function PermissionsPanel({
                   <td className="px-3 py-2">{p.id}</td>
                   <td className="px-3 py-2 font-mono text-[12px]">
                     {p.name}
-                  </td>
-                  <td className="px-3 py-2">
-                    {p.description || (
-                      <span className="text-slate-400">-</span>
-                    )}
                   </td>
                 </tr>
               ))}

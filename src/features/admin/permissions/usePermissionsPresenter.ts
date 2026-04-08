@@ -1,4 +1,4 @@
-// src/features/admin/users/hooks/usePermissionsPresenter.ts
+// src/features/admin/permissions/usePermissionsPresenter.ts
 import { useState } from "react";
 import { createPermission } from "./api";
 
@@ -14,7 +14,6 @@ export function usePermissionsPresenter(
 
   async function createPermissionAndReload(payload: {
     name: string;
-    description: string | null;
   }) {
     setCreating(true);
     setError(null);

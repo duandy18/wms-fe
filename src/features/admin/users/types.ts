@@ -15,15 +15,7 @@ export type UserDTO = {
   permissions: string[];
 };
 
-export type RoleDTO = {
-  id: number;
-  name: string;
-  description: string | null;
-  permissions: PermissionDTO[];
-};
-
 export type PermissionDTO = {
   id: number;
   name: string;
-  description: string | null;
 };
