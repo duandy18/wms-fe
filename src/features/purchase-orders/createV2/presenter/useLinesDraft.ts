@@ -1,7 +1,7 @@
 // src/features/purchase-orders/createV2/presenter/useLinesDraft.ts
 
 import { useState } from "react";
-import type { ItemBasic } from "../../../../master-data/itemsApi";
+import type { ItemBasic } from "../../../pms/items/contracts/itemBasic";
 import type { LineDraft } from "../lineDraft";
 import { applySelectedItemToLine, makeEmptyLine } from "../lineDraft";
 

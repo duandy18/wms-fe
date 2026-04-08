@@ -1,5 +1,6 @@
 // src/features/oms/fsku/itemsApi.ts
-import { fetchItemsBasic, type ItemBasic } from "../../../master-data/itemsApi";
+import { fetchItemsBasic } from "../../../master-data/itemsApi";
+import type { ItemBasic } from "../../pms/items/contracts/itemBasic";
 import type { MasterItem } from "./types";
 
 /**

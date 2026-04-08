@@ -9,7 +9,7 @@ import type {
   ItemDetailResponse,
   ItemSlice,
 } from "../../inventory/snapshot/api";
-import type { ItemBasic } from "../../../master-data/itemsApi";
+import type { ItemBasic } from "../../pms/items/contracts/itemBasic";
 
 type Props = {
   detail: ItemDetailResponse | null;

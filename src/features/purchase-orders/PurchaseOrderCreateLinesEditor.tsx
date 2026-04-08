@@ -6,7 +6,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import type { LineDraft } from "./usePurchaseOrderCreatePresenter";
-import type { ItemBasic } from "../../master-data/itemsApi";
+import type { ItemBasic } from "../pms/items/contracts/itemBasic";
 import { PurchaseOrderCreateLineRow } from "./createV2/linesEditor/LineRow";
 import { PurchaseOrderCreateLinesTableHead } from "./createV2/linesEditor/Columns";
 import { PO_CREATE_LINE_COLSPAN } from "./createV2/linesEditor/columns.def";

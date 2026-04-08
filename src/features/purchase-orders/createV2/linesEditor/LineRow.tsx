@@ -6,7 +6,7 @@
 // - qty_base 由后端推导
 
 import React, { useEffect, useMemo } from "react";
-import type { ItemBasic } from "../../../../master-data/itemsApi";
+import type { ItemBasic } from "../../../pms/items/contracts/itemBasic";
 import type { ItemUom } from "../../../pms/items/api/itemUomsApi";
 import type { LineDraft } from "../../usePurchaseOrderCreatePresenter";
 import { calcEstAmount } from "./calc";
