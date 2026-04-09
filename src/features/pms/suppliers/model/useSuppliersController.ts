@@ -1,4 +1,4 @@
-// src/features/pms/suppliers/hooks/useSuppliersController.ts
+// src/features/pms/suppliers/model/useSuppliersController.ts
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {

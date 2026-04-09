@@ -1,4 +1,4 @@
-// src/features/pms/suppliers/ui.ts
+// src/features/pms/suppliers/ui/index.ts
 // 只影响 suppliers 页面（本目录内使用）
 
 export const UI = {
