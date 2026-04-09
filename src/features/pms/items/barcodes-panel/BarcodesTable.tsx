@@ -15,7 +15,7 @@ export const BarcodesTable: React.FC<{
           <tr>
             <th className="border-b px-4 py-3 text-left">ID</th>
             <th className="border-b px-4 py-3 text-left">条码</th>
-            <th className="border-b px-4 py-3 text-left">类型</th>
+            <th className="border-b px-4 py-3 text-left">码制</th>
             <th className="border-b px-4 py-3 text-left">主条码</th>
             <th className="border-b px-4 py-3 text-left">操作</th>
           </tr>
@@ -26,7 +26,7 @@ export const BarcodesTable: React.FC<{
             <tr key={b.id} className="border-t">
               <td className="px-4 py-3">{b.id}</td>
               <td className="px-4 py-3 font-mono">{b.barcode}</td>
-              <td className="px-4 py-3">{b.kind}</td>
+              <td className="px-4 py-3">{b.symbology}</td>
               <td className="px-4 py-3">
                 {b.is_primary ? (
                   <span className="rounded bg-emerald-100 px-3 py-1 text-base text-emerald-700">

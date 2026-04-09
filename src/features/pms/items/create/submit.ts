@@ -66,7 +66,12 @@ export async function runPostCreateWrites(args: {
     is_inbound_default: boolean;
     is_outbound_default: boolean;
   }>;
-  barcodesToCreate: Array<{ barcode: string; kind: "EAN13" | "UPC" | "INNER" | "CUSTOM"; set_primary: boolean }>;
+  barcodesToCreate: Array<{
+    barcode: string;
+    target: "BASE" | "PURCHASE_DEFAULT";
+    symbology: "EAN13" | "UPC" | "UPC12" | "EAN8" | "GS1" | "CUSTOM";
+    set_primary: boolean;
+  }>;
 }): Promise<void> {
   const { itemId, uomsToCreate, barcodesToCreate } = args;
 
@@ -74,7 +79,7 @@ export async function runPostCreateWrites(args: {
   if (!base) throw new Error("missing base uom");
 
   // 先创建 base（ratio_to_base 强制 1）
-  await createItemUom({
+  const createdBase = await createItemUom({
     item_id: itemId,
     uom: base.uom,
     ratio_to_base: 1,
@@ -87,26 +92,38 @@ export async function runPostCreateWrites(args: {
 
   // 再创建 purchase_default（若存在）
   const purchase = uomsToCreate.find((x) => !x.is_base && x.is_purchase_default);
-  if (purchase) {
-    await createItemUom({
-      item_id: itemId,
-      uom: purchase.uom,
-      ratio_to_base: purchase.ratio_to_base,
-      display_name: purchase.display_name,
-      is_base: false,
-      is_purchase_default: true,
-      is_inbound_default: Boolean(purchase.is_inbound_default),
-      is_outbound_default: Boolean(purchase.is_outbound_default),
-    });
-  }
+  const createdPurchase = purchase
+    ? await createItemUom({
+        item_id: itemId,
+        uom: purchase.uom,
+        ratio_to_base: purchase.ratio_to_base,
+        display_name: purchase.display_name,
+        is_base: false,
+        is_purchase_default: true,
+        is_inbound_default: Boolean(purchase.is_inbound_default),
+        is_outbound_default: Boolean(purchase.is_outbound_default),
+      })
+    : null;
 
   for (const b of barcodesToCreate) {
+    const itemUomId =
+      b.target === "BASE"
+        ? createdBase.id
+        : b.target === "PURCHASE_DEFAULT"
+          ? createdPurchase?.id ?? null
+          : null;
+
+    if (!itemUomId) {
+      throw new Error(`missing target item_uom for barcode target=${b.target}`);
+    }
+
     const created = await createItemBarcode({
-      item_id: itemId,
+      item_uom_id: itemUomId,
       barcode: b.barcode,
-      kind: b.kind,
+      symbology: b.symbology,
       active: true,
     });
+
     if (b.set_primary) {
       await setPrimaryBarcode(created.id);
     }
