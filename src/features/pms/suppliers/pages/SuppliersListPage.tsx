@@ -1,4 +1,4 @@
-// src/features/pms/suppliers/SuppliersListPage.tsx
+// src/features/pms/suppliers/pages/SuppliersListPage.tsx
 
 import React from "react";
 import PageTitle from "../../../../components/ui/PageTitle";

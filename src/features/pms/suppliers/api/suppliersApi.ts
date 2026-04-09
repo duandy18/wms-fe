@@ -1,4 +1,4 @@
-// src/features/pms/suppliers/api.ts
+// src/features/pms/suppliers/api/suppliersApi.ts
 import { apiGet, apiPost, apiPatch, apiDelete } from "../../../../lib/api";
 
 /** 联系人角色（先用 string，后端也是 string） */
