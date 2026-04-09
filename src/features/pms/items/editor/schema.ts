@@ -12,6 +12,9 @@ export type FieldErrors =
     barcodes?: string;
   };
 
+type BarcodeTarget = "BASE" | "PURCHASE_DEFAULT";
+type BarcodeSymbology = "EAN13" | "UPC" | "UPC12" | "EAN8" | "GS1" | "CUSTOM";
+
 function parseSupplierId(v: string): number | null {
   const s = (v ?? "").trim();
   if (!s) return null;
@@ -79,7 +82,12 @@ export function validateCreate(
           is_inbound_default: boolean;
           is_outbound_default: boolean;
         }>;
-        barcodesToCreate: Array<{ barcode: string; kind: "EAN13" | "UPC" | "INNER" | "CUSTOM"; set_primary: boolean }>;
+        barcodesToCreate: Array<{
+          barcode: string;
+          target: BarcodeTarget;
+          symbology: BarcodeSymbology;
+          set_primary: boolean;
+        }>;
       };
     }
   | { ok: false; fieldErrors: FieldErrors } {
@@ -120,8 +128,15 @@ export function validateCreate(
   // barcodes
   const itemBarcode = normalizeBarcode(form.barcodes.item_barcode);
   const caseBarcode = normalizeBarcode(form.barcodes.case_barcode);
+  const hasPurchase = !!purchaseUom && purchaseRatio != null;
+
   if (itemBarcode && caseBarcode && itemBarcode === caseBarcode) {
     errors.barcodes = "产品码与箱码不能相同";
+  }
+  if (caseBarcode && !hasPurchase) {
+    errors.barcodes = errors.barcodes
+      ? `${errors.barcodes}；箱码必须先配置采购默认单位`
+      : "箱码必须先配置采购默认单位";
   }
 
   // shelf life（仅 REQUIRED 允许）
@@ -148,8 +163,6 @@ export function validateCreate(
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
 
   // ---- uoms to create ----
-  const hasPurchase = !!purchaseUom && purchaseRatio != null;
-
   const uomsToCreate: Array<{
     uom: string;
     ratio_to_base: number;
@@ -182,11 +195,31 @@ export function validateCreate(
     });
   }
 
-  // barcodes to create
-  const barcodesToCreate: Array<{ barcode: string; kind: "EAN13" | "UPC" | "INNER" | "CUSTOM"; set_primary: boolean }> =
-    [];
-  if (itemBarcode) barcodesToCreate.push({ barcode: itemBarcode, kind: "EAN13", set_primary: true });
-  if (caseBarcode) barcodesToCreate.push({ barcode: caseBarcode, kind: "INNER", set_primary: false });
+  // barcodes to create（终态：绑定到目标 uom，而不是写 kind=INNER）
+  const barcodesToCreate: Array<{
+    barcode: string;
+    target: BarcodeTarget;
+    symbology: BarcodeSymbology;
+    set_primary: boolean;
+  }> = [];
+
+  if (itemBarcode) {
+    barcodesToCreate.push({
+      barcode: itemBarcode,
+      target: "BASE",
+      symbology: "EAN13",
+      set_primary: true,
+    });
+  }
+
+  if (caseBarcode) {
+    barcodesToCreate.push({
+      barcode: caseBarcode,
+      target: "PURCHASE_DEFAULT",
+      symbology: "CUSTOM",
+      set_primary: false,
+    });
+  }
 
   return {
     ok: true,

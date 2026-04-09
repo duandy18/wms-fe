@@ -9,6 +9,7 @@ import {
   setPrimaryBarcode,
   type ItemBarcode,
 } from "../api/itemBarcodesOwnerApi";
+import { fetchItemUoms, type ItemUom } from "../api/itemUomsOwnerApi";
 import { getErrorMessage } from "./errors";
 
 export type BarcodeKind = "CUSTOM" | "EAN13" | "EAN8" | "UPC" | "INNER";
@@ -26,6 +27,30 @@ type UseItemBarcodesPanelModelArgs = {
 
 function hasPrimary(list: ItemBarcode[]): boolean {
   return list.some((b) => Boolean(b.is_primary));
+}
+
+function pickTargetUomId(args: { uoms: ItemUom[]; kind: BarcodeKind }): number {
+  const { uoms, kind } = args;
+
+  const base = uoms.find((x) => x.is_base) ?? null;
+  if (!base) {
+    throw new Error("缺少基准单位，无法绑定条码");
+  }
+
+  if (kind === "INNER") {
+    const purchase = uoms.find((x) => x.is_purchase_default && !x.is_base) ?? null;
+    if (!purchase) {
+      throw new Error("箱码必须先配置采购默认单位");
+    }
+    return purchase.id;
+  }
+
+  return base.id;
+}
+
+function mapKindToSymbology(kind: BarcodeKind): "CUSTOM" | "EAN13" | "EAN8" | "UPC" {
+  if (kind === "INNER") return "CUSTOM";
+  return kind;
 }
 
 export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) {
@@ -150,10 +175,13 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
     setSaving(true);
     setError(null);
     try {
+      const uoms = await fetchItemUoms(itemId);
+      const itemUomId = pickTargetUomId({ uoms, kind: newKind });
+
       const created = await createItemBarcode({
-        item_id: itemId,
+        item_uom_id: itemUomId,
         barcode: code,
-        kind: newKind,
+        symbology: mapKindToSymbology(newKind),
         active: true,
       });
 

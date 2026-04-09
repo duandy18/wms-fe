@@ -1,7 +1,7 @@
 // src/features/pms/items/api/itemBarcodesOwnerApi.ts
 // PMS Items owner 条码 API（仅 owner/internal consumer 使用）
 //
-// 对应后端 app/api/routers/item_barcodes.py：
+// 对应后端 app/pms/items/routers/item_barcodes.py：
 //  - POST   /item-barcodes                   创建条码
 //  - GET    /item-barcodes/item/{id}         按商品读取条码列表
 //  - GET    /item-barcodes/by-items          按 item_ids 批量读取条码（避免 N+1）
@@ -13,8 +13,9 @@ import { apiDelete, apiGet, apiPost } from "../../../../lib/api";
 export interface ItemBarcode {
   id: number;
   item_id: number;
+  item_uom_id: number;
   barcode: string;
-  kind: string;
+  symbology: string;
   active: boolean;
   is_primary?: boolean;
   created_at?: string;
@@ -42,29 +43,28 @@ export async function fetchBarcodesByItems(
 
   if (ids.length === 0) return [];
 
-  // 注意：这里保持与你当前 admin/barcodesApi.ts 完全一致的参数形式
   return apiGet<ItemBarcode[]>("/item-barcodes/by-items", {
-    item_id: ids, // item_id=1&item_id=2...
+    item_id: ids,
     active_only: activeOnly,
   });
 }
 
-/** 新增条码 */
+/** 新增条码（终态：绑定到 item_uom） */
 export async function createItemBarcode(params: {
-  item_id: number;
+  item_uom_id: number;
   barcode: string;
-  kind?: string;
+  symbology?: string;
   active?: boolean;
 }): Promise<ItemBarcode> {
-  const { item_id, barcode, kind, active } = params;
-  if (!item_id) throw new Error("invalid item_id");
+  const { item_uom_id, barcode, symbology, active } = params;
+  if (!item_uom_id) throw new Error("invalid item_uom_id");
   const code = barcode.trim();
   if (!code) throw new Error("barcode required");
 
   return apiPost<ItemBarcode>("/item-barcodes", {
-    item_id,
+    item_uom_id,
     barcode: code,
-    kind: kind || "CUSTOM",
+    symbology: symbology || "CUSTOM",
     active: active ?? true,
   });
 }
