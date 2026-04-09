@@ -4,26 +4,6 @@ import type { Item } from "../../../../contracts/item/contract";
 
 export type EnabledFilter = "all" | "enabled" | "disabled";
 
-export type ScanProbeError = {
-  stage?: string;
-  error?: string;
-};
-
-export type ScanProbeResult =
-  | {
-      ok: boolean;
-      committed: boolean;
-      scan_ref: string;
-      event_id?: number | null;
-      source?: string | null;
-      item_id?: number | null;
-      qty?: number | null;
-      batch_code?: string | null;
-      evidence?: Array<Record<string, unknown>>;
-      errors?: ScanProbeError[];
-    }
-  | null;
-
 export type ItemsState = {
   items: Item[];
   loading: boolean;
@@ -33,24 +13,11 @@ export type ItemsState = {
   selectedItem: Item | null;
 
   primaryBarcodes: Record<number, string>;
-  barcodeCounts: Record<number, number>;
-  barcodeOwners: Record<string, number[]>;
-  barcodeIndex: Record<string, number>;
 
   filter: EnabledFilter;
 
-  probeResult: ScanProbeResult;
-  probeLoading: boolean;
-  probeError: string | null;
-
   setScannedBarcode: (code: string | null) => void;
   setSelectedItem: (item: Item | null) => void;
-
-  setProbeState: (data: {
-    result?: ScanProbeResult;
-    loading?: boolean;
-    error?: string | null;
-  }) => void;
 
   setPrimaryBarcodeLocal: (itemId: number, barcode: string | null) => void;
 

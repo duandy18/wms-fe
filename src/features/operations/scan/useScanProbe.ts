@@ -1,14 +1,18 @@
 // src/features/operations/scan/useScanProbe.ts
 //
-// 统一扫码探针 Hook：所有“只解析、不落账”的扫码入口都用这一套。
+// 统一扫码探针 Hook：所有“只解析、不落账”的 WMS 扫码入口都用这一套。
 // - 后端统一走 /scan + ScanRequest(mode + barcode + warehouse_id + probe=true)
 // - 前端拿到统一的 ScanStandardResult：status + item_id + batch/日期 + qty + raw
+//
+// 边界：
+// - 这里只服务 WMS receive / pick / count
+// - PMS items 页面条码体检已迁出，不再通过 items -> pick 的桥接复用本 Hook
 
 import { useState } from "react";
 import { apiPost } from "../../../lib/api";
 import type { ScanResponse } from "./api";
 
-export type ScanProbeMode = "receive" | "pick" | "count" | "items";
+export type ScanProbeMode = "receive" | "pick" | "count";
 
 export type ScanStatus = "OK" | "UNBOUND" | "ERROR";
 
@@ -41,19 +45,12 @@ type ApiErrorShape = {
   message?: string;
 };
 
-/**
- * useScanProbe(mode):
- * - mode = "items" 时，实际仍走后端 mode="pick"，前端只拿解析结果。
- */
 export function useScanProbe(mode: ScanProbeMode) {
   const [lastResult, setLastResult] = useState<ScanStandardResult | null>(
     null,
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const actualMode: "receive" | "pick" | "count" =
-    mode === "items" ? "pick" : mode;
 
   async function probe(params: ScanProbeParams): Promise<ScanStandardResult> {
     const rawBarcode = params.barcode ?? "";
@@ -83,7 +80,7 @@ export function useScanProbe(mode: ScanProbeMode) {
 
     try {
       const payload = {
-        mode: actualMode,
+        mode,
         barcode,
         warehouse_id: params.warehouseId ?? 1,
         probe: true,
@@ -114,7 +111,6 @@ export function useScanProbe(mode: ScanProbeMode) {
         item_id: res.item_id,
         qty: res.qty ?? null,
         batch_code: res.batch_code ?? null,
-        // 目前 /scan 响应里没有日期字段，留好占位，方便后续扩展
         production_date: null,
         expiry_date: null,
         raw: res,

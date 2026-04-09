@@ -11,11 +11,13 @@
 // - 取消底部 ItemBarcodesPanel（不再提供第二套条码管理入口）。
 // - 条码治理唯一入口：编辑器 edit mode 的 BarcodeSection（ItemBarcodesSection）。
 // - URL 入口：/items?barcode=xxx：
+//   - 通过 PMS public barcode probe 解析条码；
 //   - 若条码唯一绑定 → 自动选中商品并滚到编辑器；
 //   - 若未绑定 → 保持 create mode，交给编辑器（create）去回填主条码。
 
 import React, { useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
+import { probeItemBarcode } from "../../../../domains/pms/public/barcodeProbeClient";
 import { useItemsStore } from "../model/itemsStore";
 import ItemsFormSection from "../components/ItemsFormSection";
 
@@ -33,7 +35,6 @@ const ItemsPage: React.FC = () => {
 
   const scannedBarcode = useItemsStore((s) => s.scannedBarcode);
   const primaryBarcodes = useItemsStore((s) => s.primaryBarcodes);
-  const barcodeIndex = useItemsStore((s) => s.barcodeIndex);
   const filter = useItemsStore((s) => s.filter);
 
   const setScannedBarcode = useItemsStore((s) => s.setScannedBarcode);
@@ -62,23 +63,50 @@ const ItemsPage: React.FC = () => {
     void loadItems();
   }, [loadItems]);
 
-  // --- 3. 若 URL/外部带入条码：若唯一绑定 → 自动选中商品并滚到编辑器（唯一治理入口）
+  // --- 3. 若 URL/外部带入条码：改走 PMS public barcode probe
+  // 规则：
+  // - BOUND：按解析到的 item_id 自动选中商品并滚到编辑器
+  // - UNBOUND / ERROR：保持 create mode，滚到编辑器，由编辑器继续承接
   useEffect(() => {
     if (!scannedBarcode) return;
 
-    const itemId = barcodeIndex[scannedBarcode];
-    if (!itemId) {
-      // 未绑定：不再打开底部面板；交给 create 表单做“新建并绑定”
-      gotoEditor();
-      return;
+    let cancelled = false;
+
+    async function resolveByProbe() {
+      const code = scannedBarcode;
+      if (!code) return;
+
+      try {
+        const resp = await probeItemBarcode(code);
+        if (cancelled) return;
+
+        const itemId =
+          resp.status === "BOUND" && resp.item_id && resp.item_id > 0
+            ? resp.item_id
+            : null;
+
+        if (!itemId) {
+          gotoEditor();
+          return;
+        }
+
+        const target = items.find((it) => it.id === itemId);
+        if (!target) return;
+
+        setSelectedItem(target);
+        gotoEditor();
+      } catch {
+        if (cancelled) return;
+        gotoEditor();
+      }
     }
 
-    const target = items.find((it) => it.id === itemId);
-    if (!target) return;
+    void resolveByProbe();
 
-    setSelectedItem(target);
-    gotoEditor();
-  }, [scannedBarcode, barcodeIndex, items, setSelectedItem]);
+    return () => {
+      cancelled = true;
+    };
+  }, [scannedBarcode, items, setSelectedItem]);
 
   // --- 4. 顶部主条码覆盖率统计 ---
   const stats: ItemsStats = useMemo(() => {
