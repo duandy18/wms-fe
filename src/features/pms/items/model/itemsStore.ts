@@ -24,22 +24,8 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
   selectedItem: null,
 
   primaryBarcodes: {},
-  barcodeCounts: {},
-  barcodeOwners: {},
-  barcodeIndex: {},
 
   filter: "all",
-
-  probeResult: null,
-  probeLoading: false,
-  probeError: null,
-
-  setProbeState: ({ result, loading, error }) =>
-    set((s) => ({
-      probeResult: result !== undefined ? result : s.probeResult,
-      probeLoading: loading !== undefined ? loading : s.probeLoading,
-      probeError: error !== undefined ? error : s.probeError,
-    })),
 
   setScannedBarcode: (code) => set({ scannedBarcode: code }),
   setSelectedItem: (item) => set({ selectedItem: item }),
@@ -66,9 +52,6 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
       set({
         items: data,
         primaryBarcodes: maps.primaryBarcodes,
-        barcodeCounts: maps.barcodeCounts,
-        barcodeOwners: maps.barcodeOwners,
-        barcodeIndex: maps.barcodeIndex,
       });
     } catch (e: unknown) {
       const err = e as ApiErrorShape;
@@ -89,7 +72,9 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
 
     try {
       set({ error: null });
-      const updated = next ? await enableItemTest(itemId) : await disableItemTest(itemId);
+      const updated = next
+        ? await enableItemTest(itemId)
+        : await disableItemTest(itemId);
 
       // ✅ 回写 items（保持列表单一真相）
       set((s) => ({
