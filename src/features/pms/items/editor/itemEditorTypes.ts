@@ -17,7 +17,6 @@ export type ItemEditorVm = {
   supError: string | null;
 
   selectedItem: Item | null;
-  selectedPrimaryBarcode: string;
 
   form: FormState;
   setForm: (next: FormState) => void;

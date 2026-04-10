@@ -5,10 +5,8 @@ import type { FormState } from "../create/types";
 import { asRecord } from "./itemEditorUtils";
 
 /**
- * 编辑模式下的 items 基础字段回填（不回填 uoms；不回填条码表事实）
- * - uoms：留空，交给 item_uoms 回填 effect
- * - barcodes：留空，条码输入并入 BasicSection；保存时写入 item_barcodes
- * - weight_kg：不再挂 form 根；由 item_uoms 回填到 base uom.net_weight_kg
+ * 编辑模式下只回填 item 本体字段。
+ * 商品页不再承载包装单位 / 条码 / 单位换算治理。
  */
 export function buildEditForm(args: { selectedItem: Item; emptyForm: FormState }): FormState {
   const { selectedItem, emptyForm } = args;
@@ -32,12 +30,6 @@ export function buildEditForm(args: { selectedItem: Item; emptyForm: FormState }
 
     shelf_life_value: r["shelf_life_value"] == null ? "" : String(r["shelf_life_value"]),
     shelf_life_unit: (r["shelf_life_unit"] ?? "MONTH") as FormState["shelf_life_unit"],
-
-    // 单位 + 基础包装净重：置空，等待 item_uoms 回填
-    uoms: [],
-
-    // 条码：置空，用户可在 BasicSection 扫码/输入；保存时同步写入 item_barcodes
-    barcodes: { item_barcode: "", case_barcode: "" },
 
     status: selectedItem.enabled ? "enabled" : "disabled",
   };

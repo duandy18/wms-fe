@@ -35,6 +35,13 @@ function renderPrimaryCell(row: ItemBarcodeCompositeRow): React.ReactNode {
   return row.is_primary ? "是" : "否";
 }
 
+function renderWeightCell(row: ItemBarcodeCompositeRow): React.ReactNode {
+  if (row.net_weight_kg == null) {
+    return <span className="text-slate-400">—</span>;
+  }
+  return <span className="font-mono">{row.net_weight_kg}</span>;
+}
+
 export const BarcodesTable: React.FC<{
   rows: ItemBarcodeCompositeRow[];
   loading?: boolean;
@@ -48,6 +55,7 @@ export const BarcodesTable: React.FC<{
             <th className="border-b px-4 py-3 text-left font-semibold">SKU</th>
             <th className="border-b px-4 py-3 text-left font-semibold">商品名称</th>
             <th className="border-b px-4 py-3 text-left font-semibold">包装单位</th>
+            <th className="border-b px-4 py-3 text-left font-semibold">重量（kg）</th>
             <th className="border-b px-4 py-3 text-left font-semibold">条码</th>
             <th className="border-b px-4 py-3 text-left font-semibold">是否主条码</th>
             <th className="border-b px-4 py-3 text-left font-semibold">操作</th>
@@ -57,13 +65,13 @@ export const BarcodesTable: React.FC<{
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+              <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
                 条码列表加载中…
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+              <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
                 暂无包装/条码记录
               </td>
             </tr>
@@ -73,6 +81,7 @@ export const BarcodesTable: React.FC<{
                 <td className="px-4 py-3 font-mono">{row.sku}</td>
                 <td className="px-4 py-3">{row.item_name}</td>
                 <td className="px-4 py-3">{renderPackageName(row)}</td>
+                <td className="px-4 py-3 whitespace-nowrap">{renderWeightCell(row)}</td>
                 <td className="px-4 py-3">{renderBarcodeCell(row)}</td>
                 <td className="px-4 py-3">{renderPrimaryCell(row)}</td>
                 <td className="px-4 py-3">

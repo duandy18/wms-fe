@@ -6,8 +6,6 @@ import type { ItemEditorVm } from "./useItemEditor";
 import HeaderBar from "./sections/HeaderBar";
 import FlashBar from "./sections/FlashBar";
 import BasicSection from "./sections/BasicSection";
-import UomAndWeightSection from "./sections/UomAndWeightSection";
-import SupplierSection from "./sections/SupplierSection";
 import ProductAttributesSection from "./sections/ProductAttributesSection";
 import StatusSection from "./sections/StatusSection";
 
@@ -31,22 +29,15 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
       ) : null}
 
       <form onSubmit={vm.submit} className="space-y-6">
-        {/* 基础字段（名称 / 规格 / 品牌 / 品类） */}
+        {/* 商品本体基础字段 */}
         <BasicSection vm={vm} />
 
-        {/* 单位行 */}
-        <UomAndWeightSection vm={vm} />
-
-        {/* 供应商 */}
-        <SupplierSection vm={vm} />
-
-        {/* 批次 / 有效期策略 */}
+        {/* 供应商 / 批次策略 / 有效期策略 */}
         <ProductAttributesSection vm={vm} />
 
         {/* 状态 */}
         <StatusSection vm={vm} />
 
-        {/* 操作按钮 */}
         <div className="flex items-center gap-3 pt-2">
           {vm.mode === "edit" ? (
             <button
@@ -68,8 +59,8 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
             {vm.saving
               ? "保存中…"
               : vm.mode === "edit"
-              ? "保存修改"
-              : "保存商品"}
+                ? "保存修改"
+                : "保存商品"}
           </button>
         </div>
       </form>

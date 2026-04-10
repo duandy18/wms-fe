@@ -89,7 +89,7 @@ export const AddBarcodeForm: React.FC<{
               disabled={!canSubmit}
               className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
             >
-              {saving ? "保存中…" : mode === "edit" ? "保存修改" : "保存绑定"}
+              {saving ? "保存中…" : mode === "edit" ? "保存修改" : "绑定条码"}
             </button>
 
             {mode === "edit" ? (
@@ -104,10 +104,6 @@ export const AddBarcodeForm: React.FC<{
             ) : null}
           </div>
         </div>
-      </div>
-
-      <div className="text-xs text-slate-500">
-        绑定规则：一个商品、一个包装单位、一条码。修改也在这里完成，不在下方列表内直接改。
       </div>
     </form>
   );

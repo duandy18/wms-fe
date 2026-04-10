@@ -2,35 +2,35 @@
 // 只影响 suppliers 页面（本目录内使用）
 
 export const UI = {
-  // 字号体系：最大不超过 PageTitle 的 title
+  // 字号体系：回落到常规业务页密度
   title: "text-2xl",
-  h2: "text-xl",
-  body: "text-lg",
-  small: "text-base",
+  h2: "text-base",
+  body: "text-sm",
+  small: "text-xs",
 
   // 容器
-  card: "rounded-2xl border border-slate-200 bg-white p-8",
-  subcard: "rounded-2xl border border-slate-200 bg-slate-50 p-6",
+  card: "rounded-xl border border-slate-200 bg-white p-6",
+  subcard: "rounded-xl border border-slate-200 bg-slate-50 p-4",
 
   // 表格
-  table: "min-w-full text-lg",
-  theadRow: "h-16 text-slate-800",
-  tbodyRow: "h-16",
+  table: "min-w-full text-sm",
+  theadRow: "h-12 text-slate-800",
+  tbodyRow: "h-12",
 
   // 控件
-  input: "w-full rounded-2xl border border-slate-300 px-5 py-4 text-lg",
-  select: "w-full rounded-2xl border border-slate-300 px-5 py-4 text-lg",
-  btn: "rounded-2xl border border-slate-300 px-6 py-3 text-lg hover:bg-slate-50",
+  input: "w-full rounded border border-slate-300 px-3 py-2 text-sm bg-white",
+  select: "w-full rounded border border-slate-300 px-3 py-2 text-sm bg-white",
+  btn: "rounded border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50",
   btnPrimary:
-    "rounded-2xl bg-slate-900 px-8 py-4 text-lg text-white disabled:opacity-60",
+    "rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60",
   btnDanger:
-    "rounded-2xl border border-red-300 px-6 py-3 text-lg text-red-700 hover:bg-red-50",
+    "rounded border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50",
 
   // 反馈
   errorBox:
-    "rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-lg text-red-700",
+    "rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700",
   badgeOk:
-    "inline-flex items-center rounded-full px-4 py-2 text-lg font-semibold bg-emerald-100 text-emerald-800",
+    "inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-emerald-100 text-emerald-800",
   badgeBad:
-    "inline-flex items-center rounded-full px-4 py-2 text-lg font-semibold bg-red-100 text-red-800",
+    "inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-red-100 text-red-800",
 } as const;

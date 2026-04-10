@@ -39,7 +39,7 @@ const SuppliersListPage: React.FC = () => {
   const c = useSuppliersController();
 
   return (
-    <div className="space-y-10 p-10">
+    <div className="space-y-6 p-6">
       <PageTitle title="供应商主数据" description="字段与列表对齐：名称/编码/官网/联系人信息/状态。状态只能在编辑中修改。" />
 
       <SupplierCreateSection
@@ -68,8 +68,8 @@ const SuppliersListPage: React.FC = () => {
         onSubmit={c.handleCreate}
       />
 
-      <section className={`${CARD} space-y-8`}>
-        <div className="flex items-center justify-between gap-6">
+      <section className={`${CARD} space-y-6`}>
+        <div className="flex items-center justify-between gap-4">
           <div className={`${H2} font-semibold text-slate-900`}>供应商列表</div>
 
           <SuppliersToolbar

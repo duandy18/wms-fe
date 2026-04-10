@@ -46,7 +46,7 @@ const ItemUomsGovernanceSection: React.FC<{
       ) : null}
 
       <form onSubmit={(e) => void m.handleSave(e)} className="space-y-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[140px_minmax(220px,1fr)] md:items-center">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[120px_minmax(180px,1fr)_140px_minmax(180px,1fr)] md:items-center">
           <label className="text-sm font-medium text-slate-700">基础包装</label>
           <input
             className="w-full rounded border px-3 py-2 bg-white font-mono"
@@ -54,6 +54,16 @@ const ItemUomsGovernanceSection: React.FC<{
             value={m.baseUom}
             onChange={(e) => m.setBaseUom(e.target.value)}
             disabled={m.saving}
+          />
+
+          <label className="text-sm font-medium text-slate-700">基础重量（kg）</label>
+          <input
+            className="w-full rounded border px-3 py-2 bg-white font-mono"
+            placeholder="如：0.25"
+            value={m.baseWeightKg}
+            onChange={(e) => m.setBaseWeightKg(e.target.value)}
+            disabled={m.saving}
+            inputMode="decimal"
           />
         </div>
 

@@ -59,14 +59,7 @@ export const ItemBarcodesSection: React.FC<{
     <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-base font-semibold text-slate-900">条码绑定卡</div>
-          <div className="mt-1 text-sm text-slate-500">
-            当前商品下，选择一个包装单位，再绑定一条条码。修改也回到这里完成。
-          </div>
-        </div>
-
-        <div className="rounded bg-slate-100 px-3 py-1 text-xs text-slate-600">
-          {m.isEditMode ? "修改模式" : "新增模式"}
+          <div className="text-base font-semibold text-slate-900">包装单位和条码绑定</div>
         </div>
       </div>
 
