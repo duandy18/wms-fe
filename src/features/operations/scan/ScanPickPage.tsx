@@ -131,7 +131,7 @@ const ScanPickPage: React.FC = () => {
     }));
   };
 
-  // 扫码台：只做解析（probe=true，不扣库存），用于识别 item_id 和跳转条码绑定
+  // 扫码台：只做解析（probe=true，不扣库存），用于识别 item_id 和跳转商品条码页
   async function handleScanConsole(barcode: string) {
     setError(null);
     setResult(null);
@@ -152,11 +152,11 @@ const ScanPickPage: React.FC = () => {
         }));
       } else if (std.status === "UNBOUND") {
         const go = window.confirm(
-          `条码 ${barcode} 尚未绑定任何商品，是否前往 Items 进行条码绑定？`,
+          `条码 ${barcode} 尚未绑定任何商品，是否前往「商品条码」进行条码绑定？`,
         );
         if (go) {
           navigate(
-            `/items?barcode=${encodeURIComponent(barcode)}`,
+            `/item-barcodes?barcode=${encodeURIComponent(barcode)}`,
           );
         }
       } else if (std.status === "ERROR" && std.message) {

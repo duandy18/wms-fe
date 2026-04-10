@@ -10,9 +10,14 @@ export interface ScanResponse {
   event_id: number | null;
   source: string;
   item_id?: number | null;
+  item_uom_id?: number | null;
+  ratio_to_base?: number | null;
   location_id?: number | null;
   qty?: number | null;
+  qty_base?: number | null;
   batch_code?: string | null;
+  production_date?: string | null;
+  expiry_date?: string | null;
 
   // v2：承接 scan_orchestrator.ingest 的统一返回结构
   evidence?: Array<Record<string, unknown>>;

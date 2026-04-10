@@ -1,28 +1,23 @@
-// src/features/pms/items/ItemsPage.tsx
+// src/features/pms/items/pages/ItemsPage.tsx
 //
-// 商品主数据首页（列表上方，编辑器中治理到底）
+// 商品主数据首页（商品本体主数据页）
 //
-// - 顶部：主条码覆盖率统计
-// - 下部：新建商品表单（编辑器）
+// - 顶部：页面说明
+// - 下部：新建/编辑商品表单
 // - 底部：商品列表
 //
 // 收敛规则（硬）：
-// - 取消 Items 页“扫码工作台 UI”（不展示扫码台/最近记录/条码体检区）。
-// - 取消底部 ItemBarcodesPanel（不再提供第二套条码管理入口）。
-// - 条码治理唯一入口：编辑器 edit mode 的 BarcodeSection（ItemBarcodesSection）。
-// - URL 入口：/items?barcode=xxx：
-//   - 通过 PMS public barcode probe 解析条码；
-//   - 若条码唯一绑定 → 自动选中商品并滚到编辑器；
-//   - 若未绑定 → 保持 create mode，交给编辑器（create）去回填主条码。
+// - 商品页只管商品本体主数据，不再承担条码治理职责。
+// - 不保留 StatsCards / 主条码覆盖率统计。
+// - URL 入口：/items?barcode=xxx 仅保留“已绑定条码自动定位商品”。
+// - 若条码未绑定 / 解析失败：本页不承接绑定，不跳转旧入口。
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { probeItemBarcode } from "../../../../domains/pms/public/barcodeProbeClient";
 import { useItemsStore } from "../model/itemsStore";
 import ItemsFormSection from "../components/ItemsFormSection";
 
-import type { ItemsStats } from "./types";
-import { StatsCards } from "./sections/StatsCards";
 import { ItemsListCard } from "./sections/ItemsListCard";
 
 const EDITOR_ANCHOR_ID = "items-editor";
@@ -34,7 +29,6 @@ const ItemsPage: React.FC = () => {
   const error = useItemsStore((s) => s.error);
 
   const scannedBarcode = useItemsStore((s) => s.scannedBarcode);
-  const primaryBarcodes = useItemsStore((s) => s.primaryBarcodes);
   const filter = useItemsStore((s) => s.filter);
 
   const setScannedBarcode = useItemsStore((s) => s.setScannedBarcode);
@@ -58,15 +52,12 @@ const ItemsPage: React.FC = () => {
     }
   }, [location.search, setScannedBarcode]);
 
-  // --- 2. 首次加载商品 + 条码绑定信息 ---
+  // --- 2. 首次加载商品 ---
   useEffect(() => {
     void loadItems();
   }, [loadItems]);
 
-  // --- 3. 若 URL/外部带入条码：改走 PMS public barcode probe
-  // 规则：
-  // - BOUND：按解析到的 item_id 自动选中商品并滚到编辑器
-  // - UNBOUND / ERROR：保持 create mode，滚到编辑器，由编辑器继续承接
+  // --- 3. 若 URL/外部带入条码：仅保留“已绑定条码自动定位商品”
   useEffect(() => {
     if (!scannedBarcode) return;
 
@@ -85,10 +76,7 @@ const ItemsPage: React.FC = () => {
             ? resp.item_id
             : null;
 
-        if (!itemId) {
-          gotoEditor();
-          return;
-        }
+        if (!itemId) return;
 
         const target = items.find((it) => it.id === itemId);
         if (!target) return;
@@ -97,7 +85,6 @@ const ItemsPage: React.FC = () => {
         gotoEditor();
       } catch {
         if (cancelled) return;
-        gotoEditor();
       }
     }
 
@@ -108,17 +95,6 @@ const ItemsPage: React.FC = () => {
     };
   }, [scannedBarcode, items, setSelectedItem]);
 
-  // --- 4. 顶部主条码覆盖率统计 ---
-  const stats: ItemsStats = useMemo(() => {
-    const total = items.length;
-    const withPrimary = Object.keys(primaryBarcodes).length;
-    return {
-      total,
-      withPrimary,
-      withoutPrimary: total - withPrimary,
-    };
-  }, [items, primaryBarcodes]);
-
   return (
     <div className="space-y-6 p-6">
       <header>
@@ -126,11 +102,11 @@ const ItemsPage: React.FC = () => {
         <p className="mt-1 text-sm text-slate-500">
           Items 是全系统统一的商品来源：入库、出库、库存、批次、订单都只认{" "}
           <span className="font-mono">item_id</span> / <span className="font-mono">sku</span>。
-          商品新建必须绑定供货商（必选），否则无法创建。条码治理收敛到编辑器内完成（唯一入口）。
+          商品新建必须绑定供货商（必选），否则无法创建。本页只维护商品本体主数据；
+          条码、箱码、包装单位、单位换算不再由本页治理。
+          当前 <span className="font-mono">/items?barcode=xxx</span> 只保留已绑定条码自动定位商品。
         </p>
       </header>
-
-      <StatsCards stats={stats} />
 
       {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">

@@ -3,16 +3,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useItemsStore } from "../model/itemsStore";
 import {
-  fetchItemBarcodes,
+  fetchItemBarcodeRows,
   createItemBarcode,
   deleteItemBarcode,
   setPrimaryBarcode,
-  type ItemBarcode,
+  type ItemBarcodeCompositeRow,
 } from "../api/itemBarcodesOwnerApi";
 import { fetchItemUoms, type ItemUom } from "../api/itemUomsOwnerApi";
 import { getErrorMessage } from "./errors";
 
-export type BarcodeKind = "CUSTOM" | "EAN13" | "EAN8" | "UPC" | "INNER";
+export type BarcodeUomOption = {
+  id: number;
+  label: string;
+  ratio_to_base: number;
+  is_base: boolean;
+  is_purchase_default: boolean;
+};
 
 type UseItemBarcodesPanelModelArgs = {
   /**
@@ -25,32 +31,35 @@ type UseItemBarcodesPanelModelArgs = {
   disableClosePanel?: boolean;
 };
 
-function hasPrimary(list: ItemBarcode[]): boolean {
-  return list.some((b) => Boolean(b.is_primary));
+function hasPrimary(list: ItemBarcodeCompositeRow[]): boolean {
+  return list.some((row) => Boolean(row.is_primary));
 }
 
-function pickTargetUomId(args: { uoms: ItemUom[]; kind: BarcodeKind }): number {
-  const { uoms, kind } = args;
-
-  const base = uoms.find((x) => x.is_base) ?? null;
-  if (!base) {
-    throw new Error("缺少基准单位，无法绑定条码");
-  }
-
-  if (kind === "INNER") {
-    const purchase = uoms.find((x) => x.is_purchase_default && !x.is_base) ?? null;
-    if (!purchase) {
-      throw new Error("箱码必须先配置采购默认单位");
-    }
-    return purchase.id;
-  }
-
-  return base.id;
+function sortUoms(list: ItemUom[]): ItemUom[] {
+  return [...list].sort((a, b) => {
+    if (a.is_base !== b.is_base) return a.is_base ? -1 : 1;
+    if (a.ratio_to_base !== b.ratio_to_base) return a.ratio_to_base - b.ratio_to_base;
+    return a.id - b.id;
+  });
 }
 
-function mapKindToSymbology(kind: BarcodeKind): "CUSTOM" | "EAN13" | "EAN8" | "UPC" {
-  if (kind === "INNER") return "CUSTOM";
-  return kind;
+function buildUomLabel(uom: ItemUom): string {
+  const name = (uom.display_name ?? "").trim() || uom.uom;
+  const tags: string[] = [];
+  if (uom.is_base) tags.push("最小单位");
+  if (uom.is_purchase_default) tags.push("采购默认");
+  const suffix = tags.length > 0 ? `，${tags.join(" / ")}` : "";
+  return `${name}（倍率 ${uom.ratio_to_base}${suffix}）`;
+}
+
+function buildUomOptions(uoms: ItemUom[]): BarcodeUomOption[] {
+  return sortUoms(uoms).map((uom) => ({
+    id: uom.id,
+    label: buildUomLabel(uom),
+    ratio_to_base: uom.ratio_to_base,
+    is_base: uom.is_base,
+    is_purchase_default: uom.is_purchase_default,
+  }));
 }
 
 export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) {
@@ -66,12 +75,14 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
   const explicitItemId = args?.itemId;
   const itemId: number | null = explicitItemId != null ? explicitItemId : selectedItem ? selectedItem.id : null;
 
-  const [barcodes, setBarcodes] = useState<ItemBarcode[]>([]);
+  const [rows, setRows] = useState<ItemBarcodeCompositeRow[]>([]);
+  const [uomOptions, setUomOptions] = useState<BarcodeUomOption[]>([]);
+  const [selectedUomId, setSelectedUomId] = useState<number | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [newCode, setNewCode] = useState("");
-  const [newKind, setNewKind] = useState<BarcodeKind>("CUSTOM");
   const [saving, setSaving] = useState(false);
 
   const hasSelection = itemId != null;
@@ -82,20 +93,37 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
 
     setSelectedItem(null);
 
-    setBarcodes([]);
+    setRows([]);
+    setUomOptions([]);
+    setSelectedUomId(null);
     setError(null);
     setNewCode("");
-    setNewKind("CUSTOM");
     setSaving(false);
     setLoading(false);
 
     setScannedBarcode(null);
   };
 
-  const updatePrimaryLocal = (list: ItemBarcode[]) => {
+  const updatePrimaryLocal = (nextRows: ItemBarcodeCompositeRow[]) => {
     if (itemId == null) return;
-    const primary = list.find((b) => b.is_primary);
+    const primary = nextRows.find((row) => row.is_primary);
     setPrimaryBarcodeLocal(itemId, primary ? primary.barcode : null);
+  };
+
+  const applyRows = (nextRows: ItemBarcodeCompositeRow[]) => {
+    setRows(nextRows);
+    updatePrimaryLocal(nextRows);
+  };
+
+  const applyUoms = (uoms: ItemUom[]) => {
+    const nextOptions = buildUomOptions(uoms);
+    setUomOptions(nextOptions);
+
+    setSelectedUomId((current) => {
+      if (current != null && nextOptions.some((x) => x.id === current)) return current;
+      const base = nextOptions.find((x) => x.is_base) ?? null;
+      return base?.id ?? nextOptions[0]?.id ?? null;
+    });
   };
 
   const refresh = async () => {
@@ -103,9 +131,12 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
     setLoading(true);
     setError(null);
     try {
-      const list = await fetchItemBarcodes(itemId);
-      setBarcodes(list);
-      updatePrimaryLocal(list);
+      const [nextRows, nextUoms] = await Promise.all([
+        fetchItemBarcodeRows(itemId, false),
+        fetchItemUoms(itemId),
+      ]);
+      applyRows(nextRows);
+      applyUoms(nextUoms);
       await loadItems();
     } catch (e: unknown) {
       setError(getErrorMessage(e, "刷新条码列表失败"));
@@ -116,7 +147,9 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
 
   useEffect(() => {
     if (itemId == null) {
-      setBarcodes([]);
+      setRows([]);
+      setUomOptions([]);
+      setSelectedUomId(null);
       setError(null);
       setNewCode("");
       return;
@@ -128,14 +161,19 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
       setLoading(true);
       setError(null);
       try {
-        const list = await fetchItemBarcodes(itemId);
+        const [nextRows, nextUoms] = await Promise.all([
+          fetchItemBarcodeRows(itemId, false),
+          fetchItemUoms(itemId),
+        ]);
         if (cancelled) return;
-        setBarcodes(list);
-        updatePrimaryLocal(list);
+        applyRows(nextRows);
+        applyUoms(nextUoms);
       } catch (e: unknown) {
         if (!cancelled) {
           setError(getErrorMessage(e, "加载条码失败"));
-          setBarcodes([]);
+          setRows([]);
+          setUomOptions([]);
+          setSelectedUomId(null);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -159,8 +197,9 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
     if (itemId == null) return false;
     if (saving) return false;
     if (!newCode.trim()) return false;
+    if (selectedUomId == null || selectedUomId <= 0) return false;
     return true;
-  }, [itemId, saving, newCode]);
+  }, [itemId, saving, newCode, selectedUomId]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,25 +211,24 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
       return;
     }
 
+    if (selectedUomId == null || selectedUomId <= 0) {
+      setError("请选择单位");
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
-      const uoms = await fetchItemUoms(itemId);
-      const itemUomId = pickTargetUomId({ uoms, kind: newKind });
-
       const created = await createItemBarcode({
-        item_uom_id: itemUomId,
+        item_uom_id: selectedUomId,
         barcode: code,
-        symbology: mapKindToSymbology(newKind),
+        symbology: "CUSTOM",
         active: true,
       });
 
-      /**
-       * ✅ 终态规则（避免箱码/INNER 抢主条码）：
-       * - INNER 永远不自动设为主条码
-       * - 非 INNER：仅当当前还没有主条码时，自动设为主条码
-       */
-      const shouldAutoPrimary = newKind !== "INNER" && !hasPrimary(barcodes);
+      const target = uomOptions.find((x) => x.id === selectedUomId) ?? null;
+      const shouldAutoPrimary = Boolean(target?.is_base) && !hasPrimary(rows);
+
       if (shouldAutoPrimary) {
         await setPrimaryBarcode(created.id);
       }
@@ -230,17 +268,19 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
     itemId,
     hasSelection,
 
-    barcodes,
+    rows,
+    uomOptions,
+    selectedUomId,
+
     loading,
     error,
 
     newCode,
-    newKind,
     saving,
     canSubmit,
 
     setNewCode,
-    setNewKind,
+    setSelectedUomId,
     setError,
 
     closePanel,

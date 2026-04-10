@@ -31,11 +31,10 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
       ) : null}
 
       <form onSubmit={vm.submit} className="space-y-6">
-
-        {/* 第一行 + 第二行（名称/规格/品牌/品类 + 条码） */}
+        {/* 基础字段（名称 / 规格 / 品牌 / 品类） */}
         <BasicSection vm={vm} />
 
-        {/* 第三行：单位行（从原第四行提升上来） */}
+        {/* 单位行 */}
         <UomAndWeightSection vm={vm} />
 
         {/* 供应商 */}

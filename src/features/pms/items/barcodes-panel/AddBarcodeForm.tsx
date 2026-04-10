@@ -1,18 +1,19 @@
 // src/features/pms/items/barcodes-panel/AddBarcodeForm.tsx
 
 import React from "react";
-import type { BarcodeKind } from "./useItemBarcodesPanelModel";
+import type { BarcodeUomOption } from "./useItemBarcodesPanelModel";
 
 export const ITEMS_ADD_BARCODE_INPUT_ID = "items-add-barcode-input";
 
 export const AddBarcodeForm: React.FC<{
   newCode: string;
-  newKind: BarcodeKind;
+  selectedUomId: number | null;
+  uomOptions: BarcodeUomOption[];
   saving: boolean;
   canSubmit: boolean;
 
   onChangeCode: (v: string) => void;
-  onChangeKind: (v: BarcodeKind) => void;
+  onChangeSelectedUomId: (v: number | null) => void;
 
   onSubmit: (e: React.FormEvent) => void;
 
@@ -22,14 +23,21 @@ export const AddBarcodeForm: React.FC<{
   inputId?: string;
 }> = ({
   newCode,
-  newKind,
+  selectedUomId,
+  uomOptions,
   saving,
   canSubmit,
   onChangeCode,
-  onChangeKind,
+  onChangeSelectedUomId,
   onSubmit,
   inputId,
 }) => {
+  const title = !newCode.trim()
+    ? "请输入条码"
+    : selectedUomId == null
+      ? "请选择单位"
+      : "";
+
   return (
     <form onSubmit={onSubmit} className="mt-3 flex flex-wrap items-center gap-3">
       <input
@@ -42,25 +50,29 @@ export const AddBarcodeForm: React.FC<{
       />
 
       <select
-        className="rounded border px-4 py-3 text-lg"
-        value={newKind}
-        onChange={(e) => onChangeKind(e.target.value as BarcodeKind)}
-        disabled={saving}
+        className="min-w-[260px] rounded border px-4 py-3 text-base"
+        value={selectedUomId ?? ""}
+        onChange={(e) => {
+          const raw = e.target.value;
+          onChangeSelectedUomId(raw ? Number(raw) : null);
+        }}
+        disabled={saving || uomOptions.length === 0}
       >
-        <option value="CUSTOM">CUSTOM</option>
-        <option value="EAN13">EAN13</option>
-        <option value="EAN8">EAN8</option>
-        <option value="UPC">UPC</option>
-        <option value="INNER">INNER</option>
+        <option value="">请选择单位</option>
+        {uomOptions.map((opt) => (
+          <option key={opt.id} value={opt.id}>
+            {opt.label}
+          </option>
+        ))}
       </select>
 
       <button
         type="submit"
         disabled={!canSubmit}
         className="rounded bg-slate-900 px-5 py-3 text-lg text-white disabled:opacity-60"
-        title={!newCode.trim() ? "请输入条码" : ""}
+        title={title}
       >
-        {saving ? "保存中…" : "新增并设为主"}
+        {saving ? "保存中…" : "新增条码"}
       </button>
     </form>
   );

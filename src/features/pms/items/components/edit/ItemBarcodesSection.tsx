@@ -20,10 +20,8 @@ export const ItemBarcodesSection: React.FC<{ itemId: number; disabled?: boolean 
       const code = e.detail.code.trim();
       if (!code) return;
 
-      // ✅ 写入新增条码输入框
       m.setNewCode(code);
 
-      // ✅ 强制聚焦新增条码输入框
       requestAnimationFrame(() => {
         const el = document.getElementById(ITEMS_ADD_BARCODE_INPUT_ID);
         if (el instanceof HTMLInputElement) {
@@ -41,18 +39,18 @@ export const ItemBarcodesSection: React.FC<{ itemId: number; disabled?: boolean 
     <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="text-base font-semibold">条码管理</div>
-        <div className="text-[12px] text-slate-500">新增/设为主/删除</div>
+        <div className="text-[12px] text-slate-500">一个商品，一个单位，一行条码</div>
       </div>
 
       {m.error ? <div className="text-base text-red-600">{m.error}</div> : null}
 
       {m.loading ? (
         <div className="text-base text-slate-600">条码加载中…</div>
-      ) : m.barcodes.length === 0 ? (
+      ) : m.rows.length === 0 ? (
         <div className="text-base text-slate-600">当前商品尚未配置条码。</div>
       ) : (
         <BarcodesTable
-          barcodes={m.barcodes}
+          rows={m.rows}
           onSetPrimary={(id) => void m.handleSetPrimary(id)}
           onDelete={(id) => void m.handleDelete(id)}
         />
@@ -62,11 +60,12 @@ export const ItemBarcodesSection: React.FC<{ itemId: number; disabled?: boolean 
         <AddBarcodeForm
           inputId={ITEMS_ADD_BARCODE_INPUT_ID}
           newCode={m.newCode}
-          newKind={m.newKind}
+          selectedUomId={m.selectedUomId}
+          uomOptions={m.uomOptions}
           saving={m.saving}
           canSubmit={!disabled && m.canSubmit}
           onChangeCode={m.setNewCode}
-          onChangeKind={m.setNewKind}
+          onChangeSelectedUomId={m.setSelectedUomId}
           onSubmit={(e) => void m.handleAdd(e)}
         />
       </div>
