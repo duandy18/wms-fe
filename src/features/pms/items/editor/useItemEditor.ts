@@ -1,7 +1,7 @@
 // src/features/pms/items/editor/useItemEditor.ts
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import type { Supplier } from "@/features/pms/suppliers/api/suppliersApi";
+import type { SupplierBasic } from "@/domains/pms/public/contracts/supplierBasic";
 import type { Item } from "../../../../contracts/item/contract";
 import { updateItem } from "../api/itemsOwnerApi";
 import { runCreateItem, submitCreateItem } from "../create/submit";
@@ -16,7 +16,7 @@ export type { ItemEditorVm, ItemEditorMode };
 export default function useItemEditor(args: {
   selectedItem: Item | null;
 
-  suppliers: Supplier[];
+  suppliers: SupplierBasic[];
   supLoading: boolean;
   supError: string | null;
 

@@ -35,12 +35,12 @@ export const ItemsPickerCard: React.FC<{
       ) : null}
 
       <label className="block space-y-1">
-        <div className="text-[11px] text-slate-500">搜索（按 SKU / 名称 / 主条码 / 品牌 / id）</div>
+        <div className="text-[11px] text-slate-500">搜索（按 SKU / 名称 / 品牌 / id）</div>
         <input
           className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
           value={I.query}
           onChange={(e) => I.setQuery(e.target.value)}
-          placeholder="例如：SKU-0001 / 笔记本 / 690... / 得力 / 12"
+          placeholder="例如：SKU-0001 / 笔记本 / 得力 / 12"
         />
       </label>
 
@@ -54,11 +54,9 @@ export const ItemsPickerCard: React.FC<{
             <table className="min-w-full table-fixed border-collapse text-xs">
               <thead className="sticky top-0 bg-white z-10">
                 <tr className="text-[11px] text-slate-600 border-b border-slate-200">
-                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[110px]">SKU</th>
-                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[240px]">商品名称</th>
-                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[180px]">主条码</th>
-                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[110px]">品牌</th>
-                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[80px]">最小单位</th>
+                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[120px]">SKU</th>
+                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[320px]">商品名称</th>
+                  <th className="px-2 py-2 text-left border-r border-slate-200 w-[120px]">品牌</th>
                   <th className="px-2 py-2 text-center w-[70px]">选择</th>
                 </tr>
               </thead>
@@ -77,16 +75,8 @@ export const ItemsPickerCard: React.FC<{
                         {it.name || "—"}
                       </td>
 
-                      <td className="px-2 py-2 align-top border-r border-slate-100 font-mono text-[11px] text-slate-700 break-words whitespace-normal">
-                        {it.barcode ?? "—"}
-                      </td>
-
                       <td className="px-2 py-2 align-top border-r border-slate-100 text-[11px] text-slate-700 break-words whitespace-normal">
                         {it.brand ?? "—"}
-                      </td>
-
-                      <td className="px-2 py-2 align-top border-r border-slate-100 text-[11px] text-slate-700 break-words whitespace-normal">
-                        {it.uom ?? "—"}
                       </td>
 
                       <td className="px-2 py-2 align-top text-center">

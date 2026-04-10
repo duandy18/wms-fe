@@ -23,7 +23,6 @@ type Props = {
   onSelectItemId: (itemId: number | null) => void;
   orderInfo: OrderView | null;
 
-  // ✅ 用于“扫码命中行闪烁反馈”
   justScannedItemId?: number | null;
 };
 
@@ -46,13 +45,11 @@ export const PickTaskDetailPanel: React.FC<Props> = ({
     return "bg-slate-50 text-slate-600 border-slate-200";
   };
 
-  // ✅ Hooks 必须始终在顶层调用：即使 task 为 null，也返回空数组
   const lines = useMemo(() => {
     if (!task) return [];
 
     const xs = [...(task.lines ?? [])];
 
-    // 稳定排序：优先 sku，其次 item_id（不随扫描重排）
     xs.sort((a, b) => {
       const ma = itemMetaMap[a.item_id];
       const mb = itemMetaMap[b.item_id];
@@ -67,7 +64,6 @@ export const PickTaskDetailPanel: React.FC<Props> = ({
     return xs;
   }, [task, itemMetaMap]);
 
-  // activeItemId 变化时自动滚动到对应行
   useEffect(() => {
     if (activeItemId == null) return;
     const row = rowRefs.current[activeItemId];
@@ -76,7 +72,6 @@ export const PickTaskDetailPanel: React.FC<Props> = ({
     }
   }, [activeItemId]);
 
-  // ✅ 刚扫码命中：闪烁反馈（不改业务事实，只做 UI）
   useEffect(() => {
     if (justScannedItemId == null) return;
     setFlashItemId(justScannedItemId);
@@ -88,9 +83,6 @@ export const PickTaskDetailPanel: React.FC<Props> = ({
     return () => window.clearTimeout(t);
   }, [justScannedItemId]);
 
-  // ========================
-  // Early returns（在 Hooks 之后）
-  // ========================
   if (error) {
     return <div className="text-sm text-red-600">{error}</div>;
   }
@@ -101,9 +93,7 @@ export const PickTaskDetailPanel: React.FC<Props> = ({
 
   return (
     <div className="space-y-3">
-      {/* 任务头 + 订单头：左右两列布局 */}
       <div className="grid grid-cols-1 gap-4 text-sm text-slate-700 md:grid-cols-2">
-        {/* 左：任务信息 */}
         <div className="space-y-1">
           <div>
             <span className="mr-1 text-slate-500">任务 ID:</span>
@@ -130,7 +120,6 @@ export const PickTaskDetailPanel: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* 右：订单信息 */}
         {orderInfo ? (
           <div className="space-y-1 rounded-md border border-slate-200 bg-slate-50 p-2 text-xs text-slate-700">
             <div>
@@ -153,12 +142,11 @@ export const PickTaskDetailPanel: React.FC<Props> = ({
         )}
       </div>
 
-      {/* 行明细表格（处方式单表：一行=一个 SKU） */}
       <div className="mt-1 max-h-72 overflow-auto rounded-lg border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 bg-slate-50">
             <tr className="text-xs text-slate-600">
-              <th className="px-3 py-2 text-left">商品（SKU / 名称 / 规格 / 单位）</th>
+              <th className="px-3 py-2 text-left">商品（SKU / 名称 / 规格）</th>
               <th className="px-3 py-2 text-right">应拣</th>
               <th className="px-3 py-2 text-right">已拣</th>
               <th className="px-3 py-2 text-right">剩余</th>
@@ -205,7 +193,6 @@ export const PickTaskDetailPanel: React.FC<Props> = ({
                         <span className="text-xs text-slate-700">
                           {meta.name}
                           {meta.spec ? ` · ${meta.spec}` : ""}
-                          {meta.uom ? ` · ${meta.uom}` : ""}
                         </span>
                         <span className="text-[11px] text-slate-400">item_id={ln.item_id}</span>
                       </div>

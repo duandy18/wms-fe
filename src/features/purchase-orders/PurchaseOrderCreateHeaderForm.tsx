@@ -2,7 +2,7 @@
 // 采购单头部信息（大字号 Cockpit 版 + 仓库下拉 + 采购人/时间必填）
 
 import React from "react";
-import type { SupplierBasic } from "../../master-data/suppliersApi";
+import type { SupplierBasic } from "../../domains/pms/public/contracts/supplierBasic";
 
 interface PurchaseOrderCreateHeaderFormProps {
   supplierId: number | null;

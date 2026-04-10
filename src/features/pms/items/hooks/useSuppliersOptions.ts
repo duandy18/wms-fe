@@ -1,10 +1,13 @@
 // src/features/pms/items/hooks/useSuppliersOptions.ts
 
 import { useEffect, useState } from "react";
-import { fetchSuppliers, type Supplier } from "@/features/pms/suppliers/api/suppliersApi";
+import {
+  fetchSuppliersBasic,
+  type SupplierBasic,
+} from "@/domains/pms/public";
 
 export function useSuppliersOptions() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierBasic[]>([]);
   const [supLoading, setSupLoading] = useState(false);
   const [supError, setSupError] = useState<string | null>(null);
 
@@ -15,12 +18,12 @@ export function useSuppliersOptions() {
       setSupLoading(true);
       setSupError(null);
       try {
-        const list = await fetchSuppliers({ active: true });
+        const list = await fetchSuppliersBasic({ active: true });
         if (!alive) return;
         setSuppliers(list);
       } catch (e: unknown) {
         if (!alive) return;
-        const msg = e instanceof Error ? e.message : "加载供货商失败";
+        const msg = e instanceof Error ? e.message : "加载供应商失败";
         setSuppliers([]);
         setSupError(msg);
       } finally {

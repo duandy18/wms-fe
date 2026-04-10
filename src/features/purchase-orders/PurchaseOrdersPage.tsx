@@ -8,21 +8,12 @@ import {
   usePurchaseOrdersListPresenter,
   type StatusFilter,
 } from "./usePurchaseOrdersListPresenter";
-import { apiGet } from "../../lib/api";
+import {
+  fetchSuppliersBasic,
+  type SupplierBasic,
+} from "../../domains/pms/public";
 
-type SupplierOption = {
-  id: number;
-  name: string;
-};
-
-type SuppliersApiResponse = {
-  ok: boolean;
-  data: {
-    id: number;
-    name: string;
-    active: boolean;
-  }[];
-};
+type SupplierOption = SupplierBasic;
 
 const PurchaseOrdersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,26 +30,25 @@ const PurchaseOrdersPage: React.FC = () => {
   );
 
   useEffect(() => {
+    let alive = true;
+
     async function loadSuppliers() {
       try {
-        const res = await apiGet<SuppliersApiResponse | SupplierOption[]>(
-          "/suppliers?active=true",
-        );
-
-        const list: SupplierOption[] = Array.isArray(res)
-          ? res.map((s) => ({ id: s.id, name: s.name }))
-          : (res.data ?? []).map((s) => ({
-              id: s.id,
-              name: s.name,
-            }));
-
+        const list = await fetchSuppliersBasic({ active: true });
+        if (!alive) return;
         setSupplierOptions(list);
       } catch (err) {
         console.error("loadSuppliers failed", err);
+        if (!alive) return;
+        setSupplierOptions([]);
       }
     }
 
     void loadSuppliers();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   function handleRowClick(id: number) {

@@ -1,7 +1,6 @@
 // src/features/pms/items/editor/sections/SupplierSection.tsx
 
 import React from "react";
-import type { Supplier } from "@/features/pms/suppliers/api/suppliersApi";
 import type { ItemEditorVm } from "../useItemEditor";
 
 const FieldError: React.FC<{ msg?: string }> = ({ msg }) =>
@@ -20,9 +19,9 @@ const SupplierSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
           disabled={vm.supLoading || vm.saving}
         >
           <option value="">
-            {vm.supLoading ? "供货商加载中…" : "请选择供货商（可选）"}
+            {vm.supLoading ? "供应商加载中…" : "请选择供应商（可选）"}
           </option>
-          {vm.suppliers.map((s: Supplier) => (
+          {vm.suppliers.map((s) => (
             <option key={s.id} value={String(s.id)}>
               {s.name}
             </option>
