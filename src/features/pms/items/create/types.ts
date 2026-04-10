@@ -3,13 +3,16 @@
 export type StatusMode = "enabled" | "disabled";
 export type ShelfLifeUnit = "DAY" | "WEEK" | "MONTH" | "YEAR";
 
+/**
+ * 这些类型仍保留，供其它包装/条码治理代码复用；
+ * 但商品管理页表单 FormState 不再承载这些字段。
+ */
 export interface UomDraft {
-  uom: string; // 单位代码（必填 for base；其它行可选）
-  ratio_to_base: string; // 字符串态，便于输入；校验时转 int（>=1）
-  display_name: string; // 可选展示名
-  net_weight_kg: string; // 基础包装净重（kg）；当前主链只治理 base
+  uom: string;
+  ratio_to_base: string;
+  display_name: string;
+  net_weight_kg: string;
 
-  // item_uoms flags（终态合同）
   is_base: boolean;
   is_purchase_default: boolean;
   is_inbound_default: boolean;
@@ -17,8 +20,8 @@ export interface UomDraft {
 }
 
 export interface BarcodesDraft {
-  item_barcode: string; // 产品码（可选但通常应填）
-  case_barcode: string; // 箱码/包装码（可选）
+  item_barcode: string;
+  case_barcode: string;
 }
 
 export interface FormState {
@@ -36,17 +39,6 @@ export interface FormState {
 
   shelf_life_value: string;
   shelf_life_unit: ShelfLifeUnit;
-
-  /**
-   * ✅ 终态：单位真相完全表达为 item_uoms 子表结构
-   * - 至少包含 1 条 base（is_base=true, ratio_to_base=1）
-   * - 基础包装净重 net_weight_kg 也挂在这条 base uom 上
-   * - 可选包含 1 条 purchase_default（is_purchase_default=true, ratio_to_base>=1）
-   */
-  uoms: UomDraft[];
-
-  // barcodes（两层）
-  barcodes: BarcodesDraft;
 
   status: StatusMode;
 }
@@ -66,10 +58,6 @@ export const EMPTY_FORM: FormState = {
 
   shelf_life_value: "",
   shelf_life_unit: "MONTH",
-
-  uoms: [],
-
-  barcodes: { item_barcode: "", case_barcode: "" },
 
   status: "enabled",
 };

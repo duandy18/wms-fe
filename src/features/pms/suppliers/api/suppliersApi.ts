@@ -1,5 +1,5 @@
 // src/features/pms/suppliers/api/suppliersApi.ts
-import { apiGet, apiPost, apiPatch, apiDelete } from "../../../../lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "../../../../lib/api";
 
 /** 联系人角色（先用 string，后端也是 string） */
 export type SupplierContactRole =
@@ -31,48 +31,6 @@ export interface Supplier {
   contacts: SupplierContact[];
 }
 
-/** 兼容后端两种返回：数组 or {ok,data} */
-type ListRespCompat =
-  | Supplier[]
-  | {
-      ok: boolean;
-      data: Supplier[];
-    };
-
-type OneRespCompat =
-  | Supplier
-  | {
-      ok: boolean;
-      data: Supplier;
-    };
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return !!v && typeof v === "object" && !Array.isArray(v);
-}
-
-function isSupplier(v: unknown): v is Supplier {
-  if (!isRecord(v)) return false;
-  return typeof v.id === "number" && typeof v.name === "string" && typeof v.code === "string" && typeof v.active === "boolean";
-}
-
-function unwrapList(res: ListRespCompat): Supplier[] {
-  if (Array.isArray(res)) return res;
-  return res.data ?? [];
-}
-
-function unwrapOne(res: OneRespCompat): Supplier {
-  // 1) 后端直接返回 Supplier
-  if (isSupplier(res)) return res;
-
-  // 2) 后端返回 { ok, data }
-  if (isRecord(res)) {
-    const data = res["data"];
-    if (isSupplier(data)) return data;
-  }
-
-  throw new Error("Unexpected response shape");
-}
-
 export async function fetchSuppliers(params?: { active?: boolean; q?: string }): Promise<Supplier[]> {
   const qs = new URLSearchParams();
   if (params?.active !== undefined) qs.set("active", String(params.active));
@@ -80,8 +38,7 @@ export async function fetchSuppliers(params?: { active?: boolean; q?: string }):
   const query = qs.toString();
   const path = query ? `/suppliers?${query}` : "/suppliers";
 
-  const res = await apiGet<ListRespCompat>(path);
-  return unwrapList(res);
+  return apiGet<Supplier[]>(path);
 }
 
 export async function createSupplier(payload: {
@@ -90,8 +47,7 @@ export async function createSupplier(payload: {
   website?: string | null;
   active: boolean;
 }): Promise<Supplier> {
-  const res = await apiPost<OneRespCompat>("/suppliers", payload);
-  return unwrapOne(res);
+  return apiPost<Supplier>("/suppliers", payload);
 }
 
 export async function updateSupplier(
@@ -103,8 +59,7 @@ export async function updateSupplier(
     active: boolean;
   }>,
 ): Promise<Supplier> {
-  const res = await apiPatch<OneRespCompat>(`/suppliers/${supplierId}`, payload);
-  return unwrapOne(res);
+  return apiPatch<Supplier>(`/suppliers/${supplierId}`, payload);
 }
 
 export async function createSupplierContact(

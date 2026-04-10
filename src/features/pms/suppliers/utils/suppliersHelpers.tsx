@@ -3,8 +3,25 @@
 import React from "react";
 import type { SupplierContact, SupplierContactRole } from "../api/suppliersApi";
 
-export type ApiErrorShape = { message?: string };
-export const errMsg = (e: unknown, fallback: string) => (e as ApiErrorShape | undefined)?.message ?? fallback;
+type ApiErrorShape = {
+  message?: string;
+  response?: {
+    data?: {
+      detail?: string;
+      message?: string;
+    };
+  };
+};
+
+export const errMsg = (e: unknown, fallback: string) => {
+  const err = e as ApiErrorShape | undefined;
+  return (
+    err?.response?.data?.detail ??
+    err?.response?.data?.message ??
+    err?.message ??
+    fallback
+  );
+};
 
 export function renderText(v: string | null | undefined) {
   return v && v.trim() ? v : "—";

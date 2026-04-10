@@ -123,12 +123,7 @@ export function useSuppliersController() {
 
       await load();
     } catch (e2: unknown) {
-      const msg = errMsg(e2, "创建供应商失败");
-      if (msg.toLowerCase().includes("unique") || msg.toLowerCase().includes("duplicate") || msg.includes("重复")) {
-        setCreateError("供应商名称或编码已存在，请换一个再试。");
-      } else {
-        setCreateError(msg);
-      }
+      setCreateError(errMsg(e2, "创建供应商失败"));
     } finally {
       setCreating(false);
     }
@@ -266,12 +261,7 @@ export function useSuppliersController() {
       setEditing(null);
       await load();
     } catch (e2: unknown) {
-      const msg = errMsg(e2, "保存失败");
-      if (msg.toLowerCase().includes("unique") || msg.toLowerCase().includes("duplicate") || msg.includes("重复")) {
-        setEditError("供应商名称或编码已存在，请换一个再试。");
-      } else {
-        setEditError(msg);
-      }
+      setEditError(errMsg(e2, "保存失败"));
     } finally {
       setEditSaving(false);
     }

@@ -138,9 +138,6 @@ export const ItemsListTable: React.FC<{
 
             <th className="border px-4 py-3 text-left font-semibold">批次策略</th>
             <th className="border px-4 py-3 text-left font-semibold">有效期策略</th>
-            <th className="border px-4 py-3 text-left font-semibold">推导</th>
-
-            <th className="border px-4 py-3 text-left font-semibold">单位净重(kg)</th>
             <th className="border px-4 py-3 text-left font-semibold">默认保质期</th>
 
             <th className="border px-4 py-3 text-left font-semibold">状态</th>
@@ -159,12 +156,8 @@ export const ItemsListTable: React.FC<{
             const isTest = Boolean(getBoolean(r["is_test"]) ?? false);
             const enabled = Boolean(getBoolean(r["enabled"]) ?? false);
 
-            const weight = r["weight_kg"];
-            const weightText = weight === null || weight === undefined ? "—" : String(weight);
-
             const lotSourcePolicy = policyCnLotSource(r["lot_source_policy"]);
             const expiryPolicy = policyCnExpiry(r["expiry_policy"]);
-            const derivationAllowed = Boolean(getBoolean(r["derivation_allowed"]) ?? false);
 
             const sv = formatShelfValue(r["shelf_life_value"]);
             const su = formatShelfUnitCn(r["shelf_life_unit"]);
@@ -223,9 +216,6 @@ export const ItemsListTable: React.FC<{
 
                 <td className="px-4 py-3">{lotSourcePolicy}</td>
                 <td className="px-4 py-3">{expiryPolicy}</td>
-                <td className="px-4 py-3">{derivationAllowed ? "允许" : "禁止"}</td>
-
-                <td className="px-4 py-3 font-mono">{weightText}</td>
                 <td className="px-4 py-3 font-mono">{shelfText}</td>
 
                 <td className="px-4 py-3">

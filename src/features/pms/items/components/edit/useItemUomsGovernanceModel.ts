@@ -27,6 +27,32 @@ type UseItemUomsGovernanceModelArgs = {
   onChanged?: () => Promise<void> | void;
 };
 
+function formatWeightInput(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "";
+  return String(value);
+}
+
+function parseWeightKgOrNull(raw: string): number | null {
+  const text = trim(raw);
+  if (!text) return null;
+
+  const value = Number(text);
+  if (!Number.isFinite(value) || value <= 0) {
+    return Number.NaN;
+  }
+  return value;
+}
+
+function sameNullableNumber(a: number | null | undefined, b: number | null | undefined): boolean {
+  const left = a ?? null;
+  const right = b ?? null;
+
+  if (left == null && right == null) return true;
+  if (left == null || right == null) return false;
+
+  return Math.abs(left - right) < 1e-9;
+}
+
 export function useItemUomsGovernanceModel(
   args: UseItemUomsGovernanceModelArgs,
 ) {
@@ -40,6 +66,7 @@ export function useItemUomsGovernanceModel(
   const [success, setSuccess] = useState<string | null>(null);
 
   const [baseUom, setBaseUom] = useState("");
+  const [baseWeightKg, setBaseWeightKg] = useState("");
   const [extraPackages, setExtraPackages] = useState<ExtraPackageDraft[]>([]);
 
   const refresh = useCallback(async () => {
@@ -53,6 +80,7 @@ export function useItemUomsGovernanceModel(
 
       const base = pickBaseUom(list);
       setBaseUom(base?.uom ?? "");
+      setBaseWeightKg(formatWeightInput(base?.net_weight_kg ?? null));
       setExtraPackages(buildExtraDrafts(list));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "加载包装方式失败";
@@ -60,6 +88,7 @@ export function useItemUomsGovernanceModel(
       setSuccess(null);
       setUoms([]);
       setBaseUom("");
+      setBaseWeightKg("");
       setExtraPackages([]);
     } finally {
       setLoading(false);
@@ -125,6 +154,11 @@ export function useItemUomsGovernanceModel(
     const nextBase = trim(baseUom);
     if (!nextBase) return "基础包装不能为空";
 
+    const baseWeight = parseWeightKgOrNull(baseWeightKg);
+    if (Number.isNaN(baseWeight)) {
+      return "基础重量必须是大于 0 的数字";
+    }
+
     const seen = new Set<string>();
     for (const row of extraPackages) {
       const name = trim(row.name);
@@ -143,7 +177,7 @@ export function useItemUomsGovernanceModel(
     }
 
     return null;
-  }, [baseUom, extraPackages]);
+  }, [baseUom, baseWeightKg, extraPackages]);
 
   const handleSave = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
@@ -157,6 +191,7 @@ export function useItemUomsGovernanceModel(
       }
 
       const nextBase = trim(baseUom);
+      const nextBaseWeightKg = parseWeightKgOrNull(baseWeightKg);
       const effectiveRows = extraPackages.filter(
         (row) => trim(row.name) || trim(row.ratio),
       );
@@ -176,13 +211,15 @@ export function useItemUomsGovernanceModel(
             currentBase.ratio_to_base !== 1 ||
             currentBase.is_base !== true ||
             currentBase.is_inbound_default !== true ||
-            currentBase.is_outbound_default !== true;
+            currentBase.is_outbound_default !== true ||
+            !sameNullableNumber(currentBase.net_weight_kg, nextBaseWeightKg);
 
           if (needBaseUpdate) {
             await updateItemUom(currentBase.id, {
               item_id: itemId,
               uom: nextBase,
               ratio_to_base: 1,
+              net_weight_kg: nextBaseWeightKg,
               is_base: true,
               is_inbound_default: true,
               is_outbound_default: true,
@@ -193,6 +230,7 @@ export function useItemUomsGovernanceModel(
             item_id: itemId,
             uom: nextBase,
             ratio_to_base: 1,
+            net_weight_kg: nextBaseWeightKg,
             is_base: true,
             is_purchase_default: false,
             is_inbound_default: true,
@@ -263,7 +301,7 @@ export function useItemUomsGovernanceModel(
         setSaving(false);
       }
     },
-    [baseUom, extraPackages, itemId, onChanged, refresh, validate],
+    [baseUom, baseWeightKg, extraPackages, itemId, onChanged, refresh, validate],
   );
 
   return {
@@ -275,6 +313,8 @@ export function useItemUomsGovernanceModel(
     success,
     baseUom,
     setBaseUom,
+    baseWeightKg,
+    setBaseWeightKg,
     extraPackages,
     refresh,
     addExtraPackageRow,

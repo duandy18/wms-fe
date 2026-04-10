@@ -1,5 +1,10 @@
 // src/features/pms/items/api/itemUomsOwnerApi.ts
-import { apiGet, apiPost, apiPatch, apiDelete } from "../../../../lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "../../../../lib/api";
+import {
+  normalizeItemBarcodeCompositeRow,
+  type ItemBarcodeCompositeRow,
+  type RawItemBarcodeCompositeRow,
+} from "./itemBarcodesOwnerApi";
 
 export type ItemUom = {
   id: number;
@@ -54,6 +59,27 @@ export async function fetchItemUomsByItems(itemIds: number[]): Promise<ItemUom[]
   for (const id of ids) qs.append("item_id", String(id));
 
   return apiGet<ItemUom[]>(`/item-uoms/by-items?${qs.toString()}`);
+}
+
+// -----------------------------
+// 批量 owner 复合读
+// GET /item-uoms/rows/by-items?item_id=1&item_id=2
+// 一行 = 一个商品 + 一个包装 + 零/一条码
+// -----------------------------
+export async function fetchItemUomRowsByItems(
+  itemIds: number[],
+): Promise<ItemBarcodeCompositeRow[]> {
+  const ids = itemIds.filter((x) => Number.isFinite(x) && x > 0);
+  if (ids.length === 0) return [];
+
+  const qs = new URLSearchParams();
+  for (const id of ids) qs.append("item_id", String(id));
+
+  const rows = await apiGet<RawItemBarcodeCompositeRow[]>(
+    `/item-uoms/rows/by-items?${qs.toString()}`,
+  );
+
+  return rows.map(normalizeItemBarcodeCompositeRow);
 }
 
 // -----------------------------

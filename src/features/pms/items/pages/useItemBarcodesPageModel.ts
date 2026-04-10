@@ -4,12 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import type { Item } from "../../../../contracts/item/contract";
 import { probeItemBarcode } from "../../../../domains/pms/public/barcodeProbeClient";
-import {
-  fetchBarcodesByItems,
-  type ItemBarcode,
-  type ItemBarcodeCompositeRow,
-} from "../api/itemBarcodesOwnerApi";
-import { fetchItemUomsByItems, type ItemUom } from "../api/itemUomsOwnerApi";
+import type { ItemBarcodeCompositeRow } from "../api/itemBarcodesOwnerApi";
+import { fetchItemUomRowsByItems } from "../api/itemUomsOwnerApi";
 import { fetchItems } from "../api/itemsOwnerApi";
 
 type ItemsBarcodeScannedDetail = { code: string };
@@ -31,74 +27,8 @@ function rowDisplayName(row: Pick<ItemBarcodeCompositeRow, "display_name" | "uom
   return row.display_name?.trim() || row.uom;
 }
 
-function barcodeTimestamp(barcode: ItemBarcode): string {
-  return barcode.updated_at ?? barcode.created_at ?? "";
-}
-
-function isBetterBarcode(next: ItemBarcode, current: ItemBarcode): boolean {
-  const nextPrimary = Boolean(next.is_primary);
-  const currentPrimary = Boolean(current.is_primary);
-  if (nextPrimary !== currentPrimary) return nextPrimary;
-
-  const nextTs = barcodeTimestamp(next);
-  const currentTs = barcodeTimestamp(current);
-  if (nextTs !== currentTs) return nextTs > currentTs;
-
-  return next.id > current.id;
-}
-
-function pickBarcodeByUom(barcodes: ItemBarcode[]): Map<number, ItemBarcode> {
-  const map = new Map<number, ItemBarcode>();
-
-  for (const barcode of barcodes) {
-    const current = map.get(barcode.item_uom_id);
-    if (!current || isBetterBarcode(barcode, current)) {
-      map.set(barcode.item_uom_id, barcode);
-    }
-  }
-
-  return map;
-}
-
-function buildGlobalBarcodeRows(args: {
-  items: Item[];
-  uoms: ItemUom[];
-  barcodes: ItemBarcode[];
-}): ItemBarcodeCompositeRow[] {
-  const { items, uoms, barcodes } = args;
-
-  const itemMap = new Map<number, Item>();
-  for (const item of items) itemMap.set(item.id, item);
-
-  const barcodeByUomId = pickBarcodeByUom(barcodes);
-
-  const rows: ItemBarcodeCompositeRow[] = [];
-  for (const uom of uoms) {
-    const item = itemMap.get(uom.item_id);
-    if (!item) continue;
-
-    const barcode = barcodeByUomId.get(uom.id) ?? null;
-
-    rows.push({
-      barcode_id: barcode?.id ?? 0,
-      item_id: item.id,
-      item_uom_id: uom.id,
-      sku: item.sku,
-      item_name: item.name,
-      uom: uom.uom,
-      display_name: uom.display_name ?? null,
-      ratio_to_base: uom.ratio_to_base,
-      is_base: uom.is_base,
-      is_purchase_default: uom.is_purchase_default,
-      barcode: barcode?.barcode ?? "",
-      symbology: barcode?.symbology ?? "",
-      is_primary: Boolean(barcode?.is_primary),
-      active: barcode?.active ?? true,
-      updated_at: barcode?.updated_at ?? barcode?.created_at ?? "",
-    });
-  }
-
-  return rows.sort((a, b) => {
+function sortGlobalBarcodeRows(rows: ItemBarcodeCompositeRow[]): ItemBarcodeCompositeRow[] {
+  return [...rows].sort((a, b) => {
     if (a.sku !== b.sku) return a.sku.localeCompare(b.sku, "zh-CN");
     if (a.item_name !== b.item_name) return a.item_name.localeCompare(b.item_name, "zh-CN");
     if (a.ratio_to_base !== b.ratio_to_base) return a.ratio_to_base - b.ratio_to_base;
@@ -172,6 +102,8 @@ export function useItemBarcodesPageModel() {
 
   const loadRowsOnly = useCallback(async (currentItems: Item[]) => {
     setLoadingRows(true);
+    setError(null);
+
     try {
       const ids = currentItems.map((x) => x.id).filter((x) => x > 0);
       if (ids.length === 0) {
@@ -179,18 +111,8 @@ export function useItemBarcodesPageModel() {
         return;
       }
 
-      const [uoms, barcodes] = await Promise.all([
-        fetchItemUomsByItems(ids),
-        fetchBarcodesByItems(ids, true),
-      ]);
-
-      setRows(
-        buildGlobalBarcodeRows({
-          items: currentItems,
-          uoms,
-          barcodes,
-        }),
-      );
+      const nextRows = await fetchItemUomRowsByItems(ids);
+      setRows(sortGlobalBarcodeRows(nextRows));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "加载条码列表失败";
       setError(msg);

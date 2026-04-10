@@ -55,6 +55,12 @@ function buildUomOptions(uoms: ItemUom[]): BarcodeUomOption[] {
   }));
 }
 
+function rowHasBoundBarcode(
+  row: Pick<ItemBarcodeCompositeRow, "barcode_id" | "barcode">,
+): boolean {
+  return row.barcode_id > 0 && row.barcode.trim().length > 0;
+}
+
 export function useItemBarcodesPanelModel(args: UseItemBarcodesPanelModelArgs) {
   const { itemId, editingRow, reloadToken, onSaved, onCancelEdit } = args;
 
@@ -69,8 +75,8 @@ export function useItemBarcodesPanelModel(args: UseItemBarcodesPanelModelArgs) {
   const [isPrimary, setIsPrimary] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const isEditMode = editingRow != null;
-  const editingBarcodeId = editingRow?.barcode_id ?? null;
+  const isEditMode = editingRow != null && rowHasBoundBarcode(editingRow);
+  const editingBarcodeId = isEditMode ? editingRow!.barcode_id : null;
 
   const selectedUom = useMemo(
     () => uomOptions.find((x) => x.id === selectedUomId) ?? null,
@@ -146,15 +152,15 @@ export function useItemBarcodesPanelModel(args: UseItemBarcodesPanelModelArgs) {
   useEffect(() => {
     if (editingRow && editingRow.item_id === itemId) {
       setSelectedUomId(editingRow.item_uom_id);
-      setNewCode(editingRow.barcode);
-      setIsPrimary(Boolean(editingRow.is_primary));
+      setNewCode(isEditMode ? editingRow.barcode : "");
+      setIsPrimary(isEditMode ? Boolean(editingRow.is_primary) : false);
       setError(null);
       return;
     }
     setNewCode("");
     setIsPrimary(false);
     setError(null);
-  }, [editingRow, itemId]);
+  }, [editingRow, itemId, isEditMode]);
 
   const canSubmit = useMemo(() => {
     if (saving) return false;
@@ -187,6 +193,7 @@ export function useItemBarcodesPanelModel(args: UseItemBarcodesPanelModelArgs) {
     const conflictRow = rows.find(
       (row) =>
         row.item_uom_id === selectedUomId &&
+        rowHasBoundBarcode(row) &&
         row.barcode_id !== (editingBarcodeId ?? -1),
     );
     if (conflictRow) {

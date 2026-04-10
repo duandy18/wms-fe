@@ -13,16 +13,12 @@ const EDITOR_ANCHOR_ID = "items-editor";
 const ItemEditorContainer: React.FC = () => {
   const selectedItem = useItemsStore((s) => s.selectedItem);
   const setSelectedItem = useItemsStore((s) => s.setSelectedItem);
-  const primaryBarcodes = useItemsStore((s) => s.primaryBarcodes);
   const loadItems = useItemsStore((s) => s.loadItems);
 
   const { suppliers, supLoading, supError } = useSuppliersOptions();
 
-  const selectedPrimaryBarcode = selectedItem ? primaryBarcodes[selectedItem.id] ?? "" : "";
-
   const vm: ItemEditorVm = useItemEditor({
     selectedItem,
-    selectedPrimaryBarcode,
     suppliers,
     supLoading,
     supError,

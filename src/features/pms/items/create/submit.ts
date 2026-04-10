@@ -4,8 +4,6 @@ import type { Supplier } from "@/features/pms/suppliers/api/suppliersApi";
 import type { Item, ItemCreateInput } from "../../../../contracts/item/contract";
 import { createItem } from "../api/itemsOwnerApi";
 import type { FormState } from "./types";
-import { createItemUom } from "../api/itemUomsOwnerApi";
-import { createItemBarcode, setPrimaryBarcode } from "../api/itemBarcodesOwnerApi";
 
 export type SubmitResult =
   | { ok: true; created: { id: number; sku: string } }
@@ -51,83 +49,5 @@ export async function submitCreateItem(args: {
 }
 
 export async function runCreateItem(body: ItemCreateInput): Promise<Item> {
-  return await createItem(body);
-}
-
-export async function runPostCreateWrites(args: {
-  itemId: number;
-  uomsToCreate: Array<{
-    uom: string;
-    ratio_to_base: number;
-    display_name: string | null;
-    net_weight_kg: number | null;
-    is_base: boolean;
-    is_purchase_default: boolean;
-    is_inbound_default: boolean;
-    is_outbound_default: boolean;
-  }>;
-  barcodesToCreate: Array<{
-    barcode: string;
-    target: "BASE" | "PURCHASE_DEFAULT";
-    symbology: "EAN13" | "UPC" | "UPC12" | "EAN8" | "GS1" | "CUSTOM";
-    set_primary: boolean;
-  }>;
-}): Promise<void> {
-  const { itemId, uomsToCreate, barcodesToCreate } = args;
-
-  const base = uomsToCreate.find((x) => x.is_base);
-  if (!base) throw new Error("missing base uom");
-
-  // 先创建 base（ratio_to_base 强制 1）
-  const createdBase = await createItemUom({
-    item_id: itemId,
-    uom: base.uom,
-    ratio_to_base: 1,
-    display_name: base.display_name,
-    net_weight_kg: base.net_weight_kg,
-    is_base: true,
-    is_purchase_default: Boolean(base.is_purchase_default),
-    is_inbound_default: Boolean(base.is_inbound_default),
-    is_outbound_default: Boolean(base.is_outbound_default),
-  });
-
-  // 再创建 purchase_default（若存在）
-  const purchase = uomsToCreate.find((x) => !x.is_base && x.is_purchase_default);
-  const createdPurchase = purchase
-    ? await createItemUom({
-        item_id: itemId,
-        uom: purchase.uom,
-        ratio_to_base: purchase.ratio_to_base,
-        display_name: purchase.display_name,
-        net_weight_kg: purchase.net_weight_kg,
-        is_base: false,
-        is_purchase_default: true,
-        is_inbound_default: Boolean(purchase.is_inbound_default),
-        is_outbound_default: Boolean(purchase.is_outbound_default),
-      })
-    : null;
-
-  for (const b of barcodesToCreate) {
-    const itemUomId =
-      b.target === "BASE"
-        ? createdBase.id
-        : b.target === "PURCHASE_DEFAULT"
-          ? createdPurchase?.id ?? null
-          : null;
-
-    if (!itemUomId) {
-      throw new Error(`missing target item_uom for barcode target=${b.target}`);
-    }
-
-    const created = await createItemBarcode({
-      item_uom_id: itemUomId,
-      barcode: b.barcode,
-      symbology: b.symbology,
-      active: true,
-    });
-
-    if (b.set_primary) {
-      await setPrimaryBarcode(created.id);
-    }
-  }
+  return createItem(body);
 }
