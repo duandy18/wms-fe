@@ -1,13 +1,13 @@
 // src/features/purchase-orders/createV2/linesEditor/LineRow.tsx
 //
 // 终态 PO Create 行编辑：
-// - 输入单位：uom_id（来自 item_uoms）
+// - 输入单位：uom_id（来自 public aggregate.uoms）
 // - 输入数量：qty_input
 // - qty_base 由后端推导
 
 import React, { useEffect, useMemo } from "react";
 import type { ItemBasic } from "../../../../domains/pms/public/contracts/itemBasic";
-import type { ItemUom } from "../../../pms/items/api/itemUomsOwnerApi";
+import type { PublicAggregateUom } from "../../../../domains/pms/public/contracts/itemAggregate";
 import type { LineDraft } from "../../usePurchaseOrderCreatePresenter";
 import { calcEstAmount } from "./calc";
 
@@ -20,7 +20,8 @@ export type PurchaseOrderLineRowProps = {
 
   selectedItem: ItemBasic | undefined;
 
-  uomsForSelectedItem: ItemUom[];
+  uomsForSelectedItem: PublicAggregateUom[];
+  primaryBarcodeText?: string;
   uomsLoading?: boolean;
 
   onChangeLineField: (lineId: number, field: keyof LineDraft, value: string) => void;
@@ -37,6 +38,7 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
   itemsLoading,
   selectedItem,
   uomsForSelectedItem,
+  primaryBarcodeText,
   uomsLoading,
   onChangeLineField,
   onSelectItem,
@@ -47,7 +49,7 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
 
   const brandText = selectedItem?.brand?.trim() ? selectedItem.brand : "—";
   const categoryText = selectedItem?.category?.trim() ? selectedItem.category : "—";
-  const barcodeText = "—";
+  const barcodeText = primaryBarcodeText?.trim() ? primaryBarcodeText : "—";
 
   const uomIdValue = (line.uom_id ?? "").trim();
 
