@@ -51,6 +51,7 @@ export function draftFromItemUom(u: ItemUom): UomDraft {
     uom: u.uom ?? "",
     ratio_to_base: String(u.ratio_to_base ?? ""),
     display_name: u.display_name ?? "",
+    net_weight_kg: u.net_weight_kg == null ? "" : String(u.net_weight_kg),
     is_base: Boolean(u.is_base),
     is_purchase_default: Boolean(u.is_purchase_default),
     is_inbound_default: Boolean(u.is_inbound_default),

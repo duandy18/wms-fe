@@ -24,6 +24,7 @@ function emptyUomDraft(): UomDraft {
     uom: "",
     ratio_to_base: "",
     display_name: "",
+    net_weight_kg: "",
     is_base: false,
     is_purchase_default: false,
     is_inbound_default: false,
@@ -82,6 +83,7 @@ function upsertPurchase(uoms: UomDraft[], patch: Partial<UomDraft>): UomDraft[] 
     is_inbound_default: false,
     is_outbound_default: false,
     display_name: "",
+    net_weight_kg: "",
   };
 
   return [...nextWithBase, nextPurchase];
@@ -90,25 +92,30 @@ function upsertPurchase(uoms: UomDraft[], patch: Partial<UomDraft>): UomDraft[] 
 const UomAndWeightSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
   const { form, setForm, fieldErrors } = vm;
 
-  // ✅ 与页面其它输入框统一：白底、同样 border/spacing
   const monoInput = "rounded border px-3 py-2 w-full bg-white font-mono text-base";
 
   const base = useMemo(() => findBase(form.uoms) ?? null, [form.uoms]);
   const purchase = useMemo(() => findPurchaseDefault(form.uoms) ?? null, [form.uoms]);
 
   const baseUom = base?.uom ?? "";
+  const baseNetWeight = base?.net_weight_kg ?? "";
   const purchaseUom = purchase?.uom ?? "";
   const purchaseRatio = purchase?.ratio_to_base ?? "";
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-      {/* 单件净重 */}
+      {/* 基础包装净重 */}
       <div>
         <input
           className={monoInput}
-          placeholder="单件净重(kg)（可选，如：0.2）"
-          value={form.weight_kg}
-          onChange={(e) => setForm({ ...form, weight_kg: e.target.value })}
+          placeholder="基础包装净重(kg)（可选，如：0.2）"
+          value={baseNetWeight}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              uoms: upsertBase(form.uoms, { net_weight_kg: e.target.value }),
+            })
+          }
           disabled={vm.saving}
           inputMode="decimal"
         />

@@ -15,6 +15,20 @@ import {
   trimOrNull,
 } from "./itemEditorUtils";
 
+function parseNonNegativeNumberOrNull(v: string): number | null {
+  const s = (v ?? "").trim();
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function sameNullableNumber(a: number | null | undefined, b: number | null | undefined): boolean {
+  const av = a == null ? null : Number(a);
+  const bv = b == null ? null : Number(b);
+  if (av == null && bv == null) return true;
+  return av === bv;
+}
+
 export async function syncItemUomsForEdit(args: {
   itemId: number;
   form: FormState;
@@ -24,6 +38,7 @@ export async function syncItemUomsForEdit(args: {
   const baseDraft = pickBaseDraft(form.uoms);
   const desiredBase = (baseDraft?.uom ?? "").trim();
   const desiredBaseDisplay = trimOrNull(baseDraft?.display_name ?? "");
+  const desiredBaseNetWeight = parseNonNegativeNumberOrNull(baseDraft?.net_weight_kg ?? "");
 
   const purchaseDraft = pickPurchaseDraft(form.uoms);
   const desiredPurchase = (purchaseDraft?.uom ?? "").trim();
@@ -40,6 +55,7 @@ export async function syncItemUomsForEdit(args: {
     const needUpdate =
       base.uom !== desiredBase ||
       (base.display_name ?? null) !== desiredBaseDisplay ||
+      !sameNullableNumber(base.net_weight_kg, desiredBaseNetWeight) ||
       base.ratio_to_base !== 1 ||
       base.is_base !== true;
 
@@ -49,6 +65,7 @@ export async function syncItemUomsForEdit(args: {
         uom: desiredBase,
         ratio_to_base: 1,
         display_name: desiredBaseDisplay,
+        net_weight_kg: desiredBaseNetWeight,
         is_base: true,
       });
     }
@@ -58,6 +75,7 @@ export async function syncItemUomsForEdit(args: {
       uom: desiredBase,
       ratio_to_base: 1,
       display_name: desiredBaseDisplay,
+      net_weight_kg: desiredBaseNetWeight,
       is_base: true,
       is_purchase_default: true,
       is_inbound_default: true,

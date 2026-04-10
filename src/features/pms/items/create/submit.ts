@@ -35,7 +35,6 @@ export async function submitCreateItem(args: {
     category: form.category.trim() || null,
 
     supplier_id: form.supplier_id.trim() ? Number(form.supplier_id.trim()) : null,
-    weight_kg: form.weight_kg.trim() ? Number(form.weight_kg.trim()) : null,
 
     lot_source_policy: form.lot_source_policy,
     expiry_policy: form.expiry_policy,
@@ -61,6 +60,7 @@ export async function runPostCreateWrites(args: {
     uom: string;
     ratio_to_base: number;
     display_name: string | null;
+    net_weight_kg: number | null;
     is_base: boolean;
     is_purchase_default: boolean;
     is_inbound_default: boolean;
@@ -84,6 +84,7 @@ export async function runPostCreateWrites(args: {
     uom: base.uom,
     ratio_to_base: 1,
     display_name: base.display_name,
+    net_weight_kg: base.net_weight_kg,
     is_base: true,
     is_purchase_default: Boolean(base.is_purchase_default),
     is_inbound_default: Boolean(base.is_inbound_default),
@@ -98,6 +99,7 @@ export async function runPostCreateWrites(args: {
         uom: purchase.uom,
         ratio_to_base: purchase.ratio_to_base,
         display_name: purchase.display_name,
+        net_weight_kg: purchase.net_weight_kg,
         is_base: false,
         is_purchase_default: true,
         is_inbound_default: Boolean(purchase.is_inbound_default),

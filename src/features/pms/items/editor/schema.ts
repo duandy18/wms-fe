@@ -7,6 +7,7 @@ export type Flash = { kind: "success" | "error"; text: string } | null;
 
 export type FieldErrors =
   Partial<Record<keyof FormState, string>> & {
+    weight_kg?: string;
     base_uom_uom?: string;
     purchase_default_uom?: string;
     barcodes?: string;
@@ -77,6 +78,7 @@ export function validateCreate(
           uom: string;
           ratio_to_base: number;
           display_name: string | null;
+          net_weight_kg: number | null;
           is_base: boolean;
           is_purchase_default: boolean;
           is_inbound_default: boolean;
@@ -97,13 +99,14 @@ export function validateCreate(
 
   const supplierId = parseSupplierId(form.supplier_id);
 
-  const weight = parseNonNegativeNumber(form.weight_kg);
-  if (form.weight_kg.trim() && weight === null) errors.weight_kg = "单件净重必须是 >= 0 的数字";
-
   // ---- uoms（终态：item_uoms 结构）----
   const baseDraft = pickBase(form.uoms);
   const baseUom = normalizeUomText(baseDraft?.uom ?? "");
+  const baseNetWeight = parseNonNegativeNumber(baseDraft?.net_weight_kg ?? "");
   if (!baseUom) errors.base_uom_uom = "基准单位必须填写";
+  if ((baseDraft?.net_weight_kg ?? "").trim() && baseNetWeight === null) {
+    errors.weight_kg = "基础包装净重必须是 >= 0 的数字";
+  }
 
   const purchaseDraft = pickPurchaseDefault(form.uoms);
   const purchaseUom = normalizeUomText(purchaseDraft?.uom ?? "");
@@ -167,6 +170,7 @@ export function validateCreate(
     uom: string;
     ratio_to_base: number;
     display_name: string | null;
+    net_weight_kg: number | null;
     is_base: boolean;
     is_purchase_default: boolean;
     is_inbound_default: boolean;
@@ -176,6 +180,7 @@ export function validateCreate(
       uom: baseUom,
       ratio_to_base: 1,
       display_name: normalizeText(baseDraft?.display_name ?? ""),
+      net_weight_kg: baseNetWeight,
       is_base: true,
       is_purchase_default: hasPurchase ? false : true,
       is_inbound_default: true,
@@ -188,6 +193,7 @@ export function validateCreate(
       uom: purchaseUom,
       ratio_to_base: purchaseRatio as number,
       display_name: normalizeText(purchaseDraft?.display_name ?? ""),
+      net_weight_kg: null,
       is_base: false,
       is_purchase_default: true,
       is_inbound_default: false,
@@ -230,7 +236,6 @@ export function validateCreate(
       category: normalizeText(form.category),
 
       supplier_id: supplierId,
-      weight_kg: weight,
 
       lot_source_policy: form.lot_source_policy,
       expiry_policy: form.expiry_policy,

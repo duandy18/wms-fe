@@ -1,12 +1,11 @@
 // src/features/pms/items/barcodes-panel/useItemBarcodesPanelModel.ts
 
-import { useEffect, useMemo, useState } from "react";
-import { useItemsStore } from "../model/itemsStore";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  fetchItemBarcodeRows,
   createItemBarcode,
-  deleteItemBarcode,
+  fetchItemBarcodeRows,
   setPrimaryBarcode,
+  updateItemBarcode,
   type ItemBarcodeCompositeRow,
 } from "../api/itemBarcodesOwnerApi";
 import { fetchItemUoms, type ItemUom } from "../api/itemUomsOwnerApi";
@@ -21,14 +20,11 @@ export type BarcodeUomOption = {
 };
 
 type UseItemBarcodesPanelModelArgs = {
-  /**
-   * Inline 模式：直接指定 itemId（不依赖 store.selectedItem）
-   */
-  itemId?: number;
-  /**
-   * Inline 模式可选：禁用 closePanel 行为（默认 false）
-   */
-  disableClosePanel?: boolean;
+  itemId: number;
+  editingRow?: ItemBarcodeCompositeRow | null;
+  reloadToken?: number;
+  onSaved?: () => Promise<void> | void;
+  onCancelEdit?: () => void;
 };
 
 function hasPrimary(list: ItemBarcodeCompositeRow[]): boolean {
@@ -45,11 +41,8 @@ function sortUoms(list: ItemUom[]): ItemUom[] {
 
 function buildUomLabel(uom: ItemUom): string {
   const name = (uom.display_name ?? "").trim() || uom.uom;
-  const tags: string[] = [];
-  if (uom.is_base) tags.push("最小单位");
-  if (uom.is_purchase_default) tags.push("采购默认");
-  const suffix = tags.length > 0 ? `，${tags.join(" / ")}` : "";
-  return `${name}（倍率 ${uom.ratio_to_base}${suffix}）`;
+  if (uom.is_base) return `${name}（基础包装）`;
+  return `${name}（${uom.ratio_to_base} × 基础包装）`;
 }
 
 function buildUomOptions(uoms: ItemUom[]): BarcodeUomOption[] {
@@ -62,18 +55,8 @@ function buildUomOptions(uoms: ItemUom[]): BarcodeUomOption[] {
   }));
 }
 
-export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) {
-  const selectedItem = useItemsStore((s) => s.selectedItem);
-  const scannedBarcode = useItemsStore((s) => s.scannedBarcode);
-
-  const setPrimaryBarcodeLocal = useItemsStore((s) => s.setPrimaryBarcodeLocal);
-  const loadItems = useItemsStore((s) => s.loadItems);
-
-  const setSelectedItem = useItemsStore((s) => s.setSelectedItem);
-  const setScannedBarcode = useItemsStore((s) => s.setScannedBarcode);
-
-  const explicitItemId = args?.itemId;
-  const itemId: number | null = explicitItemId != null ? explicitItemId : selectedItem ? selectedItem.id : null;
+export function useItemBarcodesPanelModel(args: UseItemBarcodesPanelModelArgs) {
+  const { itemId, editingRow, reloadToken, onSaved, onCancelEdit } = args;
 
   const [rows, setRows] = useState<ItemBarcodeCompositeRow[]>([]);
   const [uomOptions, setUomOptions] = useState<BarcodeUomOption[]>([]);
@@ -83,51 +66,36 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
   const [error, setError] = useState<string | null>(null);
 
   const [newCode, setNewCode] = useState("");
+  const [isPrimary, setIsPrimary] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const hasSelection = itemId != null;
+  const isEditMode = editingRow != null;
+  const editingBarcodeId = editingRow?.barcode_id ?? null;
 
-  const closePanel = () => {
-    // Inline 模式：不允许清空 store 状态
-    if (explicitItemId != null || args?.disableClosePanel) return;
+  const selectedUom = useMemo(
+    () => uomOptions.find((x) => x.id === selectedUomId) ?? null,
+    [uomOptions, selectedUomId],
+  );
 
-    setSelectedItem(null);
-
-    setRows([]);
-    setUomOptions([]);
-    setSelectedUomId(null);
-    setError(null);
-    setNewCode("");
-    setSaving(false);
-    setLoading(false);
-
-    setScannedBarcode(null);
-  };
-
-  const updatePrimaryLocal = (nextRows: ItemBarcodeCompositeRow[]) => {
-    if (itemId == null) return;
-    const primary = nextRows.find((row) => row.is_primary);
-    setPrimaryBarcodeLocal(itemId, primary ? primary.barcode : null);
-  };
-
-  const applyRows = (nextRows: ItemBarcodeCompositeRow[]) => {
+  const applyRows = useCallback((nextRows: ItemBarcodeCompositeRow[]) => {
     setRows(nextRows);
-    updatePrimaryLocal(nextRows);
-  };
+  }, []);
 
-  const applyUoms = (uoms: ItemUom[]) => {
+  const applyUoms = useCallback((uoms: ItemUom[]) => {
     const nextOptions = buildUomOptions(uoms);
     setUomOptions(nextOptions);
 
     setSelectedUomId((current) => {
+      if (editingRow && editingRow.item_id === itemId) {
+        return editingRow.item_uom_id;
+      }
       if (current != null && nextOptions.some((x) => x.id === current)) return current;
       const base = nextOptions.find((x) => x.is_base) ?? null;
       return base?.id ?? nextOptions[0]?.id ?? null;
     });
-  };
+  }, [editingRow, itemId]);
 
-  const refresh = async () => {
-    if (itemId == null) return;
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -137,24 +105,14 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
       ]);
       applyRows(nextRows);
       applyUoms(nextUoms);
-      await loadItems();
     } catch (e: unknown) {
-      setError(getErrorMessage(e, "刷新条码列表失败"));
+      setError(getErrorMessage(e, "刷新条码绑定失败"));
     } finally {
       setLoading(false);
     }
-  };
+  }, [applyRows, applyUoms, itemId]);
 
   useEffect(() => {
-    if (itemId == null) {
-      setRows([]);
-      setUomOptions([]);
-      setSelectedUomId(null);
-      setError(null);
-      setNewCode("");
-      return;
-    }
-
     let cancelled = false;
 
     (async () => {
@@ -170,7 +128,7 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
         applyUoms(nextUoms);
       } catch (e: unknown) {
         if (!cancelled) {
-          setError(getErrorMessage(e, "加载条码失败"));
+          setError(getErrorMessage(e, "加载条码绑定失败"));
           setRows([]);
           setUomOptions([]);
           setSelectedUomId(null);
@@ -183,27 +141,37 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId]);
+  }, [itemId, reloadToken, applyRows, applyUoms]);
 
   useEffect(() => {
-    // 只有 Panel 模式才从 scannedBarcode 带入输入框
-    if (explicitItemId != null) return;
-    if (!scannedBarcode) return;
-    setNewCode(scannedBarcode);
-  }, [explicitItemId, scannedBarcode]);
+    if (editingRow && editingRow.item_id === itemId) {
+      setSelectedUomId(editingRow.item_uom_id);
+      setNewCode(editingRow.barcode);
+      setIsPrimary(Boolean(editingRow.is_primary));
+      setError(null);
+      return;
+    }
+    setNewCode("");
+    setIsPrimary(false);
+    setError(null);
+  }, [editingRow, itemId]);
 
   const canSubmit = useMemo(() => {
-    if (itemId == null) return false;
     if (saving) return false;
     if (!newCode.trim()) return false;
     if (selectedUomId == null || selectedUomId <= 0) return false;
     return true;
-  }, [itemId, saving, newCode, selectedUomId]);
+  }, [saving, newCode, selectedUomId]);
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const cancelEdit = useCallback(() => {
+    setError(null);
+    setNewCode("");
+    setIsPrimary(false);
+    onCancelEdit?.();
+  }, [onCancelEdit]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (itemId == null) return;
 
     const code = newCode.trim();
     if (!code) {
@@ -212,82 +180,86 @@ export function useItemBarcodesPanelModel(args?: UseItemBarcodesPanelModelArgs) 
     }
 
     if (selectedUomId == null || selectedUomId <= 0) {
-      setError("请选择单位");
+      setError("请选择包装单位");
+      return;
+    }
+
+    const conflictRow = rows.find(
+      (row) =>
+        row.item_uom_id === selectedUomId &&
+        row.barcode_id !== (editingBarcodeId ?? -1),
+    );
+    if (conflictRow) {
+      setError("当前包装单位已绑定条码，请从下方列表进入修改，不允许同一包装重复绑码。");
       return;
     }
 
     setSaving(true);
     setError(null);
+
     try {
-      const created = await createItemBarcode({
-        item_uom_id: selectedUomId,
-        barcode: code,
-        symbology: "CUSTOM",
-        active: true,
-      });
+      if (isEditMode && editingBarcodeId != null) {
+        await updateItemBarcode(editingBarcodeId, {
+          item_uom_id: selectedUomId,
+          barcode: code,
+          symbology: editingRow?.symbology ?? "CUSTOM",
+          is_primary: isPrimary,
+        });
+      } else {
+        const created = await createItemBarcode({
+          item_uom_id: selectedUomId,
+          barcode: code,
+          symbology: "CUSTOM",
+          active: true,
+        });
 
-      const target = uomOptions.find((x) => x.id === selectedUomId) ?? null;
-      const shouldAutoPrimary = Boolean(target?.is_base) && !hasPrimary(rows);
+        const shouldAutoPrimary =
+          Boolean(isPrimary) || (Boolean(selectedUom?.is_base) && !hasPrimary(rows));
 
-      if (shouldAutoPrimary) {
-        await setPrimaryBarcode(created.id);
+        if (shouldAutoPrimary) {
+          await setPrimaryBarcode(created.id);
+        }
       }
 
       await refresh();
-      setNewCode("");
+      await Promise.resolve(onSaved?.());
+
+      if (isEditMode) {
+        cancelEdit();
+      } else {
+        setNewCode("");
+        setIsPrimary(false);
+      }
     } catch (e: unknown) {
-      setError(getErrorMessage(e, "新增条码失败"));
+      setError(getErrorMessage(e, isEditMode ? "修改条码绑定失败" : "新增条码绑定失败"));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (itemId == null) return;
-    if (!window.confirm("确认删除该条码吗？")) return;
-
-    try {
-      await deleteItemBarcode(id);
-      await refresh();
-    } catch (e: unknown) {
-      setError(getErrorMessage(e, "删除条码失败"));
-    }
-  };
-
-  const handleSetPrimary = async (id: number) => {
-    if (itemId == null) return;
-    try {
-      await setPrimaryBarcode(id);
-      await refresh();
-    } catch (e: unknown) {
-      setError(getErrorMessage(e, "设置主条码失败"));
-    }
-  };
-
   return {
     itemId,
-    hasSelection,
-
     rows,
     uomOptions,
     selectedUomId,
+    selectedUom,
 
     loading,
     error,
 
     newCode,
+    isPrimary,
     saving,
     canSubmit,
+    isEditMode,
 
     setNewCode,
     setSelectedUomId,
+    setIsPrimary,
     setError,
 
-    closePanel,
     refresh,
-
-    handleAdd,
-    handleDelete,
-    handleSetPrimary,
+    cancelEdit,
+    handleSubmit,
   };
 }
