@@ -21,6 +21,10 @@ export type ShelfLifeUnit = "DAY" | "WEEK" | "MONTH" | "YEAR";
  * 若后端响应中仍出现 barcode/primary_barcode/requires_* 等历史字段：
  * - 前端业务逻辑不得依赖其语义
  * - 仅允许作为展示冗余（read-only）并逐步移除
+ *
+ * 若后端响应中仍出现 weight_kg：
+ * - 这是兼容读取字段
+ * - 真实来源已切到 base item_uom.net_weight_kg
  */
 export type Item = {
   id: number;
@@ -62,7 +66,6 @@ export type ItemCreateInput = {
   enabled?: boolean;
 
   supplier_id?: number | null;
-  weight_kg?: number | null;
 
   lot_source_policy: string;
   expiry_policy: string;

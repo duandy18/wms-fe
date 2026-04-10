@@ -34,7 +34,6 @@ export async function createItem(input: ItemCreateInput): Promise<Item> {
     enabled: input.enabled ?? true,
 
     supplier_id: input.supplier_id ?? null,
-    weight_kg: input.weight_kg ?? null,
 
     // ---- terminal policy fields ----
     lot_source_policy: String(input.lot_source_policy ?? "").trim(),
@@ -63,7 +62,6 @@ export async function updateItem(id: number, input: ItemUpdateInput): Promise<It
   if (input.enabled !== undefined) body.enabled = Boolean(input.enabled);
 
   if (input.supplier_id !== undefined) body.supplier_id = input.supplier_id;
-  if (input.weight_kg !== undefined) body.weight_kg = input.weight_kg;
 
   if (input.lot_source_policy !== undefined) {
     const v = String(input.lot_source_policy ?? "").trim();

@@ -7,6 +7,7 @@ export interface UomDraft {
   uom: string; // 单位代码（必填 for base；其它行可选）
   ratio_to_base: string; // 字符串态，便于输入；校验时转 int（>=1）
   display_name: string; // 可选展示名
+  net_weight_kg: string; // 基础包装净重（kg）；当前主链只治理 base
 
   // item_uoms flags（终态合同）
   is_base: boolean;
@@ -27,7 +28,6 @@ export interface FormState {
   category: string;
 
   supplier_id: string;
-  weight_kg: string;
 
   lot_source_policy: "SUPPLIER_ONLY" | "INTERNAL_ONLY";
   expiry_policy: "NONE" | "REQUIRED";
@@ -40,6 +40,7 @@ export interface FormState {
   /**
    * ✅ 终态：单位真相完全表达为 item_uoms 子表结构
    * - 至少包含 1 条 base（is_base=true, ratio_to_base=1）
+   * - 基础包装净重 net_weight_kg 也挂在这条 base uom 上
    * - 可选包含 1 条 purchase_default（is_purchase_default=true, ratio_to_base>=1）
    */
   uoms: UomDraft[];
@@ -57,7 +58,6 @@ export const EMPTY_FORM: FormState = {
   category: "",
 
   supplier_id: "",
-  weight_kg: "",
 
   lot_source_policy: "SUPPLIER_ONLY",
   expiry_policy: "NONE",

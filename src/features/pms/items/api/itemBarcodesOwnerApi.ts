@@ -3,13 +3,14 @@
 //
 // 对应后端 app/pms/items/routers/item_barcodes.py：
 //  - POST   /item-barcodes                    创建条码
+//  - PATCH  /item-barcodes/{id}               修改条码绑定
 //  - GET    /item-barcodes/item/{id}          按商品读取条码列表（裸行）
 //  - GET    /item-barcodes/item/{id}/rows     按商品读取复合条码行（商品+单位+条码）
 //  - GET    /item-barcodes/by-items           按 item_ids 批量读取条码（避免 N+1）
 //  - POST   /item-barcodes/{id}/set-primary   设为主条码
 //  - DELETE /item-barcodes/{id}               删除条码
 
-import { apiDelete, apiGet, apiPost } from "../../../../lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "../../../../lib/api";
 
 export interface ItemBarcode {
   id: number;
@@ -109,6 +110,49 @@ export async function createItemBarcode(params: {
     symbology: symbology || "CUSTOM",
     active: active ?? true,
   });
+}
+
+/** 修改条码绑定（包装 / 条码 / 是否主条码） */
+export async function updateItemBarcode(
+  id: number,
+  params: {
+    item_uom_id?: number;
+    barcode?: string;
+    symbology?: string;
+    active?: boolean;
+    is_primary?: boolean;
+  },
+): Promise<ItemBarcode> {
+  if (!id || id <= 0) throw new Error("invalid id");
+
+  const body: Record<string, unknown> = {};
+
+  if (params.item_uom_id !== undefined) {
+    if (!params.item_uom_id || params.item_uom_id <= 0) {
+      throw new Error("invalid item_uom_id");
+    }
+    body.item_uom_id = params.item_uom_id;
+  }
+
+  if (params.barcode !== undefined) {
+    const code = params.barcode.trim();
+    if (!code) throw new Error("barcode required");
+    body.barcode = code;
+  }
+
+  if (params.symbology !== undefined) {
+    body.symbology = params.symbology || "CUSTOM";
+  }
+
+  if (params.active !== undefined) {
+    body.active = params.active;
+  }
+
+  if (params.is_primary !== undefined) {
+    body.is_primary = params.is_primary;
+  }
+
+  return apiPatch<ItemBarcode>(`/item-barcodes/${id}`, body);
 }
 
 /** 删除条码 */

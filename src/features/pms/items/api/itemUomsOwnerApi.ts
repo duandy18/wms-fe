@@ -9,6 +9,7 @@ export type ItemUom = {
   ratio_to_base: number;
 
   display_name: string | null;
+  net_weight_kg: number | null;
 
   is_base: boolean;
   is_purchase_default: boolean;
@@ -24,6 +25,7 @@ export type ItemUomCreateInput = {
   uom: string;
   ratio_to_base: number;
   display_name?: string | null;
+  net_weight_kg?: number | null;
 
   is_base?: boolean;
   is_purchase_default?: boolean;
