@@ -1,7 +1,10 @@
 // src/features/purchase-orders/createV2/presenter/useSuppliersLoader.ts
 
 import { useEffect, useState } from "react";
-import { fetchSuppliersBasic, type SupplierBasic } from "../../../../master-data/suppliersApi";
+import {
+  fetchSuppliersBasic,
+  type SupplierBasic,
+} from "../../../../domains/pms/public";
 import { getErrorMessage } from "../utils";
 import { normalizeSupplierOptions } from "../normalize";
 
@@ -22,12 +25,11 @@ export function useSuppliersLoader(): {
       setSuppliersError(null);
 
       try {
-        const data = await fetchSuppliersBasic();
+        const data = await fetchSuppliersBasic({ active: true });
         if (alive) {
           setSupplierOptions(normalizeSupplierOptions(data, { activeOnly: true }));
         }
       } catch (err) {
-         
         console.error("fetchSuppliersBasic failed", err);
         if (alive) setSuppliersError(getErrorMessage(err, "加载供应商列表失败"));
       }

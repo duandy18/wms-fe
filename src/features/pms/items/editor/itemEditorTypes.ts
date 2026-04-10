@@ -1,7 +1,7 @@
 // src/features/pms/items/editor/itemEditorTypes.ts
 
 import type { FormEvent } from "react";
-import type { Supplier } from "@/features/pms/suppliers/api/suppliersApi";
+import type { SupplierBasic } from "@/domains/pms/public/contracts/supplierBasic";
 import type { Item } from "../../../../contracts/item/contract";
 import type { FormState } from "../create/types";
 import type { Flash, FieldErrors } from "./schema";
@@ -12,7 +12,7 @@ export type ItemEditorVm = {
   mode: ItemEditorMode;
   editorTitle: string;
 
-  suppliers: Supplier[];
+  suppliers: SupplierBasic[];
   supLoading: boolean;
   supError: string | null;
 

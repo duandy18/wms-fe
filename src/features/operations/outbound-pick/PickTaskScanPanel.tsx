@@ -1,7 +1,7 @@
 // src/features/operations/outbound-pick/PickTaskScanPanel.tsx
 //
 // 扫码拣货 Panel（执行采集器，协同裁决版）：
-// - 显示当前 active item 的 sku/name/spec/uom
+// - 显示当前 active item 的 sku/name/spec
 // - 数量输入：一次扫描对应本次拣货的数量（例如 5 件）
 // - 批次输入：仅当商品为批次受控（requires_batch/has_shelf_life）时强制出现
 // - 预览（item_id + qty + batch），错误/成功提示
@@ -78,7 +78,6 @@ export const PickTaskScanPanel: React.FC<Props> = ({
     }
   };
 
-  // 扫描成功后自动聚焦数量输入框并选中，方便下一次修改数量
   useEffect(() => {
     if (scanSuccess && qtyInputRef.current) {
       qtyInputRef.current.focus();
@@ -95,7 +94,6 @@ export const PickTaskScanPanel: React.FC<Props> = ({
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-slate-800">扫码拣货（写入任务）</h3>
 
-      {/* 当前拣货商品信息 */}
       {activeItemMeta ? (
         <div className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-700">
           <div>
@@ -104,8 +102,7 @@ export const PickTaskScanPanel: React.FC<Props> = ({
             <span>{activeItemMeta.name}</span>
           </div>
           <div className="text-[11px] text-slate-500">
-            {activeItemMeta.spec && `规格：${activeItemMeta.spec} `}
-            {activeItemMeta.uom && ` · 最小单位：${activeItemMeta.uom}`}
+            {activeItemMeta.spec && `规格：${activeItemMeta.spec}`}
           </div>
           <div className="mt-1 text-[11px] text-slate-600">
             批次策略：{" "}
@@ -128,7 +125,6 @@ export const PickTaskScanPanel: React.FC<Props> = ({
         </div>
       )}
 
-      {/* 说明文字（简化版） */}
       <div className="space-y-1 text-[11px] text-slate-600">
         <p>
           扫码后系统调用 <code>/pick-tasks/&lt;task_id&gt;/scan</code>{" "}
@@ -140,7 +136,6 @@ export const PickTaskScanPanel: React.FC<Props> = ({
         </p>
       </div>
 
-      {/* 输入区：批次（仅受控时显示） + 数量 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
         {batchRequired ? (
           <div className="space-y-1">
@@ -182,7 +177,6 @@ export const PickTaskScanPanel: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 预览 / 错误 / 成功 */}
       <div className="space-y-2">
         {hasPreview && (
           <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-slate-700">
@@ -220,7 +214,6 @@ export const PickTaskScanPanel: React.FC<Props> = ({
         )}
       </div>
 
-      {/* 扫码台 */}
       <div className="mt-1 rounded-lg border border-dashed border-slate-300 p-2">
         <ScanConsole
           title="拣货任务扫码台"

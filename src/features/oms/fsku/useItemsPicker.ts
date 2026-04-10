@@ -26,7 +26,6 @@ export function useItemsPicker(): UseItemsPickerState {
     setLoading(true);
     setError(null);
     try {
-      // 先用最小实现：拉一页 items；后续需要更强搜索再扩展
       const list = await apiListItems({ limit: 50, offset: 0 });
       setItems(list);
     } catch (e: unknown) {
@@ -49,10 +48,9 @@ export function useItemsPicker(): UseItemsPickerState {
     return items.filter((it) => {
       const hitSku = String(it.sku).toLowerCase().includes(q);
       const hitName = String(it.name).toLowerCase().includes(q);
-      const hitBarcode = (it.barcode ?? "").toLowerCase().includes(q);
       const hitBrand = (it.brand ?? "").toLowerCase().includes(q);
       const hitId = String(it.id).includes(q);
-      return hitSku || hitName || hitBarcode || hitBrand || hitId;
+      return hitSku || hitName || hitBrand || hitId;
     });
   }, [items, query]);
 

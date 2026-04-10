@@ -45,13 +45,12 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
 }) => {
   const selectedItemId = line.item_id ? Number(line.item_id) : null;
 
-  const brandText = selectedItem?.brand_name?.trim() ? selectedItem.brand_name : "—";
-  const categoryText = selectedItem?.category_name?.trim() ? selectedItem.category_name : "—";
-  const barcodeText = selectedItem?.main_barcode?.trim() ? selectedItem.main_barcode : "—";
+  const brandText = selectedItem?.brand?.trim() ? selectedItem.brand : "—";
+  const categoryText = selectedItem?.category?.trim() ? selectedItem.category : "—";
+  const barcodeText = "—";
 
   const uomIdValue = (line.uom_id ?? "").trim();
 
-  // 默认选择：purchase_default → base → first
   useEffect(() => {
     if (!selectedItemId || uomIdValue) return;
     if (!uomsForSelectedItem || uomsForSelectedItem.length === 0) return;
@@ -98,11 +97,10 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
         >
           <option value="">{itemsLoading ? "加载中…" : "请选择商品"}</option>
           {items.map((it) => {
-            const brand = it.brand_name?.trim() ? it.brand_name : "—";
-            const cat = it.category_name?.trim() ? it.category_name : "—";
-            const bc = it.main_barcode?.trim() ? it.main_barcode : "—";
+            const brand = it.brand?.trim() ? it.brand : "—";
+            const cat = it.category?.trim() ? it.category : "—";
             const spec = it.spec ? ` ｜ ${it.spec}` : "";
-            const label = `[${it.id}] ${it.name}${spec} · ${brand} · ${cat} · ${bc}`;
+            const label = `[${it.id}] ${it.name}${spec} · ${brand} · ${cat}`;
             return (
               <option key={it.id} value={it.id}>
                 {label}
@@ -141,7 +139,6 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
         />
       </td>
 
-      {/* 输入单位 */}
       <td className="px-3 py-3">
         <select
           className="w-44 rounded-xl border border-slate-300 px-3 py-2 text-base"
@@ -166,7 +163,6 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
         </select>
       </td>
 
-      {/* 数量 */}
       <td className="px-3 py-3 text-right">
         <input
           className="w-28 rounded-xl border border-slate-300 px-3 py-2 text-right text-base"
@@ -177,7 +173,6 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
         />
       </td>
 
-      {/* 预计 base */}
       <td className="px-3 py-3 text-right">
         <div className="text-slate-900 font-mono">{qtyBaseHint ?? "-"}</div>
         <div className="text-[11px] text-slate-500">

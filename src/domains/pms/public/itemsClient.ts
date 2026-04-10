@@ -10,11 +10,10 @@ type PublicItemsApiRow = {
   spec?: string | null;
 
   enabled?: boolean;
+  supplier_id?: number | null;
 
-  // PMS public ItemBasic（后端）当前直接返回 brand/category/primary_barcode
   brand?: string | null;
   category?: string | null;
-  primary_barcode?: string | null;
 };
 
 function cleanStr(v: unknown): string | null {
@@ -60,16 +59,13 @@ export async function fetchItemsBasic(
       sku: String(it.sku ?? ""),
       name: String(it.name ?? ""),
       spec: cleanStr(it.spec),
-      uom: null,
       enabled: typeof it.enabled === "boolean" ? it.enabled : true,
-
-      // public ItemBasic 前端合同仍保留这两个展示字段名
-      spec_family: null,
-      brand_name: cleanStr(it.brand),
-      category_name: cleanStr(it.category),
-
-      // 后端 public 返回 primary_barcode；前端 public 合同字段名仍为 main_barcode
-      main_barcode: cleanStr(it.primary_barcode),
+      supplier_id:
+        typeof it.supplier_id === "number" && Number.isFinite(it.supplier_id)
+          ? it.supplier_id
+          : null,
+      brand: cleanStr(it.brand),
+      category: cleanStr(it.category),
     };
   });
 }

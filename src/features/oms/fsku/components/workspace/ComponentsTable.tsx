@@ -33,32 +33,26 @@ export const ComponentsTable: React.FC<{
       <table className="min-w-full table-fixed border-collapse text-xs">
         <thead className="sticky top-0 bg-white z-10">
           <tr className="border-b border-slate-200 text-[11px] text-slate-600">
-            {/* SKU */}
             <th className="px-2 py-2 text-left border-r border-slate-200 w-[120px]">
               SKU
             </th>
 
-            {/* 商品名称（重点列，加宽） */}
             <th className="px-2 py-2 text-left border-r border-slate-200 w-[420px]">
               商品名称
             </th>
 
-            {/* 数量（极窄，个位数） */}
+            <th className="px-2 py-2 text-left border-r border-slate-200 w-[96px]">
+              品牌
+            </th>
+
             <th className="px-2 py-2 text-left border-r border-slate-200 w-[40px]">
               数量
             </th>
 
-            {/* 单位 */}
-            <th className="px-2 py-2 text-left border-r border-slate-200 w-[72px]">
-              单位
-            </th>
-
-            {/* 类型 */}
             <th className="px-2 py-2 text-left border-r border-slate-200 w-[96px]">
               类型
             </th>
 
-            {/* 操作 */}
             <th className="px-2 py-2 text-left w-[72px]">
               操作
             </th>
@@ -71,17 +65,18 @@ export const ComponentsTable: React.FC<{
 
             return (
               <tr key={idx} className="border-b border-slate-100">
-                {/* SKU */}
                 <td className="px-2 py-2 align-top border-r border-slate-100 font-mono text-[11px] text-slate-900 break-words">
                   {it?.sku ?? "—"}
                 </td>
 
-                {/* 商品名称（多行、主视觉） */}
                 <td className="px-2 py-2 align-top border-r border-slate-100 text-[12px] text-slate-900 break-words">
                   {it?.name ?? "—"}
                 </td>
 
-                {/* 数量输入（极窄） */}
+                <td className="px-2 py-2 align-top border-r border-slate-100 text-[11px] text-slate-700">
+                  {it?.brand ?? "—"}
+                </td>
+
                 <td className="px-2 py-2 align-top border-r border-slate-100">
                   <input
                     className="w-[20px] rounded-md border border-slate-300 px-[2px] py-1 text-sm text-right disabled:bg-slate-50"
@@ -92,12 +87,6 @@ export const ComponentsTable: React.FC<{
                   />
                 </td>
 
-                {/* 单位 */}
-                <td className="px-2 py-2 align-top border-r border-slate-100 text-[11px] text-slate-700">
-                  {it?.uom ?? "—"}
-                </td>
-
-                {/* 类型 */}
                 <td className="px-2 py-2 align-top border-r border-slate-100">
                   {readOnly ? (
                     <span
@@ -122,7 +111,6 @@ export const ComponentsTable: React.FC<{
                   )}
                 </td>
 
-                {/* 操作 */}
                 <td className="px-2 py-2 align-top">
                   {!readOnly ? (
                     <button

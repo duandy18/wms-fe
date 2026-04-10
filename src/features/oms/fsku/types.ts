@@ -17,15 +17,12 @@ export type FskuComponent = {
 export type FskuShape = "single" | "bundle";
 
 export type Fsku = {
-  id: number; // ✅ 合同：int
+  id: number;
   code: string;
   name: string;
   shape: FskuShape;
   status: FskuStatus;
 
-  // 后端聚合摘要：
-  // - components_summary: SKU 版（工程排查）
-  // - components_summary_name: 主数据商品名版（运营/治理展示；可能缺省，用于向后兼容）
   components_summary: string;
   components_summary_name?: string;
 
@@ -43,9 +40,7 @@ export type MasterItem = {
   id: number;
   sku: string;
   name: string;
-  barcode: string | null;
   brand: string | null;
-  uom: string | null;
 };
 
 export type PlatformSkuBinding = {
@@ -82,8 +77,6 @@ export type ApiProblem = {
   context?: unknown;
 };
 
-// -------------------- Merchant Code ↔ FSKU bindings (治理事实) --------------------
-
 export type FskuLite = {
   id: number;
   code: string;
@@ -101,14 +94,12 @@ export type MerchantCodeBindingRow = {
   platform: string;
   shop_id: string;
 
-  // ✅ join 展示字段（不落绑定表）
   store: StoreLite;
 
   merchant_code: string;
   fsku_id: number;
   fsku: FskuLite;
 
-  // ✅ current-only：无 effective_from/effective_to
   reason: string | null;
   created_at: string;
   updated_at: string;

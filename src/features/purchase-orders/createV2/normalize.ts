@@ -1,6 +1,6 @@
 // src/features/purchase-orders/createV2/normalize.ts
 
-import type { SupplierBasic } from "../../../master-data/suppliersApi";
+import type { SupplierBasic } from "../../../domains/pms/public/contracts/supplierBasic";
 
 export function normalizeSupplierOptions(
   list: SupplierBasic[],
@@ -15,7 +15,6 @@ export function normalizeSupplierOptions(
       name: String(s.name ?? "").trim(),
     }));
 
-  // 简单按名称排序，提升可用性
   cleaned.sort((a, b) => a.name.localeCompare(b.name, "zh-Hans-CN"));
   return cleaned;
 }

@@ -1,6 +1,6 @@
 // src/features/pms/items/create/submit.ts
 
-import type { Supplier } from "@/features/pms/suppliers/api/suppliersApi";
+import type { SupplierBasic } from "@/domains/pms/public/contracts/supplierBasic";
 import type { Item, ItemCreateInput } from "../../../../contracts/item/contract";
 import { createItem } from "../api/itemsOwnerApi";
 import type { FormState } from "./types";
@@ -11,7 +11,7 @@ export type SubmitResult =
 
 export async function submitCreateItem(args: {
   form: FormState;
-  suppliers: Supplier[];
+  suppliers: SupplierBasic[];
   supLoading: boolean;
 }): Promise<{ body: ItemCreateInput } | SubmitResult> {
   const { form, suppliers, supLoading } = args;
@@ -19,7 +19,7 @@ export async function submitCreateItem(args: {
   if (!supLoading && suppliers.length === 0) {
     return {
       ok: false,
-      error: "没有可用供货商。请先到「系统管理 → 供应商主数据」新建供应商。",
+      error: "没有可用供应商。请先到「系统管理 → 供应商主数据」新建供应商。",
     };
   }
 

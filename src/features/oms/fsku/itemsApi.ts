@@ -12,15 +12,12 @@ import type { MasterItem } from "./types";
 export async function apiListItems(args: { limit: number; offset: number }): Promise<MasterItem[]> {
   const limit = Number.isFinite(args.limit) && args.limit > 0 ? Math.trunc(args.limit) : 50;
 
-  // 当前 PMS public itemsClient 暂不支持 offset；FSKU 选择器当前也只拉第一页
   const rows = await fetchItemsBasic({ limit });
 
   return rows.map((r: ItemBasic) => ({
     id: r.id,
     sku: r.sku,
     name: r.name,
-    barcode: r.main_barcode,
-    brand: r.brand_name,
-    uom: r.uom,
+    brand: r.brand,
   }));
 }
