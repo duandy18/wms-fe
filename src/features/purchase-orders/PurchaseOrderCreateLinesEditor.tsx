@@ -7,10 +7,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { LineDraft } from "./usePurchaseOrderCreatePresenter";
 import type { ItemBasic } from "../../domains/pms/public/contracts/itemBasic";
+import type {
+  PublicItemAggregate,
+  PublicAggregateUom,
+} from "../../domains/pms/public/contracts/itemAggregate";
+import { fetchItemAggregate } from "../../domains/pms/public/itemAggregateClient";
 import { PurchaseOrderCreateLineRow } from "./createV2/linesEditor/LineRow";
 import { PurchaseOrderCreateLinesTableHead } from "./createV2/linesEditor/Columns";
 import { PO_CREATE_LINE_COLSPAN } from "./createV2/linesEditor/columns.def";
-import { fetchItemUomsByItems, type ItemUom } from "../pms/items/api/itemUomsOwnerApi";
 
 interface PurchaseOrderCreateLinesEditorProps {
   lines: LineDraft[];
@@ -22,16 +26,24 @@ interface PurchaseOrderCreateLinesEditorProps {
   onRemoveLine: (lineId: number) => void;
 }
 
-type UomsByItemId = Record<number, ItemUom[]>;
+type AggregatesByItemId = Record<number, PublicItemAggregate>;
 
-function sortUoms(uoms: ItemUom[]): ItemUom[] {
-  const score = (u: ItemUom) => {
-    // 越小越优先：purchase_default > base > others
+function sortUoms(uoms: PublicAggregateUom[]): PublicAggregateUom[] {
+  const score = (u: PublicAggregateUom) => {
     const purchase = u.is_purchase_default ? 0 : 10;
     const base = u.is_base ? 0 : 1;
     return purchase + base;
   };
   return [...uoms].sort((a, b) => score(a) - score(b) || a.id - b.id);
+}
+
+function pickPrimaryBarcodeText(aggregate: PublicItemAggregate | undefined, loading: boolean): string {
+  if (!aggregate) return loading ? "加载中…" : "—";
+  const primary =
+    aggregate.barcodes.find((x) => x.is_primary && x.active) ??
+    aggregate.barcodes.find((x) => x.active) ??
+    aggregate.barcodes[0];
+  return primary?.barcode?.trim() ? primary.barcode : "—";
 }
 
 export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEditorProps> = ({
@@ -49,57 +61,56 @@ export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEd
     return m;
   }, [items]);
 
-  // ---- item_uoms 批量缓存（避免 N+1）----
-  const [uomsByItemId, setUomsByItemId] = useState<UomsByItemId>({});
-  const [uomsLoading, setUomsLoading] = useState(false);
-  const [uomsError, setUomsError] = useState<string | null>(null);
+  const [aggregatesByItemId, setAggregatesByItemId] = useState<AggregatesByItemId>({});
+  const [aggregatesLoading, setAggregatesLoading] = useState(false);
+  const [aggregatesError, setAggregatesError] = useState<string | null>(null);
 
-  const itemIds = useMemo(() => {
-    const ids = items.map((x) => x.id).filter((x) => Number.isFinite(x) && x > 0);
+  const selectedItemIds = useMemo(() => {
+    const ids = lines
+      .map((x) => Number(x.item_id))
+      .filter((x) => Number.isFinite(x) && x > 0);
     return Array.from(new Set(ids)).sort((a, b) => a - b);
-  }, [items]);
+  }, [lines]);
 
   useEffect(() => {
     let alive = true;
 
     async function run() {
-      // items 还在加载时，不要发 uoms 请求
-      if (itemsLoading) return;
-
-      if (itemIds.length === 0) {
-        setUomsByItemId({});
-        setUomsError(null);
+      if (selectedItemIds.length === 0) {
+        setAggregatesByItemId({});
+        setAggregatesError(null);
         return;
       }
 
-      setUomsLoading(true);
-      setUomsError(null);
+      setAggregatesLoading(true);
+      setAggregatesError(null);
 
       try {
-        const all = await fetchItemUomsByItems(itemIds);
-
-        const m: UomsByItemId = {};
-        for (const u of all) {
-          const iid = Number(u.item_id);
-          if (!Number.isFinite(iid) || iid <= 0) continue;
-          (m[iid] ||= []).push(u);
-        }
-
-        for (const k of Object.keys(m)) {
-          const iid = Number(k);
-          m[iid] = sortUoms(m[iid]);
-        }
+        const entries = await Promise.all(
+          selectedItemIds.map(async (itemId) => {
+            const aggregate = await fetchItemAggregate(itemId);
+            return [itemId, aggregate] as const;
+          }),
+        );
 
         if (!alive) return;
-        setUomsByItemId(m);
+
+        const next: AggregatesByItemId = {};
+        for (const [itemId, aggregate] of entries) {
+          next[itemId] = {
+            ...aggregate,
+            uoms: sortUoms(aggregate.uoms),
+          };
+        }
+        setAggregatesByItemId(next);
       } catch (e) {
         if (!alive) return;
-        console.error("fetchItemUomsByItems failed:", e);
-        setUomsError("单位加载失败（item_uoms）");
-        setUomsByItemId({});
+        console.error("fetchItemAggregate failed:", e);
+        setAggregatesError("商品详情加载失败（public aggregate）");
+        setAggregatesByItemId({});
       } finally {
         if (alive) {
-          setUomsLoading(false);
+          setAggregatesLoading(false);
         }
       }
     }
@@ -108,7 +119,7 @@ export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEd
     return () => {
       alive = false;
     };
-  }, [itemIds, itemsLoading]);
+  }, [selectedItemIds]);
 
   return (
     <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
@@ -124,13 +135,13 @@ export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEd
       </div>
 
       <p className="text-base text-slate-600">
-        每一行代表一个 SKU 的采购计划：选择系统商品 → 选择输入单位（item_uoms）→ 输入数量（qty_input）。
+        每一行代表一个 SKU 的采购计划：选择系统商品 → 选择输入单位（public aggregate.uoms）→ 输入数量（qty_input）。
         系统会展示预计的 base 数量（仅提示），实际 base 由后端按单位倍率推导。
       </p>
 
-      {uomsError ? (
+      {aggregatesError ? (
         <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-base text-amber-900">
-          {uomsError}
+          {aggregatesError}
         </div>
       ) : null}
 
@@ -149,11 +160,16 @@ export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEd
               lines.map((line, idx) => {
                 const selectedItemId = line.item_id ? Number(line.item_id) : null;
                 const selectedItem = selectedItemId != null ? itemMap.get(selectedItemId) : undefined;
-
-                const uomsForSelectedItem =
+                const aggregate =
                   selectedItemId != null && Number.isFinite(selectedItemId) && selectedItemId > 0
-                    ? (uomsByItemId[selectedItemId] ?? [])
-                    : [];
+                    ? aggregatesByItemId[selectedItemId]
+                    : undefined;
+
+                const uomsForSelectedItem = aggregate?.uoms ?? [];
+                const primaryBarcodeText =
+                  selectedItemId != null && Number.isFinite(selectedItemId) && selectedItemId > 0
+                    ? pickPrimaryBarcodeText(aggregate, aggregatesLoading)
+                    : "—";
 
                 return (
                   <PurchaseOrderCreateLineRow
@@ -164,7 +180,8 @@ export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEd
                     itemsLoading={itemsLoading}
                     selectedItem={selectedItem}
                     uomsForSelectedItem={uomsForSelectedItem}
-                    uomsLoading={uomsLoading}
+                    primaryBarcodeText={primaryBarcodeText}
+                    uomsLoading={aggregatesLoading}
                     onChangeLineField={onChangeLineField}
                     onSelectItem={onSelectItem}
                     onRemoveLine={onRemoveLine}
