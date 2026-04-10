@@ -46,9 +46,9 @@ const PickTasksCockpitPage: React.FC = () => {
 
   const c = usePickTasksCockpitController({
     navigateToBarcodeBind: (barcode: string) => {
-      const msg = `条码 ${barcode} 未能解析出有效商品，请在条码管理中完成绑定后再试。`;
-      const go = window.confirm(`${msg}\n\n是否现在前往「条码管理」进行绑定？`);
-      if (go) navigate(`/items?barcode=${encodeURIComponent(barcode)}`);
+      const msg = `条码 ${barcode} 未能解析出有效商品，请在商品条码页完成绑定后再试。`;
+      const go = window.confirm(`${msg}\n\n是否现在前往「商品条码」进行绑定？`);
+      if (go) navigate(`/item-barcodes?barcode=${encodeURIComponent(barcode)}`);
     },
   });
 

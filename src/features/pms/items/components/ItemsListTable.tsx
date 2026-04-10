@@ -1,10 +1,9 @@
 // src/features/pms/items/components/ItemsListTable.tsx
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { Item } from "../../../../contracts/item/contract";
 import { useItemsStore } from "../model/itemsStore";
 import { computeItemQuality } from "../quality/itemQuality";
-import { fetchItemUomsByItems, type ItemUom } from "../api/itemUomsOwnerApi";
 import {
   asRecord,
   getBoolean,
@@ -15,7 +14,6 @@ import {
   policyCnLotSource,
   policyCnExpiry,
 } from "./itemsListTableFormatters";
-import { renderPackagingUoms } from "./itemsListTableUom";
 
 const StatusBadge: React.FC<{ enabled: boolean }> = ({ enabled }) => {
   return enabled ? (
@@ -49,56 +47,6 @@ export const ItemsListTable: React.FC<{
   const toggleItemTest = useItemsStore((s) => s.toggleItemTest);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [qualityFilter, setQualityFilter] = useState<"all" | "issues">("all");
-
-  // ---- item_uoms 批量缓存（避免 N+1）----
-  const [uomsByItemId, setUomsByItemId] = useState<Record<number, ItemUom[]>>({});
-  const [uomsLoading, setUomsLoading] = useState(false);
-
-  const itemIds = useMemo(() => rows.map((x) => x.id).filter((x) => Number.isFinite(x) && x > 0), [rows]);
-
-  useEffect(() => {
-    let alive = true;
-
-    async function run() {
-      if (itemIds.length === 0) {
-        setUomsByItemId({});
-        return;
-      }
-
-      setUomsLoading(true);
-      try {
-        const all = await fetchItemUomsByItems(itemIds);
-
-        const m: Record<number, ItemUom[]> = {};
-        for (const u of all) {
-          const iid = Number(u.item_id);
-          if (!Number.isFinite(iid) || iid <= 0) continue;
-          (m[iid] ||= []).push(u);
-        }
-
-        // 排序：采购默认优先，其次最小包装单位
-        for (const k of Object.keys(m)) {
-          const iid = Number(k);
-          m[iid].sort((a, b) => {
-            const score = (x: ItemUom) => (x.is_purchase_default ? 0 : 10) + (x.is_base ? 0 : 1);
-            return score(a) - score(b) || a.id - b.id;
-          });
-        }
-
-        if (alive) setUomsByItemId(m);
-      } catch (e) {
-        console.error("fetchItemUomsByItems failed:", e);
-        if (alive) setUomsByItemId({});
-      } finally {
-        if (alive) setUomsLoading(false);
-      }
-    }
-
-    void run();
-    return () => {
-      alive = false;
-    };
-  }, [itemIds]);
 
   const qualityRows = useMemo(() => {
     return rows.map((it) => {
@@ -171,7 +119,6 @@ export const ItemsListTable: React.FC<{
           >
             仅提示
           </button>
-          {uomsLoading ? <span className="ml-2 text-slate-500">包装单位加载中…</span> : null}
         </div>
       </div>
 
@@ -179,7 +126,6 @@ export const ItemsListTable: React.FC<{
         <thead>
           <tr className="bg-slate-50">
             <th className="border px-4 py-3 text-left font-semibold">SKU</th>
-            <th className="border px-4 py-3 text-left font-semibold">主条码</th>
             <th className="border px-4 py-3 text-left font-semibold">商品名称</th>
             <th className="border px-4 py-3 text-left font-semibold">规格</th>
             <th className="border px-4 py-3 text-left font-semibold">品牌</th>
@@ -189,9 +135,6 @@ export const ItemsListTable: React.FC<{
             <th className="border px-4 py-3 text-left font-semibold">质量提示</th>
 
             <th className="border px-4 py-3 text-left font-semibold">供货商</th>
-
-            {/* ✅ 你要求的列标题 */}
-            <th className="border px-4 py-3 text-left font-semibold">包装单位</th>
 
             <th className="border px-4 py-3 text-left font-semibold">批次策略</th>
             <th className="border px-4 py-3 text-left font-semibold">有效期策略</th>
@@ -239,12 +182,9 @@ export const ItemsListTable: React.FC<{
                     })
                     .join("\n");
 
-            const uoms = uomsByItemId[it.id] ?? [];
-
             return (
               <tr key={it.id} className="border-t">
                 <td className="px-4 py-3 font-mono">{it.sku}</td>
-                <td className="px-4 py-3 font-mono">{primaryBarcodes[it.id] ?? "—"}</td>
                 <td className="px-4 py-3 font-medium">{it.name}</td>
 
                 <td className="px-4 py-3 text-slate-700 whitespace-pre-line">{spec}</td>
@@ -280,9 +220,6 @@ export const ItemsListTable: React.FC<{
                 </td>
 
                 <td className="px-4 py-3">{supplierLabel(it)}</td>
-
-                {/* ✅ 你要求的包装单位渲染 */}
-                <td className="px-4 py-3">{renderPackagingUoms(uoms)}</td>
 
                 <td className="px-4 py-3">{lotSourcePolicy}</td>
                 <td className="px-4 py-3">{expiryPolicy}</td>

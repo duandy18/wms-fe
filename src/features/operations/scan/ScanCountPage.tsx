@@ -167,11 +167,11 @@ const ScanCountPage: React.FC = () => {
         }));
       } else if (std.status === "UNBOUND") {
         const go = window.confirm(
-          `条码 ${barcode} 尚未绑定任何商品，是否前往 Items 进行条码绑定？`,
+          `条码 ${barcode} 尚未绑定任何商品，是否前往「商品条码」进行条码绑定？`,
         );
         if (go) {
           navigate(
-            `/items?barcode=${encodeURIComponent(barcode)}`,
+            `/item-barcodes?barcode=${encodeURIComponent(barcode)}`,
           );
         }
       } else if (std.status === "ERROR" && std.message) {

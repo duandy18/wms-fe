@@ -8,6 +8,12 @@ type Props = {
 };
 
 export const ScanPickResultPanel: React.FC<Props> = ({ result }) => {
+  const showQtySummary =
+    result &&
+    ((result.qty ?? null) !== null ||
+      (result.qty_base ?? null) !== null ||
+      (result.ratio_to_base ?? null) !== null);
+
   return (
     <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
       <h2 className="text-sm font-semibold text-slate-800">
@@ -15,12 +21,40 @@ export const ScanPickResultPanel: React.FC<Props> = ({ result }) => {
       </h2>
       {result ? (
         <>
-          <div className="text-xs text-slate-700 space-y-1">
+          <div className="text-xs text-slate-700 space-y-2">
             <div>
               scan_ref:{" "}
               <span className="font-mono">{result.scan_ref}</span> · ok=
               {String(result.ok)} · committed=
               {String(result.committed)} · source={result.source}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {result.item_id && result.item_id > 0 && (
+                <span className="inline-flex items-center rounded-lg border px-2 py-1 text-[11px] text-slate-700">
+                  item_id={result.item_id}
+                </span>
+              )}
+
+              {result.item_uom_id && result.item_uom_id > 0 && (
+                <span className="inline-flex items-center rounded-lg border px-2 py-1 text-[11px] text-slate-700">
+                  item_uom_id={result.item_uom_id}
+                </span>
+              )}
+
+              {showQtySummary && (
+                <>
+                  <span className="inline-flex items-center rounded-lg border px-2 py-1 text-[11px] text-slate-700">
+                    qty={result.qty ?? "-"}
+                  </span>
+                  <span className="inline-flex items-center rounded-lg border px-2 py-1 text-[11px] text-slate-700">
+                    qty_base={result.qty_base ?? "-"}
+                  </span>
+                  <span className="inline-flex items-center rounded-lg border px-2 py-1 text-[11px] text-slate-700">
+                    ratio_to_base={result.ratio_to_base ?? "-"}
+                  </span>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-3 pt-1">

@@ -107,6 +107,9 @@ export const JdOrderDetailPage = lazy(
 export const ItemsPage = lazy(
   () => import("../../features/pms/items/pages/ItemsPage"),
 );
+export const ItemBarcodesPage = lazy(
+  () => import("../../features/pms/items/pages/ItemBarcodesPage"),
+);
 
 // 系统管理：admin/users
 export const UsersManagePage = lazy(

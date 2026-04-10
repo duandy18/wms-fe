@@ -446,6 +446,15 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
+            path="item-barcodes"
+            element={
+              <RequirePermission permission="page.pms.read">
+                <P.ItemBarcodesPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
             path="suppliers"
             element={
               <RequirePermission permission="page.pms.read">

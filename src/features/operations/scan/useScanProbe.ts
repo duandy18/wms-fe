@@ -21,7 +21,15 @@ export interface ScanStandardResult {
   barcode: string;
 
   item_id?: number | null;
+  item_uom_id?: number | null;
+  ratio_to_base?: number | null;
+
+  // qty：输入单位数量
   qty?: number | null;
+
+  // qty_base：执行基础单位数量
+  qty_base?: number | null;
+
   batch_code?: string | null;
   production_date?: string | null;
   expiry_date?: string | null;
@@ -109,10 +117,13 @@ export function useScanProbe(mode: ScanProbeMode) {
         status,
         barcode,
         item_id: res.item_id,
+        item_uom_id: res.item_uom_id ?? null,
+        ratio_to_base: res.ratio_to_base ?? null,
         qty: res.qty ?? null,
+        qty_base: res.qty_base ?? null,
         batch_code: res.batch_code ?? null,
-        production_date: null,
-        expiry_date: null,
+        production_date: res.production_date ?? null,
+        expiry_date: res.expiry_date ?? null,
         raw: res,
         message,
       };
@@ -128,7 +139,10 @@ export function useScanProbe(mode: ScanProbeMode) {
         status: "ERROR",
         barcode,
         item_id: undefined,
+        item_uom_id: null,
+        ratio_to_base: null,
         qty: null,
+        qty_base: null,
         batch_code: null,
         production_date: null,
         expiry_date: null,

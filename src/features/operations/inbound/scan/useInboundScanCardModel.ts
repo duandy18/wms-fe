@@ -56,8 +56,17 @@ export function useInboundScanCardModel(c: InboundCockpitController) {
       });
 
       if (std.status === "OK") {
+        const ratio = std.ratio_to_base ?? 1;
+        const qtyBasePreview = std.qty_base ?? std.qty ?? 1;
+
         setStatusLevel("ok");
-        setStatusMsg("条码已识别，正在累加实收数量…");
+        if (ratio > 1) {
+          setStatusMsg(
+            `条码已识别（包装倍率 ${ratio}），本次将按基础数量 ${qtyBasePreview} 累加实收数量…`,
+          );
+        } else {
+          setStatusMsg("条码已识别，正在累加实收数量…");
+        }
       } else if (std.status === "UNBOUND") {
         setStatusLevel("warn");
         setStatusMsg("条码未绑定商品：请先在【商品条码管理】完成绑定。");
@@ -66,11 +75,21 @@ export function useInboundScanCardModel(c: InboundCockpitController) {
         setStatusMsg(std.message ?? "条码解析失败");
       }
 
-      const itemId = (std.item_id as number | null | undefined) ?? parsedLocal.item_id ?? null;
+      const itemId =
+        (std.item_id as number | null | undefined) ?? parsedLocal.item_id ?? null;
 
-      const qtyFromParsed = (std.qty as number | null | undefined) ?? parsedLocal.qty ?? 1;
+      // receive 语义：
+      // - qty：输入单位数量
+      // - qty_base：执行基础单位数量
+      // 入库 cockpit 后续累加必须吃 qty_base，回退时才用 qty
+      const qtyFromProbe =
+        (std.qty_base as number | null | undefined) ??
+        (std.qty as number | null | undefined) ??
+        parsedLocal.qty ??
+        1;
 
-      const effectiveQty = Number.isFinite(scanQty) && scanQty > 0 ? scanQty : qtyFromParsed;
+      const effectiveQty =
+        Number.isFinite(scanQty) && scanQty > 0 ? scanQty : qtyFromProbe;
 
       const overridden: ParsedBarcode = {
         ...parsedLocal,
@@ -84,7 +103,11 @@ export function useInboundScanCardModel(c: InboundCockpitController) {
       // handleScanParsed 成功后，给用户一个“结果已落账”的反馈
       if (itemId) {
         setStatusLevel("ok");
-        setStatusMsg("已累加实收数量。");
+        if ((std.ratio_to_base ?? 1) > 1) {
+          setStatusMsg(`已按基础数量 ${effectiveQty} 累加实收数量。`);
+        } else {
+          setStatusMsg("已累加实收数量。");
+        }
       } else {
         setStatusLevel("warn");
         setStatusMsg("已解析条码，但未识别到对应商品。请检查条码绑定。");

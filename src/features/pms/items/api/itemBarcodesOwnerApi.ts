@@ -2,11 +2,12 @@
 // PMS Items owner 条码 API（仅 owner/internal consumer 使用）
 //
 // 对应后端 app/pms/items/routers/item_barcodes.py：
-//  - POST   /item-barcodes                   创建条码
-//  - GET    /item-barcodes/item/{id}         按商品读取条码列表
-//  - GET    /item-barcodes/by-items          按 item_ids 批量读取条码（避免 N+1）
-//  - POST   /item-barcodes/{id}/set-primary  设为主条码
-//  - DELETE /item-barcodes/{id}              删除条码
+//  - POST   /item-barcodes                    创建条码
+//  - GET    /item-barcodes/item/{id}          按商品读取条码列表（裸行）
+//  - GET    /item-barcodes/item/{id}/rows     按商品读取复合条码行（商品+单位+条码）
+//  - GET    /item-barcodes/by-items           按 item_ids 批量读取条码（避免 N+1）
+//  - POST   /item-barcodes/{id}/set-primary   设为主条码
+//  - DELETE /item-barcodes/{id}               删除条码
 
 import { apiDelete, apiGet, apiPost } from "../../../../lib/api";
 
@@ -22,10 +23,51 @@ export interface ItemBarcode {
   updated_at?: string;
 }
 
-/** 按 item_id 获取条码列表 */
+/**
+ * 商品条码页 owner 复合行：
+ * - 一行 = 一个商品 + 一个单位 + 一条码
+ * - 供“一个商品，一个单位，一行条码”的页面表格直接消费
+ */
+export interface ItemBarcodeCompositeRow {
+  barcode_id: number;
+  item_id: number;
+  item_uom_id: number;
+
+  sku: string;
+  item_name: string;
+
+  uom: string;
+  display_name: string | null;
+  ratio_to_base: number;
+  is_base: boolean;
+  is_purchase_default: boolean;
+
+  barcode: string;
+  symbology: string;
+  is_primary: boolean;
+  active: boolean;
+  updated_at: string;
+}
+
+/** 按 item_id 获取条码列表（裸行） */
 export async function fetchItemBarcodes(itemId: number): Promise<ItemBarcode[]> {
   if (!itemId || itemId <= 0) throw new Error("invalid item_id");
   return apiGet<ItemBarcode[]>(`/item-barcodes/item/${itemId}`);
+}
+
+/**
+ * 按 item_id 获取复合条码行：
+ * - 一行 = 商品 + 单位 + 条码
+ * - activeOnly 默认 false：与后端默认一致，页面治理默认看全量
+ */
+export async function fetchItemBarcodeRows(
+  itemId: number,
+  activeOnly: boolean = false,
+): Promise<ItemBarcodeCompositeRow[]> {
+  if (!itemId || itemId <= 0) throw new Error("invalid item_id");
+  return apiGet<ItemBarcodeCompositeRow[]>(`/item-barcodes/item/${itemId}/rows`, {
+    active_only: activeOnly,
+  });
 }
 
 /**

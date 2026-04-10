@@ -10,7 +10,6 @@ import { errMsg } from "../utils/itemsHelpers";
 import { type Flash, type FieldErrors, validateCreate, validateEdit } from "./schema";
 import { fetchItemUoms } from "../api/itemUomsOwnerApi";
 import { syncItemUomsForEdit } from "./syncItemUomsForEdit";
-import { syncItemBarcodesForEdit } from "./syncItemBarcodesForEdit";
 import { draftFromItemUom, pickBaseUom, pickPurchaseDefaultUom } from "./itemEditorUtils";
 import { buildEditForm } from "./buildEditForm";
 import type { ItemEditorVm, ItemEditorMode } from "./itemEditorTypes";
@@ -210,7 +209,6 @@ export default function useItemEditor(args: {
       await updateItem(selectedItem.id, r.body);
 
       await syncItemUomsForEdit({ itemId: selectedItem.id, form });
-      await syncItemBarcodesForEdit({ itemId: selectedItem.id, form });
 
       await onAfterSaved();
       setFlash({ kind: "success", text: "保存成功" });
