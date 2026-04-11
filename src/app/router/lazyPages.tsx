@@ -32,8 +32,8 @@ export const ShippingLabelPrintPage = lazy(
 );
 
 // 库存 & 报表
-export const SnapshotPage = lazy(
-  () => import("../../features/inventory/snapshot/SnapshotPage"),
+export const InventoryPage = lazy(
+  () => import("../../features/wms/inventory/inventory/pages/InventoryPage"),
 );
 export const OutboundDashboardPage = lazy(
   () =>
@@ -41,8 +41,8 @@ export const OutboundDashboardPage = lazy(
 );
 
 // 库存台账（业务页）
-export const StockLedgerPage = lazy(
-  () => import("../../features/inventory/ledger/StockLedgerPage"),
+export const InventoryLedgerPage = lazy(
+  () => import("../../features/wms/inventory/ledger/InventoryLedgerPage"),
 );
 
 // 物流：运价管理 / 运价模板 / 发货成本报表 / 发货账本详情

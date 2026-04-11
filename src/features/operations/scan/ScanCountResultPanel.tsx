@@ -37,7 +37,7 @@ export const ScanCountResultPanel: React.FC<Props> = ({ result }) => {
 
               {result.item_id && result.item_id > 0 && (
                 <a
-                  href={`/inventory/snapshot?item_id=${result.item_id}`}
+                  href={`/inventory?item_id=${result.item_id}`}
                   className="inline-flex items-center rounded-lg border px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-100"
                 >
                   查看库存（Snapshot）

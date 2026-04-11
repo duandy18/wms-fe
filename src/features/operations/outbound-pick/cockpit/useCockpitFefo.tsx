@@ -1,7 +1,8 @@
 // src/features/operations/outbound-pick/cockpit/useCockpitFefo.tsx
 
 import { useEffect, useState } from "react";
-import { fetchItemDetail, type ItemDetailResponse } from "../../../inventory/snapshot/api";
+import { fetchInventoryItemDetail } from "@/features/wms/inventory/api/inventory";
+import type { InventoryDetailResponse as ItemDetailResponse } from "@/features/wms/inventory/api/contracts";
 import type { PickTask } from "../pickTasksApi";
 import type { ApiErrorShape } from "../types_cockpit";
 
@@ -30,7 +31,7 @@ export function useCockpitFefo(args: {
     setFefoLoading(true);
     setFefoError(null);
 
-    fetchItemDetail(itemId)
+    fetchInventoryItemDetail(itemId)
       .then((detail) => setFefoDetail(detail))
       .catch((err: unknown) => {
         const e = err as ApiErrorShape;

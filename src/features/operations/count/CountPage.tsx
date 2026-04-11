@@ -2,7 +2,7 @@
 //
 // v2 盘点 Cockpit：
 // - 左侧：手工盘点表单 + 扫码台 (/scan, mode=count)
-// - 右侧：实时库存 / 批次（来自 snapshot）+ Trace 时间线（按 scan_ref）
+// - 右侧：实时库存 / 批次（来自 inventory）+ Trace 时间线（按 scan_ref）
 // -------------------------------------------------------------------
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -16,11 +16,11 @@ import { ScanConsole } from "../../../components/scan/ScanConsole";
 import type { ParsedBarcode } from "../scan/barcodeParser";
 
 import { apiGet } from "../../../lib/api";
-import {
-  fetchItemDetail,
-  type ItemDetailResponse,
-  type ItemSlice,
-} from "../../inventory/snapshot/api";
+import { fetchInventoryItemDetail } from "@/features/wms/inventory/api/inventory";
+import type {
+  InventoryDetailResponse as ItemDetailResponse,
+  InventoryDetailSlice as ItemSlice,
+} from "@/features/wms/inventory/api/contracts";
 
 import { TraceTimeline } from "../../diagnostics/trace/TraceTimeline";
 import type { TraceEvent } from "../../diagnostics/trace/types";
@@ -108,7 +108,7 @@ const CountPage: React.FC = () => {
     setSnapshotLoading(true);
     setSnapshotError(null);
     try {
-      const detail = await fetchItemDetail(form.item_id);
+      const detail = await fetchInventoryItemDetail(form.item_id);
       setItemDetail(detail);
     } catch (err: unknown) {
       const e = err as ApiErrorShape;
@@ -495,9 +495,9 @@ const CountPage: React.FC = () => {
           </section>
         </div>
 
-        {/* 右侧：库存 snapshot + TraceTimeline */}
+        {/* 右侧：库存 inventory + TraceTimeline */}
         <div className="space-y-6">
-          {/* 库存 snapshot */}
+          {/* 库存 inventory */}
           <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-800">
               库存与批次（FEFO）
@@ -526,13 +526,13 @@ const CountPage: React.FC = () => {
                         className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs"
                       >
                         <div className="flex justify-between">
-                          <span className="font-mono">{s.batch_code}</span>
+                          <span className="font-mono">{s.lot_code}</span>
                           <span className="font-semibold">
                             可用：{s.available_qty}
                           </span>
                         </div>
                         <div className="text-slate-600">
-                          expire: {s.expire_at ?? "-"}
+                          expire: {s.expiry_date ?? "-"}
                         </div>
                       </div>
                     ),

@@ -6,9 +6,9 @@
 
 import React, { useMemo } from "react";
 import type {
-  ItemDetailResponse,
-  ItemSlice,
-} from "../../inventory/snapshot/api";
+  InventoryDetailResponse as ItemDetailResponse,
+  InventoryDetailSlice as ItemSlice,
+} from "@/features/wms/inventory/api/contracts";
 import type { ItemBasic } from "../../../domains/pms/public/contracts/itemBasic";
 
 type Props = {
@@ -27,8 +27,8 @@ function sortFEFO(slices: ItemSlice[]) {
   return [...slices]
     .map((s) => s as SliceWithExpire)
     .sort((a, b) => {
-      const da = a.expire_at ? Date.parse(a.expire_at) : Infinity;
-      const db = b.expire_at ? Date.parse(b.expire_at) : Infinity;
+      const da = a.expiry_date ? Date.parse(a.expiry_date) : Infinity;
+      const db = b.expiry_date ? Date.parse(b.expiry_date) : Infinity;
       return da - db;
     });
 }
@@ -50,7 +50,7 @@ export const PickTaskFefoPanel: React.FC<Props> = ({
     const withStock =
       sortedSlices.find((s) => (s.available_qty ?? 0) > 0) ??
       sortedSlices[0];
-    return withStock.batch_code ?? null;
+    return withStock.lot_code ?? null;
   }, [sortedSlices]);
 
   return (
@@ -101,10 +101,10 @@ export const PickTaskFefoPanel: React.FC<Props> = ({
           <div className="max-h-32 space-y-2 overflow-auto">
             {sortedSlices.map((s, idx) => {
               const isRecommended =
-                recommended && s.batch_code === recommended;
+                recommended && s.lot_code === recommended;
               return (
                 <div
-                  key={`${s.batch_code}-${idx}`}
+                  key={`${s.lot_code}-${idx}`}
                   className={
                     "rounded-lg p-2 text-xs " +
                     (isRecommended
@@ -113,13 +113,13 @@ export const PickTaskFefoPanel: React.FC<Props> = ({
                   }
                 >
                   <div className="flex justify-between">
-                    <span className="font-mono">{s.batch_code}</span>
+                    <span className="font-mono">{s.lot_code}</span>
                     <span className="font-semibold">
                       可用：{s.available_qty}
                     </span>
                   </div>
                   <div className="text-slate-600">
-                    expire: {s.expire_at ?? "-"}
+                    expire: {s.expiry_date ?? "-"}
                   </div>
                   {isRecommended && (
                     <div className="mt-1 text-[11px] text-sky-700">

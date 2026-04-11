@@ -46,7 +46,7 @@ const AppRouter: React.FC = () => {
             index
             element={
               <RequirePermission permission="page.wms.read">
-                <P.SnapshotPage />
+                <P.InventoryPage />
               </RequirePermission>
             }
           />
@@ -114,10 +114,10 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="snapshot"
+            path="inventory"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.SnapshotPage />
+                <P.InventoryPage />
               </RequirePermission>
             }
           />
@@ -125,7 +125,7 @@ const AppRouter: React.FC = () => {
             path="inventory/ledger"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.StockLedgerPage />
+                <P.InventoryLedgerPage />
               </RequirePermission>
             }
           />
@@ -509,7 +509,7 @@ const AppRouter: React.FC = () => {
           />
         </Route>
 
-        <Route path="*" element={<Navigate to="/snapshot" replace />} />
+        <Route path="*" element={<Navigate to="/inventory" replace />} />
       </Routes>
     </Suspense>
   );

@@ -51,7 +51,7 @@ export const InboundCommitCard: React.FC<Props> = ({ c }) => {
   };
 
   const handleViewInventory = () => {
-    navigate("/inventory/snapshot");
+    navigate("/inventory");
   };
 
   return (

@@ -11,10 +11,8 @@ import { scanPickV2 } from "../scan/api";
 import type { ScanRequest, ScanResponse } from "../scan/api";
 
 import { apiGet } from "../../../lib/api";
-import {
-  fetchItemDetail,
-  type ItemDetailResponse,
-} from "../../inventory/snapshot/api";
+import { fetchInventoryItemDetail } from "@/features/wms/inventory/api/inventory";
+import type { InventoryDetailResponse as ItemDetailResponse } from "@/features/wms/inventory/api/contracts";
 
 import type { TraceEvent } from "../../diagnostics/trace/types";
 
@@ -62,25 +60,25 @@ const OutboundPickV2Page: React.FC = () => {
   const [lastResp, setLastResp] = useState<ScanResponse | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
-  // ---------------- snapshot 状态 ----------------
+  // ---------------- inventory 状态 ----------------
   const [itemDetail, setItemDetail] = useState<ItemDetailResponse | null>(
     null,
   );
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
-  const loadSnapshot = useCallback(async () => {
+  const loadInventoryDetail = useCallback(async () => {
     if (!form.itemId) return;
 
     setSnapshotLoading(true);
     setSnapshotError(null);
 
     try {
-      const detail = await fetchItemDetail(form.itemId);
+      const detail = await fetchInventoryItemDetail(form.itemId);
       setItemDetail(detail);
     } catch (err: unknown) {
       const e = err as ApiErrorShape;
-      console.error("loadSnapshot failed:", e);
+      console.error("loadInventoryDetail failed:", e);
       setSnapshotError(e?.message ?? "加载库存详情失败");
       setItemDetail(null);
     } finally {
@@ -89,8 +87,8 @@ const OutboundPickV2Page: React.FC = () => {
   }, [form.itemId]);
 
   useEffect(() => {
-    void loadSnapshot();
-  }, [loadSnapshot]);
+    void loadInventoryDetail();
+  }, [loadInventoryDetail]);
 
   // ---------------- trace 状态 ----------------
   const [traceEvents, setTraceEvents] = useState<TraceEvent[]>([]);
@@ -140,7 +138,7 @@ const OutboundPickV2Page: React.FC = () => {
         // 只有真正扣库（非 probe）时才自动加载 Trace / Snapshot
         setLastScanRef(scanRef);
         await loadTrace(scanRef);
-        await loadSnapshot();
+        await loadInventoryDetail();
       }
     } catch (err: unknown) {
       const e = err as ApiErrorShape;

@@ -7,7 +7,10 @@
 // - Snapshot 批次视图（当前任务第一个商品）
 
 import React from "react";
-import type { ItemDetailResponse, ItemSlice } from "../../inventory/snapshot/api";
+import type {
+  InventoryDetailResponse as ItemDetailResponse,
+  InventoryDetailSlice as ItemSlice,
+} from "@/features/wms/inventory/api/contracts";
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import type { LedgerRow } from "../../diagnostics/ledger-tool/types";
 
@@ -232,7 +235,7 @@ export const PickTaskPostCommitPanel: React.FC<Props> = ({
                             {s.warehouse_name ?? s.warehouse_id ?? "-"}
                           </td>
                           <td className="px-2 py-1 font-mono">
-                            {s.batch_code ?? "-"}
+                            {s.lot_code ?? "-"}
                           </td>
                           <td className="px-2 py-1">
                             {s.expiry_date ?? s.expire_at ?? "-"}
