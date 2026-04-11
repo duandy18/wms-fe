@@ -7,9 +7,10 @@ import type { Item } from "@/contracts/item/contract";
 import {
   DOC_TYPES,
   type InternalOutboundDoc,
-  type InventorySnapshotRow,
+  type InventoryRowLite,
   type StockHint,
 } from "./types";
+import type { InventoryResponse } from "@/features/wms/inventory/api/contracts";
 import { extractErrorMessage } from "./helpers";
 
 export function useInternalOutboundController() {
@@ -49,19 +50,19 @@ export function useInternalOutboundController() {
     setStockHint((prev) => ({ ...prev, loading: true }));
 
     try {
-      const rows = await apiGet<InventorySnapshotRow[]>("/inventory/snapshot", {
-        warehouse_id: warehouseIdValue,
-        item_id: itemIdValue,
-        limit: 50,
-      });
+      const res = await apiGet<InventoryResponse>(
+        `/stock/inventory?warehouse_id=${warehouseIdValue}&item_id=${itemIdValue}&limit=50&offset=0`,
+      );
+
+      const rows = Array.isArray(res?.rows) ? (res.rows as InventoryRowLite[]) : [];
 
       let qty: number | null = null;
       let batches: number | null = null;
 
-      if (Array.isArray(rows) && rows.length > 0) {
+      if (rows.length > 0) {
         batches = rows.length;
         const first = rows[0];
-        qty = first.available_qty ?? first.qty ?? first.onhand_qty ?? null;
+        qty = first.qty ?? null;
       }
 
       setStockHint({ loading: false, qty, batches });

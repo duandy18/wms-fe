@@ -41,7 +41,7 @@ export type StockHint = {
   batches: number | null;
 };
 
-export type InventorySnapshotRow = {
+export type InventoryRowLite = {
   available_qty?: number | null;
   qty?: number | null;
   onhand_qty?: number | null;

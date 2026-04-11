@@ -2,7 +2,7 @@
 
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import type { LedgerRow } from "../../diagnostics/ledger-tool/types";
-import type { ItemDetailResponse } from "../../inventory/snapshot/api";
+import type { InventoryDetailResponse as ItemDetailResponse } from "@/features/wms/inventory/api/contracts";
 
 export type StatusFilter = "ALL" | "READY" | "PICKING" | "DONE";
 

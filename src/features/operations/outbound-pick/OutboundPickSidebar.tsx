@@ -4,9 +4,9 @@
 
 import React from "react";
 import type {
-  ItemDetailResponse,
-  ItemSlice,
-} from "../../inventory/snapshot/api";
+  InventoryDetailResponse as ItemDetailResponse,
+  InventoryDetailSlice as ItemSlice,
+} from "@/features/wms/inventory/api/contracts";
 import type { TraceEvent } from "../../diagnostics/trace/types";
 import { TraceTimeline } from "../../diagnostics/trace/TraceTimeline";
 
@@ -46,7 +46,7 @@ export const OutboundPickSidebar: React.FC<Props> = ({
 }) => {
   return (
     <div className="space-y-6">
-      {/* 库存 snapshot */}
+      {/* 库存 inventory */}
       <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">
           库存与批次（FEFO）
@@ -73,13 +73,13 @@ export const OutboundPickSidebar: React.FC<Props> = ({
                     className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs"
                   >
                     <div className="flex justify-between">
-                      <span className="font-mono">{slice.batch_code}</span>
+                      <span className="font-mono">{slice.lot_code}</span>
                       <span className="font-semibold">
                         可用：{slice.available_qty}
                       </span>
                     </div>
                     <div className="text-slate-600">
-                      expire: {slice.expire_at ?? "-"}
+                      expire: {slice.expiry_date ?? "-"}
                     </div>
                   </div>
                 ),

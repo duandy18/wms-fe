@@ -11,7 +11,8 @@ import type { TraceEvent } from "../../../diagnostics/trace/types";
 import { fetchLedgerList } from "../../../diagnostics/ledger-tool/api";
 import type { LedgerList, LedgerRow } from "../../../diagnostics/ledger-tool/types";
 
-import { fetchItemDetail, type ItemDetailResponse } from "../../../inventory/snapshot/api";
+import { fetchInventoryItemDetail } from "@/features/wms/inventory/api/inventory";
+import type { InventoryDetailResponse as ItemDetailResponse } from "@/features/wms/inventory/api/contracts";
 
 export function useCockpitCommit(args: {
   selectedTask: PickTask | null;
@@ -60,10 +61,10 @@ export function useCockpitCommit(args: {
       try {
         const firstLine = task.lines && task.lines[0];
         if (firstLine) {
-          snapshot = await fetchItemDetail(firstLine.item_id);
+          snapshot = await fetchInventoryItemDetail(firstLine.item_id);
         }
       } catch (e) {
-        console.error("loadPostCommit: fetchItemDetail failed", e);
+        console.error("loadPostCommit: fetchInventoryItemDetail failed", e);
       }
 
       setPostCommitInfo({

@@ -76,7 +76,7 @@ export function buildDiagnosticUrl(link: DiagnosticLink): string {
     }
     default: {
       // 不认识就返回首页，理论上不会走到这里
-      return "/snapshot";
+      return "/inventory";
     }
   }
 }

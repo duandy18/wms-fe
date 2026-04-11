@@ -5,7 +5,7 @@
 // - 也支持从 snapshot 的批次列表中下拉选择（FEFO 排序）
 
 import React from "react";
-import type { ItemSlice } from "../../inventory/snapshot/api";
+import type { InventoryDetailSlice as ItemSlice } from "@/features/wms/inventory/api/contracts";
 
 export type FormState = {
   warehouseId: number;
@@ -37,7 +37,7 @@ export const OutboundPickFormPanel: React.FC<Props> = ({
 }) => {
   // FEFO 排序（按 expire_at）
   const sortedBatches: SliceWithExpire[] = [...batchSlices]
-    .filter((s) => s.batch_code)
+    .filter((s) => s.lot_code)
     .map((s) => s as SliceWithExpire)
     .sort((a, b) => {
       const da = a.expire_at ? Date.parse(a.expire_at) : Infinity;
@@ -125,11 +125,11 @@ export const OutboundPickFormPanel: React.FC<Props> = ({
                 <option value="">- 选择一个批次（可选） -</option>
                 {sortedBatches.map((s, idx) => (
                   <option
-                    key={`${s.batch_code}-${idx}`}
-                    value={s.batch_code!}
+                    key={`${s.lot_code}-${idx}`}
+                    value={s.lot_code!}
                   >
-                    {s.batch_code} · 可用 {s.available_qty}
-                    {s.expire_at ? ` · 过期 ${s.expire_at}` : ""}
+                    {s.lot_code} · 可用 {s.available_qty}
+                    {s.expiry_date ? ` · 过期 ${s.expiry_date}` : ""}
                   </option>
                 ))}
               </select>
