@@ -1,20 +1,23 @@
 // src/features/purchase-orders/PurchaseOrderCreateLinesEditor.tsx
-// 多行采购明细编辑（大字号 Cockpit 版）
+// 多行采购明细编辑
 //
-// 终态：行输入使用 uom_id + qty_input；qty_base 由后端通过 item_uoms.ratio_to_base 推导。
-// 前端仅做“预计 base”提示，不作为事实口径。
+// 当前 create 合同：
+// - 必填：item_id + uom_id + qty_input
+// - 可选商业字段：supply_price / discount_amount / discount_note / remark
+// - qty_base 由后端通过 item_uoms.ratio_to_base 推导
+// - 前端仅展示“预计 base”，不作为事实字段
 
 import React, { useEffect, useMemo, useState } from "react";
-import type { LineDraft } from "./usePurchaseOrderCreatePresenter";
+import type { LineDraft } from "./create/presenter/lineDraft";
 import type { ItemBasic } from "../../domains/pms/public/contracts/itemBasic";
 import type {
   PublicItemAggregate,
   PublicAggregateUom,
 } from "../../domains/pms/public/contracts/itemAggregate";
 import { fetchItemAggregate } from "../../domains/pms/public/itemAggregateClient";
-import { PurchaseOrderCreateLineRow } from "./createV2/linesEditor/LineRow";
-import { PurchaseOrderCreateLinesTableHead } from "./createV2/linesEditor/Columns";
-import { PO_CREATE_LINE_COLSPAN } from "./createV2/linesEditor/columns.def";
+import { PurchaseOrderCreateLineRow } from "./create/linesEditor/LineRow";
+import { PurchaseOrderCreateLinesTableHead } from "./create/linesEditor/columns/TableHead";
+import { PO_CREATE_LINE_COLSPAN } from "./create/linesEditor/columns/defs";
 
 interface PurchaseOrderCreateLinesEditorProps {
   lines: LineDraft[];
@@ -37,7 +40,10 @@ function sortUoms(uoms: PublicAggregateUom[]): PublicAggregateUom[] {
   return [...uoms].sort((a, b) => score(a) - score(b) || a.id - b.id);
 }
 
-function pickPrimaryBarcodeText(aggregate: PublicItemAggregate | undefined, loading: boolean): string {
+function pickPrimaryBarcodeText(
+  aggregate: PublicItemAggregate | undefined,
+  loading: boolean,
+): string {
   if (!aggregate) return loading ? "加载中…" : "—";
   const primary =
     aggregate.barcodes.find((x) => x.is_primary && x.active) ??
@@ -46,7 +52,9 @@ function pickPrimaryBarcodeText(aggregate: PublicItemAggregate | undefined, load
   return primary?.barcode?.trim() ? primary.barcode : "—";
 }
 
-export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEditorProps> = ({
+export const PurchaseOrderCreateLinesEditor: React.FC<
+  PurchaseOrderCreateLinesEditorProps
+> = ({
   lines,
   items,
   itemsLoading,
@@ -124,7 +132,13 @@ export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEd
   return (
     <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-900">行明细（多行编辑）</h2>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">行明细（多行编辑）</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            行输入负责计划数量与商业字段，不负责执行态收货信息。
+          </p>
+        </div>
+
         <button
           type="button"
           onClick={onAddLine}
@@ -135,7 +149,7 @@ export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEd
       </div>
 
       <p className="text-base text-slate-600">
-        每一行代表一个 SKU 的采购计划：选择系统商品 → 选择输入单位（public aggregate.uoms）→ 输入数量（qty_input）。
+        每一行代表一个 SKU 的采购计划：选择系统商品 → 选择输入单位 → 输入数量与商业字段。
         系统会展示预计的 base 数量（仅提示），实际 base 由后端按单位倍率推导。
       </p>
 
@@ -152,22 +166,30 @@ export const PurchaseOrderCreateLinesEditor: React.FC<PurchaseOrderCreateLinesEd
           <tbody>
             {lines.length === 0 ? (
               <tr>
-                <td colSpan={PO_CREATE_LINE_COLSPAN} className="px-3 py-6 text-center text-base text-slate-400">
+                <td
+                  colSpan={PO_CREATE_LINE_COLSPAN}
+                  className="px-3 py-6 text-center text-base text-slate-400"
+                >
                   暂无行，请点击右上角“添加一行”
                 </td>
               </tr>
             ) : (
               lines.map((line, idx) => {
                 const selectedItemId = line.item_id ? Number(line.item_id) : null;
-                const selectedItem = selectedItemId != null ? itemMap.get(selectedItemId) : undefined;
+                const selectedItem =
+                  selectedItemId != null ? itemMap.get(selectedItemId) : undefined;
                 const aggregate =
-                  selectedItemId != null && Number.isFinite(selectedItemId) && selectedItemId > 0
+                  selectedItemId != null &&
+                  Number.isFinite(selectedItemId) &&
+                  selectedItemId > 0
                     ? aggregatesByItemId[selectedItemId]
                     : undefined;
 
                 const uomsForSelectedItem = aggregate?.uoms ?? [];
                 const primaryBarcodeText =
-                  selectedItemId != null && Number.isFinite(selectedItemId) && selectedItemId > 0
+                  selectedItemId != null &&
+                  Number.isFinite(selectedItemId) &&
+                  selectedItemId > 0
                     ? pickPrimaryBarcodeText(aggregate, aggregatesLoading)
                     : "—";
 

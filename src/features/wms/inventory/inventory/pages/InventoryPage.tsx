@@ -15,7 +15,7 @@ const InventoryPage: React.FC = () => {
     <div className="space-y-4">
       <PageTitle
         title="即时库存 / FEFO 风险"
-        description="基于实时 stocks_lot + lots + ledger(receipt dates) 的库存视图，仅展示当前有库存的切片（仓库+lot）。"
+        description="基于实时 stocks_lot + lots 的库存视图；生产日/到期日展示以 lot canonical snapshot 为准；仅展示当前有库存的切片（仓库+lot）。"
       />
 
       <InventoryFilters

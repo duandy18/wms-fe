@@ -1,4 +1,4 @@
-// src/features/purchase-orders/createV2/linesEditor/calc.ts
+// src/features/purchase-orders/create/linesEditor/calc.ts
 
 /**
  * Phase2 数量口径（写模型 UI）：

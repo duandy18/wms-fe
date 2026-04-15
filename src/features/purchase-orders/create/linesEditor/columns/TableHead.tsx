@@ -1,6 +1,6 @@
-// src/features/purchase-orders/createV2/linesEditor/Columns.tsx
+// src/features/purchase-orders/create/linesEditor/columns/TableHead.tsx
 import React from "react";
-import { PO_CREATE_LINE_COLUMNS } from "./columns.def";
+import { PO_CREATE_LINE_COLUMNS } from "./defs";
 
 export const PurchaseOrderCreateLinesTableHead: React.FC = () => {
   return (

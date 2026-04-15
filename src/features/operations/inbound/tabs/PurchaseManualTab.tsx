@@ -10,7 +10,6 @@ import { PurchaseOrderList } from "../purchase-context";
 import { PurchaseOrderDetailReadonly } from "../purchase-context";
 
 import { InboundUI } from "../ui";
-import { ReceiptWorkbench } from "../receipts/ReceiptWorkbench";
 
 export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({ c }) => {
   const m = useInboundTaskContextModel(c);
@@ -85,7 +84,9 @@ export const PurchaseManualTab: React.FC<{ c: InboundCockpitController }> = ({ c
       </section>
 
       {/* ② Receipt 工作台（唯一主对象） */}
-      <ReceiptWorkbench po={po} />
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        采购收货工作台已退役：采购模块只保留计划与完成情况，收货作业迁移到统一收货页。
+      </div>
     </div>
   );
 

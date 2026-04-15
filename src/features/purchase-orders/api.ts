@@ -1,50 +1,48 @@
-// src/features/purchase-orders/api.ts
 import { apiGet, apiPost } from "../../lib/api";
 
 export type PurchaseOrderStatus = "CREATED" | "CLOSED" | "CANCELED" | string;
 
 // ----------------------
-// ✅ 列表态：轻量类型（/purchase-orders/）
+// 计划合同（/purchase-orders/ 与 /purchase-orders/{id}）
 // ----------------------
 
-export interface PurchaseOrderListLine {
+export interface PurchaseOrderPlanLine {
   id: number;
   po_id: number;
   line_no: number;
   item_id: number;
 
-  // ✅ Phase2：快照解释器（历史/展示）
-  uom_snapshot?: string | null;
-  case_ratio_snapshot?: number | null;
-  case_uom_snapshot?: string | null;
-  qty_ordered_case_input?: number | null;
+  item_name: string | null;
+  item_sku: string | null;
+  spec_text: string | null;
 
-  // ✅ 事实口径（后端输出）
-  qty_ordered_base?: number | null;
-  qty_received_base?: number | null;
-  qty_remaining_base?: number | null;
+  qty_ordered_input: number;
+  purchase_ratio_to_base_snapshot: number;
+  qty_ordered_base: number;
 
-  /**
-   * 终态说明：
-   * - 禁止依赖 base_uom 等文本单位残影
-   * - 单位展示应来自快照解释器（uom_snapshot / case_*_snapshot）或 item_uoms 映射
-   */
+  supply_price: string | null;
+  discount_amount: string;
+  discount_note: string | null;
 
-  status?: PurchaseOrderStatus;
+  remark: string | null;
 
   created_at: string;
   updated_at: string;
 }
 
+// 旧组件内部仍在使用这些类型名；这里只做前端内部同义收敛，不代表后端合同回退
+export type PurchaseOrderListLine = PurchaseOrderPlanLine;
+export type PurchaseOrderDetailLine = PurchaseOrderPlanLine;
+
 export interface PurchaseOrderListItem {
   id: number;
-  supplier: string;
-  warehouse_id: number;
+  po_no: string;
 
+  warehouse_id: number;
   warehouse_name?: string | null;
 
-  supplier_id: number | null;
-  supplier_name: string | null;
+  supplier_id: number;
+  supplier_name: string;
   total_amount: string | null;
 
   purchaser: string;
@@ -66,7 +64,7 @@ export interface PurchaseOrderListItem {
   canceled_reason?: string | null;
   canceled_by?: number | null;
 
-  lines: PurchaseOrderListLine[];
+  lines: PurchaseOrderPlanLine[];
 }
 
 export interface PurchaseOrderListParams {
@@ -90,74 +88,15 @@ export async function fetchPurchaseOrders(
   return apiGet<PurchaseOrderListItem[]>(path);
 }
 
-// ----------------------
-// ✅ 详情态：强合同类型（/purchase-orders/{id}）
-// ----------------------
-
-export interface PurchaseOrderDetailLine {
-  id: number;
-  po_id: number;
-  line_no: number;
-
-  item_id: number;
-
-  item_name: string | null;
-  item_sku: string | null;
-
-  biz_category: string | null;
-
-  spec_text: string | null;
-
-  // enrich
-  sku: string | null;
-  primary_barcode: string | null;
-
-  brand: string | null;
-  category: string | null;
-
-  supplier_id: number | null;
-  supplier_name: string | null;
-
-  weight_kg: string | null;
-  uom: string | null;
-
-  has_shelf_life: boolean | null;
-  shelf_life_value: number | null;
-  shelf_life_unit: string | null;
-  enabled: boolean | null;
-
-  // 合同字段
-  supply_price: string | null;
-  retail_price: string | null;
-  promo_price: string | null;
-  min_price: string | null;
-
-  // ✅ Phase2：快照解释器（第一公民）
-  uom_snapshot?: string | null;
-  case_ratio_snapshot?: number | null;
-  case_uom_snapshot?: string | null;
-  qty_ordered_case_input?: number | null;
-
-  // ✅ 事实口径（唯一真相）
-  qty_ordered_base: number;
-  qty_received_base: number;
-  qty_remaining_base: number;
-
-  line_amount: string | null;
-  status: PurchaseOrderStatus;
-  remark: string | null;
-
-  created_at: string;
-  updated_at: string;
-}
-
 export interface PurchaseOrderDetail {
   id: number;
-  supplier: string;
-  warehouse_id: number;
+  po_no: string;
 
-  supplier_id: number | null;
-  supplier_name: string | null;
+  warehouse_id: number;
+  warehouse_name?: string | null;
+
+  supplier_id: number;
+  supplier_name: string;
   total_amount: string | null;
 
   purchaser: string;
@@ -179,7 +118,7 @@ export interface PurchaseOrderDetail {
   canceled_reason?: string | null;
   canceled_by?: number | null;
 
-  lines: PurchaseOrderDetailLine[];
+  lines: PurchaseOrderPlanLine[];
 }
 
 export async function fetchPurchaseOrderV2(id: number): Promise<PurchaseOrderDetail> {
@@ -187,23 +126,22 @@ export async function fetchPurchaseOrderV2(id: number): Promise<PurchaseOrderDet
 }
 
 // ----------------------
-// Create / receive（后端终态合同：uom_id + qty_input）
+// Create（终态合同：头表 + 行商业字段）
 // ----------------------
 
 export interface PurchaseOrderLineCreatePayload {
   line_no: number;
   item_id: number;
-
-  // ✅ 终态：输入单位 + 输入数量（由服务层推导 qty_base）
   uom_id: number;
   qty_input: number;
 
-  // 可选：业务分类/备注
-  category?: string | null;
+  supply_price?: string | null;
+  discount_amount?: string | null;
+  discount_note?: string | null;
   remark?: string | null;
 }
 
-export interface PurchaseOrderCreateV2Payload {
+export interface PurchaseOrderCreatePayload {
   supplier_id: number;
   warehouse_id: number;
 
@@ -215,52 +153,142 @@ export interface PurchaseOrderCreateV2Payload {
   lines: PurchaseOrderLineCreatePayload[];
 }
 
-export interface PurchaseOrderReceiveLinePayload {
-  line_id?: number;
-  line_no?: number;
-  qty: number;
-
-  production_date?: string | null;
-  expiry_date?: string | null;
-}
-
-export async function createPurchaseOrderV2(
-  payload: PurchaseOrderCreateV2Payload,
+export async function createPurchaseOrder(
+  payload: PurchaseOrderCreatePayload,
 ): Promise<PurchaseOrderDetail> {
   return apiPost<PurchaseOrderDetail>("/purchase-orders/", payload);
 }
 
-export async function receivePurchaseOrderLine(
-  poId: number,
-  payload: PurchaseOrderReceiveLinePayload,
-): Promise<PurchaseOrderDetail> {
-  return apiPost<PurchaseOrderDetail>(`/purchase-orders/${poId}/receive-line`, payload);
+// ----------------------
+// Completion（/purchase-orders/completion*）
+// ----------------------
+
+export type PurchaseOrderCompletionStatus =
+  | "NOT_RECEIVED"
+  | "PARTIAL"
+  | "RECEIVED"
+  | string;
+
+export interface PurchaseOrderCompletionLine {
+  po_line_id: number;
+  line_no: number;
+
+  item_id: number;
+  item_name: string | null;
+  item_sku: string | null;
+  spec_text: string | null;
+
+  purchase_uom_id_snapshot: number;
+  purchase_uom_name_snapshot: string;
+  purchase_ratio_to_base_snapshot: number;
+  qty_ordered_input: number;
+  qty_ordered_base: number;
+
+  qty_received_base: number;
+  qty_remaining_base: number;
+  line_completion_status: PurchaseOrderCompletionStatus;
+  last_received_at: string | null;
 }
 
-
-// ----------------------
-// Receipts（事实历史）
-// ----------------------
-
-export interface PurchaseOrderReceiptEvent {
-  ref: string;
-  ref_line: number;
+export interface PurchaseOrderCompletionListItem {
+  po_id: number;
+  po_no: string;
+  po_status: string;
 
   warehouse_id: number;
+  supplier_id: number;
+  supplier_name: string;
+  purchaser: string;
+  purchase_time: string;
+  total_amount: string | null;
+
+  po_line_id: number;
+  line_no: number;
+
   item_id: number;
-  line_no: number | null;
+  item_name: string | null;
+  item_sku: string | null;
+  spec_text: string | null;
 
-  batch_code: string;
-  qty: number;
-  after_qty: number;
+  purchase_uom_id_snapshot: number;
+  purchase_uom_name_snapshot: string;
+  purchase_ratio_to_base_snapshot: number;
+  qty_ordered_input: number;
+  qty_ordered_base: number;
 
+  qty_received_base: number;
+  qty_remaining_base: number;
+  line_completion_status: PurchaseOrderCompletionStatus;
+  last_received_at: string | null;
+}
+
+export interface PurchaseOrderCompletionSummary {
+  po_id: number;
+  po_no: string;
+  po_status: string;
+
+  warehouse_id: number;
+  supplier_id: number;
+  supplier_name: string;
+  purchaser: string;
+  purchase_time: string;
+  total_amount: string | null;
+
+  total_ordered_base: number;
+  total_received_base: number;
+  total_remaining_base: number;
+  completion_status: PurchaseOrderCompletionStatus;
+  last_received_at: string | null;
+}
+
+export interface PurchaseOrderCompletionEvent {
+  event_id: number;
+  event_no: string;
+  trace_id: string;
+  source_ref: string | null;
   occurred_at: string;
+
+  po_line_id: number;
+  line_no: number;
+  item_id: number;
+
+  qty_base: number;
+  lot_code: string | null;
   production_date: string | null;
   expiry_date: string | null;
 }
 
-export async function fetchPurchaseOrderReceipts(
+export interface PurchaseOrderCompletionDetail {
+  summary: PurchaseOrderCompletionSummary;
+  lines: PurchaseOrderCompletionLine[];
+  receipt_events: PurchaseOrderCompletionEvent[];
+}
+
+export interface PurchaseOrderCompletionListParams {
+  skip?: number;
+  limit?: number;
+  supplier_id?: number;
+  po_status?: string;
+  q?: string;
+}
+
+export async function fetchPurchaseOrdersCompletion(
+  params: PurchaseOrderCompletionListParams = {},
+): Promise<PurchaseOrderCompletionListItem[]> {
+  const qs = new URLSearchParams();
+  if (params.skip != null) qs.set("skip", String(params.skip));
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  if (params.supplier_id != null) qs.set("supplier_id", String(params.supplier_id));
+  if (params.po_status) qs.set("po_status", params.po_status);
+  if (params.q) qs.set("q", params.q);
+
+  const query = qs.toString();
+  const path = query ? `/purchase-orders/completion?${query}` : "/purchase-orders/completion";
+  return apiGet<PurchaseOrderCompletionListItem[]>(path);
+}
+
+export async function fetchPurchaseOrderCompletionDetail(
   poId: number,
-): Promise<PurchaseOrderReceiptEvent[]> {
-  return apiGet<PurchaseOrderReceiptEvent[]>(`/purchase-orders/${poId}/receipts`);
+): Promise<PurchaseOrderCompletionDetail> {
+  return apiGet<PurchaseOrderCompletionDetail>(`/purchase-orders/${poId}/completion`);
 }

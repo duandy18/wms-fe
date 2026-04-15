@@ -3,8 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { PurchaseReportFilters } from "./reportsApi";
 import { apiGet } from "../../lib/api";
-import { useSuppliersLoader } from "./createV2/presenter/useSuppliersLoader";
-import { useItemsLoader } from "./createV2/presenter/useItemsLoader";
+import { useSuppliersLoader } from "./create/presenter/useSuppliersLoader";
+import { useItemsLoader } from "./create/presenter/useItemsLoader";
 import type { TabKey } from "./usePurchaseReportsPresenter";
 
 interface PurchaseReportsFiltersProps {

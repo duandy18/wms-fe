@@ -27,7 +27,6 @@ export const PurchaseOrderHeaderCard: React.FC<PurchaseOrderHeaderCardProps> = (
   totalQtyReceived,
   mode = "default",
 }) => {
-  // ✅ 入库页：基本信息全部删除（锚点在列表）
   if (mode === "inbound") return null;
 
   const remainingHead = totalQtyOrdered - totalQtyReceived;
@@ -51,15 +50,15 @@ export const PurchaseOrderHeaderCard: React.FC<PurchaseOrderHeaderCardProps> = (
 
       <div className={gridCls}>
         <div>
-          <span className={labelCls}>采购单 ID</span>
+          <span className={labelCls}>采购单</span>
           <div className={idCls}>
-            {po.id} ({poRef})
+            {po.po_no || poRef || `PO-${po.id}`}
           </div>
         </div>
 
         <div>
           <span className={labelCls}>供应商</span>
-          <div>{po.supplier_name ?? po.supplier}</div>
+          <div>{po.supplier_name}</div>
         </div>
 
         <div>

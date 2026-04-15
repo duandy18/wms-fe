@@ -127,7 +127,7 @@ export default function InventoryDrawer({
               <section className="border border-slate-200 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div className="text-lg font-semibold text-slate-800">
-                    最近变动（台账事实）
+                    最近变动（台账事件事实）
                   </div>
                   <div className="text-xs text-slate-500">
                     过滤口径：
@@ -183,7 +183,7 @@ export default function InventoryDrawer({
                 )}
 
                 <div className="mt-3 text-xs text-slate-500">
-                  解释只来自台账事实（/stock/ledger/query），前端不推导。
+                  本卡仅展示最近台账事件事实（/stock/ledger/query）；不承担 lot 当前属性解释。
                 </div>
               </section>
 
@@ -206,8 +206,11 @@ export default function InventoryDrawer({
               </section>
 
               <section className="border border-slate-200 rounded-lg">
-                <div className="px-4 py-3 border-b border-slate-200 text-lg font-semibold text-slate-800">
-                  仓 + 批次切片
+                <div className="px-4 py-3 border-b border-slate-200">
+                  <div className="text-lg font-semibold text-slate-800">仓 + 批次切片</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    下表中的生产日 / 到期日来自对应 lot 的 canonical snapshot，不由前端推导。
+                  </div>
                 </div>
                 <div className="max-h-[440px] overflow-auto">
                   <table className="min-w-full text-base">

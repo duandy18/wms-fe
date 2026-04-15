@@ -361,35 +361,18 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="purchase-orders/overview"
-            element={
-              <RequirePermission permission="page.wms.read">
-                <P.PurchaseOverviewPage />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="purchase-orders"
-            element={<Navigate to="/purchase-orders/overview" replace />}
-          />
-          <Route
-            path="purchase-orders/reports"
-            element={<Navigate to="/purchase-orders/overview" replace />}
-          />
-
-          <Route
-            path="purchase-orders/new-v2"
             element={
-              <RequirePermission permission="page.wms.read">
-                <P.PurchaseOrderCreateV2Page />
+              <RequirePermission permission="page.procurement.read">
+                <P.PurchaseOrdersPage />
               </RequirePermission>
             }
           />
           <Route
-            path="purchase-orders/:poId"
+            path="purchase-orders/new"
             element={
-              <RequirePermission permission="page.wms.read">
-                <P.PurchaseOrderDetailPage />
+              <RequirePermission permission="page.procurement.read">
+                <P.PurchaseOrderCreatePage />
               </RequirePermission>
             }
           />

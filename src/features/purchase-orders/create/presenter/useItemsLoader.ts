@@ -1,4 +1,4 @@
-// src/features/purchase-orders/createV2/presenter/useItemsLoader.ts
+// src/features/purchase-orders/create/presenter/useItemsLoader.ts
 
 import { useEffect, useState } from "react";
 import { fetchItemsBasic } from "../../../../domains/pms/public/itemsClient";

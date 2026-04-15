@@ -1,14 +1,15 @@
-// src/features/purchase-orders/createV2/linesEditor/LineRow.tsx
+// src/features/purchase-orders/create/linesEditor/LineRow.tsx
 //
-// 终态 PO Create 行编辑：
+// 当前 PO Create 行编辑：
 // - 输入单位：uom_id（来自 public aggregate.uoms）
 // - 输入数量：qty_input
+// - 商业字段：supply_price / discount_amount / discount_note / remark
 // - qty_base 由后端推导
 
 import React, { useEffect, useMemo } from "react";
 import type { ItemBasic } from "../../../../domains/pms/public/contracts/itemBasic";
 import type { PublicAggregateUom } from "../../../../domains/pms/public/contracts/itemAggregate";
-import type { LineDraft } from "../../usePurchaseOrderCreatePresenter";
+import type { LineDraft } from "../presenter/lineDraft";
 import { calcEstAmount } from "./calc";
 
 export type PurchaseOrderLineRowProps = {
@@ -31,6 +32,13 @@ export type PurchaseOrderLineRowProps = {
   canRemove: boolean;
 };
 
+function safeNonNegativeNumber(raw: string): number {
+  const t = raw.trim();
+  if (!t) return 0;
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
 export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = ({
   line,
   idx,
@@ -47,15 +55,12 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
 }) => {
   const selectedItemId = line.item_id ? Number(line.item_id) : null;
 
-  const brandText = selectedItem?.brand?.trim() ? selectedItem.brand : "—";
-  const categoryText = selectedItem?.category?.trim() ? selectedItem.category : "—";
   const barcodeText = primaryBarcodeText?.trim() ? primaryBarcodeText : "—";
-
-  const uomIdValue = (line.uom_id ?? "").trim();
+  const uomIdValue = line.uom_id.trim();
 
   useEffect(() => {
     if (!selectedItemId || uomIdValue) return;
-    if (!uomsForSelectedItem || uomsForSelectedItem.length === 0) return;
+    if (!uomsForSelectedItem.length) return;
 
     const preferred =
       uomsForSelectedItem.find((x) => x.is_purchase_default) ??
@@ -74,7 +79,7 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
 
   const ratioToBaseHint = selectedUom?.ratio_to_base ?? 1;
 
-  const qtyInputRaw = (line.qty_input ?? "").trim();
+  const qtyInputRaw = line.qty_input.trim();
   const qtyInputNum = qtyInputRaw ? Number(qtyInputRaw) : NaN;
 
   const qtyBaseHint =
@@ -82,12 +87,26 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
       ? Math.trunc(qtyInputNum) * Math.trunc(ratioToBaseHint)
       : null;
 
-  const estAmount = calcEstAmount({ qtyBase: qtyBaseHint, supplyPrice: line.supply_price });
+  const grossAmount = calcEstAmount({
+    qtyBase: qtyBaseHint,
+    supplyPrice: line.supply_price,
+  });
+  const discountAmountNum = safeNonNegativeNumber(line.discount_amount);
+  const netAmount =
+    qtyBaseHint !== null && grossAmount > 0
+      ? Math.max(grossAmount - discountAmountNum, 0)
+      : 0;
 
   const uomSelectDisabled = itemsLoading || !selectedItemId || Boolean(uomsLoading);
 
+  const itemNameText = line.item_name || selectedItem?.name || "—";
+  const specText = line.spec_text || selectedItem?.spec || "—";
+  const skuText = selectedItem?.sku?.trim() ? selectedItem.sku : "—";
+  const brandText = selectedItem?.brand?.trim() ? selectedItem.brand : "—";
+  const categoryText = selectedItem?.category?.trim() ? selectedItem.category : "—";
+
   return (
-    <tr className="border-b border-slate-100">
+    <tr className="border-b border-slate-100 align-top">
       <td className="px-3 py-3 text-left font-mono text-base">{idx + 1}</td>
 
       <td className="px-3 py-3">
@@ -113,32 +132,16 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
       </td>
 
       <td className="px-3 py-3">
-        <input
-          className="w-56 rounded-xl border border-slate-300 px-3 py-2 text-base"
-          value={line.item_name}
-          onChange={(e) => onChangeLineField(line.id, "item_name", e.target.value)}
-          placeholder="商品名称（供货商单据）"
-        />
-      </td>
-
-      <td className="px-3 py-3 text-slate-700">{brandText}</td>
-      <td className="px-3 py-3 text-slate-700">{categoryText}</td>
-
-      <td className="px-3 py-3">
-        <input
-          className="w-44 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-mono text-slate-700"
-          value={barcodeText}
-          readOnly
-        />
-      </td>
-
-      <td className="px-3 py-3">
-        <input
-          className="w-48 rounded-xl border border-slate-300 px-3 py-2 text-base"
-          value={line.spec_text}
-          onChange={(e) => onChangeLineField(line.id, "spec_text", e.target.value)}
-          placeholder="如 1.5kg*8入"
-        />
+        <div className="min-w-[300px] space-y-1">
+          <div className="font-medium text-slate-900">{itemNameText}</div>
+          <div className="text-xs text-slate-600">
+            SKU：{skuText} · 规格：{specText}
+          </div>
+          <div className="text-xs text-slate-600">
+            品牌：{brandText} · 分类：{categoryText}
+          </div>
+          <div className="text-xs font-mono text-slate-500">条码：{barcodeText}</div>
+        </div>
       </td>
 
       <td className="px-3 py-3">
@@ -176,23 +179,52 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
       </td>
 
       <td className="px-3 py-3 text-right">
-        <div className="text-slate-900 font-mono">{qtyBaseHint ?? "-"}</div>
+        <div className="font-mono text-slate-900">{qtyBaseHint ?? "-"}</div>
         <div className="text-[11px] text-slate-500">
-          提示：后端按倍率推导{selectedUom ? `（×${selectedUom.ratio_to_base}）` : ""}
+          后端推导{selectedUom ? `（×${selectedUom.ratio_to_base}）` : ""}
         </div>
       </td>
 
       <td className="px-3 py-3 text-right">
         <input
-          className="w-32 rounded-xl border border-slate-300 px-3 py-2 text-right text-base"
+          className="w-28 rounded-xl border border-slate-300 px-3 py-2 text-right text-base"
           value={line.supply_price}
           onChange={(e) => onChangeLineField(line.id, "supply_price", e.target.value)}
-          placeholder="每最小单位单价"
+          placeholder="单价"
+          inputMode="decimal"
         />
       </td>
 
-      <td className="px-3 py-3 text-right text-slate-800">
-        {qtyBaseHint !== null && estAmount > 0 ? estAmount.toFixed(2) : "-"}
+      <td className="px-3 py-3 text-right">
+        <input
+          className="w-28 rounded-xl border border-slate-300 px-3 py-2 text-right text-base"
+          value={line.discount_amount}
+          onChange={(e) => onChangeLineField(line.id, "discount_amount", e.target.value)}
+          placeholder="折扣"
+          inputMode="decimal"
+        />
+      </td>
+
+      <td className="px-3 py-3">
+        <input
+          className="w-44 rounded-xl border border-slate-300 px-3 py-2 text-base"
+          value={line.discount_note}
+          onChange={(e) => onChangeLineField(line.id, "discount_note", e.target.value)}
+          placeholder="折扣说明"
+        />
+      </td>
+
+      <td className="px-3 py-3">
+        <input
+          className="w-52 rounded-xl border border-slate-300 px-3 py-2 text-base"
+          value={line.remark}
+          onChange={(e) => onChangeLineField(line.id, "remark", e.target.value)}
+          placeholder="行备注"
+        />
+      </td>
+
+      <td className="px-3 py-3 text-right font-mono text-slate-800">
+        {qtyBaseHint !== null && grossAmount > 0 ? netAmount.toFixed(2) : "-"}
       </td>
 
       <td className="px-3 py-3">

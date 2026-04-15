@@ -156,17 +156,11 @@ export const ElectronicWaybillConfigPage = lazy(
 export const PurchaseOrdersPage = lazy(
   () => import("../../features/purchase-orders/PurchaseOrdersPage"),
 );
-export const PurchaseOrderDetailPage = lazy(
-  () => import("../../features/purchase-orders/PurchaseOrderDetailPage"),
-);
-export const PurchaseOrderCreateV2Page = lazy(
-  () => import("../../features/purchase-orders/PurchaseOrderCreateV2Page"),
+export const PurchaseOrderCreatePage = lazy(
+  () => import("../../features/purchase-orders/PurchaseOrderCreatePage"),
 );
 export const PurchaseReportsPage = lazy(
   () => import("../../features/purchase-orders/PurchaseReportsPage"),
-);
-export const PurchaseOverviewPage = lazy(
-  () => import("../../features/purchase-orders/PurchaseOverviewPage"),
 );
 
 // 收货任务详情
