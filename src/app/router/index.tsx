@@ -378,6 +378,15 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
+            path="purchase-orders/:poId"
+            element={
+              <RequirePermission permission="page.procurement.read">
+                <P.PurchaseOrderViewPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
             path="receive-tasks/:taskId"
             element={
               <RequirePermission permission="page.wms.read">

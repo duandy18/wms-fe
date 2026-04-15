@@ -148,7 +148,7 @@ export const PurchaseOrdersTable: React.FC<PurchaseOrdersTableProps> = ({
             onEditRow(row);
           }}
         >
-          编辑
+          查看
         </button>
       ),
     },
