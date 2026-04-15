@@ -1,7 +1,7 @@
 // src/features/purchase-orders/create/presenter/useSubmitPurchaseOrder.ts
 
 import { useState } from "react";
-import { createPurchaseOrder, type PurchaseOrderDetail } from "../../api";
+import { createPurchaseOrder } from "../../api";
 import type { LineDraft } from "./lineDraft";
 import { buildPayloadLines } from "./lineDraft";
 import { datetimeLocalToIsoOrThrow, getErrorMessage } from "../utils";
@@ -16,13 +16,11 @@ export function useSubmitPurchaseOrder(args: {
   lines: LineDraft[];
   onAfterSuccessReset: () => void;
 }): {
-  lastCreatedPo: PurchaseOrderDetail | null;
   submitting: boolean;
   error: string | null;
   setError: (v: string | null) => void;
   submit: (onSuccess?: (poId: number) => void) => Promise<void>;
 } {
-  const [lastCreatedPo, setLastCreatedPo] = useState<PurchaseOrderDetail | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,8 +88,6 @@ export function useSubmitPurchaseOrder(args: {
         lines: normalizedLines,
       });
 
-      setLastCreatedPo(po);
-
       args.onAfterSuccessReset();
       onSuccess?.(po.id);
     } catch (err) {
@@ -103,7 +99,6 @@ export function useSubmitPurchaseOrder(args: {
   };
 
   return {
-    lastCreatedPo,
     submitting,
     error,
     setError,

@@ -69,6 +69,7 @@ vi.mock("./lazyPages", () => {
     PurchaseOrdersPage: page("PurchaseOrdersPage mock view"),
     PurchaseOrderCreatePage: page("PurchaseOrderCreatePage mock view"),
     PurchaseOrderViewPage: page("PurchaseOrderViewPage mock view"),
+    PurchaseReportsPage: page("PurchaseReportsPage mock view"),
 
     PurchaseOrderCreateV2Page: page("PurchaseOrderCreateV2Page mock view"),
     ReceiveTaskDetailPage: page("ReceiveTaskDetailPage mock view"),
