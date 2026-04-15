@@ -1,23 +1,49 @@
 // src/features/purchase-orders/PurchaseOrderCreatePage.tsx
 // 新建采购单页
 // - 上半区：头部输入 + 行明细输入
-// - 下半区：本次创建后的只读回显报告
+// - 创建成功后直接跳转到采购单详情页
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import PageTitle from "../../components/ui/PageTitle";
-import { usePurchaseOrderCreatePresenter } from "./usePurchaseOrderCreatePresenter";
 import { PurchaseOrderCreateHeaderForm } from "./PurchaseOrderCreateHeaderForm";
 import { PurchaseOrderCreateLinesEditor } from "./PurchaseOrderCreateLinesEditor";
-import { PurchaseOrderCurrentReport } from "./PurchaseOrderCurrentReport";
+import { nowIsoMinuteForDatetimeLocal } from "./create/utils";
+import { useSubmitPurchaseOrder } from "./create/presenter/useSubmitPurchaseOrder";
+import { usePurchaseOrderFormShell } from "./form/usePurchaseOrderFormShell";
 
 const PurchaseOrderCreatePage: React.FC = () => {
   const navigate = useNavigate();
-  const [state, actions] = usePurchaseOrderCreatePresenter();
+
+  const [formState, formActions] = usePurchaseOrderFormShell({
+    getFreshPurchaseTime: nowIsoMinuteForDatetimeLocal,
+  });
+
+  const submitModel = useSubmitPurchaseOrder({
+    supplierId: formState.supplierId,
+    supplierName: formState.supplierName,
+    warehouseId: formState.warehouseId,
+    purchaser: formState.purchaser,
+    purchaseTime: formState.purchaseTime,
+    remark: formState.remark,
+    lines: formState.lines,
+    onAfterSuccessReset: formActions.resetAfterCreateSuccess,
+  });
+
+  const handleSelectSupplier = (id: number | null) => {
+    formActions.selectSupplier(id);
+
+    if (id == null) {
+      submitModel.setError(null);
+      return;
+    }
+
+    submitModel.setError("已切换供应商：已清空行明细，请重新选择该供应商提供的商品。");
+  };
 
   const handleSubmit: React.FormEventHandler = async (e) => {
     e.preventDefault();
-    await actions.submit();
+    await submitModel.submit((poId) => navigate(`/purchase-orders/${poId}`));
   };
 
   return (
@@ -26,7 +52,7 @@ const PurchaseOrderCreatePage: React.FC = () => {
         <div>
           <PageTitle
             title="新建采购单"
-            description="独立新建页：上半区录入采购计划，下半区只展示本次创建成功的采购单回显报告。页面不承载全量采购列表。"
+            description="独立新建页：录入采购计划并创建采购单。创建成功后直接进入采购单详情页，不再在本页停留查看回显。"
           />
           <p className="mt-2 text-base text-slate-600">
             供应商与商品来自 PMS 真相源；数量、单位与商业字段在此录入，BASE 数量由后端按倍率推导。
@@ -44,47 +70,43 @@ const PurchaseOrderCreatePage: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <PurchaseOrderCreateHeaderForm
-          supplierId={state.supplierId}
-          supplierName={state.supplierName}
-          supplierOptions={state.supplierOptions}
-          suppliersLoading={state.suppliersLoading}
-          suppliersError={state.suppliersError}
-          warehouseId={state.warehouseId}
-          purchaser={state.purchaser}
-          purchaseTime={state.purchaseTime}
-          remark={state.remark}
-          error={state.error}
-          onSelectSupplier={actions.selectSupplier}
-          onChangeWarehouseId={actions.setWarehouseId}
-          onChangePurchaser={actions.setPurchaser}
-          onChangePurchaseTime={actions.setPurchaseTime}
-          onChangeRemark={actions.setRemark}
+          supplierId={formState.supplierId}
+          supplierName={formState.supplierName}
+          supplierOptions={formState.supplierOptions}
+          suppliersLoading={formState.suppliersLoading}
+          suppliersError={formState.suppliersError}
+          warehouseId={formState.warehouseId}
+          purchaser={formState.purchaser}
+          purchaseTime={formState.purchaseTime}
+          remark={formState.remark}
+          error={submitModel.error}
+          onSelectSupplier={handleSelectSupplier}
+          onChangeWarehouseId={formActions.setWarehouseId}
+          onChangePurchaser={formActions.setPurchaser}
+          onChangePurchaseTime={formActions.setPurchaseTime}
+          onChangeRemark={formActions.setRemark}
         />
 
         <PurchaseOrderCreateLinesEditor
-          lines={state.lines}
-          items={state.itemOptions}
-          itemsLoading={state.itemsLoading}
-          onSelectItem={actions.selectItemForLine}
-          onChangeLineField={actions.changeLineField}
-          onAddLine={actions.addLine}
-          onRemoveLine={actions.removeLine}
+          lines={formState.lines}
+          items={formState.itemOptions}
+          itemsLoading={formState.itemsLoading}
+          onSelectItem={formActions.selectItemForLine}
+          onChangeLineField={formActions.changeLineField}
+          onAddLine={formActions.addLine}
+          onRemoveLine={formActions.removeLine}
         />
 
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={state.submitting}
+            disabled={submitModel.submitting}
             className="inline-flex items-center rounded-xl bg-indigo-600 px-6 py-3 text-lg font-semibold text-white shadow-sm disabled:opacity-60"
           >
-            {state.submitting ? "创建中…" : "创建采购单"}
+            {submitModel.submitting ? "创建中…" : "创建采购单"}
           </button>
         </div>
       </form>
-
-      <div className="mt-10">
-        <PurchaseOrderCurrentReport po={state.lastCreatedPo} />
-      </div>
     </div>
   );
 };

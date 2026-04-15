@@ -1,236 +1,76 @@
-// src/features/purchase-orders/PurchaseReportsPage.tsx
+// 拆分说明：本文件已从“大一统页面”收薄为装配层；筛选、控制器、KPI、表格分别拆入 reports/api、reports/model、reports/components。路径：src/features/purchase-orders/PurchaseReportsPage.tsx
 
-import React, { useEffect, useMemo } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import PageTitle from "../../components/ui/PageTitle";
-import { usePurchaseReportsPresenter, type TabKey } from "./usePurchaseReportsPresenter";
-import { PurchaseReportsFilters } from "./PurchaseReportsFilters";
-import { SuppliersReportTable } from "./SuppliersReportTable";
-import { ItemsReportTable } from "./ItemsReportTable";
-import { DailyReportTable } from "./DailyReportTable";
-import type { PurchaseReportFilters as Filters, PurchaseReportsMode } from "./reportsApi";
-
-const parseMoney = (v: string | null | undefined): number => {
-  if (!v) return 0;
-  const n = Number(v);
-  return Number.isNaN(n) ? 0 : n;
-};
+import PurchaseReportsFilters from "./reports/components/PurchaseReportsFilters";
+import PurchaseReportsKpiCards from "./reports/components/PurchaseReportsKpiCards";
+import PurchaseReportsTables from "./reports/components/PurchaseReportsTables";
+import { usePurchaseReportsController } from "./reports/model/usePurchaseReportsController";
 
 const PurchaseReportsPage: React.FC = () => {
-  const [state, actions] = usePurchaseReportsPresenter();
-
-  const mode: PurchaseReportsMode = state.filters.mode ?? "fact";
-
-  const handleChangeFilter = (field: keyof Filters, value: string) => {
-    actions.setFilters((prev) => {
-      const next: Filters = { ...prev };
-
-      if (field === "warehouseId" || field === "supplierId") {
-        const n = value.trim() ? Number(value.trim()) : undefined;
-        next[field] = n !== undefined && !Number.isNaN(n) ? n : undefined;
-
-        // ✅ 切换供应商：清空商品筛选（避免事实污染）
-        if (field === "supplierId") {
-          next.itemKeyword = undefined;
-          next.itemId = undefined;
-        }
-      } else if (field === "status") {
-        next.status = value || undefined;
-      } else if (field === "dateFrom" || field === "dateTo") {
-        next[field] = value || undefined;
-      } else if (field === "itemKeyword") {
-        next.itemKeyword = value || undefined;
-        // itemKeyword 属于模糊筛选，写入时同时清空 itemId（避免冲突）
-        if (value && value.trim()) next.itemId = undefined;
-      } else if (field === "itemId") {
-        const n = value.trim() ? Number(value.trim()) : undefined;
-        next.itemId = n !== undefined && !Number.isNaN(n) ? n : undefined;
-        if (next.itemId != null) next.itemKeyword = undefined;
-      } else if (field === "mode") {
-        // 只允许 fact/plan
-        next.mode = (value === "plan" ? "plan" : "fact") as PurchaseReportsMode;
-      }
-
-      return next;
-    });
-  };
-
-  const handleQuickRange = (kind: "thisMonth" | "thisWeek") => {
-    actions.setFilters((prev) => {
-      const next: Filters = { ...prev };
-
-      const today = new Date();
-      const pad2 = (n: number) => String(n).padStart(2, "0");
-      const toYMD = (d: Date) =>
-        `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-
-      if (kind === "thisMonth") {
-        const from = new Date(today.getFullYear(), today.getMonth(), 1);
-        next.dateFrom = toYMD(from);
-        next.dateTo = toYMD(today);
-      } else {
-        const day = today.getDay() || 7;
-        const from = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate() - (day - 1),
-        );
-        next.dateFrom = toYMD(from);
-        next.dateTo = toYMD(today);
-      }
-
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    void actions.loadReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    void actions.loadReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.activeTab]);
-
-  const supplierTotalAmount = useMemo(
-    () =>
-      state.supplierRows.reduce((sum, r) => sum + parseMoney(r.total_amount), 0),
-    [state.supplierRows],
-  );
-
-  const itemTotalAmount = useMemo(
-    () => state.itemRows.reduce((sum, r) => sum + parseMoney(r.total_amount), 0),
-    [state.itemRows],
-  );
-
-  const dailyTotalAmount = useMemo(
-    () =>
-      state.dailyRows.reduce((sum, r) => sum + parseMoney(r.total_amount), 0),
-    [state.dailyRows],
-  );
+  const c = usePurchaseReportsController();
+  const navigate = useNavigate();
 
   return (
-    <div className="p-6 space-y-6">
-      <PageTitle
-        title="采购报表"
-        description="从供应商、商品、时间三个视角查看采购历史。可切换“事实/计划”口径，避免把未收货误判为缺失。"
-      />
-
-      {/* ✅ 口径切换（不改 filters 组件也能先跑起来） */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="text-sm font-semibold text-slate-800">统计口径</div>
-
-          <div className="inline-flex rounded-full bg-slate-100 p-1 text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                handleChangeFilter("mode", "fact");
-                void actions.loadReports();
-              }}
-              className={
-                "px-3 py-1.5 rounded-full font-medium transition-colors " +
-                (mode === "fact"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:bg-slate-200/70")
-              }
-              title="只统计真实收货（Receipt）"
-            >
-              事实（收货）
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                handleChangeFilter("mode", "plan");
-                void actions.loadReports();
-              }}
-              className={
-                "px-3 py-1.5 rounded-full font-medium transition-colors " +
-                (mode === "plan"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:bg-slate-200/70")
-              }
-              title="统计下单计划（PO），包含未收货"
-            >
-              计划（下单）
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-2 text-[11px] text-slate-500">
-          {mode === "fact"
-            ? "事实口径：仅统计已发生的收货事实（Receipt）。未收货的采购单不会出现在汇总中。"
-            : "计划口径：统计采购单（PO）下单计划，包含未收货记录。"}
-        </div>
-      </section>
+    <div className="p-8 space-y-6">
+      <div className="space-y-2">
+        <PageTitle
+          title="采购报表"
+          description="采购模块分析页。当前提供总览、按商品、按供应商、按日四种分析视角，并统一对接后端 /purchase-reports 接口。"
+        />
+        <p className="text-sm text-slate-600">
+          当前页用于综合分析，不承载采购单录入或详情编辑。
+        </p>
+      </div>
 
       <PurchaseReportsFilters
-        activeTab={state.activeTab as TabKey}
-        filters={state.filters}
-        loading={state.loading}
-        error={state.error}
-        onChangeFilter={handleChangeFilter}
-        onQuickRange={handleQuickRange}
-        onRefresh={() => void actions.loadReports()}
+        tab={c.tab}
+        setTab={c.setTab}
+        timeMode={c.timeMode}
+        setTimeMode={c.setTimeMode}
+        warehouseId={c.warehouseId}
+        setWarehouseId={c.setWarehouseId}
+        supplierId={c.supplierId}
+        setSupplierId={c.setSupplierId}
+        selectedItemId={c.selectedItemId}
+        setSelectedItemId={c.setSelectedItemId}
+        dateFrom={c.dateFrom}
+        setDateFrom={c.setDateFrom}
+        dateTo={c.dateTo}
+        setDateTo={c.setDateTo}
+        warehouses={c.warehouses}
+        warehousesLoading={c.warehousesLoading}
+        warehousesError={c.warehousesError}
+        supplierOptions={c.supplierOptions}
+        suppliersLoading={c.suppliersLoading}
+        suppliersError={c.suppliersError}
+        selectedSupplierId={c.selectedSupplierId}
+        itemOptions={c.itemOptions}
+        itemsLoading={c.itemsLoading}
+        itemsError={c.itemsError}
+        loading={c.loading}
+        error={c.error}
+        currentRowsCount={c.currentRowsCount}
       />
 
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="inline-flex rounded-full bg-slate-100 p-1">
-            <button
-              type="button"
-              onClick={() => actions.setActiveTab("suppliers")}
-              className={
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors " +
-                (state.activeTab === "suppliers"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:bg-slate-200/70")
-              }
-            >
-              按供应商
-            </button>
-            <button
-              type="button"
-              onClick={() => actions.setActiveTab("items")}
-              className={
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors " +
-                (state.activeTab === "items"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:bg-slate-200/70")
-              }
-            >
-              按商品
-            </button>
-            <button
-              type="button"
-              onClick={() => actions.setActiveTab("daily")}
-              className={
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors " +
-                (state.activeTab === "daily"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:bg-slate-200/70")
-              }
-            >
-              按日期（日汇总）
-            </button>
-          </div>
-        </div>
+      <PurchaseReportsKpiCards summary={c.summary} />
 
-        {state.activeTab === "suppliers" && (
-          <SuppliersReportTable
-            rows={state.supplierRows}
-            totalAmount={supplierTotalAmount}
-          />
-        )}
-
-        {state.activeTab === "items" && (
-          <ItemsReportTable rows={state.itemRows} totalAmount={itemTotalAmount} />
-        )}
-
-        {state.activeTab === "daily" && (
-          <DailyReportTable rows={state.dailyRows} totalAmount={dailyTotalAmount} />
-        )}
-      </section>
+      <PurchaseReportsTables
+        tab={c.tab}
+        loading={c.loading}
+        itemsRows={c.itemsRows}
+        supplierRows={c.supplierRows}
+        dailyRows={c.dailyRows}
+        expandedItemId={c.expandedItemId}
+        itemLineRowsByItemId={c.itemLineRowsByItemId}
+        itemLineLoadingItemId={c.itemLineLoadingItemId}
+        onToggleItemExpand={c.toggleItemExpand}
+        supplierIdFilter={c.supplierId}
+        onOpenPurchaseOrder={(poId) => {
+          navigate(`/purchase-orders/${poId}`);
+        }}
+      />
     </div>
   );
 };

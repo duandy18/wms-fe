@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "../../lib/api";
+import { apiGet, apiPost, apiPut } from "../../lib/api";
 
 export type PurchaseOrderStatus = "CREATED" | "CLOSED" | "CANCELED" | string;
 
@@ -16,6 +16,7 @@ export interface PurchaseOrderPlanLine {
   item_sku: string | null;
   spec_text: string | null;
 
+  purchase_uom_id_snapshot: number;
   qty_ordered_input: number;
   purchase_ratio_to_base_snapshot: number;
   qty_ordered_base: number;
@@ -50,6 +51,8 @@ export interface PurchaseOrderListItem {
 
   remark: string | null;
   status: PurchaseOrderStatus;
+  editable: boolean;
+  edit_block_reason: string | null;
 
   created_at: string;
   updated_at: string;
@@ -104,6 +107,8 @@ export interface PurchaseOrderDetail {
 
   remark: string | null;
   status: PurchaseOrderStatus;
+  editable: boolean;
+  edit_block_reason: string | null;
 
   created_at: string;
   updated_at: string;
@@ -126,7 +131,7 @@ export async function fetchPurchaseOrderV2(id: number): Promise<PurchaseOrderDet
 }
 
 // ----------------------
-// Create（终态合同：头表 + 行商业字段）
+// Create / Update（终态合同：头表 + 行商业字段）
 // ----------------------
 
 export interface PurchaseOrderLineCreatePayload {
@@ -153,10 +158,19 @@ export interface PurchaseOrderCreatePayload {
   lines: PurchaseOrderLineCreatePayload[];
 }
 
+export type PurchaseOrderUpdatePayload = PurchaseOrderCreatePayload;
+
 export async function createPurchaseOrder(
   payload: PurchaseOrderCreatePayload,
 ): Promise<PurchaseOrderDetail> {
   return apiPost<PurchaseOrderDetail>("/purchase-orders/", payload);
+}
+
+export async function updatePurchaseOrder(
+  poId: number,
+  payload: PurchaseOrderUpdatePayload,
+): Promise<PurchaseOrderDetail> {
+  return apiPut<PurchaseOrderDetail>(`/purchase-orders/${poId}`, payload);
 }
 
 // ----------------------
