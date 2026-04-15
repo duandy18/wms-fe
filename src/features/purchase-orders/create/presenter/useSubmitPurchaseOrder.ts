@@ -1,9 +1,9 @@
-// src/features/purchase-orders/createV2/presenter/useSubmitPurchaseOrder.ts
+// src/features/purchase-orders/create/presenter/useSubmitPurchaseOrder.ts
 
 import { useState } from "react";
-import { createPurchaseOrderV2, type PurchaseOrderDetail } from "../../api";
-import type { LineDraft } from "../lineDraft";
-import { buildPayloadLines } from "../lineDraft";
+import { createPurchaseOrder, type PurchaseOrderDetail } from "../../api";
+import type { LineDraft } from "./lineDraft";
+import { buildPayloadLines } from "./lineDraft";
 import { datetimeLocalToIsoOrThrow, getErrorMessage } from "../utils";
 
 export function useSubmitPurchaseOrder(args: {
@@ -37,8 +37,14 @@ export function useSubmitPurchaseOrder(args: {
       return;
     }
 
-    // 仓库必填
-    const wid = Number(warehouseId.trim() || "1");
+    // 仓库必填：不再做“空值默认为 1”的兼容兜底
+    const warehouseText = warehouseId.trim();
+    if (!warehouseText) {
+      setError("请选择仓库");
+      return;
+    }
+
+    const wid = Number(warehouseText);
     if (Number.isNaN(wid) || wid <= 0) {
       setError("仓库 ID 非法");
       return;
@@ -75,7 +81,7 @@ export function useSubmitPurchaseOrder(args: {
 
     setSubmitting(true);
     try {
-      const po = await createPurchaseOrderV2({
+      const po = await createPurchaseOrder({
         supplier_id: supplierId,
         warehouse_id: wid,
         purchaser: purchaserTrimmed,
@@ -89,7 +95,7 @@ export function useSubmitPurchaseOrder(args: {
       args.onAfterSuccessReset();
       onSuccess?.(po.id);
     } catch (err) {
-      console.error("createPurchaseOrderV2 failed", err);
+      console.error("createPurchaseOrder failed", err);
       setError(getErrorMessage(err, "创建多行采购单失败"));
     } finally {
       setSubmitting(false);

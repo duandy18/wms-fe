@@ -1,4 +1,4 @@
-// src/features/purchase-orders/createV2/utils.ts
+// src/features/purchase-orders/create/utils.ts
 
 type ApiErrorShape = {
   message?: string;

@@ -1,4 +1,4 @@
-// src/features/purchase-orders/createV2/normalize.ts
+// src/features/purchase-orders/create/normalize.ts
 
 import type { SupplierBasic } from "../../../domains/pms/public/contracts/supplierBasic";
 

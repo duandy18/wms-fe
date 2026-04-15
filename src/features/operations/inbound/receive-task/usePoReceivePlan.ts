@@ -1,7 +1,12 @@
 // src/features/operations/inbound/receive-task/usePoReceivePlan.ts
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { PurchaseOrderDetail, PurchaseOrderDetailLine } from "../../../purchase-orders/api";
+import type { PurchaseOrderDetailLine } from "../../../purchase-orders/api";
+
+type ReceivePlanPoLike = {
+  id: number;
+  lines?: PurchaseOrderDetailLine[] | null;
+} | null;
 
 export type PlanRow = {
   poLineId: number;
@@ -25,7 +30,7 @@ export type PlanRow = {
   // ✅ 快照解释器（Phase2 第一公民）
   case_ratio_snapshot: number; // 1采购单位=多少最小单位（>=1；无则为 1）
 
-  // ✅ 保质期策略（来自详情态行）
+  // ✅ 保质期策略（旧 receive-task 仍可能用到；缺失时按 false/null 降级）
   has_shelf_life: boolean;
   shelf_life_value: number | null;
   shelf_life_unit: string | null;
@@ -38,7 +43,7 @@ function safeInt(v: unknown, fallback: number): number {
 }
 
 function baseUomLabel(line: PurchaseOrderDetailLine): string {
-  // ✅ 终态：禁止依赖文本单位残影字段
+  // ✅ 计划合同不再承诺文本单位残影；这里只做兼容降级展示
   const snap = String((line as { uom_snapshot?: string | null }).uom_snapshot ?? "").trim();
   if (snap) return snap;
 
@@ -59,7 +64,6 @@ function caseUomSnapshot(line: PurchaseOrderDetailLine): string {
 }
 
 function deriveOrderedCase(line: PurchaseOrderDetailLine, orderedBase: number, ratio: number): number {
-  // ✅ 主线：输入痕迹 qty_ordered_case_input
   const caseInput = (line as { qty_ordered_case_input?: number | null }).qty_ordered_case_input;
   if (caseInput != null) return safeInt(caseInput, 0);
 
@@ -69,10 +73,7 @@ function deriveOrderedCase(line: PurchaseOrderDetailLine, orderedBase: number, r
     return Math.floor(base / r);
   }
 
-  // 保守兜底：倍率=1 时，case 与 base 等价
   if (r === 1) return base;
-
-  // 否则不给“瞎猜的件数”
   return 0;
 }
 
@@ -97,16 +98,17 @@ function requiresExpiryExplicit(row: PlanRow): boolean {
   return false;
 }
 
-export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
+export function usePoReceivePlan(po: ReceivePlanPoLike) {
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [qtyMap, setQtyMap] = useState<Record<number, string>>({});
 
-  // ✅ Phase 3：创建任务阶段输入批次/生产日期/到期日期（必要时）
+  // 旧 receive-task 页面仍保留这组输入状态；后续整体退役
   const [batchMap, setBatchMap] = useState<Record<number, string>>({});
   const [prodMap, setProdMap] = useState<Record<number, string>>({});
   const [expMap, setExpMap] = useState<Record<number, string>>({});
 
-  // ✅ 变更检测：以 base 事实 + 快照解释器为 key
+  // 计划页不再以 received/remaining 作为主合同；
+  // 这里只把它们当作“可选兼容字段”，不存在时做本地降级。
   const poRevKey = useMemo(() => {
     if (!po) return "";
     const parts = (po.lines ?? []).map((l) => {
@@ -115,7 +117,8 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
       const caseUom = caseUomSnapshot(l);
       const orderedBase = safeInt((l as { qty_ordered_base?: number | null }).qty_ordered_base, 0);
       const receivedBase = safeInt((l as { qty_received_base?: number | null }).qty_received_base, 0);
-      const remainBase = safeInt((l as { qty_remaining_base?: number | null }).qty_remaining_base, 0);
+      const remainRaw = (l as { qty_remaining_base?: number | null }).qty_remaining_base;
+      const remainBase = remainRaw == null ? Math.max(orderedBase - receivedBase, 0) : safeInt(remainRaw, 0);
       return `${l.id}:${orderedBase}:${receivedBase}:${remainBase}:${ratio}:${caseInput ?? "N"}:${caseUom}`;
     });
     return `${po.id}|${parts.join("|")}`;
@@ -155,7 +158,8 @@ export function usePoReceivePlan(po: PurchaseOrderDetail | null) {
       .map((l) => {
         const ordered_base = safeInt((l as { qty_ordered_base?: number | null }).qty_ordered_base, 0);
         const received_base = safeInt((l as { qty_received_base?: number | null }).qty_received_base, 0);
-        const remain_base = safeInt((l as { qty_remaining_base?: number | null }).qty_remaining_base, 0);
+        const remainRaw = (l as { qty_remaining_base?: number | null }).qty_remaining_base;
+        const remain_base = remainRaw == null ? Math.max(ordered_base - received_base, 0) : safeInt(remainRaw, 0);
 
         const ratio = caseRatioSnapshot(l);
         const base_uom_label = baseUomLabel(l);

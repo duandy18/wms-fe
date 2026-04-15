@@ -1,9 +1,9 @@
-// src/features/purchase-orders/createV2/presenter/types.ts
+// src/features/purchase-orders/create/presenter/types.ts
 
 import type { PurchaseOrderDetail } from "../../api";
 import type { SupplierBasic } from "../../../../domains/pms/public/contracts/supplierBasic";
 import type { ItemBasic } from "../../../../domains/pms/public/contracts/itemBasic";
-import type { LineDraft } from "../lineDraft";
+import type { LineDraft } from "./lineDraft";
 
 export interface PurchaseOrderCreateState {
   supplierId: number | null;
