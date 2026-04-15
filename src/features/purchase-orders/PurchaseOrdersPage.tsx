@@ -22,7 +22,6 @@ const PurchaseOrdersPage: React.FC = () => {
     { setSupplierFilter, setStatusFilter, setSearchText, reload },
   ] = usePurchaseOrdersListPresenter();
 
-  const [selectedPoLineId, setSelectedPoLineId] = useState<number | null>(null);
   const [supplierOptions, setSupplierOptions] = useState<SupplierOption[]>([]);
 
   useEffect(() => {
@@ -48,7 +47,7 @@ const PurchaseOrdersPage: React.FC = () => {
   }, []);
 
   function handleEditRow(row: PurchaseOrderCompletionListItem) {
-    setSelectedPoLineId(row.po_line_id);
+    navigate(`/purchase-orders/${row.po_id}`);
   }
 
   return (
@@ -124,7 +123,7 @@ const PurchaseOrdersPage: React.FC = () => {
           loading={loadingList}
           error={listError}
           onEditRow={handleEditRow}
-          selectedPoLineId={selectedPoLineId}
+          selectedPoLineId={null}
         />
       </section>
     </div>

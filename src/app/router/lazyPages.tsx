@@ -159,6 +159,9 @@ export const PurchaseOrdersPage = lazy(
 export const PurchaseOrderCreatePage = lazy(
   () => import("../../features/purchase-orders/PurchaseOrderCreatePage"),
 );
+export const PurchaseOrderViewPage = lazy(
+  () => import("../../features/purchase-orders/PurchaseOrderViewPage"),
+);
 export const PurchaseReportsPage = lazy(
   () => import("../../features/purchase-orders/PurchaseReportsPage"),
 );
