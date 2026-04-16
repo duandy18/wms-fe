@@ -55,7 +55,7 @@ const AppRouter: React.FC = () => {
             path="inbound"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.InboundCockpitPage />
+                <P.InboundWorkbenchPage />
               </RequirePermission>
             }
           />
@@ -63,7 +63,7 @@ const AppRouter: React.FC = () => {
             path="inbound/cockpit"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.InboundCockpitPage />
+                <P.InboundWorkbenchPage />
               </RequirePermission>
             }
           />

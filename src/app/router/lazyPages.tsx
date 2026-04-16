@@ -12,8 +12,8 @@ export const LoginPage = lazy(() => import("../../features/auth/LoginPage"));
 export const CountCockpitPage = lazy(
   () => import("../../features/operations/count/CountCockpitPage"),
 );
-export const InboundCockpitPage = lazy(
-  () => import("../../features/operations/inbound/InboundCockpitPage"),
+export const InboundWorkbenchPage = lazy(
+  () => import("../../features/wms/inbound/pages/InboundWorkbenchPage"),
 );
 export const PickTasksCockpitPage = lazy(
   () => import("../../features/operations/outbound-pick/PickTasksCockpitPage"),
