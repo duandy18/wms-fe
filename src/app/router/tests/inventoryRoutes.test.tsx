@@ -4,14 +4,14 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter, Outlet } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
-import AppRouter from "./index";
+import AppRouter from "../index";
 
-vi.mock("../layout/AppLayout", () => ({
+vi.mock("../../layout/AppLayout", () => ({
   __esModule: true,
   AppLayout: () => <Outlet />,
 }));
 
-vi.mock("./guards", () => ({
+vi.mock("../guards", () => ({
   __esModule: true,
   RequireAuth: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   RequirePermission: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -19,7 +19,7 @@ vi.mock("./guards", () => ({
   RouteLoading: () => <div>RouteLoading mock view</div>,
 }));
 
-vi.mock("./lazyPages", () => {
+vi.mock("../lazyPages", () => {
   const page = (name: string) => () => <div>{name}</div>;
 
   return {
@@ -31,7 +31,7 @@ vi.mock("./lazyPages", () => {
     InventoryPage: page("InventoryPage mock view"),
     InventoryLedgerPage: page("InventoryLedgerPage mock view"),
 
-    InboundCockpitPage: page("InboundCockpitPage mock view"),
+    InboundWorkbenchPage: page("InboundWorkbenchPage mock view"),
     CountCockpitPage: page("CountCockpitPage mock view"),
     PickTasksCockpitPage: page("PickTasksCockpitPage mock view"),
     InternalOutboundPage: page("InternalOutboundPage mock view"),
