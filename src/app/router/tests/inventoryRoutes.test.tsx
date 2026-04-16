@@ -6,7 +6,7 @@ import { MemoryRouter, Outlet } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 import AppRouter from "../index";
 
-vi.mock("../layout/AppLayout", () => ({
+vi.mock("../../layout/AppLayout", () => ({
   __esModule: true,
   AppLayout: () => <Outlet />,
 }));
