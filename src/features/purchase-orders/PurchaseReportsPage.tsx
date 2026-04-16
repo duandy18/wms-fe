@@ -14,7 +14,7 @@ const PurchaseReportsPage: React.FC = () => {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="space-y-2">
+      <div className="space-y-3">
         <PageTitle
           title="采购报表"
           description="采购模块分析页。当前提供总览、按商品、按供应商、按日四种分析视角，并统一对接后端 /purchase-reports 接口。"
@@ -22,6 +22,10 @@ const PurchaseReportsPage: React.FC = () => {
         <p className="text-sm text-slate-600">
           当前页用于综合分析，不承载采购单录入或详情编辑。
         </p>
+        <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-slate-700">
+          <span className="font-medium text-slate-900">口径说明：</span>
+          当前页所有金额均为计划金额，不是实际收货金额；跨商品比较请以最小单位数为准，采购数量仅作辅助展示。
+        </div>
       </div>
 
       <PurchaseReportsFilters

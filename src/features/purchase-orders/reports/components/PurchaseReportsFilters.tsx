@@ -213,14 +213,21 @@ const PurchaseReportsFilters: React.FC<Props> = ({
         </div>
       ) : null}
 
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-        {loading
-          ? "加载中…"
-          : error
-            ? `加载失败：${error}`
-            : `当前视图共 ${currentRowsCount} 行 · ${
-                tab === "daily" ? "按最后收货时间" : getTimeModeLabel(timeMode)
-              }`}
+      <div className="grid gap-3 xl:grid-cols-2">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          {loading
+            ? "加载中…"
+            : error
+              ? `加载失败：${error}`
+              : `当前视图共 ${currentRowsCount} 行 · ${
+                  tab === "daily" ? "按最后收货时间" : getTimeModeLabel(timeMode)
+                }`}
+        </div>
+
+        <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-slate-700">
+          <span className="font-medium text-slate-900">口径说明：</span>
+          金额列统一展示计划金额，不代表实际收货金额；跨商品比较请以最小单位数为准，采购数量仅作辅助展示。
+        </div>
       </div>
     </section>
   );
