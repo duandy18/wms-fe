@@ -4,7 +4,7 @@ export type InboundMode = "PURCHASE" | "RETURN" | "OTHER";
 
 export type InboundSourceType =
   | "PURCHASE_ORDER"
-  | "RETURN_ORDER"
+  | "RETURN"
   | "MANUAL";
 
 export type InboundDraftHead = {

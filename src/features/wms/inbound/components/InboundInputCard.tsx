@@ -4,8 +4,12 @@ import React from "react";
 import InboundModeSelector from "./InboundModeSelector";
 import InboundSourceSection from "./InboundSourceSection";
 import InboundPurchaseSourceLinesPanel from "./InboundPurchaseSourceLinesPanel";
-import InboundItemEntrySection, { type InboundItemEditableLine } from "./InboundItemEntrySection";
-import InboundLinesEditor, { type InboundEditableLine } from "./InboundLinesEditor";
+import InboundItemEntrySection, {
+  type InboundItemEditableLine,
+} from "./InboundItemEntrySection";
+import InboundLinesEditor, {
+  type InboundEditableLine,
+} from "./InboundLinesEditor";
 import type {
   InboundWarehouseOption,
   PurchaseOrderCompletionLoadedLine,
@@ -58,6 +62,7 @@ export interface InboundInputCardProps {
   onLineLotCodeInputChange: (localId: string, value: string) => void;
   onLineProductionDateChange: (localId: string, value: string) => void;
   onLineExpiryDateChange: (localId: string, value: string) => void;
+  onLineRemarkChange: (localId: string, value: string) => void;
 
   onAddLine: () => void;
   onRemoveLine: (localId: string) => void;
@@ -96,6 +101,7 @@ export const InboundInputCard: React.FC<InboundInputCardProps> = ({
   onLineLotCodeInputChange,
   onLineProductionDateChange,
   onLineExpiryDateChange,
+  onLineRemarkChange,
   onAddLine,
   onRemoveLine,
 }) => {
@@ -109,7 +115,7 @@ export const InboundInputCard: React.FC<InboundInputCardProps> = ({
             入库输入卡
           </div>
           <div className="text-sm text-slate-500">
-            这一张卡继续收口为：模式选择、来源区、采购来源行、商品识别区、行编辑区。
+            这一张卡继续收口为：模式选择、来源区、采购来源行、执行区。
           </div>
         </div>
 
@@ -143,20 +149,23 @@ export const InboundInputCard: React.FC<InboundInputCardProps> = ({
             loading={purchaseSourceLinesLoading}
             error={purchaseSourceLinesError}
           />
-        ) : null}
+        ) : (
+          <InboundItemEntrySection
+            lines={itemLines}
+            onBarcodeChange={onLineBarcodeChange}
+            onItemIdChange={onLineItemIdChange}
+            onUomIdChange={onLineUomIdChange}
+          />
+        )}
 
-        <InboundItemEntrySection
-          lines={itemLines}
-          onBarcodeChange={onLineBarcodeChange}
-          onItemIdChange={onLineItemIdChange}
-          onUomIdChange={onLineUomIdChange}
-        />
         <InboundLinesEditor
+          isPurchaseMode={isPurchaseMode}
           lines={lines}
           onQtyInputChange={onLineQtyInputChange}
           onLotCodeInputChange={onLineLotCodeInputChange}
           onProductionDateChange={onLineProductionDateChange}
           onExpiryDateChange={onLineExpiryDateChange}
+          onRemarkChange={onLineRemarkChange}
           onAddLine={onAddLine}
           onRemoveLine={onRemoveLine}
         />

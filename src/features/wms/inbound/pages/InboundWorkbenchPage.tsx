@@ -9,6 +9,10 @@ const InboundWorkbenchPage: React.FC = () => {
   const m = useInboundWorkbenchModel();
   const { state } = m;
 
+  const purchaseSourceLineMap = new Map(
+    m.purchaseSourceLines.map((line) => [line.poLineId, line]),
+  );
+
   return (
     <div className="space-y-6 p-7">
       <header className="space-y-2">
@@ -42,13 +46,30 @@ const InboundWorkbenchPage: React.FC = () => {
           itemId: line.itemId,
           uomId: line.uomId,
         }))}
-        lines={state.lines.map((line) => ({
-          localId: line.localId,
-          qtyInput: line.qtyInput,
-          lotCodeInput: line.lotCodeInput,
-          productionDate: line.productionDate,
-          expiryDate: line.expiryDate,
-        }))}
+        lines={state.lines.map((line) => {
+          const sourceLine =
+            line.poLineId != null
+              ? purchaseSourceLineMap.get(line.poLineId) ?? null
+              : null;
+
+          return {
+            localId: line.localId,
+            poLineId: line.poLineId,
+            sourceLineNo: sourceLine?.lineNo ?? null,
+            sourceItemName: sourceLine?.itemName ?? null,
+            sourceItemSku: sourceLine?.itemSku ?? null,
+            sourceUomName: sourceLine?.uomName ?? null,
+            sourceQtyRemainingInput: sourceLine?.qtyRemainingInput ?? "",
+            sourceQtyRemainingBase: sourceLine?.qtyRemainingBase ?? null,
+            sourceLineCompletionStatus:
+              sourceLine?.lineCompletionStatus ?? null,
+            qtyInput: line.qtyInput,
+            lotCodeInput: line.lotCodeInput,
+            productionDate: line.productionDate,
+            expiryDate: line.expiryDate,
+            remark: line.remark,
+          };
+        })}
         submitting={state.submitting}
         submitError={state.submitError}
         onSubmit={() => {
@@ -81,6 +102,9 @@ const InboundWorkbenchPage: React.FC = () => {
         }}
         onLineExpiryDateChange={(localId, value) => {
           m.updateLine(localId, { expiryDate: value });
+        }}
+        onLineRemarkChange={(localId, value) => {
+          m.updateLine(localId, { remark: value });
         }}
         onAddLine={m.addLine}
         onRemoveLine={(localId) => {

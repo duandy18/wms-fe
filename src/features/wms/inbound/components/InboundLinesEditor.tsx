@@ -12,28 +12,43 @@ const btnCls =
 
 export type InboundEditableLine = {
   localId: string;
+
+  poLineId: number | null;
+  sourceLineNo: number | null;
+  sourceItemName: string | null;
+  sourceItemSku: string | null;
+  sourceUomName: string | null;
+  sourceQtyRemainingInput: string;
+  sourceQtyRemainingBase: number | null;
+  sourceLineCompletionStatus: string | null;
+
   qtyInput: string;
   lotCodeInput: string;
   productionDate: string;
   expiryDate: string;
+  remark: string;
 };
 
 export interface InboundLinesEditorProps {
+  isPurchaseMode: boolean;
   lines: InboundEditableLine[];
   onQtyInputChange: (localId: string, value: string) => void;
   onLotCodeInputChange: (localId: string, value: string) => void;
   onProductionDateChange: (localId: string, value: string) => void;
   onExpiryDateChange: (localId: string, value: string) => void;
+  onRemarkChange: (localId: string, value: string) => void;
   onAddLine: () => void;
   onRemoveLine: (localId: string) => void;
 }
 
 export const InboundLinesEditor: React.FC<InboundLinesEditorProps> = ({
+  isPurchaseMode,
   lines,
   onQtyInputChange,
   onLotCodeInputChange,
   onProductionDateChange,
   onExpiryDateChange,
+  onRemarkChange,
   onAddLine,
   onRemoveLine,
 }) => {
@@ -43,15 +58,19 @@ export const InboundLinesEditor: React.FC<InboundLinesEditorProps> = ({
         <div className="space-y-1">
           <div className="text-sm font-semibold text-slate-900">行编辑区</div>
           <div className="text-sm text-slate-500">
-            当前这一步只把数量、批次与日期编辑推进到真正的多行渲染。
+            {isPurchaseMode
+              ? "采购模式下，这里真正承接采购来源行并形成 WMS 执行区；只允许编辑执行字段。"
+              : "当前这一步继续承接手工识别结果，并编辑 WMS 执行字段。"}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button type="button" className={btnCls} onClick={onAddLine}>
-            新增一行
-          </button>
-        </div>
+        {!isPurchaseMode ? (
+          <div className="flex items-center gap-2">
+            <button type="button" className={btnCls} onClick={onAddLine}>
+              新增一行
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4">
@@ -70,17 +89,49 @@ export const InboundLinesEditor: React.FC<InboundLinesEditorProps> = ({
                 第 {index + 1} 行
               </div>
 
-              <button
-                type="button"
-                className={btnCls}
-                onClick={() => onRemoveLine(line.localId)}
-                disabled={lines.length <= 1}
-              >
-                删除此行
-              </button>
+              {!isPurchaseMode ? (
+                <button
+                  type="button"
+                  className={btnCls}
+                  onClick={() => onRemoveLine(line.localId)}
+                  disabled={lines.length <= 1}
+                >
+                  删除此行
+                </button>
+              ) : null}
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {isPurchaseMode ? (
+              <section className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="text-xs font-medium text-slate-700">
+                  采购来源摘要
+                </div>
+                <div className="mt-2 text-sm text-slate-700">
+                  来源行：第 {line.sourceLineNo ?? "-"} 行 · po_line_id：
+                  {line.poLineId ?? "-"}
+                </div>
+                <div className="mt-1 text-sm text-slate-700">
+                  商品：{line.sourceItemName ?? "暂无"} / SKU：
+                  {line.sourceItemSku ?? "暂无"}
+                </div>
+                <div className="mt-1 text-sm text-slate-700">
+                  单位：{line.sourceUomName ?? "暂无"}
+                </div>
+                <div className="mt-1 text-sm text-slate-600">
+                  待收数量：
+                  {line.sourceQtyRemainingInput || "待人工换算"}
+                  {line.sourceQtyRemainingBase != null
+                    ? ` / base：${line.sourceQtyRemainingBase}`
+                    : ""}
+                </div>
+                <div className="mt-1 text-sm text-slate-500">
+                  completion 状态：
+                  {line.sourceLineCompletionStatus ?? "暂无"}
+                </div>
+              </section>
+            ) : null}
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
               <label>
                 <div className={labelCls}>qty_input</div>
                 <input
@@ -127,13 +178,25 @@ export const InboundLinesEditor: React.FC<InboundLinesEditorProps> = ({
                   }
                 />
               </label>
+
+              <label>
+                <div className={labelCls}>remark</div>
+                <input
+                  className={inputCls}
+                  placeholder="行备注"
+                  value={line.remark}
+                  onChange={(e) => onRemarkChange(line.localId, e.target.value)}
+                />
+              </label>
             </div>
           </section>
         ))}
       </div>
 
       <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
-        当前只推进多行草稿编辑；商品识别区仍然只绑定第一行，下一步再继续收口。
+        {isPurchaseMode
+          ? "采购模式下：商品、单位、po_line_id 来自采购来源行；本区只编辑 WMS 执行字段。"
+          : "非采购模式下：仍允许继续新增/删除行，并通过商品识别区补齐 item / uom。"}
       </div>
     </section>
   );
