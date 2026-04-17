@@ -17,7 +17,7 @@ export function mapModeToSourceType(mode: InboundMode): InboundSourceType {
     case "PURCHASE":
       return "PURCHASE_ORDER";
     case "RETURN":
-      return "RETURN_ORDER";
+      return "RETURN";
     case "OTHER":
     default:
       return "MANUAL";
