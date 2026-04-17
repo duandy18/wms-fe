@@ -15,6 +15,24 @@ export const CountCockpitPage = lazy(
 export const InboundWorkbenchPage = lazy(
   () => import("../../features/wms/inbound/pages/InboundWorkbenchPage"),
 );
+export const InboundReceiptsSummaryPage = lazy(
+  () => import("../../features/inbound-receipts/pages/InboundReceiptsSummaryPage"),
+);
+export const InboundReceiptsPurchasePage = lazy(
+  () => import("../../features/inbound-receipts/pages/InboundReceiptsPurchasePage"),
+);
+export const InboundReceiptsReturnsPage = lazy(
+  () => import("../../features/inbound-receipts/pages/InboundReceiptsReturnsPage"),
+);
+export const InboundReceiptsManualPage = lazy(
+  () => import("../../features/inbound-receipts/pages/InboundReceiptsManualPage"),
+);
+export const InboundOperationsPage = lazy(
+  () => import("../../features/wms/inbound-operations/pages/InboundOperationsPage"),
+);
+export const InboundOperationTaskPage = lazy(
+  () => import("../../features/wms/inbound-operations/pages/InboundOperationTaskPage"),
+);
 export const PickTasksCockpitPage = lazy(
   () => import("../../features/operations/outbound-pick/PickTasksCockpitPage"),
 );

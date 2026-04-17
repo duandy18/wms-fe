@@ -55,7 +55,7 @@ const AppRouter: React.FC = () => {
             path="inbound"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.InboundWorkbenchPage />
+                <Navigate to="/inbound-operations" replace />
               </RequirePermission>
             }
           />
@@ -63,7 +63,7 @@ const AppRouter: React.FC = () => {
             path="inbound/cockpit"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.InboundWorkbenchPage />
+                <Navigate to="/inbound-receipts" replace />
               </RequirePermission>
             }
           />
@@ -391,6 +391,55 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="page.procurement.read">
                 <P.PurchaseReportsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="inbound-receipts"
+            element={
+              <RequirePermission permission="page.inbound.read">
+                <P.InboundReceiptsSummaryPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inbound-receipts/purchase"
+            element={
+              <RequirePermission permission="page.inbound.read">
+                <P.InboundReceiptsPurchasePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inbound-receipts/returns"
+            element={
+              <RequirePermission permission="page.inbound.read">
+                <P.InboundReceiptsReturnsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inbound-receipts/manual"
+            element={
+              <RequirePermission permission="page.inbound.read">
+                <P.InboundReceiptsManualPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inbound-operations"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.InboundOperationsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inbound-operations/:receiptNo"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.InboundOperationTaskPage />
               </RequirePermission>
             }
           />
