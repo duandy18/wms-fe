@@ -32,6 +32,12 @@ vi.mock("../lazyPages", () => {
     InventoryLedgerPage: page("InventoryLedgerPage mock view"),
 
     InboundWorkbenchPage: page("InboundWorkbenchPage mock view"),
+    InboundReceiptsSummaryPage: page("InboundReceiptsSummaryPage mock view"),
+    InboundReceiptsPurchasePage: page("InboundReceiptsPurchasePage mock view"),
+    InboundReceiptsReturnsPage: page("InboundReceiptsReturnsPage mock view"),
+    InboundReceiptsManualPage: page("InboundReceiptsManualPage mock view"),
+    InboundOperationsPage: page("InboundOperationsPage mock view"),
+    InboundOperationTaskPage: page("InboundOperationTaskPage mock view"),
     CountCockpitPage: page("CountCockpitPage mock view"),
     PickTasksCockpitPage: page("PickTasksCockpitPage mock view"),
     InternalOutboundPage: page("InternalOutboundPage mock view"),
@@ -120,6 +126,48 @@ describe("AppRouter inventory routes", () => {
     renderWithRoute("/inventory/ledger");
     expect(
       await screen.findByText("InventoryLedgerPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders InboundReceiptsSummaryPage on /inbound-receipts", async () => {
+    renderWithRoute("/inbound-receipts");
+    expect(
+      await screen.findByText("InboundReceiptsSummaryPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders InboundReceiptsPurchasePage on /inbound-receipts/purchase", async () => {
+    renderWithRoute("/inbound-receipts/purchase");
+    expect(
+      await screen.findByText("InboundReceiptsPurchasePage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders InboundReceiptsReturnsPage on /inbound-receipts/returns", async () => {
+    renderWithRoute("/inbound-receipts/returns");
+    expect(
+      await screen.findByText("InboundReceiptsReturnsPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders InboundReceiptsManualPage on /inbound-receipts/manual", async () => {
+    renderWithRoute("/inbound-receipts/manual");
+    expect(
+      await screen.findByText("InboundReceiptsManualPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders InboundOperationsPage on /inbound-operations", async () => {
+    renderWithRoute("/inbound-operations");
+    expect(
+      await screen.findByText("InboundOperationsPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders InboundOperationTaskPage on /inbound-operations/IBR-0001", async () => {
+    renderWithRoute("/inbound-operations/IBR-0001");
+    expect(
+      await screen.findByText("InboundOperationTaskPage mock view"),
     ).toBeInTheDocument();
   });
 
