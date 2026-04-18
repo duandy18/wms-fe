@@ -19,6 +19,9 @@ type Props = {
   reloadToken: number;
   barcodeCardRef: RefObject<HTMLDivElement | null>;
 
+  pendingBarcode: string | null;
+  onConsumePendingBarcode: () => void;
+
   onPackagingChanged: () => Promise<void> | void;
   onBarcodesSaved: () => Promise<void> | void;
   onCancelEdit: () => void;
@@ -35,12 +38,14 @@ const ItemBarcodesInputSection: React.FC<Props> = ({
   editingRow,
   reloadToken,
   barcodeCardRef,
+  pendingBarcode,
+  onConsumePendingBarcode,
   onPackagingChanged,
   onBarcodesSaved,
   onCancelEdit,
 }) => {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
       <div>
         <div className="text-base font-semibold text-slate-900">选择商品</div>
       </div>
@@ -49,7 +54,7 @@ const ItemBarcodesInputSection: React.FC<Props> = ({
         <div className="space-y-1">
           <label className="block text-sm font-medium text-slate-700">搜索商品</label>
           <input
-            className="w-full rounded border px-3 py-2 bg-white"
+            className="w-full rounded border bg-white px-3 py-2"
             placeholder="按 SKU / 商品名称 / 规格 / 品牌 / 品类 / 供应商搜索"
             value={keyword}
             onChange={(e) => onChangeKeyword(e.target.value)}
@@ -60,7 +65,7 @@ const ItemBarcodesInputSection: React.FC<Props> = ({
         <div className="space-y-1">
           <label className="block text-sm font-medium text-slate-700">选择商品</label>
           <select
-            className="w-full rounded border px-3 py-2 bg-white"
+            className="w-full rounded border bg-white px-3 py-2"
             value={selectedItemId ?? ""}
             onChange={(e) => {
               const raw = e.target.value;
@@ -110,6 +115,8 @@ const ItemBarcodesInputSection: React.FC<Props> = ({
               itemId={selectedItem.id}
               editingRow={editingRow}
               reloadToken={reloadToken}
+              scannedCode={pendingBarcode}
+              onScannedCodeConsumed={onConsumePendingBarcode}
               onSaved={onBarcodesSaved}
               onCancelEdit={onCancelEdit}
             />

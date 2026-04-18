@@ -8,8 +8,6 @@ import type { ItemBarcodeCompositeRow } from "../api/itemBarcodesOwnerApi";
 import { fetchItemUomRowsByItems } from "../api/itemUomsOwnerApi";
 import { fetchItems } from "../api/itemsOwnerApi";
 
-type ItemsBarcodeScannedDetail = { code: string };
-
 function buildSearchText(item: Item): string {
   return [
     item.sku,
@@ -137,6 +135,44 @@ export function useItemBarcodesPageModel() {
     }
   }, [editingRow, selectedItemId]);
 
+  const handleProbeBarcodeInput = useCallback(
+    async (inputBarcode: string) => {
+      const code = inputBarcode.trim();
+      if (!code) return;
+
+      const resp = await probeItemBarcode(code);
+
+      const itemId =
+        resp.status === "BOUND" && resp.item_id && resp.item_id > 0
+          ? resp.item_id
+          : null;
+
+      if (itemId) {
+        const target = items.find((x) => x.id === itemId) ?? null;
+        if (target) {
+          setSelectedItemId(target.id);
+          setEditingRow(null);
+          setPendingBarcode(null);
+          setBarcodeHint(
+            `已按条码 ${code} 自动定位商品，可继续维护包装并绑定条码。`,
+          );
+        } else {
+          setPendingBarcode(null);
+          setBarcodeHint(
+            `条码 ${code} 已绑定商品，但当前列表中未找到该商品，请刷新后重试。`,
+          );
+        }
+        return;
+      }
+
+      setPendingBarcode(code);
+      setBarcodeHint(
+        `条码 ${code} 尚未绑定商品。请先选择商品，系统会把该条码自动带入上方条码绑定卡。`,
+      );
+    },
+    [items],
+  );
+
   useEffect(() => {
     const barcode = barcodeFromQuery;
     if (!barcode) {
@@ -151,36 +187,7 @@ export function useItemBarcodesPageModel() {
 
     async function resolveByProbe(inputBarcode: string) {
       try {
-        const resp = await probeItemBarcode(inputBarcode);
-        if (cancelled) return;
-
-        const itemId =
-          resp.status === "BOUND" && resp.item_id && resp.item_id > 0
-            ? resp.item_id
-            : null;
-
-        if (itemId) {
-          const target = items.find((x) => x.id === itemId) ?? null;
-          if (target) {
-            setSelectedItemId(target.id);
-            setEditingRow(null);
-            setPendingBarcode(null);
-            setBarcodeHint(
-              `已按条码 ${inputBarcode} 自动定位商品，可继续维护包装并绑定条码。`,
-            );
-          } else {
-            setPendingBarcode(null);
-            setBarcodeHint(
-              `条码 ${inputBarcode} 已绑定商品，但当前列表中未找到该商品，请刷新后重试。`,
-            );
-          }
-          return;
-        }
-
-        setPendingBarcode(inputBarcode);
-        setBarcodeHint(
-          `条码 ${inputBarcode} 尚未绑定商品。请先选择商品，系统会把该条码自动带入上方条码绑定卡。`,
-        );
+        await handleProbeBarcodeInput(inputBarcode);
       } catch {
         if (cancelled) return;
         setPendingBarcode(inputBarcode);
@@ -195,25 +202,11 @@ export function useItemBarcodesPageModel() {
     return () => {
       cancelled = true;
     };
-  }, [barcodeFromQuery, items]);
+  }, [barcodeFromQuery, items, handleProbeBarcodeInput]);
 
-  useEffect(() => {
-    if (!selectedItemId || !pendingBarcode) return;
-
-    const code = pendingBarcode.trim();
-    if (!code) return;
-
-    requestAnimationFrame(() => {
-      window.dispatchEvent(
-        new CustomEvent<ItemsBarcodeScannedDetail>("items:barcode-scanned", {
-          detail: { code },
-        }),
-      );
-    });
-
-    setBarcodeHint(`已将条码 ${code} 带入上方绑定卡，请确认后保存。`);
+  const clearPendingBarcode = useCallback(() => {
     setPendingBarcode(null);
-  }, [selectedItemId, pendingBarcode]);
+  }, []);
 
   const handleSelectItemId = useCallback((nextItemId: number | null) => {
     setSelectedItemId(nextItemId);
@@ -274,6 +267,9 @@ export function useItemBarcodesPageModel() {
     handleSelectItemId,
 
     barcodeHint,
+    pendingBarcode,
+    clearPendingBarcode,
+
     rows,
     editingRow,
     reloadToken,
@@ -283,5 +279,6 @@ export function useItemBarcodesPageModel() {
     handlePackagingChanged,
     handleBarcodesSaved,
     clearEditingRow,
+    handleProbeBarcodeInput,
   };
 }

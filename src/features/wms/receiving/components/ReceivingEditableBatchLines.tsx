@@ -1,7 +1,8 @@
 import React from "react";
-import type {
-  ReceivingEntryDraft,
-  ReceivingTaskLineOut,
+import {
+  receivingLineShowsDateFields,
+  type ReceivingEntryDraft,
+  type ReceivingTaskLineOut,
 } from "../contracts/receiving";
 
 type Props = {
@@ -29,6 +30,11 @@ const ReceivingEditableBatchLines: React.FC<Props> = ({
 
       {lines.map((line) => {
         const entries = entriesByLineNo[line.line_no] ?? [];
+        const showDateFields = receivingLineShowsDateFields(line);
+        const gridCols = showDateFields
+          ? "grid-cols-1 md:grid-cols-5 xl:grid-cols-6"
+          : "grid-cols-1 md:grid-cols-4 xl:grid-cols-5";
+
         return (
           <section
             key={line.line_no}
@@ -41,6 +47,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = ({
                 </div>
                 <div className="text-xs text-slate-500">
                   剩余待收：{line.remaining_qty} {line.uom_name_snapshot || ""}
+                  {showDateFields ? " · 需录入日期" : " · 无需录入日期"}
                 </div>
               </div>
               <button
@@ -56,7 +63,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = ({
               {entries.map((entry, index) => (
                 <div
                   key={`${line.line_no}-${index}`}
-                  className="grid grid-cols-1 gap-3 rounded-md border border-slate-100 bg-slate-50 p-3 md:grid-cols-5 xl:grid-cols-6"
+                  className={`grid gap-3 rounded-md border border-slate-100 bg-slate-50 p-3 ${gridCols}`}
                 >
                   <label className="space-y-1 text-xs text-slate-600">
                     <span>本次数量</span>
@@ -83,40 +90,55 @@ const ReceivingEditableBatchLines: React.FC<Props> = ({
                     />
                   </label>
 
-                  <label className="space-y-1 text-xs text-slate-600">
-                    <span>生产日期</span>
-                    <input
-                      type="date"
-                      className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
-                      value={entry.production_date}
-                      onChange={(e) =>
-                        onChangeEntry(line.line_no, index, { production_date: e.target.value })
-                      }
-                    />
-                  </label>
+                  {showDateFields ? (
+                    <label className="space-y-1 text-xs text-slate-600">
+                      <span>生产日期</span>
+                      <input
+                        type="date"
+                        className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
+                        value={entry.production_date}
+                        onChange={(e) =>
+                          onChangeEntry(line.line_no, index, { production_date: e.target.value })
+                        }
+                      />
+                    </label>
+                  ) : null}
+
+                  {showDateFields ? (
+                    <label className="space-y-1 text-xs text-slate-600">
+                      <span>到期日期</span>
+                      <input
+                        type="date"
+                        className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
+                        value={entry.expiry_date}
+                        onChange={(e) =>
+                          onChangeEntry(line.line_no, index, { expiry_date: e.target.value })
+                        }
+                      />
+                    </label>
+                  ) : null}
 
                   <label className="space-y-1 text-xs text-slate-600">
-                    <span>到期日期</span>
-                    <input
-                      type="date"
-                      className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
-                      value={entry.expiry_date}
-                      onChange={(e) =>
-                        onChangeEntry(line.line_no, index, { expiry_date: e.target.value })
-                      }
-                    />
-                  </label>
-
-                  <label className="space-y-1 text-xs text-slate-600 xl:col-span-2">
                     <span>备注</span>
+                    <input
+                      type="text"
+                      className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
+                      value={entry.remark}
+                      onChange={(e) =>
+                        onChangeEntry(line.line_no, index, { remark: e.target.value })
+                      }
+                    />
+                  </label>
+
+                  <div className="space-y-1 text-xs text-slate-600 xl:col-span-2">
+                    <span>扫码信息</span>
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
-                        value={entry.remark}
-                        onChange={(e) =>
-                          onChangeEntry(line.line_no, index, { remark: e.target.value })
-                        }
+                        readOnly
+                        className="w-full rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm text-slate-600"
+                        value={entry.barcode_input || ""}
+                        placeholder="未通过扫码回填"
                       />
                       <button
                         type="button"
@@ -127,7 +149,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = ({
                         删除
                       </button>
                     </div>
-                  </label>
+                  </div>
                 </div>
               ))}
             </div>

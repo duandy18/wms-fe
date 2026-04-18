@@ -3,6 +3,8 @@ import type {
   ReceivingSubmitIn,
   ReceivingSubmitOut,
   ReceivingTaskListOut,
+  ReceivingTaskProbeIn,
+  ReceivingTaskProbeOut,
   ReceivingTaskReadOut,
 } from "../contracts/receiving";
 
@@ -13,6 +15,16 @@ export async function fetchReceivingTasks(): Promise<ReceivingTaskListOut> {
 export async function fetchReceivingTask(receiptNo: string): Promise<ReceivingTaskReadOut> {
   return apiGet<ReceivingTaskReadOut>(
     `/wms/receiving/tasks/${encodeURIComponent(receiptNo)}`,
+  );
+}
+
+export async function probeReceivingTaskBarcode(
+  receiptNo: string,
+  payload: ReceivingTaskProbeIn,
+): Promise<ReceivingTaskProbeOut> {
+  return apiPost<ReceivingTaskProbeOut>(
+    `/wms/receiving/tasks/${encodeURIComponent(receiptNo)}/probe`,
+    payload,
   );
 }
 

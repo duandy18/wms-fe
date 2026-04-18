@@ -8,6 +8,10 @@ export type ReceivingStatus =
   | "RELEASED"
   | "VOIDED";
 
+export type ReceivingExpiryPolicy = "NONE" | "REQUIRED";
+export type ReceivingLotSourcePolicy = "INTERNAL_ONLY" | "SUPPLIER_ONLY";
+export type ReceivingShelfLifeUnit = "DAY" | "WEEK" | "MONTH" | "YEAR";
+
 export interface ReceivingTaskListItemOut {
   receipt_id: number;
   receipt_no: string;
@@ -40,6 +44,13 @@ export interface ReceivingTaskLineOut {
   item_spec_snapshot: string | null;
   uom_name_snapshot: string | null;
   ratio_to_base_snapshot: string;
+
+  expiry_policy: ReceivingExpiryPolicy;
+  lot_source_policy: ReceivingLotSourcePolicy;
+  derivation_allowed: boolean;
+  shelf_life_value: number | null;
+  shelf_life_unit: ReceivingShelfLifeUnit | null;
+
   received_qty: string;
   remaining_qty: string;
   remark: string | null;
@@ -59,8 +70,32 @@ export interface ReceivingTaskReadOut {
   lines: ReceivingTaskLineOut[];
 }
 
+export type ReceivingTaskProbeStatus =
+  | "MATCHED"
+  | "UNBOUND"
+  | "UNMATCHED"
+  | "AMBIGUOUS";
+
+export interface ReceivingTaskProbeIn {
+  barcode: string;
+}
+
+export interface ReceivingTaskProbeOut {
+  ok: boolean;
+  status: ReceivingTaskProbeStatus;
+  barcode: string;
+  item_id: number | null;
+  item_uom_id: number | null;
+  ratio_to_base: number | null;
+  matched_line_no: number | null;
+  item_name_snapshot: string | null;
+  uom_name_snapshot: string | null;
+  message: string | null;
+}
+
 export interface ReceivingEntryDraft {
   qty_inbound: string;
+  barcode_input: string;
   batch_no: string;
   production_date: string;
   expiry_date: string;
@@ -69,6 +104,7 @@ export interface ReceivingEntryDraft {
 
 export interface ReceivingEntryIn {
   qty_inbound: number;
+  barcode_input?: string | null;
   batch_no?: string | null;
   production_date?: string | null;
   expiry_date?: string | null;
@@ -121,11 +157,18 @@ export interface ReceivingSubmitOut {
 export function createEmptyReceivingEntryDraft(): ReceivingEntryDraft {
   return {
     qty_inbound: "",
+    barcode_input: "",
     batch_no: "",
     production_date: "",
     expiry_date: "",
     remark: "",
   };
+}
+
+export function receivingLineShowsDateFields(
+  line: Pick<ReceivingTaskLineOut, "expiry_policy">,
+): boolean {
+  return line.expiry_policy === "REQUIRED";
 }
 
 export function formatReceivingSourceType(sourceType: ReceivingSourceType): string {

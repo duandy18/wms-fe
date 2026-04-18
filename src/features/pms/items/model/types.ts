@@ -9,14 +9,12 @@ export type ItemsState = {
   loading: boolean;
   error: string | null;
 
-  scannedBarcode: string | null;
   selectedItem: Item | null;
 
   primaryBarcodes: Record<number, string>;
 
   filter: EnabledFilter;
 
-  setScannedBarcode: (code: string | null) => void;
   setSelectedItem: (item: Item | null) => void;
 
   setPrimaryBarcodeLocal: (itemId: number, barcode: string | null) => void;
