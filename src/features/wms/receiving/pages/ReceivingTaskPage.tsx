@@ -66,6 +66,12 @@ const ReceivingTaskPage: React.FC = () => {
           <ReceivingEditableBatchLines
             lines={m.task.lines}
             entriesByLineNo={m.entriesByLineNo}
+
+            resolvingEntryKey={null}
+
+            onResolveBarcode={async () => {}}
+                  uomOptionsByLineNo={{}}
+                  onSelectActualUom={() => {}}
             onAddEntry={m.addEntry}
             onRemoveEntry={m.removeEntry}
             onChangeEntry={m.updateEntry}
