@@ -1,20 +1,15 @@
-// src/features/pms/items/components/edit/ItemBarcodesSection.tsx
-
 import React, { useEffect } from "react";
+import { ScanConsole } from "../../../../../shared/scan/ui/ScanConsole";
 import type { ItemBarcodeCompositeRow } from "../../api/itemBarcodesOwnerApi";
 import { AddBarcodeForm, ITEMS_ADD_BARCODE_INPUT_ID } from "../../barcodes-panel/AddBarcodeForm";
 import { useItemBarcodesPanelModel } from "../../barcodes-panel/useItemBarcodesPanelModel";
-
-type ItemsBarcodeScannedDetail = { code: string };
-
-function isItemsBarcodeScannedEvent(e: Event): e is CustomEvent<ItemsBarcodeScannedDetail> {
-  return e instanceof CustomEvent && typeof (e.detail as ItemsBarcodeScannedDetail | undefined)?.code === "string";
-}
 
 export const ItemBarcodesSection: React.FC<{
   itemId: number;
   editingRow?: ItemBarcodeCompositeRow | null;
   reloadToken?: number;
+  scannedCode?: string | null;
+  onScannedCodeConsumed?: () => void;
   onSaved?: () => Promise<void> | void;
   onCancelEdit?: () => void;
   disabled?: boolean;
@@ -22,6 +17,8 @@ export const ItemBarcodesSection: React.FC<{
   itemId,
   editingRow,
   reloadToken,
+  scannedCode,
+  onScannedCodeConsumed,
   onSaved,
   onCancelEdit,
   disabled,
@@ -34,29 +31,35 @@ export const ItemBarcodesSection: React.FC<{
     onCancelEdit,
   });
 
+  function focusBarcodeInput() {
+    requestAnimationFrame(() => {
+      const el = document.getElementById(ITEMS_ADD_BARCODE_INPUT_ID);
+      if (el instanceof HTMLInputElement) {
+        el.focus();
+        el.select();
+      }
+    });
+  }
+
+  async function handleScanFill(codeRaw: string): Promise<void> {
+    const code = codeRaw.trim();
+    if (!code) return;
+
+    m.setNewCode(code);
+    focusBarcodeInput();
+  }
+
   useEffect(() => {
-    function onScanned(e: Event) {
-      if (!isItemsBarcodeScannedEvent(e)) return;
-      const code = e.detail.code.trim();
-      if (!code) return;
+    const code = (scannedCode ?? "").trim();
+    if (!code) return;
 
-      m.setNewCode(code);
-
-      requestAnimationFrame(() => {
-        const el = document.getElementById(ITEMS_ADD_BARCODE_INPUT_ID);
-        if (el instanceof HTMLInputElement) {
-          el.focus();
-          el.select();
-        }
-      });
-    }
-
-    window.addEventListener("items:barcode-scanned", onScanned as EventListener);
-    return () => window.removeEventListener("items:barcode-scanned", onScanned as EventListener);
-  }, [m]);
+    m.setNewCode(code);
+    focusBarcodeInput();
+    onScannedCodeConsumed?.();
+  }, [scannedCode, onScannedCodeConsumed, m]);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-base font-semibold text-slate-900">包装单位和条码绑定</div>
@@ -74,6 +77,23 @@ export const ItemBarcodesSection: React.FC<{
       ) : m.uomOptions.length === 0 ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           当前商品还没有可用包装。请先在左侧包装卡里保存基础包装 / 新增包装，再回来绑定条码。
+        </div>
+      ) : null}
+
+      {!disabled ? (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div className="mb-2 text-sm font-semibold text-slate-900">扫码带入条码</div>
+          <div className="mb-3 text-xs text-slate-500">
+            这里的扫码只负责把原始条码带入绑定输入框，不直接保存，也不走 WMS 扫码作业链。
+          </div>
+
+          <ScanConsole
+            title="扫码带入绑定码"
+            placeholder="请在此处扫码要绑定的条码"
+            modeLabel="PMS 条码绑定"
+            scanMode="auto"
+            onScan={handleScanFill}
+          />
         </div>
       ) : null}
 

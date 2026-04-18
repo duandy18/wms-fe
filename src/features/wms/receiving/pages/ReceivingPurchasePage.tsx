@@ -1,12 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ScanConsole } from "../../../../shared/scan/ui/ScanConsole";
 import PageTitle from "../../../../components/ui/PageTitle";
-import { submitReceiving } from "../api/receivingApi";
+import {
+  probeReceivingTaskBarcode,
+  submitReceiving,
+} from "../api/receivingApi";
 import ReceivingEditableBatchLines from "../components/ReceivingEditableBatchLines";
 import ReceivingInlineDetail from "../components/ReceivingInlineDetail";
 import {
   createEmptyReceivingEntryDraft,
   formatReceivingSourceType,
   formatReceivingStatus,
+  receivingLineShowsDateFields,
   type ReceivingEntryDraft,
   type ReceivingLineIn,
   type ReceivingSubmitIn,
@@ -35,6 +40,7 @@ function normalizeOptionalString(value: string): string | null {
 function isEntryTouched(entry: ReceivingEntryDraft): boolean {
   return Boolean(
     entry.qty_inbound.trim() ||
+      entry.barcode_input.trim() ||
       entry.batch_no.trim() ||
       entry.production_date.trim() ||
       entry.expiry_date.trim() ||
@@ -50,8 +56,50 @@ function buildEmptyEntries(detail: ReceivingTaskReadOut): Record<number, Receivi
   return next;
 }
 
+function incrementQtyText(value: string): string {
+  const n = Number(value.trim() || "0");
+  const safe = Number.isFinite(n) && n > 0 ? n : 0;
+  return String(safe + 1);
+}
+
+function findScanAccumulatorIndex(rows: ReceivingEntryDraft[]): number {
+  return rows.findIndex(
+    (row) =>
+      !row.batch_no.trim() &&
+      !row.production_date.trim() &&
+      !row.expiry_date.trim() &&
+      !row.remark.trim(),
+  );
+}
+
+function applyScanToRows(
+  currentRows: ReceivingEntryDraft[],
+  barcode: string,
+): ReceivingEntryDraft[] {
+  const rows = [...currentRows];
+  const idx = findScanAccumulatorIndex(rows);
+
+  if (idx >= 0) {
+    const current = rows[idx] ?? createEmptyReceivingEntryDraft();
+    rows[idx] = {
+      ...current,
+      qty_inbound: incrementQtyText(current.qty_inbound),
+      barcode_input: barcode,
+    };
+    return rows;
+  }
+
+  rows.push({
+    ...createEmptyReceivingEntryDraft(),
+    qty_inbound: "1",
+    barcode_input: barcode,
+  });
+  return rows;
+}
+
 const ReceivingPurchasePage: React.FC = () => {
   const m = useReceivingSummaryPage("PURCHASE_ORDER");
+
   const [selectedReceiptNo, setSelectedReceiptNo] = useState("");
   const [remark, setRemark] = useState("");
   const [entriesByLineNo, setEntriesByLineNo] = useState<Record<number, ReceivingEntryDraft[]>>({});
@@ -59,6 +107,9 @@ const ReceivingPurchasePage: React.FC = () => {
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const [lastSubmit, setLastSubmit] = useState<ReceivingSubmitOut | null>(null);
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scanError, setScanError] = useState("");
+  const [scanSuccess, setScanSuccess] = useState("");
 
   const selectedRow = useMemo(() => {
     return m.rows.find((row) => row.receipt_no === selectedReceiptNo) ?? null;
@@ -73,6 +124,8 @@ const ReceivingPurchasePage: React.FC = () => {
     setSubmitError("");
     setSubmitSuccess("");
     setLastSubmit(null);
+    setScanError("");
+    setScanSuccess("");
     setEntriesByLineNo({});
   }, [selectedReceiptNo]);
 
@@ -89,6 +142,69 @@ const ReceivingPurchasePage: React.FC = () => {
     });
   }, [selectedDetail]);
 
+  async function handleProbeScan(rawBarcode: string) {
+    const barcode = rawBarcode.trim();
+    if (!barcode) return;
+
+    if (!selectedDetail) {
+      const msg = "请先选择采购收货单，再进行扫码";
+      setScanError(msg);
+      throw new Error(msg);
+    }
+
+    setScanLoading(true);
+    setScanError("");
+    setScanSuccess("");
+
+    try {
+      const result = await probeReceivingTaskBarcode(selectedDetail.receipt_no, {
+        barcode,
+      });
+
+      if (result.status !== "MATCHED" || result.matched_line_no == null) {
+        const msg = result.message || "扫码未命中当前收货单行";
+        setScanError(msg);
+        throw new Error(msg);
+      }
+
+      const matchedLine = selectedDetail.lines.find(
+        (line) => line.line_no === result.matched_line_no,
+      );
+      if (!matchedLine) {
+        const msg = "后端已命中任务行，但当前页面未找到该任务行";
+        setScanError(msg);
+        throw new Error(msg);
+      }
+
+      setEntriesByLineNo((prev) => {
+        const current = prev[matchedLine.line_no] ?? [createEmptyReceivingEntryDraft()];
+        return {
+          ...prev,
+          [matchedLine.line_no]: applyScanToRows(current, barcode),
+        };
+      });
+
+      const itemName =
+        result.item_name_snapshot ||
+        matchedLine.item_name_snapshot ||
+        `商品 ${matchedLine.item_id}`;
+      const uomName =
+        result.uom_name_snapshot ||
+        matchedLine.uom_name_snapshot ||
+        "包装";
+
+      setScanSuccess(
+        `扫码已命中任务行 ${matchedLine.line_no}：${itemName} · ${uomName} +1`,
+      );
+    } catch (error) {
+      const msg = getErrorMessage(error, "扫码识别失败");
+      setScanError(msg);
+      throw (error instanceof Error ? error : new Error(msg));
+    } finally {
+      setScanLoading(false);
+    }
+  }
+
   async function handleSubmit() {
     if (!selectedDetail) {
       setSubmitError("请先选择采购收货单");
@@ -103,7 +219,8 @@ const ReceivingPurchasePage: React.FC = () => {
 
     for (const line of selectedDetail.lines) {
       const drafts = entriesByLineNo[line.line_no] ?? [];
-      const entries = [];
+      const entries: ReceivingLineIn["entries"] = [];
+      const showDateFields = receivingLineShowsDateFields(line);
 
       for (const draft of drafts) {
         const touched = isEntryTouched(draft);
@@ -122,11 +239,25 @@ const ReceivingPurchasePage: React.FC = () => {
           return;
         }
 
+        if (
+          showDateFields &&
+          !draft.production_date.trim() &&
+          !draft.expiry_date.trim()
+        ) {
+          setSubmitError(`任务行 ${line.line_no} 的批次子行至少填写生产日期或到期日期`);
+          return;
+        }
+
         entries.push({
           qty_inbound: qty,
+          barcode_input: normalizeOptionalString(draft.barcode_input),
           batch_no: normalizeOptionalString(draft.batch_no),
-          production_date: normalizeOptionalString(draft.production_date),
-          expiry_date: normalizeOptionalString(draft.expiry_date),
+          production_date: showDateFields
+            ? normalizeOptionalString(draft.production_date)
+            : null,
+          expiry_date: showDateFields
+            ? normalizeOptionalString(draft.expiry_date)
+            : null,
           remark: normalizeOptionalString(draft.remark),
         });
       }
@@ -157,6 +288,8 @@ const ReceivingPurchasePage: React.FC = () => {
       setSubmitSuccess(`提交成功：操作单 #${out.id}`);
       setRemark("");
       setEntriesByLineNo(buildEmptyEntries(selectedDetail));
+      setScanError("");
+      setScanSuccess("");
       await m.refreshDetail(selectedDetail.receipt_no);
       m.reload();
     } catch (err) {
@@ -170,14 +303,14 @@ const ReceivingPurchasePage: React.FC = () => {
     <div className="space-y-6 p-6">
       <PageTitle
         title="采购单收货"
-        description="上卡选择采购来源的已发布收货单，并直接录入本次收货数量、批次、生产日期等；下卡展示当前收货情况。"
+        description="上卡选择采购来源的已发布收货单；扫码只确认商品包装并逐扫加一，日期与批次信息仍由页面单独补录。"
       />
 
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
         <div>
           <div className="text-sm font-semibold text-slate-900">收货录入</div>
           <div className="text-xs text-slate-500">
-            先选择采购收货单。系统会展开该收货单的收货行，并在上卡直接补录本次数量、批次号、生产日期、到期日期和备注。
+            先选择采购收货单。扫码只做商品包装识别与数量累加，不直接落账，不承担日期推导。
           </div>
         </div>
 
@@ -275,6 +408,33 @@ const ReceivingPurchasePage: React.FC = () => {
 
             {selectedDetail ? (
               <>
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-2 text-sm font-semibold text-slate-900">采购收货扫码</div>
+                  <div className="mb-3 text-xs text-slate-500">
+                    扫码只做商品包装识别。命中当前收货单行后，按包装单位逐扫 +1；批次与日期继续手动补录。
+                  </div>
+                  <ScanConsole
+                    title="扫码识别"
+                    placeholder="请选择收货单后，在此处扫码"
+                    modeLabel="采购收货"
+                    scanMode="auto"
+                    onScan={handleProbeScan}
+                  />
+                  {scanLoading ? (
+                    <div className="mt-2 text-xs text-slate-500">扫码识别中…</div>
+                  ) : null}
+                  {scanError ? (
+                    <div className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                      {scanError}
+                    </div>
+                  ) : null}
+                  {scanSuccess ? (
+                    <div className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                      {scanSuccess}
+                    </div>
+                  ) : null}
+                </div>
+
                 <label className="block space-y-1 text-xs text-slate-600">
                   <span>整单备注</span>
                   <textarea

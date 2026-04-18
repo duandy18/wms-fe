@@ -10,7 +10,7 @@ export const LoginPage = lazy(() => import("../../features/auth/LoginPage"));
 
 // 作业台 (Cockpits)
 export const CountCockpitPage = lazy(
-  () => import("../../features/operations/count/CountCockpitPage"),
+  () => import("../../features/wms/count/CountCockpitPage"),
 );
 export const InboundReceiptsSummaryPage = lazy(
   () => import("../../features/inbound-receipts/pages/InboundReceiptsSummaryPage"),
@@ -40,7 +40,7 @@ export const ReceivingTaskPage = lazy(
   () => import("../../features/wms/receiving/pages/ReceivingTaskPage"),
 );
 export const PickTasksCockpitPage = lazy(
-  () => import("../../features/operations/outbound-pick/PickTasksCockpitPage"),
+  () => import("../../features/wms/outbound-pick/PickTasksCockpitPage"),
 );
 export const ShipmentPreparePage = lazy(
   () => import("../../features/tms/shipment/pages/ShipmentPreparePage"),

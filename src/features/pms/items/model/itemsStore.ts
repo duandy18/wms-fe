@@ -20,14 +20,12 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
   loading: false,
   error: null,
 
-  scannedBarcode: null,
   selectedItem: null,
 
   primaryBarcodes: {},
 
   filter: "all",
 
-  setScannedBarcode: (code) => set({ scannedBarcode: code }),
   setSelectedItem: (item) => set({ selectedItem: item }),
 
   setPrimaryBarcodeLocal: (itemId, barcode) =>
