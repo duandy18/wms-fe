@@ -31,13 +31,15 @@ vi.mock("../lazyPages", () => {
     InventoryPage: page("InventoryPage mock view"),
     InventoryLedgerPage: page("InventoryLedgerPage mock view"),
 
-    InboundWorkbenchPage: page("InboundWorkbenchPage mock view"),
     InboundReceiptsSummaryPage: page("InboundReceiptsSummaryPage mock view"),
     InboundReceiptsPurchasePage: page("InboundReceiptsPurchasePage mock view"),
     InboundReceiptsReturnsPage: page("InboundReceiptsReturnsPage mock view"),
     InboundReceiptsManualPage: page("InboundReceiptsManualPage mock view"),
-    InboundOperationsPage: page("InboundOperationsPage mock view"),
-    InboundOperationTaskPage: page("InboundOperationTaskPage mock view"),
+    ReceivingSummaryPage: page("ReceivingSummaryPage mock view"),
+    ReceivingPurchasePage: page("ReceivingPurchasePage mock view"),
+    ReceivingManualPage: page("ReceivingManualPage mock view"),
+    ReceivingReturnsPage: page("ReceivingReturnsPage mock view"),
+    ReceivingTaskPage: page("ReceivingTaskPage mock view"),
     CountCockpitPage: page("CountCockpitPage mock view"),
     PickTasksCockpitPage: page("PickTasksCockpitPage mock view"),
     InternalOutboundPage: page("InternalOutboundPage mock view"),
@@ -157,17 +159,24 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders InboundOperationsPage on /inbound-operations", async () => {
-    renderWithRoute("/inbound-operations");
+  it("renders ReceivingSummaryPage on /inbound-operations", async () => {
+    renderWithRoute("/receiving");
     expect(
-      await screen.findByText("InboundOperationsPage mock view"),
+      await screen.findByText("ReceivingSummaryPage mock view"),
     ).toBeInTheDocument();
   });
 
-  it("renders InboundOperationTaskPage on /inbound-operations/IBR-0001", async () => {
-    renderWithRoute("/inbound-operations/IBR-0001");
+  it("renders ReceivingPurchasePage on /inbound-operations/purchase", async () => {
+    renderWithRoute("/receiving/purchase");
     expect(
-      await screen.findByText("InboundOperationTaskPage mock view"),
+      await screen.findByText("ReceivingPurchasePage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders ReceivingTaskPage on /inbound-operations/IBR-0001", async () => {
+    renderWithRoute("/receiving/IBR-0001");
+    expect(
+      await screen.findByText("ReceivingTaskPage mock view"),
     ).toBeInTheDocument();
   });
 

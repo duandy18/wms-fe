@@ -1,25 +1,25 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import PageTitle from "../../../../components/ui/PageTitle";
-import InboundOperationEditableBatchLines from "../components/InboundOperationEditableBatchLines";
-import InboundOperationReadonlyLinesTable from "../components/InboundOperationReadonlyLinesTable";
-import InboundOperationTaskInfoCard from "../components/InboundOperationTaskInfoCard";
-import { useInboundOperationTaskPage } from "../model/useInboundOperationTaskPage";
+import ReceivingEditableBatchLines from "../components/ReceivingEditableBatchLines";
+import ReceivingReadonlyLinesTable from "../components/ReceivingReadonlyLinesTable";
+import ReceivingTaskInfoCard from "../components/ReceivingTaskInfoCard";
+import { useReceivingTaskPage } from "../model/useReceivingTaskPage";
 
-const InboundOperationTaskPage: React.FC = () => {
+const ReceivingTaskPage: React.FC = () => {
   const navigate = useNavigate();
-  const m = useInboundOperationTaskPage();
+  const m = useReceivingTaskPage();
 
   if (!m.isValid) {
     return (
       <div className="space-y-4 p-6">
-        <PageTitle title="收货操作任务" description="无效的入库任务号。" />
+        <PageTitle title="收货作业任务" description="无效的收货单号。" />
         <button
           type="button"
           className="text-xs text-slate-600 hover:text-slate-900"
-          onClick={() => navigate("/inbound-operations")}
+          onClick={() => navigate("/receiving")}
         >
-          ← 返回收货操作入口
+          ← 返回收货作业入口
         </button>
       </div>
     );
@@ -28,16 +28,16 @@ const InboundOperationTaskPage: React.FC = () => {
   return (
     <div className="space-y-6 p-6">
       <PageTitle
-        title={`收货操作 / ${m.receiptNo}`}
-        description="读取 RELEASED 任务，只读展示任务信息与任务行；本次收货批次子行在下方编辑，提交后写入 WMS 收货操作事实。"
+        title={`收货作业 / ${m.receiptNo}`}
+        description="基于已发布收货单执行实际收货；只读展示收货单信息与当前收货情况，并在下方录入本次收货批次子行。"
       />
 
       <button
         type="button"
         className="text-xs text-slate-600 hover:text-slate-900"
-        onClick={() => navigate("/inbound-operations")}
+        onClick={() => navigate("/receiving")}
       >
-        ← 返回收货操作入口
+        ← 返回收货作业入口
       </button>
 
       {m.loading ? <div className="text-sm text-slate-500">加载中…</div> : null}
@@ -49,7 +49,7 @@ const InboundOperationTaskPage: React.FC = () => {
 
       {m.task ? (
         <>
-          <InboundOperationTaskInfoCard task={m.task} remainingTotal={m.remainingTotal} />
+          <ReceivingTaskInfoCard task={m.task} remainingTotal={m.remainingTotal} />
 
           <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
             <div className="text-sm font-semibold text-slate-900">整单备注</div>
@@ -61,9 +61,9 @@ const InboundOperationTaskPage: React.FC = () => {
             />
           </section>
 
-          <InboundOperationReadonlyLinesTable lines={m.task.lines} />
+          <ReceivingReadonlyLinesTable lines={m.task.lines} />
 
-          <InboundOperationEditableBatchLines
+          <ReceivingEditableBatchLines
             lines={m.task.lines}
             entriesByLineNo={m.entriesByLineNo}
             onAddEntry={m.addEntry}
@@ -104,11 +104,11 @@ const InboundOperationTaskPage: React.FC = () => {
                 className="rounded-md bg-indigo-600 px-4 py-2 text-sm text-white disabled:opacity-60"
                 disabled={m.submitting}
                 onClick={() => {
-                  if (!window.confirm(`确认提交收货操作：${m.task?.receipt_no}？`)) return;
+                  if (!window.confirm(`确认提交收货作业：${m.task?.receipt_no}？`)) return;
                   void m.submit();
                 }}
               >
-                {m.submitting ? "提交中…" : "提交收货操作"}
+                {m.submitting ? "提交中…" : "提交收货作业"}
               </button>
             </div>
           </section>
@@ -118,4 +118,4 @@ const InboundOperationTaskPage: React.FC = () => {
   );
 };
 
-export default InboundOperationTaskPage;
+export default ReceivingTaskPage;

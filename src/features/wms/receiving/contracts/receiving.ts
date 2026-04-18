@@ -1,14 +1,37 @@
-export type InboundTaskSourceType =
+export type ReceivingSourceType =
   | "PURCHASE_ORDER"
   | "RETURN_ORDER"
   | "MANUAL";
 
-export type InboundTaskStatus =
+export type ReceivingStatus =
   | "DRAFT"
   | "RELEASED"
   | "VOIDED";
 
-export interface InboundTaskLineOut {
+export interface ReceivingTaskListItemOut {
+  receipt_id: number;
+  receipt_no: string;
+  source_type: ReceivingSourceType;
+  source_doc_no_snapshot: string | null;
+  warehouse_id: number;
+  warehouse_name_snapshot: string | null;
+  supplier_id: number | null;
+  counterparty_name_snapshot: string | null;
+  status: ReceivingStatus;
+  released_at: string | null;
+  line_count: number;
+  total_planned_qty: string;
+  total_received_qty: string;
+  total_remaining_qty: string;
+  remark: string | null;
+}
+
+export interface ReceivingTaskListOut {
+  items: ReceivingTaskListItemOut[];
+  total: number;
+}
+
+export interface ReceivingTaskLineOut {
   line_no: number;
   item_id: number;
   item_uom_id: number;
@@ -22,21 +45,21 @@ export interface InboundTaskLineOut {
   remark: string | null;
 }
 
-export interface InboundTaskReadOut {
+export interface ReceivingTaskReadOut {
   receipt_id: number;
   receipt_no: string;
-  source_type: InboundTaskSourceType;
+  source_type: ReceivingSourceType;
   source_doc_no_snapshot: string | null;
   warehouse_id: number;
   warehouse_name_snapshot: string | null;
   supplier_id: number | null;
   counterparty_name_snapshot: string | null;
-  status: InboundTaskStatus;
+  status: ReceivingStatus;
   remark: string | null;
-  lines: InboundTaskLineOut[];
+  lines: ReceivingTaskLineOut[];
 }
 
-export interface InboundOperationEntryDraft {
+export interface ReceivingEntryDraft {
   qty_inbound: string;
   batch_no: string;
   production_date: string;
@@ -44,7 +67,7 @@ export interface InboundOperationEntryDraft {
   remark: string;
 }
 
-export interface InboundOperationEntryIn {
+export interface ReceivingEntryIn {
   qty_inbound: number;
   batch_no?: string | null;
   production_date?: string | null;
@@ -52,18 +75,18 @@ export interface InboundOperationEntryIn {
   remark?: string | null;
 }
 
-export interface InboundOperationLineIn {
+export interface ReceivingLineIn {
   receipt_line_no: number;
-  entries: InboundOperationEntryIn[];
+  entries: ReceivingEntryIn[];
 }
 
-export interface InboundOperationSubmitIn {
+export interface ReceivingSubmitIn {
   receipt_no: string;
   remark?: string | null;
-  lines: InboundOperationLineIn[];
+  lines: ReceivingLineIn[];
 }
 
-export interface InboundOperationLineOut {
+export interface ReceivingLineOut {
   id: number;
   receipt_line_no_snapshot: number;
   item_id: number;
@@ -81,7 +104,7 @@ export interface InboundOperationLineOut {
   remark: string | null;
 }
 
-export interface InboundOperationSubmitOut {
+export interface ReceivingSubmitOut {
   id: number;
   receipt_no_snapshot: string;
   warehouse_id: number;
@@ -92,10 +115,10 @@ export interface InboundOperationSubmitOut {
   operator_name_snapshot: string | null;
   operated_at: string;
   remark: string | null;
-  lines: InboundOperationLineOut[];
+  lines: ReceivingLineOut[];
 }
 
-export function createEmptyInboundOperationEntryDraft(): InboundOperationEntryDraft {
+export function createEmptyReceivingEntryDraft(): ReceivingEntryDraft {
   return {
     qty_inbound: "",
     batch_no: "",
@@ -105,7 +128,7 @@ export function createEmptyInboundOperationEntryDraft(): InboundOperationEntryDr
   };
 }
 
-export function formatInboundTaskSourceType(sourceType: InboundTaskSourceType): string {
+export function formatReceivingSourceType(sourceType: ReceivingSourceType): string {
   switch (sourceType) {
     case "PURCHASE_ORDER":
       return "采购";
@@ -115,5 +138,18 @@ export function formatInboundTaskSourceType(sourceType: InboundTaskSourceType): 
       return "手动";
     default:
       return sourceType;
+  }
+}
+
+export function formatReceivingStatus(status: ReceivingStatus): string {
+  switch (status) {
+    case "DRAFT":
+      return "草稿";
+    case "RELEASED":
+      return "已发布";
+    case "VOIDED":
+      return "已作废";
+    default:
+      return status;
   }
 }

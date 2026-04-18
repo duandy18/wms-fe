@@ -55,7 +55,7 @@ const AppRouter: React.FC = () => {
             path="inbound"
             element={
               <RequirePermission permission="page.wms.read">
-                <Navigate to="/inbound-operations" replace />
+                <Navigate to="/receiving" replace />
               </RequirePermission>
             }
           />
@@ -428,18 +428,42 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="inbound-operations"
+            path="receiving"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.InboundOperationsPage />
+                <P.ReceivingSummaryPage />
               </RequirePermission>
             }
           />
           <Route
-            path="inbound-operations/:receiptNo"
+            path="receiving/purchase"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.InboundOperationTaskPage />
+                <P.ReceivingPurchasePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="receiving/manual"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.ReceivingManualPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="receiving/returns"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.ReceivingReturnsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="receiving/:receiptNo"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.ReceivingTaskPage />
               </RequirePermission>
             }
           />

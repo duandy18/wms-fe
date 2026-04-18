@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-  fetchInboundTask,
-  submitInboundOperation,
-} from "../api/inboundOperationsApi";
+  fetchReceivingTask,
+  submitReceiving,
+} from "../api/receivingApi";
 import type {
-  InboundOperationEntryDraft,
-  InboundOperationLineIn,
-  InboundOperationSubmitIn,
-  InboundOperationSubmitOut,
-  InboundTaskReadOut,
-} from "../contracts/inboundOperation";
-import { createEmptyInboundOperationEntryDraft } from "../contracts/inboundOperation";
+  ReceivingEntryDraft,
+  ReceivingLineIn,
+  ReceivingSubmitIn,
+  ReceivingSubmitOut,
+  ReceivingTaskReadOut,
+} from "../contracts/receiving";
+import { createEmptyReceivingEntryDraft } from "../contracts/receiving";
 
-type EntriesByLineNo = Record<number, InboundOperationEntryDraft[]>;
+type EntriesByLineNo = Record<number, ReceivingEntryDraft[]>;
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim()) {
@@ -27,7 +27,7 @@ function normalizeOptionalString(value: string): string | null {
   return trimmed ? trimmed : null;
 }
 
-function isEntryTouched(entry: InboundOperationEntryDraft): boolean {
+function isEntryTouched(entry: ReceivingEntryDraft): boolean {
   return Boolean(
     entry.qty_inbound.trim() ||
       entry.batch_no.trim() ||
@@ -37,12 +37,12 @@ function isEntryTouched(entry: InboundOperationEntryDraft): boolean {
   );
 }
 
-export function useInboundOperationTaskPage() {
+export function useReceivingTaskPage() {
   const { receiptNo } = useParams<{ receiptNo: string }>();
   const receiptNoDecoded = decodeURIComponent(receiptNo ?? "").trim();
   const isValid = receiptNoDecoded.length > 0;
 
-  const [task, setTask] = useState<InboundTaskReadOut | null>(null);
+  const [task, setTask] = useState<ReceivingTaskReadOut | null>(null);
   const [remark, setRemark] = useState("");
   const [entriesByLineNo, setEntriesByLineNo] = useState<EntriesByLineNo>({});
   const [loading, setLoading] = useState(false);
@@ -50,7 +50,7 @@ export function useInboundOperationTaskPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
-  const [lastSubmit, setLastSubmit] = useState<InboundOperationSubmitOut | null>(null);
+  const [lastSubmit, setLastSubmit] = useState<ReceivingSubmitOut | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   const load = useCallback(async () => {
@@ -63,7 +63,7 @@ export function useInboundOperationTaskPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await fetchInboundTask(receiptNoDecoded);
+      const data = await fetchReceivingTask(receiptNoDecoded);
       setTask(data);
       setEntriesByLineNo((prev) => {
         const next: EntriesByLineNo = {};
@@ -72,7 +72,7 @@ export function useInboundOperationTaskPage() {
           next[line.line_no] =
             current && current.length > 0
               ? current
-              : [createEmptyInboundOperationEntryDraft()];
+              : [createEmptyReceivingEntryDraft()];
         }
         return next;
       });
@@ -91,7 +91,7 @@ export function useInboundOperationTaskPage() {
   const addEntry = useCallback((lineNo: number) => {
     setEntriesByLineNo((prev) => ({
       ...prev,
-      [lineNo]: [...(prev[lineNo] ?? []), createEmptyInboundOperationEntryDraft()],
+      [lineNo]: [...(prev[lineNo] ?? []), createEmptyReceivingEntryDraft()],
     }));
   }, []);
 
@@ -101,16 +101,16 @@ export function useInboundOperationTaskPage() {
       rows.splice(index, 1);
       return {
         ...prev,
-        [lineNo]: rows.length > 0 ? rows : [createEmptyInboundOperationEntryDraft()],
+        [lineNo]: rows.length > 0 ? rows : [createEmptyReceivingEntryDraft()],
       };
     });
   }, []);
 
   const updateEntry = useCallback(
-    (lineNo: number, index: number, patch: Partial<InboundOperationEntryDraft>) => {
+    (lineNo: number, index: number, patch: Partial<ReceivingEntryDraft>) => {
       setEntriesByLineNo((prev) => {
         const rows = [...(prev[lineNo] ?? [])];
-        const current = rows[index] ?? createEmptyInboundOperationEntryDraft();
+        const current = rows[index] ?? createEmptyReceivingEntryDraft();
         rows[index] = { ...current, ...patch };
         return { ...prev, [lineNo]: rows };
       });
@@ -125,7 +125,7 @@ export function useInboundOperationTaskPage() {
     setSubmitSuccess("");
     setLastSubmit(null);
 
-    const linePayloads: InboundOperationLineIn[] = [];
+    const linePayloads: ReceivingLineIn[] = [];
 
     for (const line of task.lines) {
       const drafts = entriesByLineNo[line.line_no] ?? [];
@@ -172,7 +172,7 @@ export function useInboundOperationTaskPage() {
       return;
     }
 
-    const payload: InboundOperationSubmitIn = {
+    const payload: ReceivingSubmitIn = {
       receipt_no: task.receipt_no,
       remark: normalizeOptionalString(remark),
       lines: linePayloads,
@@ -180,13 +180,13 @@ export function useInboundOperationTaskPage() {
 
     setSubmitting(true);
     try {
-      const out = await submitInboundOperation(payload);
+      const out = await submitReceiving(payload);
       setLastSubmit(out);
       setSubmitSuccess(`提交成功：操作单 #${out.id}`);
       setRemark("");
       setReloadToken((v) => v + 1);
     } catch (err) {
-      setSubmitError(getErrorMessage(err, "提交收货操作失败"));
+      setSubmitError(getErrorMessage(err, "提交收货作业失败"));
     } finally {
       setSubmitting(false);
     }

@@ -1,22 +1,22 @@
 import React from "react";
 import type {
-  InboundOperationEntryDraft,
-  InboundTaskLineOut,
-} from "../contracts/inboundOperation";
+  ReceivingEntryDraft,
+  ReceivingTaskLineOut,
+} from "../contracts/receiving";
 
 type Props = {
-  lines: InboundTaskLineOut[];
-  entriesByLineNo: Record<number, InboundOperationEntryDraft[]>;
+  lines: ReceivingTaskLineOut[];
+  entriesByLineNo: Record<number, ReceivingEntryDraft[]>;
   onAddEntry: (lineNo: number) => void;
   onRemoveEntry: (lineNo: number, index: number) => void;
   onChangeEntry: (
     lineNo: number,
     index: number,
-    patch: Partial<InboundOperationEntryDraft>,
+    patch: Partial<ReceivingEntryDraft>,
   ) => void;
 };
 
-const InboundOperationEditableBatchLines: React.FC<Props> = ({
+const ReceivingEditableBatchLines: React.FC<Props> = ({
   lines,
   entriesByLineNo,
   onAddEntry,
@@ -138,4 +138,4 @@ const InboundOperationEditableBatchLines: React.FC<Props> = ({
   );
 };
 
-export default InboundOperationEditableBatchLines;
+export default ReceivingEditableBatchLines;

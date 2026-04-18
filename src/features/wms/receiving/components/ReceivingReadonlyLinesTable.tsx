@@ -1,14 +1,14 @@
 import React from "react";
-import type { InboundTaskLineOut } from "../contracts/inboundOperation";
+import type { ReceivingTaskLineOut } from "../contracts/receiving";
 
 type Props = {
-  lines: InboundTaskLineOut[];
+  lines: ReceivingTaskLineOut[];
 };
 
-const InboundOperationReadonlyLinesTable: React.FC<Props> = ({ lines }) => {
+const ReceivingReadonlyLinesTable: React.FC<Props> = ({ lines }) => {
   return (
     <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-      <div className="text-sm font-semibold text-slate-900">任务行（只读）</div>
+      <div className="text-sm font-semibold text-slate-900">收货行（当前情况）</div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200">
         <table className="min-w-full text-sm">
@@ -27,7 +27,7 @@ const InboundOperationReadonlyLinesTable: React.FC<Props> = ({ lines }) => {
             {lines.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
-                  暂无任务行
+                  暂无收货行
                 </td>
               </tr>
             ) : (
@@ -52,4 +52,4 @@ const InboundOperationReadonlyLinesTable: React.FC<Props> = ({ lines }) => {
   );
 };
 
-export default InboundOperationReadonlyLinesTable;
+export default ReceivingReadonlyLinesTable;
