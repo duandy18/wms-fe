@@ -142,9 +142,9 @@ const ManualInboundReceiptSheet: React.FC<{
             <button
               type="button"
               className="rounded-md border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50"
-              onClick={() => navigate(`/inbound-operations/${detail.receipt_no}`)}
+              onClick={() => navigate(`/receiving/${detail.receipt_no}`)}
             >
-              去收货操作
+              去收货作业
             </button>
           ) : null}
 

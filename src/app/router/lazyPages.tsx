@@ -12,9 +12,6 @@ export const LoginPage = lazy(() => import("../../features/auth/LoginPage"));
 export const CountCockpitPage = lazy(
   () => import("../../features/operations/count/CountCockpitPage"),
 );
-export const InboundWorkbenchPage = lazy(
-  () => import("../../features/wms/inbound/pages/InboundWorkbenchPage"),
-);
 export const InboundReceiptsSummaryPage = lazy(
   () => import("../../features/inbound-receipts/pages/InboundReceiptsSummaryPage"),
 );
@@ -27,11 +24,20 @@ export const InboundReceiptsReturnsPage = lazy(
 export const InboundReceiptsManualPage = lazy(
   () => import("../../features/inbound-receipts/pages/InboundReceiptsManualPage"),
 );
-export const InboundOperationsPage = lazy(
-  () => import("../../features/wms/inbound-operations/pages/InboundOperationsPage"),
+export const ReceivingSummaryPage = lazy(
+  () => import("../../features/wms/receiving/pages/ReceivingSummaryPage"),
 );
-export const InboundOperationTaskPage = lazy(
-  () => import("../../features/wms/inbound-operations/pages/InboundOperationTaskPage"),
+export const ReceivingPurchasePage = lazy(
+  () => import("../../features/wms/receiving/pages/ReceivingPurchasePage"),
+);
+export const ReceivingManualPage = lazy(
+  () => import("../../features/wms/receiving/pages/ReceivingManualPage"),
+);
+export const ReceivingReturnsPage = lazy(
+  () => import("../../features/wms/receiving/pages/ReceivingReturnsPage"),
+);
+export const ReceivingTaskPage = lazy(
+  () => import("../../features/wms/receiving/pages/ReceivingTaskPage"),
 );
 export const PickTasksCockpitPage = lazy(
   () => import("../../features/operations/outbound-pick/PickTasksCockpitPage"),

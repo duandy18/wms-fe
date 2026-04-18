@@ -1,24 +1,25 @@
 import React from "react";
 import {
-  formatInboundTaskSourceType,
-  type InboundTaskReadOut,
-} from "../contracts/inboundOperation";
+  formatReceivingSourceType,
+  formatReceivingStatus,
+  type ReceivingTaskReadOut,
+} from "../contracts/receiving";
 
 type Props = {
-  task: InboundTaskReadOut;
+  task: ReceivingTaskReadOut;
   remainingTotal: string;
 };
 
-const InboundOperationTaskInfoCard: React.FC<Props> = ({ task, remainingTotal }) => {
+const ReceivingTaskInfoCard: React.FC<Props> = ({ task, remainingTotal }) => {
   return (
     <section className="grid grid-cols-1 gap-4 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2 xl:grid-cols-4">
       <div>
-        <div className="text-xs text-slate-500">任务号</div>
+        <div className="text-xs text-slate-500">收货单号</div>
         <div className="font-mono text-sm text-slate-900">{task.receipt_no}</div>
       </div>
       <div>
         <div className="text-xs text-slate-500">来源</div>
-        <div className="text-sm text-slate-900">{formatInboundTaskSourceType(task.source_type)}</div>
+        <div className="text-sm text-slate-900">{formatReceivingSourceType(task.source_type)}</div>
       </div>
       <div>
         <div className="text-xs text-slate-500">来源单号</div>
@@ -36,7 +37,7 @@ const InboundOperationTaskInfoCard: React.FC<Props> = ({ task, remainingTotal })
       </div>
       <div>
         <div className="text-xs text-slate-500">状态</div>
-        <div className="text-sm text-slate-900">{task.status}</div>
+        <div className="text-sm text-slate-900">{formatReceivingStatus(task.status)}</div>
       </div>
       <div>
         <div className="text-xs text-slate-500">剩余待收合计</div>
@@ -50,4 +51,4 @@ const InboundOperationTaskInfoCard: React.FC<Props> = ({ task, remainingTotal })
   );
 };
 
-export default InboundOperationTaskInfoCard;
+export default ReceivingTaskInfoCard;
