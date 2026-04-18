@@ -287,6 +287,12 @@ const ReceivingManualPage: React.FC = () => {
                 <ReceivingEditableBatchLines
                   lines={selectedDetail.lines}
                   entriesByLineNo={entriesByLineNo}
+
+                  resolvingEntryKey={null}
+
+                  onResolveBarcode={async () => {}}
+                  uomOptionsByLineNo={{}}
+                  onSelectActualUom={() => {}}
                   onAddEntry={(lineNo) => {
                     setEntriesByLineNo((prev) => ({
                       ...prev,
