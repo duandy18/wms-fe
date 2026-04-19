@@ -8,7 +8,6 @@ import {
   type OrderFacts,
   type OrderView,
 } from "../api/index";
-import { createReceiveTaskFromOrder } from "../../receive-tasks/api";
 import { getErrorMessage } from "../ui/errors";
 
 type NavState =
@@ -116,6 +115,15 @@ export function useOrderDetailPage() {
     }
   }, [orderIdNum, facts]);
 
+  const makeOrderRef = useCallback(() => {
+    if (!order) return null;
+    const plat = (order.platform || "").toUpperCase().trim();
+    const shopId = String(order.shop_id || "").trim();
+    const extOrderNo = String(order.ext_order_no || "").trim();
+    if (!plat || !shopId || !extOrderNo) return null;
+    return `ORD:${plat}:${shopId}:${extOrderNo}`;
+  }, [order]);
+
   const handleCreateRma = useCallback(async () => {
     if (!order || !facts || !facts.items?.length) return;
 
@@ -125,34 +133,23 @@ export function useOrderDetailPage() {
       return;
     }
 
+    const orderRef = makeOrderRef();
+    if (!orderRef) {
+      setError("当前订单缺少规范订单键，无法打开退货入库单页面。");
+      return;
+    }
+
     setCreatingRma(true);
     setError(null);
     try {
-      const payload = {
-        warehouse_id: 1,
-        lines: candidates.map((f) => ({
-          item_id: f.item_id,
-          qty: f.qty_remaining_refundable,
-          item_name: f.title ?? null,
-          batch_code: null as string | null,
-        })),
-      };
-
-      const task = await createReceiveTaskFromOrder(order.id, payload);
-      navigate(`/receive-tasks/${task.id}`);
+      navigate(`/inbound-receipts/returns?order_key=${encodeURIComponent(orderRef)}`);
     } catch (err: unknown) {
-      console.error("createReceiveTaskFromOrder failed", err);
-      setError(getErrorMessage(err, "创建退货任务失败"));
+      console.error("open returns receipt page failed", err);
+      setError(getErrorMessage(err, "打开退货入库单页面失败"));
     } finally {
       setCreatingRma(false);
     }
-  }, [order, facts, navigate]);
-
-  const makeOrderRef = useCallback(() => {
-    if (!order) return null;
-    const plat = (order.platform || "").toUpperCase();
-    return `ORD:${plat}:${order.shop_id}:${order.ext_order_no}`;
-  }, [order]);
+  }, [order, facts, makeOrderRef, navigate]);
 
   const handleViewStock = useCallback(
     (itemId: number) => {

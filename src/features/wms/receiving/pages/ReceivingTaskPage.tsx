@@ -2,7 +2,6 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import PageTitle from "../../../../components/ui/PageTitle";
 import ReceivingEditableBatchLines from "../components/ReceivingEditableBatchLines";
-import ReceivingReadonlyLinesTable from "../components/ReceivingReadonlyLinesTable";
 import ReceivingTaskInfoCard from "../components/ReceivingTaskInfoCard";
 import { useReceivingTaskPage } from "../model/useReceivingTaskPage";
 
@@ -29,7 +28,7 @@ const ReceivingTaskPage: React.FC = () => {
     <div className="space-y-6 p-6">
       <PageTitle
         title={`收货作业 / ${m.receiptNo}`}
-        description="基于已发布收货单执行实际收货；只读展示收货单信息与当前收货情况，并在下方录入本次收货批次子行。"
+        description="基于已发布收货单执行实际收货；页面固定展开计划行对应的实际包装行，并按基础数量校验。"
       />
 
       <button
@@ -51,33 +50,46 @@ const ReceivingTaskPage: React.FC = () => {
         <>
           <ReceivingTaskInfoCard task={m.task} remainingTotal={m.remainingTotal} />
 
-          <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-            <div className="text-sm font-semibold text-slate-900">整单备注</div>
-            <textarea
-              className="min-h-24 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
-              value={m.remark}
-              onChange={(e) => m.setRemark(e.target.value)}
-              placeholder="本次整单备注（可选）"
+          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div className="text-sm font-semibold text-slate-900">本次收货录入</div>
+
+            <label className="block space-y-1 text-xs text-slate-600">
+              <span>整单备注</span>
+              <textarea
+                className="min-h-20 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+                value={m.remark}
+                onChange={(e) => m.setRemark(e.target.value)}
+                placeholder="本次收货整单备注（可选）"
+              />
+            </label>
+
+            {m.scanError ? (
+              <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                {m.scanError}
+              </div>
+            ) : null}
+
+            {m.scanSuccess ? (
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                {m.scanSuccess}
+              </div>
+            ) : null}
+
+            <ReceivingEditableBatchLines
+              lines={m.task.lines}
+              entriesByLineNo={m.entriesByLineNo}
+              uomOptionsByLineNo={m.uomOptionsByLineNo}
+              resolvingEntryKey={m.resolvingEntryKey}
+              onResolveBarcode={m.resolveBarcodeAtEntry}
+              onSelectActualUom={m.selectActualUom}
+              showRemarkField={false}
+              showLineHint={false}
+              fixedRowsByUom={true}
+              onAddEntry={() => {}}
+              onRemoveEntry={() => {}}
+              onChangeEntry={m.updateEntry}
             />
-          </section>
 
-          <ReceivingReadonlyLinesTable lines={m.task.lines} />
-
-          <ReceivingEditableBatchLines
-            lines={m.task.lines}
-            entriesByLineNo={m.entriesByLineNo}
-
-            resolvingEntryKey={null}
-
-            onResolveBarcode={async () => {}}
-                  uomOptionsByLineNo={{}}
-                  onSelectActualUom={() => {}}
-            onAddEntry={m.addEntry}
-            onRemoveEntry={m.removeEntry}
-            onChangeEntry={m.updateEntry}
-          />
-
-          <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
             {m.submitError ? (
               <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
                 {m.submitError}

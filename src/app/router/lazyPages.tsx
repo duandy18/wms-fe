@@ -189,11 +189,7 @@ export const PurchaseOrderViewPage = lazy(
 export const PurchaseReportsPage = lazy(
   () => import("../../features/purchase-orders/PurchaseReportsPage"),
 );
-
-// 收货任务详情
-export const ReceiveTaskDetailPage = lazy(
-  () => import("../../features/receive-tasks/ReceiveTaskDetailPage"),
-);
+;
 
 // 退货任务详情
 export const ReturnTaskDetailPage = lazy(

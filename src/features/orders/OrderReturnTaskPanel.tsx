@@ -1,16 +1,16 @@
 // src/features/orders/OrderReturnTaskPanel.tsx
 //
-// 订单退货 → 生成收货任务（ReceiveTask, source_type=ORDER）面板
+// 订单退货 → 跳转退货入库单页面
 //
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   fetchOrderFactsById,
   fetchOrderViewById,
 } from "./api/client";
 import type { OrderFacts, OrderView } from "./api/types";
-import { apiPost } from "../../lib/api";
 
 type Props = {
   orderId: number;
@@ -29,22 +29,8 @@ type ReturnLineRow = {
 
 type ReturnLineDraft = {
   item_id: number;
-  item_name?: string;
   qty: number;
   qty_remaining_refundable: number;
-};
-
-type ReceiveTaskFromOrderResponse = {
-  id: number;
-  source_type: string;
-  source_id: number | null;
-  warehouse_id: number;
-  lines: Array<{
-    id: number;
-    item_id: number;
-    scanned_qty: number;
-    expected_qty: number | null;
-  }>;
 };
 
 type ApiErrorShape = {
@@ -57,18 +43,16 @@ const getErrorMessage = (err: unknown, fallback: string): string => {
 };
 
 export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
+  const navigate = useNavigate();
+
   const [orderView, setOrderView] = useState<OrderView | null>(null);
   const [orderFacts, setOrderFacts] = useState<OrderFacts | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
 
   const [qtyInputs, setQtyInputs] = useState<QtyInputMap>({});
-  const [creatingTask, setCreatingTask] = useState(false);
+  const [openingReceiptPage, setOpeningReceiptPage] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [createdTask, setCreatedTask] =
-    useState<ReceiveTaskFromOrderResponse | null>(null);
-
-  const [warehouseIdInput, setWarehouseIdInput] = useState<string>("1");
 
   const order = orderView?.order ?? null;
 
@@ -90,7 +74,6 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
 
       setLoadingOrder(true);
       setOrderError(null);
-      setCreatedTask(null);
 
       try {
         const [view, facts] = await Promise.all([
@@ -116,16 +99,9 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
     setQtyInputs((prev) => ({ ...prev, [itemId]: value }));
   };
 
-  const handleCreateTask = async () => {
+  const handleOpenReceiptPage = async () => {
     if (!order) {
-      setCreateError("订单信息尚未加载，无法创建退货任务");
-      return;
-    }
-
-    const whRaw = warehouseIdInput.trim();
-    const whId = Number(whRaw || "0");
-    if (!Number.isFinite(whId) || whId <= 0) {
-      setCreateError("仓库 ID 必须为正整数");
+      setCreateError("订单信息尚未加载，无法打开退货入库单页面");
       return;
     }
 
@@ -135,7 +111,6 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
         const qty = raw ? Number(raw) : 0;
         return {
           item_id: row.item_id,
-          item_name: row.item_name ?? undefined,
           qty,
           qty_remaining_refundable: row.qty_remaining_refundable,
         };
@@ -155,31 +130,25 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
       return;
     }
 
-    setCreatingTask(true);
+    const platform = String(order.platform || "").toUpperCase().trim();
+    const shopId = String(order.shop_id || "").trim();
+    const extOrderNo = String(order.ext_order_no || "").trim();
+    if (!platform || !shopId || !extOrderNo) {
+      setCreateError("当前订单缺少规范订单键，无法打开退货入库单页面");
+      return;
+    }
+
+    const orderRef = `ORD:${platform}:${shopId}:${extOrderNo}`;
+
+    setOpeningReceiptPage(true);
     setCreateError(null);
-    setCreatedTask(null);
-
     try {
-      const payload = {
-        warehouse_id: whId,
-        lines: lines.map((l) => ({
-          item_id: l.item_id,
-          item_name: l.item_name,
-          qty: l.qty,
-          batch_code: null,
-        })),
-      };
-
-      const resp = await apiPost<ReceiveTaskFromOrderResponse>(
-        `/receive-tasks/from-order/${order.id}`,
-        payload,
-      );
-      setCreatedTask(resp);
+      navigate(`/inbound-receipts/returns?order_key=${encodeURIComponent(orderRef)}`);
     } catch (err: unknown) {
-      console.error("OrderReturnTaskPanel: create return task failed", err);
-      setCreateError(getErrorMessage(err, "创建退货收货任务失败"));
+      console.error("OrderReturnTaskPanel: open returns receipt page failed", err);
+      setCreateError(getErrorMessage(err, "打开退货入库单页面失败"));
     } finally {
-      setCreatingTask(false);
+      setOpeningReceiptPage(false);
     }
   };
 
@@ -191,28 +160,15 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
     <section className="mt-6 space-y-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-slate-800">
-          订单退货收货任务
+          订单退货入库单
         </h2>
         <span className="text-[11px] text-slate-500">
-          根据本订单创建退货收货任务（ReceiveTask, source_type=ORDER），
-          后续在收货页面的「订单退货」模式下按任务 ID 绑定并完成收货。
+          根据本订单的剩余可退数量，直接进入退货入库单页面；在单据区生成并发布后，再进入收货页执行退货收货。
         </span>
       </div>
 
       {orderError && (
         <div className="text-xs text-red-600">{orderError}</div>
-      )}
-
-      {order && (
-        <div className="text-xs text-slate-600">
-          订单 ID：
-          <span className="font-mono">{order.id}</span>，建议仓库：
-          <input
-            className="ml-1 inline-block w-16 rounded border border-slate-300 px-1 py-0.5 text-[11px] font-mono"
-            value={warehouseIdInput}
-            onChange={(e) => setWarehouseIdInput(e.target.value)}
-          />
-        </div>
       )}
 
       <div className="max-h-64 overflow-y-auto rounded border border-slate-100 bg-slate-50">
@@ -243,7 +199,7 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
                   colSpan={6}
                   className="px-2 py-2 text-center text-slate-500"
                 >
-                  该订单没有可用行，无法创建退货任务。
+                  该订单没有可用行，无法发起退货入库。
                 </td>
               </tr>
             ) : (
@@ -291,19 +247,14 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          disabled={creatingTask || !order}
-          onClick={handleCreateTask}
+          disabled={openingReceiptPage || !order}
+          onClick={() => {
+            void handleOpenReceiptPage();
+          }}
           className="rounded-md bg-emerald-600 px-3 py-1.5 text-[11px] font-medium text-white disabled:opacity-60"
         >
-          {creatingTask ? "创建中…" : "创建退货收货任务"}
+          {openingReceiptPage ? "跳转中…" : "前往退货入库单"}
         </button>
-        {createdTask && (
-          <span className="text-[11px] text-emerald-700">
-            已创建退货收货任务：任务 ID=
-            <span className="font-mono">{createdTask.id}</span>{" "}
-            （source_type={createdTask.source_type}）。请前往收货页面的订单退货模式继续处理。
-          </span>
-        )}
       </div>
     </section>
   );
