@@ -7,23 +7,17 @@ import {
   receivingLineShowsBatchField,
   receivingLineShowsDateFields,
 } from "../contracts/receiving";
+import { formatQty } from "../utils/fixedRows";
 
-type Props = {
+type SharedProps = {
   lines: ReceivingTaskLineOut[];
   entriesByLineNo: Record<number, ReceivingEntryDraft[]>;
   uomOptionsByLineNo: Record<number, ReceivingActualUomOption[]>;
   resolvingEntryKey: string | null;
-  onAddEntry: (lineNo: number) => void;
-  onRemoveEntry: (lineNo: number, index: number) => void;
   onChangeEntry: (
     lineNo: number,
     index: number,
     patch: Partial<ReceivingEntryDraft>,
-  ) => void;
-  onSelectActualUom: (
-    lineNo: number,
-    index: number,
-    actualItemUomId: number | null,
   ) => void;
   onResolveBarcode: (
     lineNo: number,
@@ -32,18 +26,28 @@ type Props = {
   ) => Promise<void>;
   showRemarkField?: boolean;
   showLineHint?: boolean;
-  fixedRowsByUom?: boolean;
 };
+
+type FixedRowsProps = SharedProps & {
+  fixedRowsByUom: true;
+};
+
+type EditableRowsProps = SharedProps & {
+  fixedRowsByUom?: false;
+  onAddEntry: (lineNo: number) => void;
+  onRemoveEntry: (lineNo: number, index: number) => void;
+  onSelectActualUom: (
+    lineNo: number,
+    index: number,
+    actualItemUomId: number | null,
+  ) => void;
+};
+
+type Props = FixedRowsProps | EditableRowsProps;
 
 function toSafeNumber(value: string | number | null | undefined): number {
   const n = Number(value ?? 0);
   return Number.isFinite(n) ? n : 0;
-}
-
-function formatQty(value: string | number | null | undefined): string {
-  const n = toSafeNumber(value);
-  if (Number.isInteger(n)) return String(n);
-  return n.toFixed(4).replace(/\.?0+$/, "");
 }
 
 function formatBaseQty(
@@ -73,20 +77,19 @@ function renderReadonlyValue(
   );
 }
 
-const ReceivingEditableBatchLines: React.FC<Props> = ({
-  lines,
-  entriesByLineNo,
-  uomOptionsByLineNo,
-  resolvingEntryKey,
-  onAddEntry,
-  onRemoveEntry,
-  onChangeEntry,
-  onSelectActualUom,
-  onResolveBarcode,
-  showRemarkField = true,
-  showLineHint = true,
-  fixedRowsByUom = false,
-}) => {
+const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
+  const {
+    lines,
+    entriesByLineNo,
+    uomOptionsByLineNo,
+    resolvingEntryKey,
+    onChangeEntry,
+    onResolveBarcode,
+    showRemarkField = true,
+    showLineHint = true,
+  } = props;
+
+  const fixedRowsByUom = props.fixedRowsByUom === true;
   const [scanInputs, setScanInputs] = useState<Record<string, string>>({});
 
   function getScanInputValue(
@@ -150,7 +153,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = ({
                 <button
                   type="button"
                   className="rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50"
-                  onClick={() => onAddEntry(line.line_no)}
+                  onClick={() => props.onAddEntry(line.line_no)}
                 >
                   新增实现行
                 </button>
@@ -282,7 +285,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = ({
                           type="button"
                           className="rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-50"
                           disabled={entries.length <= 1}
-                          onClick={() => onRemoveEntry(line.line_no, index)}
+                          onClick={() => props.onRemoveEntry(line.line_no, index)}
                         >
                           删除实现行
                         </button>
@@ -348,7 +351,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = ({
                             }
                             onChange={(e) => {
                               const next = e.target.value.trim();
-                              onSelectActualUom(
+                              props.onSelectActualUom(
                                 line.line_no,
                                 index,
                                 next ? Number(next) : null,

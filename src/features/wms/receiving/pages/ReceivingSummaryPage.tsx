@@ -6,6 +6,7 @@ import {
   formatReceivingStatus,
 } from "../contracts/receiving";
 import { useReceivingSummaryPage } from "../model/useReceivingSummaryPage";
+import { formatQty } from "../utils/fixedRows";
 
 function formatDateTime(value: string | null): string {
   if (!value) return "-";
@@ -88,9 +89,15 @@ const ReceivingSummaryPage: React.FC = () => {
                       <td className="px-3 py-2">{formatReceivingStatus(row.status)}</td>
                       <td className="px-3 py-2">{formatDateTime(row.released_at)}</td>
                       <td className="px-3 py-2 text-right font-mono">{row.line_count}</td>
-                      <td className="px-3 py-2 text-right font-mono">{row.total_planned_qty}</td>
-                      <td className="px-3 py-2 text-right font-mono">{row.total_received_qty}</td>
-                      <td className="px-3 py-2 text-right font-mono">{row.total_remaining_qty}</td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatQty(row.total_planned_qty)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatQty(row.total_received_qty)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatQty(row.total_remaining_qty)}
+                      </td>
                       <td className="px-3 py-2">
                         <button
                           type="button"
