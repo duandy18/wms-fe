@@ -75,11 +75,53 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
+
+          <Route
+            path="outbound"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <Navigate to="/outbound/summary" replace />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="outbound/summary"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.OutboundSummaryPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="outbound/order"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.OutboundOrderPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="outbound/manual-docs"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.OutboundManualDocsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="outbound/manual"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.OutboundManualPage />
+              </RequirePermission>
+            }
+          />
+
           <Route
             path="outbound/pick-tasks"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.PickTasksCockpitPage />
+                <Navigate to="/outbound/order" replace />
               </RequirePermission>
             }
           />
@@ -95,22 +137,21 @@ const AppRouter: React.FC = () => {
             path="outbound/internal-outbound"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.InternalOutboundPage />
+                <Navigate to="/outbound/manual-docs" replace />
               </RequirePermission>
             }
           />
-
           <Route
             path="outbound/dashboard"
             element={
               <RequirePermission permission="page.wms.read">
-                <P.OutboundDashboardPage />
+                <Navigate to="/outbound/summary" replace />
               </RequirePermission>
             }
           />
           <Route
             path="inventory/outbound-dashboard"
-            element={<Navigate to="/outbound/dashboard" replace />}
+            element={<Navigate to="/outbound/summary" replace />}
           />
 
           <Route
@@ -467,7 +508,7 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-<Route
+          <Route
             path="return-tasks/:taskId"
             element={
               <RequirePermission permission="page.wms.read">

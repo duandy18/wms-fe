@@ -1,4 +1,4 @@
-// src/app/router/AppRouter.inventoryRoutes.test.tsx
+// src/app/router/tests/inventoryRoutes.test.tsx
 
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -14,7 +14,9 @@ vi.mock("../../layout/AppLayout", () => ({
 vi.mock("../guards", () => ({
   __esModule: true,
   RequireAuth: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  RequirePermission: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  RequirePermission: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   ForbiddenPage: () => <div>ForbiddenPage mock view</div>,
   RouteLoading: () => <div>RouteLoading mock view</div>,
 }));
@@ -35,15 +37,19 @@ vi.mock("../lazyPages", () => {
     InboundReceiptsPurchasePage: page("InboundReceiptsPurchasePage mock view"),
     InboundReceiptsReturnsPage: page("InboundReceiptsReturnsPage mock view"),
     InboundReceiptsManualPage: page("InboundReceiptsManualPage mock view"),
+
     ReceivingSummaryPage: page("ReceivingSummaryPage mock view"),
     ReceivingPurchasePage: page("ReceivingPurchasePage mock view"),
     ReceivingManualPage: page("ReceivingManualPage mock view"),
     ReceivingReturnsPage: page("ReceivingReturnsPage mock view"),
     ReceivingTaskPage: page("ReceivingTaskPage mock view"),
+
     CountCockpitPage: page("CountCockpitPage mock view"),
-    PickTasksCockpitPage: page("PickTasksCockpitPage mock view"),
-    InternalOutboundPage: page("InternalOutboundPage mock view"),
-    OutboundDashboardPage: page("OutboundDashboardPage mock view"),
+
+    OutboundSummaryPage: page("OutboundSummaryPage mock view"),
+    OutboundOrderPage: page("OutboundOrderPage mock view"),
+    OutboundManualDocsPage: page("OutboundManualDocsPage mock view"),
+    OutboundManualPage: page("OutboundManualPage mock view"),
 
     AnalyticsPage: page("AnalyticsPage mock view"),
 
@@ -79,7 +85,6 @@ vi.mock("../lazyPages", () => {
     PurchaseOrderViewPage: page("PurchaseOrderViewPage mock view"),
     PurchaseReportsPage: page("PurchaseReportsPage mock view"),
 
-    PurchaseOrderCreateV2Page: page("PurchaseOrderCreateV2Page mock view"),
     ReturnTaskDetailPage: page("ReturnTaskDetailPage mock view"),
 
     WarehousesListPage: page("WarehousesListPage mock view"),
@@ -111,16 +116,12 @@ describe("AppRouter inventory routes", () => {
 
   it("renders InventoryPage on root index", async () => {
     renderWithRoute("/");
-    expect(
-      await screen.findByText("InventoryPage mock view"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
   it("renders InventoryPage on /inventory", async () => {
     renderWithRoute("/inventory");
-    expect(
-      await screen.findByText("InventoryPage mock view"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
   it("renders InventoryLedgerPage on /inventory/ledger", async () => {
@@ -158,31 +159,92 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders ReceivingSummaryPage on /inbound-operations", async () => {
+  it("renders ReceivingSummaryPage on /receiving", async () => {
     renderWithRoute("/receiving");
     expect(
       await screen.findByText("ReceivingSummaryPage mock view"),
     ).toBeInTheDocument();
   });
 
-  it("renders ReceivingPurchasePage on /inbound-operations/purchase", async () => {
+  it("renders ReceivingPurchasePage on /receiving/purchase", async () => {
     renderWithRoute("/receiving/purchase");
     expect(
       await screen.findByText("ReceivingPurchasePage mock view"),
     ).toBeInTheDocument();
   });
 
-  it("renders ReceivingTaskPage on /inbound-operations/IBR-0001", async () => {
+  it("renders ReceivingTaskPage on /receiving/IBR-0001", async () => {
     renderWithRoute("/receiving/IBR-0001");
     expect(
       await screen.findByText("ReceivingTaskPage mock view"),
     ).toBeInTheDocument();
   });
 
+  it("renders OutboundSummaryPage on /outbound/summary", async () => {
+    renderWithRoute("/outbound/summary");
+    expect(
+      await screen.findByText("OutboundSummaryPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders OutboundOrderPage on /outbound/order", async () => {
+    renderWithRoute("/outbound/order");
+    expect(
+      await screen.findByText("OutboundOrderPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders OutboundManualDocsPage on /outbound/manual-docs", async () => {
+    renderWithRoute("/outbound/manual-docs");
+    expect(
+      await screen.findByText("OutboundManualDocsPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders OutboundManualPage on /outbound/manual", async () => {
+    renderWithRoute("/outbound/manual");
+    expect(
+      await screen.findByText("OutboundManualPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("redirects /outbound to /outbound/summary", async () => {
+    renderWithRoute("/outbound");
+    expect(
+      await screen.findByText("OutboundSummaryPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("redirects legacy /outbound/dashboard to /outbound/summary", async () => {
+    renderWithRoute("/outbound/dashboard");
+    expect(
+      await screen.findByText("OutboundSummaryPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("redirects legacy /inventory/outbound-dashboard to /outbound/summary", async () => {
+    renderWithRoute("/inventory/outbound-dashboard");
+    expect(
+      await screen.findByText("OutboundSummaryPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("redirects legacy /outbound/pick-tasks to /outbound/order", async () => {
+    renderWithRoute("/outbound/pick-tasks");
+    expect(
+      await screen.findByText("OutboundOrderPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("redirects legacy /outbound/internal-outbound to /outbound/manual-docs", async () => {
+    renderWithRoute("/outbound/internal-outbound");
+    expect(
+      await screen.findByText("OutboundManualDocsPage mock view"),
+    ).toBeInTheDocument();
+  });
+
   it("falls back to /inventory for unknown route", async () => {
     renderWithRoute("/some/unknown/path");
-    expect(
-      await screen.findByText("InventoryPage mock view"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 });
