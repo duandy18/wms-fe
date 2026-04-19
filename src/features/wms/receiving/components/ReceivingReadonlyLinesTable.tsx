@@ -1,5 +1,6 @@
 import React from "react";
 import type { ReceivingTaskLineOut } from "../contracts/receiving";
+import { formatQty } from "../utils/fixedRows";
 
 type Props = {
   lines: ReceivingTaskLineOut[];
@@ -39,9 +40,15 @@ const ReceivingReadonlyLinesTable: React.FC<Props> = ({ lines }) => {
                   </td>
                   <td className="px-3 py-2">{line.item_spec_snapshot || "-"}</td>
                   <td className="px-3 py-2">{line.uom_name_snapshot || "-"}</td>
-                  <td className="px-3 py-2 text-right font-mono">{line.planned_qty}</td>
-                  <td className="px-3 py-2 text-right font-mono">{line.received_qty}</td>
-                  <td className="px-3 py-2 text-right font-mono">{line.remaining_qty}</td>
+                  <td className="px-3 py-2 text-right font-mono">
+                    {formatQty(line.planned_qty)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono">
+                    {formatQty(line.received_qty)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono">
+                    {formatQty(line.remaining_qty)}
+                  </td>
                 </tr>
               ))
             )}

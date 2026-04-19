@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import type { ReceivingTaskReadOut } from "../contracts/receiving";
 import ReceivingReadonlyLinesTable from "./ReceivingReadonlyLinesTable";
 import ReceivingTaskInfoCard from "./ReceivingTaskInfoCard";
+import { formatQty } from "../utils/fixedRows";
 
 type Props = {
   detail: ReceivingTaskReadOut | null;
@@ -20,7 +21,7 @@ const ReceivingInlineDetail: React.FC<Props> = ({
       const value = Number(line.remaining_qty || "0");
       return sum + (Number.isFinite(value) ? value : 0);
     }, 0);
-    return String(total);
+    return formatQty(total);
   }, [detail]);
 
   if (loading) {

@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
 import type { PublicAggregateUom } from "../../../../domains/pms/public/contracts/itemAggregate";
 import { fetchItemAggregate } from "../../../../domains/pms/public/itemAggregateClient";
 import {
-  fetchReceivingTask,
   probeReceivingTaskBarcode,
   submitReceiving,
 } from "../api/receivingApi";
@@ -12,14 +10,16 @@ import {
   type ReceivingActualUomOption,
   type ReceivingEntryDraft,
   type ReceivingLineIn,
+  type ReceivingSourceType,
   type ReceivingSubmitIn,
   type ReceivingSubmitOut,
+  type ReceivingTaskListItemOut,
   type ReceivingTaskProbeOut,
-  type ReceivingTaskReadOut,
   receivingLineRequiresBatchField,
   receivingLineShowsBatchField,
   receivingLineShowsDateFields,
 } from "../contracts/receiving";
+import { useReceivingSummaryPage } from "./useReceivingSummaryPage";
 import {
   BASE_EPSILON,
   applyResolvedScanToFixedRows,
@@ -31,60 +31,69 @@ import {
   isEntryTouched,
   normalizeOptionalString,
   type ReceivingEntriesByLineNo,
+  type ReceivingUomOptionsByLineNo,
 } from "../utils/fixedRows";
 
-export function useReceivingTaskPage() {
-  const { receiptNo } = useParams<{ receiptNo: string }>();
-  const receiptNoDecoded = decodeURIComponent(receiptNo ?? "").trim();
-  const isValid = receiptNoDecoded.length > 0;
+type Options = {
+  sourceType: ReceivingSourceType;
+  scanMissingSelectionMessage: string;
+  submitMissingSelectionMessage: string;
+  submitFailedFallback: string;
+};
 
-  const [task, setTask] = useState<ReceivingTaskReadOut | null>(null);
+export function useReceivingFixedRowsReceiptPage(options: Options) {
+  const summary = useReceivingSummaryPage(options.sourceType);
+  const {
+    rows,
+    loading,
+    error,
+    detailByReceiptNo,
+    detailLoadingByReceiptNo,
+    detailErrorByReceiptNo,
+    toggleExpand,
+    refreshDetail,
+    reload,
+  } = summary;
+
+  const [selectedReceiptNo, setSelectedReceiptNo] = useState("");
   const [remark, setRemark] = useState("");
   const [entriesByLineNo, setEntriesByLineNo] =
     useState<ReceivingEntriesByLineNo>({});
-  const [uomOptionsByLineNo, setUomOptionsByLineNo] = useState<
-    Record<number, ReceivingActualUomOption[]>
-  >({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [uomOptionsByLineNo, setUomOptionsByLineNo] =
+    useState<ReceivingUomOptionsByLineNo>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const [lastSubmit, setLastSubmit] = useState<ReceivingSubmitOut | null>(null);
-  const [reloadToken, setReloadToken] = useState(0);
+  const [scanError, setScanError] = useState("");
+  const [scanSuccess, setScanSuccess] = useState("");
   const [resolvingEntryKey, setResolvingEntryKey] = useState<string | null>(
     null,
   );
-  const [scanError, setScanError] = useState("");
-  const [scanSuccess, setScanSuccess] = useState("");
 
-  const load = useCallback(async () => {
-    if (!isValid) {
-      setTask(null);
-      setError("无效的入库任务号。");
-      return;
-    }
+  const selectedRow = useMemo<ReceivingTaskListItemOut | null>(() => {
+    return rows.find((row) => row.receipt_no === selectedReceiptNo) ?? null;
+  }, [rows, selectedReceiptNo]);
 
-    setLoading(true);
-    setError("");
-    try {
-      const data = await fetchReceivingTask(receiptNoDecoded);
-      setTask(data);
-    } catch (err) {
-      setTask(null);
-      setError(getErrorMessage(err, "加载收货任务失败"));
-    } finally {
-      setLoading(false);
-    }
-  }, [isValid, receiptNoDecoded]);
+  const selectedDetail = useMemo(() => {
+    return selectedReceiptNo ? detailByReceiptNo[selectedReceiptNo] ?? null : null;
+  }, [detailByReceiptNo, selectedReceiptNo]);
 
   useEffect(() => {
-    void load();
-  }, [load, reloadToken]);
+    setRemark("");
+    setSubmitError("");
+    setSubmitSuccess("");
+    setLastSubmit(null);
+    setScanError("");
+    setScanSuccess("");
+    setResolvingEntryKey(null);
+    setEntriesByLineNo({});
+    setUomOptionsByLineNo({});
+  }, [selectedReceiptNo]);
 
   useEffect(() => {
-    if (!task) return;
-    const detail = task;
+    if (!selectedDetail) return;
+    const detail = selectedDetail;
 
     let cancelled = false;
 
@@ -120,24 +129,35 @@ export function useReceivingTaskPage() {
     return () => {
       cancelled = true;
     };
-  }, [task]);
+  }, [selectedDetail]);
 
   useEffect(() => {
-    if (!task) return;
+    if (!selectedDetail) return;
     if (Object.keys(uomOptionsByLineNo).length === 0) return;
 
     setEntriesByLineNo((prev) => {
       const next: ReceivingEntriesByLineNo = {};
-      for (const line of task.lines) {
-        const options = uomOptionsByLineNo[line.line_no] ?? [];
-        next[line.line_no] =
+      for (const line of selectedDetail.lines) {
+        const lineNo = line.line_no;
+        const options = uomOptionsByLineNo[lineNo] ?? [];
+        next[lineNo] =
           options.length > 0
-            ? buildPresetEntriesFromUoms(options, prev[line.line_no])
-            : prev[line.line_no] ?? [createEmptyReceivingEntryDraft()];
+            ? buildPresetEntriesFromUoms(options, prev[lineNo])
+            : prev[lineNo] ?? [createEmptyReceivingEntryDraft()];
       }
       return next;
     });
-  }, [task, uomOptionsByLineNo]);
+  }, [selectedDetail, uomOptionsByLineNo]);
+
+  const selectReceiptNo = useCallback(
+    (next: string) => {
+      setSelectedReceiptNo(next);
+      if (next) {
+        void toggleExpand(next);
+      }
+    },
+    [toggleExpand],
+  );
 
   const updateEntry = useCallback(
     (lineNo: number, index: number, patch: Partial<ReceivingEntryDraft>) => {
@@ -151,46 +171,13 @@ export function useReceivingTaskPage() {
     [],
   );
 
-  const selectActualUom = useCallback(
-    (lineNo: number, index: number, actualItemUomId: number | null) => {
-      setEntriesByLineNo((prev) => {
-        const rows = [...(prev[lineNo] ?? [])];
-        const current = rows[index] ?? createEmptyReceivingEntryDraft();
-
-        if (actualItemUomId == null) {
-          rows[index] = {
-            ...current,
-            actual_item_uom_id: null,
-            actual_uom_name_snapshot: "",
-            actual_ratio_to_base_snapshot: null,
-          };
-          return { ...prev, [lineNo]: rows };
-        }
-
-        const option = (uomOptionsByLineNo[lineNo] ?? []).find(
-          (x) => x.actual_item_uom_id === actualItemUomId,
-        );
-
-        rows[index] = {
-          ...current,
-          actual_item_uom_id: actualItemUomId,
-          actual_uom_name_snapshot: option?.actual_uom_name_snapshot ?? "",
-          actual_ratio_to_base_snapshot:
-            option?.actual_ratio_to_base_snapshot ?? null,
-        };
-        return { ...prev, [lineNo]: rows };
-      });
-    },
-    [uomOptionsByLineNo],
-  );
-
   const resolveBarcodeAtEntry = useCallback(
     async (lineNo: number, index: number, rawBarcode: string) => {
       const barcode = rawBarcode.trim();
       if (!barcode) return;
 
-      if (!task) {
-        const msg = "请先加载收货任务，再进行识别";
+      if (!selectedDetail) {
+        const msg = options.scanMissingSelectionMessage;
         setScanError(msg);
         throw new Error(msg);
       }
@@ -201,7 +188,7 @@ export function useReceivingTaskPage() {
 
       try {
         const result: ReceivingTaskProbeOut = await probeReceivingTaskBarcode(
-          task.receipt_no,
+          selectedDetail.receipt_no,
           { barcode },
         );
 
@@ -231,7 +218,7 @@ export function useReceivingTaskPage() {
           throw new Error(msg);
         }
 
-        const matchedLine = task.lines.find(
+        const matchedLine = selectedDetail.lines.find(
           (line) => line.line_no === result.matched_line_no,
         );
         if (!matchedLine) {
@@ -271,11 +258,14 @@ export function useReceivingTaskPage() {
         setResolvingEntryKey(null);
       }
     },
-    [task, uomOptionsByLineNo],
+    [options.scanMissingSelectionMessage, selectedDetail, uomOptionsByLineNo],
   );
 
   const submit = useCallback(async () => {
-    if (!task) return;
+    if (!selectedDetail) {
+      setSubmitError(options.submitMissingSelectionMessage);
+      return;
+    }
 
     setSubmitError("");
     setSubmitSuccess("");
@@ -283,7 +273,7 @@ export function useReceivingTaskPage() {
 
     const linePayloads: ReceivingLineIn[] = [];
 
-    for (const line of task.lines) {
+    for (const line of selectedDetail.lines) {
       const drafts = entriesByLineNo[line.line_no] ?? [];
       const entries: ReceivingLineIn["entries"] = [];
       const showDateFields = receivingLineShowsDateFields(line);
@@ -388,7 +378,7 @@ export function useReceivingTaskPage() {
     }
 
     const payload: ReceivingSubmitIn = {
-      receipt_no: task.receipt_no,
+      receipt_no: selectedDetail.receipt_no,
       remark: normalizeOptionalString(remark),
       lines: linePayloads,
     };
@@ -399,48 +389,57 @@ export function useReceivingTaskPage() {
       setLastSubmit(out);
       setSubmitSuccess(`提交成功：操作单 #${out.id}`);
       setRemark("");
-      setEntriesByLineNo(buildEmptyEntries(task, uomOptionsByLineNo));
+      setEntriesByLineNo(buildEmptyEntries(selectedDetail, uomOptionsByLineNo));
       setScanError("");
       setScanSuccess("");
-      setReloadToken((v) => v + 1);
+      await refreshDetail(selectedDetail.receipt_no);
+      reload();
     } catch (err) {
-      setSubmitError(getErrorMessage(err, "提交收货作业失败"));
+      setSubmitError(getErrorMessage(err, options.submitFailedFallback));
     } finally {
       setSubmitting(false);
     }
-  }, [entriesByLineNo, remark, task, uomOptionsByLineNo]);
+  }, [
+    entriesByLineNo,
+    options.submitFailedFallback,
+    options.submitMissingSelectionMessage,
+    refreshDetail,
+    reload,
+    remark,
+    selectedDetail,
+    uomOptionsByLineNo,
+  ]);
 
-  const remainingTotal = useMemo(() => {
-    if (!task) return "0";
-    const total = task.lines.reduce((sum, line) => {
-      const v = Number(line.remaining_qty || "0");
-      return sum + (Number.isFinite(v) ? v : 0);
-    }, 0);
-    return String(total);
-  }, [task]);
+  const refreshCurrent = useCallback(() => {
+    if (!selectedDetail) return;
+    void refreshDetail(selectedDetail.receipt_no);
+  }, [refreshDetail, selectedDetail]);
 
   return {
-    receiptNo: receiptNoDecoded,
-    isValid,
-    task,
+    rows,
+    loading,
+    error,
+    detailLoadingByReceiptNo,
+    detailErrorByReceiptNo,
+    selectedReceiptNo,
+    selectedRow,
+    selectedDetail,
     remark,
     setRemark,
     entriesByLineNo,
     uomOptionsByLineNo,
-    loading,
-    error,
     submitting,
     submitError,
     submitSuccess,
     lastSubmit,
-    remainingTotal,
-    resolvingEntryKey,
     scanError,
     scanSuccess,
+    resolvingEntryKey,
+    selectReceiptNo,
     updateEntry,
-    selectActualUom,
     resolveBarcodeAtEntry,
-    reload: () => setReloadToken((v) => v + 1),
     submit,
+    refreshCurrent,
+    reload,
   };
 }

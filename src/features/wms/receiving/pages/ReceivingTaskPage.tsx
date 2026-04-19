@@ -2,6 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import PageTitle from "../../../../components/ui/PageTitle";
 import ReceivingEditableBatchLines from "../components/ReceivingEditableBatchLines";
+import ReceivingScanFeedback from "../components/ReceivingScanFeedback";
+import ReceivingSubmitActions from "../components/ReceivingSubmitActions";
+import ReceivingSubmitFeedback from "../components/ReceivingSubmitFeedback";
 import ReceivingTaskInfoCard from "../components/ReceivingTaskInfoCard";
 import { useReceivingTaskPage } from "../model/useReceivingTaskPage";
 
@@ -63,17 +66,10 @@ const ReceivingTaskPage: React.FC = () => {
               />
             </label>
 
-            {m.scanError ? (
-              <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                {m.scanError}
-              </div>
-            ) : null}
-
-            {m.scanSuccess ? (
-              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                {m.scanSuccess}
-              </div>
-            ) : null}
+            <ReceivingScanFeedback
+              scanError={m.scanError}
+              scanSuccess={m.scanSuccess}
+            />
 
             <ReceivingEditableBatchLines
               lines={m.task.lines}
@@ -81,54 +77,30 @@ const ReceivingTaskPage: React.FC = () => {
               uomOptionsByLineNo={m.uomOptionsByLineNo}
               resolvingEntryKey={m.resolvingEntryKey}
               onResolveBarcode={m.resolveBarcodeAtEntry}
-              onSelectActualUom={m.selectActualUom}
               showRemarkField={false}
               showLineHint={false}
               fixedRowsByUom={true}
-              onAddEntry={() => {}}
-              onRemoveEntry={() => {}}
               onChangeEntry={m.updateEntry}
             />
 
-            {m.submitError ? (
-              <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                {m.submitError}
-              </div>
-            ) : null}
+            <ReceivingSubmitFeedback
+              submitError={m.submitError}
+              submitSuccess={m.submitSuccess}
+              lastSubmit={m.lastSubmit}
+            />
 
-            {m.submitSuccess ? (
-              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                {m.submitSuccess}
-              </div>
-            ) : null}
-
-            {m.lastSubmit ? (
-              <div className="text-xs text-slate-500">
-                最近提交：操作单 #{m.lastSubmit.id} / 操作时间 {m.lastSubmit.operated_at}
-              </div>
-            ) : null}
-
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                className="rounded-md border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50"
-                onClick={m.reload}
-                disabled={m.loading || m.submitting}
-              >
-                刷新任务
-              </button>
-              <button
-                type="button"
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm text-white disabled:opacity-60"
-                disabled={m.submitting}
-                onClick={() => {
-                  if (!window.confirm(`确认提交收货作业：${m.task?.receipt_no}？`)) return;
-                  void m.submit();
-                }}
-              >
-                {m.submitting ? "提交中…" : "提交收货作业"}
-              </button>
-            </div>
+            <ReceivingSubmitActions
+              refreshLabel="刷新任务"
+              submitLabel="提交收货作业"
+              submitting={m.submitting}
+              refreshDisabled={m.loading || m.submitting}
+              submitDisabled={m.submitting}
+              onRefresh={m.reload}
+              onSubmit={() => {
+                if (!window.confirm(`确认提交收货作业：${m.task?.receipt_no}？`)) return;
+                void m.submit();
+              }}
+            />
           </section>
         </>
       ) : null}
