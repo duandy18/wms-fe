@@ -78,6 +78,36 @@ export interface InboundReceiptReleaseOut {
   released_at: string;
 }
 
+export interface InboundReceiptReturnSourceLineOut {
+  order_line_id: number;
+  item_id: number;
+  item_name_snapshot: string | null;
+  item_spec_snapshot: string | null;
+  item_uom_id: number;
+  uom_name_snapshot: string | null;
+  ratio_to_base_snapshot: string;
+  qty_ordered: string;
+  qty_shipped: string;
+  qty_returned: string;
+  qty_remaining_refundable: string;
+  suggested_planned_qty: string;
+}
+
+export interface InboundReceiptReturnSourceOut {
+  order_id: number;
+  order_ref: string;
+  platform: string | null;
+  shop_id: string | null;
+  ext_order_no: string | null;
+  warehouse_id: number;
+  warehouse_name_snapshot: string | null;
+  remaining_qty: string;
+  existing_receipt_id: number | null;
+  existing_receipt_no: string | null;
+  existing_receipt_status: InboundReceiptStatus | null;
+  lines: InboundReceiptReturnSourceLineOut[];
+}
+
 export function formatInboundSourceType(sourceType: InboundReceiptSourceType): string {
   switch (sourceType) {
     case "PURCHASE_ORDER":

@@ -467,16 +467,7 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
-          <Route
-            path="receive-tasks/:taskId"
-            element={
-              <RequirePermission permission="page.wms.read">
-                <P.ReceiveTaskDetailPage />
-              </RequirePermission>
-            }
-          />
-          <Route
+<Route
             path="return-tasks/:taskId"
             element={
               <RequirePermission permission="page.wms.read">

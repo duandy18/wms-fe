@@ -4,6 +4,7 @@ import type {
   InboundReceiptProgressOut,
   InboundReceiptReadOut,
   InboundReceiptReleaseOut,
+  InboundReceiptReturnSourceOut,
 } from "../contracts/inboundReceipt";
 
 export interface InboundReceiptCreateFromPurchaseIn {
@@ -29,6 +30,19 @@ export interface InboundReceiptCreateManualIn {
   lines: InboundReceiptCreateManualLineIn[];
 }
 
+export interface InboundReceiptCreateFromReturnOrderLineIn {
+  order_line_id: number;
+  item_id: number;
+  planned_qty: string;
+  remark?: string | null;
+}
+
+export interface InboundReceiptCreateFromReturnOrderIn {
+  order_key: string;
+  remark?: string | null;
+  lines: InboundReceiptCreateFromReturnOrderLineIn[];
+}
+
 export async function createInboundReceiptFromPurchase(
   payload: InboundReceiptCreateFromPurchaseIn,
 ): Promise<InboundReceiptReadOut> {
@@ -39,6 +53,20 @@ export async function createInboundReceiptManual(
   payload: InboundReceiptCreateManualIn,
 ): Promise<InboundReceiptReadOut> {
   return apiPost<InboundReceiptReadOut>("/inbound-receipts/manual", payload);
+}
+
+export async function fetchInboundReceiptReturnSource(
+  orderKey: string,
+): Promise<InboundReceiptReturnSourceOut> {
+  return apiGet<InboundReceiptReturnSourceOut>(
+    `/inbound-receipts/return-source/${encodeURIComponent(orderKey)}`,
+  );
+}
+
+export async function createInboundReceiptFromReturnOrder(
+  payload: InboundReceiptCreateFromReturnOrderIn,
+): Promise<InboundReceiptReadOut> {
+  return apiPost<InboundReceiptReadOut>("/inbound-receipts/from-return-order", payload);
 }
 
 export async function fetchInboundReceipts(): Promise<InboundReceiptListOut> {
