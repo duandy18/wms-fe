@@ -39,17 +39,26 @@ export const ReceivingReturnsPage = lazy(
 export const ReceivingTaskPage = lazy(
   () => import("../../features/wms/receiving/pages/ReceivingTaskPage"),
 );
-export const PickTasksCockpitPage = lazy(
-  () => import("../../features/wms/outbound-pick/PickTasksCockpitPage"),
+
+// WMS 出库新主线
+export const OutboundSummaryPage = lazy(
+  () => import("../../features/wms/outbound/pages/OutboundSummaryPage"),
 );
+export const OutboundOrderPage = lazy(
+  () => import("../../features/wms/outbound/pages/OutboundOrderPage"),
+);
+export const OutboundManualDocsPage = lazy(
+  () => import("../../features/wms/outbound/pages/OutboundManualDocsPage"),
+);
+export const OutboundManualPage = lazy(
+  () => import("../../features/wms/outbound/pages/OutboundManualPage"),
+);
+
 export const ShipmentPreparePage = lazy(
   () => import("../../features/tms/shipment/pages/ShipmentPreparePage"),
 );
 export const ShipmentCockpitPage = lazy(
   () => import("../../features/tms/shipment/pages/ShipmentCockpitPage"),
-);
-export const InternalOutboundPage = lazy(
-  () => import("../../features/internal-outbound/pages/InternalOutboundPage"),
 );
 export const ShippingLabelPrintPage = lazy(
   () => import("../../features/tms/shipment/pages/ShippingLabelPrintPage"),
@@ -58,10 +67,6 @@ export const ShippingLabelPrintPage = lazy(
 // 库存 & 报表
 export const InventoryPage = lazy(
   () => import("../../features/wms/inventory/inventory/pages/InventoryPage"),
-);
-export const OutboundDashboardPage = lazy(
-  () =>
-    import("../../features/inventory/outbound-dashboard/OutboundDashboardPage"),
 );
 
 // 库存台账（业务页）
@@ -189,7 +194,6 @@ export const PurchaseOrderViewPage = lazy(
 export const PurchaseReportsPage = lazy(
   () => import("../../features/purchase-orders/PurchaseReportsPage"),
 );
-;
 
 // 退货任务详情
 export const ReturnTaskDetailPage = lazy(
