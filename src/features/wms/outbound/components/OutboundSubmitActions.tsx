@@ -11,6 +11,7 @@ type Props = {
   reloadCurrentLabel?: string;
   submitLabel?: string;
   showReloadList?: boolean;
+  submitDisabled?: boolean;
 };
 
 const OutboundSubmitActions: React.FC<Props> = ({
@@ -24,6 +25,7 @@ const OutboundSubmitActions: React.FC<Props> = ({
   reloadCurrentLabel = "刷新当前",
   submitLabel = "提交出库",
   showReloadList = true,
+  submitDisabled = false,
 }) => {
   return (
     <div className="space-y-2">
@@ -57,8 +59,9 @@ const OutboundSubmitActions: React.FC<Props> = ({
 
         <button
           type="button"
-          className="ml-auto rounded-md bg-slate-900 px-3 py-2 text-xs text-white hover:bg-slate-800"
+          className="ml-auto rounded-md bg-slate-900 px-3 py-2 text-xs text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           onClick={onSubmit}
+          disabled={submitDisabled}
         >
           {submitLabel}
         </button>

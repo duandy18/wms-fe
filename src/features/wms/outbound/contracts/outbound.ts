@@ -165,7 +165,7 @@ export interface OrderOutboundSubmitOut {
   lines_count: number;
 }
 
-export type ManualOutboundDocStatus = "DRAFT" | "RELEASED" | "VOIDED";
+export type ManualOutboundDocStatus = "DRAFT" | "RELEASED" | "COMPLETED" | "VOIDED";
 
 export interface ManualOutboundDocLineOut {
   id: number;
@@ -258,6 +258,8 @@ export function formatManualOutboundDocStatus(value: string): string {
       return "草稿";
     case "RELEASED":
       return "已发布";
+    case "COMPLETED":
+      return "已完成";
     case "VOIDED":
       return "已作废";
     default:

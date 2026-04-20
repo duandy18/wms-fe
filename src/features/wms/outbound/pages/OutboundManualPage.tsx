@@ -15,24 +15,52 @@ import { useOutboundManualPage } from "../model/useOutboundManualPage";
 const OutboundManualPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const m = useOutboundManualPage();
+  const {
+    rows,
+    loading,
+    error,
+    selectedDocId,
+    selectDocId,
+    detail,
+    detailLoading,
+    detailError,
+    barcodeByLineId,
+    qtyByLineId,
+    lineHintByLineId,
+    resolvedByLineId,
+    lotCandidatesByLineId,
+    selectedLotByLineId,
+    resolvingLineId,
+    updateBarcode,
+    resolveBarcode,
+    updateQty,
+    selectLot,
+    submitMessage,
+    enteredLinesCount,
+    canSubmit,
+    isSubmitting,
+    reload,
+    reloadDetail,
+    handleSubmit,
+  } = m;
 
   useEffect(() => {
     const docId = searchParams.get("docId") || "";
     if (!docId) return;
-    if (m.selectedDocId === docId) return;
-    if (m.rows.length === 0) return;
+    if (selectedDocId === docId) return;
+    if (rows.length === 0) return;
 
-    const hit = m.rows.find((row) => String(row.id) === docId);
+    const hit = rows.find((row) => String(row.id) === docId);
     if (!hit) return;
 
-    m.selectDocId(docId);
-  }, [m, m.rows, m.selectedDocId, searchParams]);
+    selectDocId(docId);
+  }, [rows, selectedDocId, selectDocId, searchParams]);
 
   return (
     <div className="space-y-6 p-6">
       <PageTitle
         title="手动出库"
-        description="消费已发布手动出库单据的执行页；本页先完成真实来源读取、扫码框与录数结构。"
+        description="消费已发布手动出库单据，完成扫码识别、lot 选择与真实提交。"
       />
 
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
@@ -40,87 +68,103 @@ const OutboundManualPage: React.FC = () => {
           手动出库执行输入
         </div>
 
-        {m.error ? (
+        {error ? (
           <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            {m.error}
+            {error}
           </div>
         ) : null}
 
         <OutboundSourceSelect
           label="已发布手动出库单据"
-          value={m.selectedDocId}
-          disabled={m.loading}
-          placeholder={m.loading ? "单据加载中…" : "请选择已发布手动出库单据"}
-          options={m.rows.map((row) => ({
+          value={selectedDocId}
+          disabled={loading}
+          placeholder={loading ? "单据加载中…" : "请选择已发布手动出库单据"}
+          options={rows.map((row) => ({
             key: row.id,
             value: String(row.id),
             label: `${row.doc_no} · 仓库 ${row.warehouse_id} · ${row.recipient_name || "-"}`,
           }))}
-          onChange={m.selectDocId}
+          onChange={selectDocId}
         />
 
-        {!m.selectedDocId ? (
+        {!selectedDocId ? (
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
             请先选择已发布手动出库单据。
           </div>
         ) : null}
 
-        {m.detailLoading ? (
+        {detailLoading ? (
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
             正在加载手动出库详情…
           </div>
         ) : null}
 
-        {m.detailError ? (
+        {detailError ? (
           <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            {m.detailError}
+            {detailError}
           </div>
         ) : null}
 
-        {m.detail ? (
+        {detail ? (
           <>
             <OutboundExecutionInfoCard
               title="单头参考"
               items={[
-                { label: "单据号", value: m.detail.doc_no },
+                { label: "单据号", value: detail.doc_no },
                 {
                   label: "状态",
-                  value: formatManualOutboundDocStatus(m.detail.status),
+                  value: formatManualOutboundDocStatus(detail.status),
                 },
-                { label: "仓库", value: `仓库 ${m.detail.warehouse_id}` },
-                { label: "领用/收件人", value: m.detail.recipient_name || "-" },
+                { label: "执行仓库", value: `仓库 ${detail.warehouse_id}` },
+                { label: "领用 / 收件人", value: detail.recipient_name || "-" },
                 {
                   label: "发布时间",
-                  value: formatDateTime(m.detail.released_at),
+                  value: formatDateTime(detail.released_at),
+                },
+                {
+                  label: "单据备注",
+                  value: detail.remark || "-",
                 },
               ]}
             />
 
             <OutboundExecutionEditableLines
-              refLabelName="line_no"
-              lines={m.detail.lines.map((line) => ({
-                key: line.id,
-                refLabel: String(line.line_no),
+              lines={detail.lines.map((line) => ({
+                id: line.id,
+                lineNo: line.line_no,
                 itemId: line.item_id,
+                itemName: line.item_name_snapshot,
+                itemSku: line.item_sku_snapshot,
+                itemSpec: line.item_spec_snapshot,
+                uomName: line.uom_name_snapshot,
                 plannedQty: line.requested_qty,
-                barcodeValue: m.barcodeByLineId[line.id] ?? "",
-                qtyValue: m.qtyByLineId[line.id] ?? "",
-                hint: m.lineHintByLineId[line.id] ?? "",
               }))}
-              emptyText="当前单据暂无行"
-              onChangeBarcode={m.updateBarcode}
-              onResolveBarcode={m.resolveBarcodePlaceholder}
-              onChangeQty={m.updateQty}
+              emptyText="当前单据暂无出库行"
+              submitLocked={isSubmitting}
+              barcodeByLineId={barcodeByLineId}
+              qtyByLineId={qtyByLineId}
+              hintByLineId={lineHintByLineId}
+              resolvedByLineId={resolvedByLineId}
+              lotCandidatesByLineId={lotCandidatesByLineId}
+              selectedLotByLineId={selectedLotByLineId}
+              resolvingLineId={resolvingLineId}
+              onChangeBarcode={updateBarcode}
+              onResolveBarcode={resolveBarcode}
+              onChangeQty={updateQty}
+              onSelectLot={selectLot}
             />
 
-            <OutboundSubmitFeedback message={m.submitMessage} />
+            <OutboundSubmitFeedback message={submitMessage} />
 
             <OutboundSubmitActions
-              summaryText={`当前已录入 ${m.enteredLinesCount} 条本次出库数量。`}
-              onReloadList={m.reload}
-              onReloadCurrent={m.reloadDetail}
-              onSubmit={m.handleSubmitPlaceholder}
-              reloadCurrentDisabled={!m.selectedDocId}
+              summaryText={`当前已录入 ${enteredLinesCount} 条本次出库数量。`}
+              reloadCurrentLabel="刷新当前单据"
+              submitLabel={isSubmitting ? "提交中…" : "提交出库"}
+              onReloadList={reload}
+              onReloadCurrent={reloadDetail}
+              onSubmit={handleSubmit}
+              reloadCurrentDisabled={!selectedDocId || detailLoading || isSubmitting}
+              submitDisabled={!canSubmit}
             />
           </>
         ) : null}
