@@ -5,10 +5,14 @@ import {
   fetchBarcodeProbe,
   fetchOrderOutboundOptions,
   fetchOrderOutboundView,
+  fetchOutboundLotCandidates,
   fetchPublicItemAggregate,
   type OrderOutboundOptionOut,
 } from "../api/outboundApi";
-import type { OrderOutboundViewResponse } from "../contracts/outbound";
+import type {
+  OrderOutboundViewResponse,
+  OutboundLotCandidateOut,
+} from "../contracts/outbound";
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim()) {
@@ -20,6 +24,8 @@ function getErrorMessage(error: unknown, fallback: string): string {
 type QtyMap = Record<number, string>;
 type BarcodeMap = Record<number, string>;
 type LineHintMap = Record<number, string>;
+type LotCandidatesMap = Record<number, OutboundLotCandidateOut[]>;
+type SelectedLotMap = Record<number, OutboundLotCandidateOut>;
 
 export interface ResolvedOutboundLineInfo {
   itemId: number;
@@ -33,7 +39,7 @@ export interface ResolvedOutboundLineInfo {
 }
 
 function buildDefaultLineHint(): string {
-  return "等待扫码识别；下一轮在这里接入命中的 lot / 批次 / 日期信息。";
+  return "上行看订单行参考，下行填实现；下一轮在这里接入命中的 lot / 批次 / 日期信息。";
 }
 
 function clearLineMaps(
@@ -43,11 +49,26 @@ function clearLineMaps(
   setResolvedByLineId: React.Dispatch<
     React.SetStateAction<Record<number, ResolvedOutboundLineInfo>>
   >,
+  setLotCandidatesByLineId: React.Dispatch<
+    React.SetStateAction<LotCandidatesMap>
+  >,
+  setSelectedLotByLineId: React.Dispatch<
+    React.SetStateAction<SelectedLotMap>
+  >,
 ) {
   setQtyByLineId({});
   setBarcodeByLineId({});
   setLineHintByLineId({});
   setResolvedByLineId({});
+  setLotCandidatesByLineId({});
+  setSelectedLotByLineId({});
+}
+
+function formatLotLabel(candidate: OutboundLotCandidateOut): string {
+  if (candidate.lot_code && candidate.lot_code.trim()) {
+    return candidate.lot_code.trim();
+  }
+  return `内部 lot #${candidate.lot_id}`;
 }
 
 export function useOutboundOrderPage() {
@@ -72,6 +93,10 @@ export function useOutboundOrderPage() {
   const [resolvedByLineId, setResolvedByLineId] = useState<
     Record<number, ResolvedOutboundLineInfo>
   >({});
+  const [lotCandidatesByLineId, setLotCandidatesByLineId] =
+    useState<LotCandidatesMap>({});
+  const [selectedLotByLineId, setSelectedLotByLineId] =
+    useState<SelectedLotMap>({});
   const [resolvingLineId, setResolvingLineId] = useState<number | null>(null);
 
   const [submitMessage, setSubmitMessage] = useState("");
@@ -148,6 +173,8 @@ export function useOutboundOrderPage() {
       setBarcodeByLineId(nextBarcodeByLineId);
       setLineHintByLineId(nextLineHintByLineId);
       setResolvedByLineId({});
+      setLotCandidatesByLineId({});
+      setSelectedLotByLineId({});
     } catch (error) {
       setDetail(null);
       clearLineMaps(
@@ -155,6 +182,8 @@ export function useOutboundOrderPage() {
         setBarcodeByLineId,
         setLineHintByLineId,
         setResolvedByLineId,
+        setLotCandidatesByLineId,
+        setSelectedLotByLineId,
       );
       setDetailError(getErrorMessage(error, "加载订单出库视图失败"));
     } finally {
@@ -174,6 +203,8 @@ export function useOutboundOrderPage() {
           setBarcodeByLineId,
           setLineHintByLineId,
           setResolvedByLineId,
+          setLotCandidatesByLineId,
+          setSelectedLotByLineId,
         );
         setDetailError("");
         return;
@@ -182,6 +213,28 @@ export function useOutboundOrderPage() {
       void loadDetail(id);
     },
     [loadDetail],
+  );
+
+  const selectWarehouseId = useCallback(
+    (next: string) => {
+      setSelectedWarehouseId(next);
+      setSubmitMessage("");
+      setLotCandidatesByLineId({});
+      setSelectedLotByLineId({});
+
+      if (!detail?.lines?.length) return;
+
+      setLineHintByLineId((prev) => {
+        const nextHints = { ...prev };
+        for (const line of detail.lines) {
+          nextHints[line.id] = resolvedByLineId[line.id]
+            ? "执行仓已切换，请重新识别条码以读取新的 lot 候选。"
+            : buildDefaultLineHint();
+        }
+        return nextHints;
+      });
+    },
+    [detail?.lines, resolvedByLineId],
   );
 
   const updateQty = useCallback((lineId: number, value: string) => {
@@ -201,7 +254,7 @@ export function useOutboundOrderPage() {
       if (!barcode) {
         setLineHintByLineId((prev) => ({
           ...prev,
-          [lineId]: "请先输入或扫码条码，再进行识别。",
+          [lineId]: "请先在本行输入或扫码条码，再进行识别。",
         }));
         return;
       }
@@ -217,6 +270,16 @@ export function useOutboundOrderPage() {
             delete next[lineId];
             return next;
           });
+          setLotCandidatesByLineId((prev) => {
+            const next = { ...prev };
+            delete next[lineId];
+            return next;
+          });
+          setSelectedLotByLineId((prev) => {
+            const next = { ...prev };
+            delete next[lineId];
+            return next;
+          });
           setLineHintByLineId((prev) => ({
             ...prev,
             [lineId]: "未识别到有效商品条码，请检查条码绑定。",
@@ -226,6 +289,16 @@ export function useOutboundOrderPage() {
 
         if (probe.item_id !== line.item_id) {
           setResolvedByLineId((prev) => {
+            const next = { ...prev };
+            delete next[lineId];
+            return next;
+          });
+          setLotCandidatesByLineId((prev) => {
+            const next = { ...prev };
+            delete next[lineId];
+            return next;
+          });
+          setSelectedLotByLineId((prev) => {
             const next = { ...prev };
             delete next[lineId];
             return next;
@@ -257,7 +330,7 @@ export function useOutboundOrderPage() {
           itemName: probe.item_basic?.name || line.item_name || null,
           itemSpec: probe.item_basic?.spec || line.item_spec || null,
           uomId: probe.item_uom_id ?? null,
-          uomName: uomName,
+          uomName,
           ratioToBase: probe.ratio_to_base ?? null,
           barcode,
         };
@@ -267,15 +340,65 @@ export function useOutboundOrderPage() {
           [lineId]: resolved,
         }));
 
+        if (!selectedWarehouse) {
+          setLotCandidatesByLineId((prev) => ({
+            ...prev,
+            [lineId]: [],
+          }));
+          setSelectedLotByLineId((prev) => {
+            const next = { ...prev };
+            delete next[lineId];
+            return next;
+          });
+          setLineHintByLineId((prev) => ({
+            ...prev,
+            [lineId]: "已识别商品与订单行一致，请先选择执行仓库，再重新识别以读取 lot 候选。",
+          }));
+          return;
+        }
+
+        const lotResp = await fetchOutboundLotCandidates(
+          selectedWarehouse.id,
+          probe.item_id,
+        );
+        const candidates = Array.isArray(lotResp.candidates)
+          ? lotResp.candidates
+          : [];
+
+        setLotCandidatesByLineId((prev) => ({
+          ...prev,
+          [lineId]: candidates,
+        }));
+        setSelectedLotByLineId((prev) => {
+          const next = { ...prev };
+          delete next[lineId];
+          return next;
+        });
+
+        if (candidates.length <= 0) {
+          setLineHintByLineId((prev) => ({
+            ...prev,
+            [lineId]: "已识别商品与订单行一致，但当前执行仓暂无可用 lot。",
+          }));
+          return;
+        }
+
         setLineHintByLineId((prev) => ({
           ...prev,
-          [lineId]:
-            resolved.ratioToBase != null
-              ? `已识别商品与订单行一致，包装倍率 × ${resolved.ratioToBase}。下一步录入本次出库数量。`
-              : "已识别商品与订单行一致。下一步录入本次出库数量。",
+          [lineId]: `已识别商品与订单行一致；当前执行仓共有 ${candidates.length} 个可用 lot，请选择。`,
         }));
       } catch (error) {
         setResolvedByLineId((prev) => {
+          const next = { ...prev };
+          delete next[lineId];
+          return next;
+        });
+        setLotCandidatesByLineId((prev) => {
+          const next = { ...prev };
+          delete next[lineId];
+          return next;
+        });
+        setSelectedLotByLineId((prev) => {
           const next = { ...prev };
           delete next[lineId];
           return next;
@@ -288,7 +411,26 @@ export function useOutboundOrderPage() {
         setResolvingLineId(null);
       }
     },
-    [barcodeByLineId, detail?.lines],
+    [barcodeByLineId, detail?.lines, selectedWarehouse],
+  );
+
+  const selectLot = useCallback(
+    (lineId: number, lotId: number) => {
+      const candidates = lotCandidatesByLineId[lineId] ?? [];
+      const matched = candidates.find((item) => item.lot_id === lotId) ?? null;
+      if (!matched) return;
+
+      setSelectedLotByLineId((prev) => ({
+        ...prev,
+        [lineId]: matched,
+      }));
+
+      setLineHintByLineId((prev) => ({
+        ...prev,
+        [lineId]: `已选择 ${formatLotLabel(matched)}；可出数量 ${matched.available_qty}。下一步录入本次出库数量并进入真实提交。`,
+      }));
+    },
+    [lotCandidatesByLineId],
   );
 
   const enteredLinesCount = useMemo(() => {
@@ -312,10 +454,19 @@ export function useOutboundOrderPage() {
       return;
     }
 
-    setSubmitMessage(
-      "当前页已完成真实扫码识别与作业展示增强；lot 命中与提交合同这一步下一轮继续接。",
-    );
-  }, [enteredLinesCount, selectedOrder, selectedWarehouse]);
+    const missingLotLines = Object.entries(qtyByLineId).filter(([key, value]) => {
+      const qty = Number(value);
+      if (!Number.isFinite(qty) || qty <= 0) return false;
+      return !selectedLotByLineId[Number(key)];
+    });
+
+    if (missingLotLines.length > 0) {
+      setSubmitMessage("已录入本次出库数量的行仍未选择 lot。");
+      return;
+    }
+
+    setSubmitMessage("当前页已接入 lot 候选读取与选择；下一轮继续接真实提交。");
+  }, [enteredLinesCount, qtyByLineId, selectedLotByLineId, selectedOrder, selectedWarehouse]);
 
   return {
     orders,
@@ -330,7 +481,7 @@ export function useOutboundOrderPage() {
     selectedOrder,
     selectOrderId,
     selectedWarehouseId,
-    setSelectedWarehouseId,
+    selectWarehouseId,
     selectedWarehouse,
 
     detail,
@@ -341,10 +492,13 @@ export function useOutboundOrderPage() {
     barcodeByLineId,
     lineHintByLineId,
     resolvedByLineId,
+    lotCandidatesByLineId,
+    selectedLotByLineId,
     resolvingLineId,
     updateQty,
     updateBarcode,
     resolveBarcode,
+    selectLot,
 
     enteredLinesCount,
     submitMessage,

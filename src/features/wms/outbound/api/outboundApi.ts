@@ -7,8 +7,12 @@ import type {
   OrderOutboundSubmitIn,
   OrderOutboundSubmitOut,
   OrderOutboundViewResponse,
+  OutboundLotCandidatesOut,
   OutboundSummaryDetailOut,
   OutboundSummaryListOut,
+  PublicItemAggregateOut,
+  PublicItemBasicOut,
+  PublicSupplierBasicOut,
 } from "../contracts/outbound";
 
 export interface OutboundSummaryQuery {
@@ -72,6 +76,46 @@ export async function fetchOrderOutboundView(
   );
 }
 
+export async function fetchOutboundLotCandidates(
+  warehouseId: number,
+  itemId: number,
+): Promise<OutboundLotCandidatesOut> {
+  return apiGet<OutboundLotCandidatesOut>("/wms/outbound/lot-candidates", {
+    warehouse_id: warehouseId,
+    item_id: itemId,
+  });
+}
+
+export interface PublicSuppliersQuery {
+  q?: string;
+}
+
+export async function fetchPublicSuppliers(
+  query: PublicSuppliersQuery = {},
+): Promise<PublicSupplierBasicOut[]> {
+  return apiGet<PublicSupplierBasicOut[]>("/public/suppliers", {
+    active: true,
+    q: query.q,
+  });
+}
+
+export interface ManualDocItemOptionsQuery {
+  supplier_id?: number;
+  q?: string;
+  limit?: number;
+}
+
+export async function fetchManualDocItemOptions(
+  query: ManualDocItemOptionsQuery = {},
+): Promise<PublicItemBasicOut[]> {
+  return apiGet<PublicItemBasicOut[]>("/public/items", {
+    enabled: true,
+    supplier_id: query.supplier_id,
+    q: query.q,
+    limit: query.limit ?? 100,
+  });
+}
+
 export async function submitOrderOutbound(
   orderId: number,
   payload: OrderOutboundSubmitIn,
@@ -103,34 +147,6 @@ export interface BarcodeProbeOut {
 
 export async function fetchBarcodeProbe(barcode: string): Promise<BarcodeProbeOut> {
   return apiPost<BarcodeProbeOut>("/items/barcode-probe", { barcode });
-}
-
-export interface PublicItemAggregateUomOut {
-  id: number;
-  uom: string;
-  ratio_to_base: number;
-  display_name?: string | null;
-}
-
-export interface PublicItemAggregateItemOut {
-  id: number;
-  sku: string;
-  name: string;
-  spec?: string | null;
-}
-
-export interface PublicItemAggregateOut {
-  item: PublicItemAggregateItemOut;
-  uoms: PublicItemAggregateUomOut[];
-  barcodes: Array<{
-    id: number;
-    item_id: number;
-    item_uom_id: number;
-    barcode: string;
-    symbology: string;
-    active: boolean;
-    is_primary: boolean;
-  }>;
 }
 
 export async function fetchPublicItemAggregate(

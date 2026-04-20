@@ -77,6 +77,66 @@ export interface OrderOutboundViewResponse {
   lines: OrderOutboundViewLineOut[];
 }
 
+export interface OutboundLotCandidateOut {
+  lot_id: number;
+  lot_code: string | null;
+  production_date: string | null;
+  expiry_date: string | null;
+  available_qty: number;
+}
+
+export interface OutboundLotCandidatesOut {
+  warehouse_id: number;
+  item_id: number;
+  candidates: OutboundLotCandidateOut[];
+}
+
+export interface PublicSupplierBasicOut {
+  id: number;
+  name: string;
+  code?: string | null;
+  active: boolean;
+}
+
+export interface PublicItemBasicOut {
+  id: number;
+  sku: string;
+  name: string;
+  spec?: string | null;
+  enabled: boolean;
+  supplier_id?: number | null;
+  brand?: string | null;
+  category?: string | null;
+}
+
+export interface PublicItemAggregateUomOut {
+  id: number;
+  uom: string;
+  ratio_to_base: number;
+  display_name?: string | null;
+}
+
+export interface PublicItemAggregateItemOut {
+  id: number;
+  sku: string;
+  name: string;
+  spec?: string | null;
+}
+
+export interface PublicItemAggregateOut {
+  item: PublicItemAggregateItemOut;
+  uoms: PublicItemAggregateUomOut[];
+  barcodes: Array<{
+    id: number;
+    item_id: number;
+    item_uom_id: number;
+    barcode: string;
+    symbology: string;
+    active: boolean;
+    is_primary: boolean;
+  }>;
+}
+
 export interface OrderOutboundSubmitLineIn {
   order_line_id: number;
   item_id: number;
@@ -110,8 +170,11 @@ export interface ManualOutboundDocLineOut {
   id: number;
   line_no: number;
   item_id: number;
+  item_uom_id: number;
   requested_qty: number;
-  remark: string | null;
+  item_name_snapshot: string | null;
+  item_spec_snapshot: string | null;
+  uom_name_snapshot: string | null;
 }
 
 export interface ManualOutboundDocOut {
@@ -122,8 +185,6 @@ export interface ManualOutboundDocOut {
   status: ManualOutboundDocStatus | string;
   recipient_name: string | null;
   recipient_id: number | null;
-  recipient_type: string | null;
-  recipient_note: string | null;
   remark: string | null;
   created_by: number | null;
   created_at: string;
@@ -136,16 +197,17 @@ export interface ManualOutboundDocOut {
 
 export interface ManualOutboundDocCreateLineIn {
   item_id: number;
+  item_uom_id: number;
   requested_qty: number;
-  remark?: string | null;
+  item_name_snapshot?: string | null;
+  item_spec_snapshot?: string | null;
+  uom_name_snapshot?: string | null;
 }
 
 export interface ManualOutboundDocCreateIn {
   warehouse_id: number;
   doc_type: string;
   recipient_name: string;
-  recipient_type?: string | null;
-  recipient_note?: string | null;
   remark?: string | null;
   lines: ManualOutboundDocCreateLineIn[];
 }
@@ -214,6 +276,11 @@ export function formatOutboundStatus(value: string): string {
 }
 
 export function formatDateTime(value: string | null): string {
+  if (!value) return "-";
+  return value.replace("T", " ").replace("Z", "");
+}
+
+export function formatDate(value: string | null): string {
   if (!value) return "-";
   return value.replace("T", " ").replace("Z", "");
 }

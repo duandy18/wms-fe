@@ -3,8 +3,11 @@ import { fetchActiveWarehouses } from "../../warehouses/api";
 import type { WarehouseListItem } from "../../warehouses/types";
 import {
   createManualOutboundDoc,
+  fetchManualDocItemOptions,
   fetchManualOutboundDoc,
   fetchManualOutboundDocs,
+  fetchPublicItemAggregate,
+  fetchPublicSuppliers,
   releaseManualOutboundDoc,
   voidManualOutboundDoc,
 } from "../api/outboundApi";
@@ -12,6 +15,9 @@ import type {
   ManualOutboundDocCreateIn,
   ManualOutboundDocCreateLineIn,
   ManualOutboundDocOut,
+  PublicItemAggregateUomOut,
+  PublicItemBasicOut,
+  PublicSupplierBasicOut,
 } from "../contracts/outbound";
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -23,16 +29,21 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 export interface ManualDocLineDraft {
   itemId: string;
+  itemUomId: string;
   requestedQty: string;
-  remark: string;
 }
 
 function createEmptyLineDraft(): ManualDocLineDraft {
   return {
     itemId: "",
+    itemUomId: "",
     requestedQty: "",
-    remark: "",
   };
+}
+
+function pickDefaultUom(uoms: PublicItemAggregateUomOut[]): PublicItemAggregateUomOut | null {
+  if (!uoms.length) return null;
+  return uoms[0] ?? null;
 }
 
 export function useOutboundManualDocsPage() {
@@ -44,6 +55,20 @@ export function useOutboundManualDocsPage() {
   const [warehouses, setWarehouses] = useState<WarehouseListItem[]>([]);
   const [warehousesLoading, setWarehousesLoading] = useState(false);
   const [warehousesError, setWarehousesError] = useState("");
+
+  const [suppliers, setSuppliers] = useState<PublicSupplierBasicOut[]>([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
+  const [suppliersError, setSuppliersError] = useState("");
+
+  const [items, setItems] = useState<PublicItemBasicOut[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [itemsError, setItemsError] = useState("");
+  const [itemCacheById, setItemCacheById] = useState<Record<number, PublicItemBasicOut>>(
+    {},
+  );
+  const [itemUomsByItemId, setItemUomsByItemId] = useState<
+    Record<number, PublicItemAggregateUomOut[]>
+  >({});
 
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
   const [detail, setDetail] = useState<ManualOutboundDocOut | null>(null);
@@ -57,9 +82,9 @@ export function useOutboundManualDocsPage() {
   const [warehouseId, setWarehouseId] = useState("");
   const [docType, setDocType] = useState("MANUAL_OUTBOUND");
   const [recipientName, setRecipientName] = useState("");
-  const [recipientType, setRecipientType] = useState("");
-  const [recipientNote, setRecipientNote] = useState("");
   const [remark, setRemark] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [itemQuery, setItemQuery] = useState("");
   const [lineDrafts, setLineDrafts] = useState<ManualDocLineDraft[]>([
     createEmptyLineDraft(),
   ]);
@@ -98,13 +123,62 @@ export function useOutboundManualDocsPage() {
     }
   }, []);
 
+  const loadSuppliers = useCallback(async () => {
+    setSuppliersLoading(true);
+    setSuppliersError("");
+    try {
+      const data = await fetchPublicSuppliers();
+      setSuppliers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setSuppliers([]);
+      setSuppliersError(getErrorMessage(err, "加载供应商列表失败"));
+    } finally {
+      setSuppliersLoading(false);
+    }
+  }, []);
+
+  const loadItems = useCallback(async () => {
+    setItemsLoading(true);
+    setItemsError("");
+    try {
+      const supplierIdNum = Number(supplierId);
+      const data = await fetchManualDocItemOptions({
+        supplier_id:
+          Number.isFinite(supplierIdNum) && supplierIdNum > 0
+            ? supplierIdNum
+            : undefined,
+        q: itemQuery.trim() || undefined,
+        limit: 100,
+      });
+      const nextItems = Array.isArray(data) ? data : [];
+      setItems(nextItems);
+      setItemCacheById((prev) => {
+        const next = { ...prev };
+        for (const item of nextItems) {
+          next[item.id] = item;
+        }
+        return next;
+      });
+    } catch (err) {
+      setItems([]);
+      setItemsError(getErrorMessage(err, "加载商品选项失败"));
+    } finally {
+      setItemsLoading(false);
+    }
+  }, [itemQuery, supplierId]);
+
   useEffect(() => {
     void loadRows();
   }, [loadRows, reloadToken]);
 
   useEffect(() => {
     void loadWarehouses();
-  }, [loadWarehouses]);
+    void loadSuppliers();
+  }, [loadSuppliers, loadWarehouses]);
+
+  useEffect(() => {
+    void loadItems();
+  }, [loadItems]);
 
   const loadDetail = useCallback(async (docId: number) => {
     setDetailLoading(true);
@@ -119,6 +193,19 @@ export function useOutboundManualDocsPage() {
       setDetailLoading(false);
     }
   }, []);
+
+  const ensureItemUoms = useCallback(async (itemId: number) => {
+    if (itemUomsByItemId[itemId]) {
+      return itemUomsByItemId[itemId];
+    }
+    const aggregate = await fetchPublicItemAggregate(itemId);
+    const uoms = Array.isArray(aggregate.uoms) ? aggregate.uoms : [];
+    setItemUomsByItemId((prev) => ({
+      ...prev,
+      [itemId]: uoms,
+    }));
+    return uoms;
+  }, [itemUomsByItemId]);
 
   const selectDoc = useCallback(
     async (docId: number) => {
@@ -137,6 +224,28 @@ export function useOutboundManualDocsPage() {
     [],
   );
 
+  const selectLineItem = useCallback(
+    async (index: number, itemIdValue: string) => {
+      updateLineDraft(index, { itemId: itemIdValue, itemUomId: "" });
+
+      const itemId = Number(itemIdValue);
+      if (!Number.isFinite(itemId) || itemId <= 0) {
+        return;
+      }
+
+      try {
+        const uoms = await ensureItemUoms(itemId);
+        const defaultUom = pickDefaultUom(uoms);
+        if (defaultUom) {
+          updateLineDraft(index, { itemUomId: String(defaultUom.id) });
+        }
+      } catch {
+        // 这里不主动抛出；建单时仍有必填校验
+      }
+    },
+    [ensureItemUoms, updateLineDraft],
+  );
+
   const addLineDraft = useCallback(() => {
     setLineDrafts((prev) => [...prev, createEmptyLineDraft()]);
   }, []);
@@ -152,11 +261,29 @@ export function useOutboundManualDocsPage() {
     setWarehouseId("");
     setDocType("MANUAL_OUTBOUND");
     setRecipientName("");
-    setRecipientType("");
-    setRecipientNote("");
     setRemark("");
+    setSupplierId("");
+    setItemQuery("");
     setLineDrafts([createEmptyLineDraft()]);
   }, []);
+
+  const getItemOptionById = useCallback(
+    (itemIdValue: string | number | null | undefined): PublicItemBasicOut | null => {
+      const id = Number(itemIdValue);
+      if (!Number.isFinite(id) || id <= 0) return null;
+      return itemCacheById[id] ?? null;
+    },
+    [itemCacheById],
+  );
+
+  const getUomOptionsByItemId = useCallback(
+    (itemIdValue: string | number | null | undefined): PublicItemAggregateUomOut[] => {
+      const id = Number(itemIdValue);
+      if (!Number.isFinite(id) || id <= 0) return [];
+      return itemUomsByItemId[id] ?? [];
+    },
+    [itemUomsByItemId],
+  );
 
   const createDoc = useCallback(async () => {
     setCreateError("");
@@ -176,26 +303,36 @@ export function useOutboundManualDocsPage() {
     const lines: ManualOutboundDocCreateLineIn[] = [];
     for (const draft of lineDrafts) {
       const itemId = Number(draft.itemId.trim());
+      const itemUomId = Number(draft.itemUomId.trim());
       const requestedQty = Number(draft.requestedQty.trim());
 
-      const touched =
-        draft.itemId.trim() || draft.requestedQty.trim() || draft.remark.trim();
+      const touched = draft.itemId.trim() || draft.itemUomId.trim() || draft.requestedQty.trim();
 
       if (!touched) continue;
 
       if (!Number.isInteger(itemId) || itemId <= 0) {
-        setCreateError("单据行 item_id 必须为正整数");
+        setCreateError("单据行商品不能为空");
+        return;
+      }
+      if (!Number.isInteger(itemUomId) || itemUomId <= 0) {
+        setCreateError("单据行包装单位不能为空");
         return;
       }
       if (!Number.isInteger(requestedQty) || requestedQty <= 0) {
-        setCreateError("单据行 requested_qty 必须为正整数");
+        setCreateError("单据行数量必须为正整数");
         return;
       }
 
+      const item = getItemOptionById(itemId);
+      const uom = getUomOptionsByItemId(itemId).find((x) => x.id === itemUomId) ?? null;
+
       lines.push({
         item_id: itemId,
+        item_uom_id: itemUomId,
         requested_qty: requestedQty,
-        remark: draft.remark.trim() || null,
+        item_name_snapshot: item?.name ?? null,
+        item_spec_snapshot: item?.spec ?? null,
+        uom_name_snapshot: uom?.display_name ?? uom?.uom ?? null,
       });
     }
 
@@ -208,8 +345,6 @@ export function useOutboundManualDocsPage() {
       warehouse_id: selectedWarehouse.id,
       doc_type: docType.trim() || "MANUAL_OUTBOUND",
       recipient_name: recipient,
-      recipient_type: recipientType.trim() || null,
-      recipient_note: recipientNote.trim() || null,
       remark: remark.trim() || null,
       lines,
     };
@@ -229,10 +364,10 @@ export function useOutboundManualDocsPage() {
     }
   }, [
     docType,
+    getItemOptionById,
+    getUomOptionsByItemId,
     lineDrafts,
     recipientName,
-    recipientNote,
-    recipientType,
     remark,
     resetCreateForm,
     selectedWarehouse,
@@ -278,6 +413,21 @@ export function useOutboundManualDocsPage() {
     warehousesLoading,
     warehousesError,
 
+    suppliers,
+    suppliersLoading,
+    suppliersError,
+    supplierId,
+    setSupplierId,
+
+    items,
+    itemsLoading,
+    itemsError,
+    itemQuery,
+    setItemQuery,
+    getItemOptionById,
+    getUomOptionsByItemId,
+    selectLineItem,
+
     selectedDocId,
     detail,
     detailLoading,
@@ -296,10 +446,6 @@ export function useOutboundManualDocsPage() {
     setDocType,
     recipientName,
     setRecipientName,
-    recipientType,
-    setRecipientType,
-    recipientNote,
-    setRecipientNote,
     remark,
     setRemark,
 
