@@ -28,6 +28,7 @@ export interface OutboundSummaryLineOut {
   order_line_id: number | null;
   manual_doc_line_id: number | null;
   item_name_snapshot: string | null;
+  item_sku_snapshot: string | null;
   item_spec_snapshot: string | null;
   remark: string | null;
   created_at: string;
@@ -173,6 +174,7 @@ export interface ManualOutboundDocLineOut {
   item_uom_id: number;
   requested_qty: number;
   item_name_snapshot: string | null;
+  item_sku_snapshot: string | null;
   item_spec_snapshot: string | null;
   uom_name_snapshot: string | null;
 }
@@ -200,6 +202,7 @@ export interface ManualOutboundDocCreateLineIn {
   item_uom_id: number;
   requested_qty: number;
   item_name_snapshot?: string | null;
+  item_sku_snapshot?: string | null;
   item_spec_snapshot?: string | null;
   uom_name_snapshot?: string | null;
 }

@@ -20,6 +20,8 @@ import type {
   PublicSupplierBasicOut,
 } from "../contracts/outbound";
 
+const MANUAL_OUTBOUND_DOC_TYPE = "MANUAL_OUTBOUND";
+
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
@@ -41,7 +43,9 @@ function createEmptyLineDraft(): ManualDocLineDraft {
   };
 }
 
-function pickDefaultUom(uoms: PublicItemAggregateUomOut[]): PublicItemAggregateUomOut | null {
+function pickDefaultUom(
+  uoms: PublicItemAggregateUomOut[],
+): PublicItemAggregateUomOut | null {
   if (!uoms.length) return null;
   return uoms[0] ?? null;
 }
@@ -63,9 +67,9 @@ export function useOutboundManualDocsPage() {
   const [items, setItems] = useState<PublicItemBasicOut[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [itemsError, setItemsError] = useState("");
-  const [itemCacheById, setItemCacheById] = useState<Record<number, PublicItemBasicOut>>(
-    {},
-  );
+  const [itemCacheById, setItemCacheById] = useState<
+    Record<number, PublicItemBasicOut>
+  >({});
   const [itemUomsByItemId, setItemUomsByItemId] = useState<
     Record<number, PublicItemAggregateUomOut[]>
   >({});
@@ -80,7 +84,6 @@ export function useOutboundManualDocsPage() {
   const [createSuccess, setCreateSuccess] = useState("");
 
   const [warehouseId, setWarehouseId] = useState("");
-  const [docType, setDocType] = useState("MANUAL_OUTBOUND");
   const [recipientName, setRecipientName] = useState("");
   const [remark, setRemark] = useState("");
   const [supplierId, setSupplierId] = useState("");
@@ -194,18 +197,21 @@ export function useOutboundManualDocsPage() {
     }
   }, []);
 
-  const ensureItemUoms = useCallback(async (itemId: number) => {
-    if (itemUomsByItemId[itemId]) {
-      return itemUomsByItemId[itemId];
-    }
-    const aggregate = await fetchPublicItemAggregate(itemId);
-    const uoms = Array.isArray(aggregate.uoms) ? aggregate.uoms : [];
-    setItemUomsByItemId((prev) => ({
-      ...prev,
-      [itemId]: uoms,
-    }));
-    return uoms;
-  }, [itemUomsByItemId]);
+  const ensureItemUoms = useCallback(
+    async (itemId: number) => {
+      if (itemUomsByItemId[itemId]) {
+        return itemUomsByItemId[itemId];
+      }
+      const aggregate = await fetchPublicItemAggregate(itemId);
+      const uoms = Array.isArray(aggregate.uoms) ? aggregate.uoms : [];
+      setItemUomsByItemId((prev) => ({
+        ...prev,
+        [itemId]: uoms,
+      }));
+      return uoms;
+    },
+    [itemUomsByItemId],
+  );
 
   const selectDoc = useCallback(
     async (docId: number) => {
@@ -240,7 +246,7 @@ export function useOutboundManualDocsPage() {
           updateLineDraft(index, { itemUomId: String(defaultUom.id) });
         }
       } catch {
-        // 这里不主动抛出；建单时仍有必填校验
+        // 建单时仍有必填校验
       }
     },
     [ensureItemUoms, updateLineDraft],
@@ -259,7 +265,6 @@ export function useOutboundManualDocsPage() {
 
   const resetCreateForm = useCallback(() => {
     setWarehouseId("");
-    setDocType("MANUAL_OUTBOUND");
     setRecipientName("");
     setRemark("");
     setSupplierId("");
@@ -268,7 +273,9 @@ export function useOutboundManualDocsPage() {
   }, []);
 
   const getItemOptionById = useCallback(
-    (itemIdValue: string | number | null | undefined): PublicItemBasicOut | null => {
+    (
+      itemIdValue: string | number | null | undefined,
+    ): PublicItemBasicOut | null => {
       const id = Number(itemIdValue);
       if (!Number.isFinite(id) || id <= 0) return null;
       return itemCacheById[id] ?? null;
@@ -277,7 +284,9 @@ export function useOutboundManualDocsPage() {
   );
 
   const getUomOptionsByItemId = useCallback(
-    (itemIdValue: string | number | null | undefined): PublicItemAggregateUomOut[] => {
+    (
+      itemIdValue: string | number | null | undefined,
+    ): PublicItemAggregateUomOut[] => {
       const id = Number(itemIdValue);
       if (!Number.isFinite(id) || id <= 0) return [];
       return itemUomsByItemId[id] ?? [];
@@ -306,7 +315,10 @@ export function useOutboundManualDocsPage() {
       const itemUomId = Number(draft.itemUomId.trim());
       const requestedQty = Number(draft.requestedQty.trim());
 
-      const touched = draft.itemId.trim() || draft.itemUomId.trim() || draft.requestedQty.trim();
+      const touched =
+        draft.itemId.trim() ||
+        draft.itemUomId.trim() ||
+        draft.requestedQty.trim();
 
       if (!touched) continue;
 
@@ -324,13 +336,15 @@ export function useOutboundManualDocsPage() {
       }
 
       const item = getItemOptionById(itemId);
-      const uom = getUomOptionsByItemId(itemId).find((x) => x.id === itemUomId) ?? null;
+      const uom =
+        getUomOptionsByItemId(itemId).find((x) => x.id === itemUomId) ?? null;
 
       lines.push({
         item_id: itemId,
         item_uom_id: itemUomId,
         requested_qty: requestedQty,
         item_name_snapshot: item?.name ?? null,
+        item_sku_snapshot: item?.sku ?? null,
         item_spec_snapshot: item?.spec ?? null,
         uom_name_snapshot: uom?.display_name ?? uom?.uom ?? null,
       });
@@ -343,7 +357,7 @@ export function useOutboundManualDocsPage() {
 
     const payload: ManualOutboundDocCreateIn = {
       warehouse_id: selectedWarehouse.id,
-      doc_type: docType.trim() || "MANUAL_OUTBOUND",
+      doc_type: MANUAL_OUTBOUND_DOC_TYPE,
       recipient_name: recipient,
       remark: remark.trim() || null,
       lines,
@@ -363,7 +377,6 @@ export function useOutboundManualDocsPage() {
       setCreating(false);
     }
   }, [
-    docType,
     getItemOptionById,
     getUomOptionsByItemId,
     lineDrafts,
@@ -373,35 +386,29 @@ export function useOutboundManualDocsPage() {
     selectedWarehouse,
   ]);
 
-  const releaseDoc = useCallback(
-    async (docId: number) => {
-      setDetailError("");
-      try {
-        const data = await releaseManualOutboundDoc(docId);
-        setDetail(data);
-        setSelectedDocId(data.id);
-        setReloadToken((v) => v + 1);
-      } catch (err) {
-        setDetailError(getErrorMessage(err, "发布单据失败"));
-      }
-    },
-    [],
-  );
+  const releaseDoc = useCallback(async (docId: number) => {
+    setDetailError("");
+    try {
+      const data = await releaseManualOutboundDoc(docId);
+      setDetail(data);
+      setSelectedDocId(data.id);
+      setReloadToken((v) => v + 1);
+    } catch (err) {
+      setDetailError(getErrorMessage(err, "发布单据失败"));
+    }
+  }, []);
 
-  const voidDoc = useCallback(
-    async (docId: number) => {
-      setDetailError("");
-      try {
-        const data = await voidManualOutboundDoc(docId);
-        setDetail(data);
-        setSelectedDocId(data.id);
-        setReloadToken((v) => v + 1);
-      } catch (err) {
-        setDetailError(getErrorMessage(err, "作废单据失败"));
-      }
-    },
-    [],
-  );
+  const voidDoc = useCallback(async (docId: number) => {
+    setDetailError("");
+    try {
+      const data = await voidManualOutboundDoc(docId);
+      setDetail(data);
+      setSelectedDocId(data.id);
+      setReloadToken((v) => v + 1);
+    } catch (err) {
+      setDetailError(getErrorMessage(err, "作废单据失败"));
+    }
+  }, []);
 
   return {
     rows,
@@ -442,8 +449,6 @@ export function useOutboundManualDocsPage() {
 
     warehouseId,
     setWarehouseId,
-    docType,
-    setDocType,
     recipientName,
     setRecipientName,
     remark,
