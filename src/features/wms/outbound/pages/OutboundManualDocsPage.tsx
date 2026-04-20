@@ -22,12 +22,21 @@ function supplierLabel(item: PublicSupplierBasicOut) {
 }
 
 function itemLabel(item: PublicItemBasicOut) {
-  const parts = [item.name, item.sku];
-  if (item.spec && item.spec.trim()) {
-    parts.push(item.spec.trim());
-  }
-  return parts.join(" · ");
+  return item.name;
 }
+
+function itemSkuText(item: PublicItemBasicOut | null) {
+  if (!item?.sku || !item.sku.trim()) return "-";
+  return item.sku.trim();
+}
+
+function itemSpecText(item: PublicItemBasicOut | null) {
+  if (!item?.spec || !item.spec.trim()) return "-";
+  return item.spec.trim();
+}
+
+const readonlyFieldClassName =
+  "w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700";
 
 const OutboundManualDocsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -75,7 +84,7 @@ const OutboundManualDocsPage: React.FC = () => {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div>
             <div className="mb-1 text-xs text-slate-500">仓库</div>
             <select
@@ -93,16 +102,6 @@ const OutboundManualDocsPage: React.FC = () => {
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <div className="mb-1 text-xs text-slate-500">单据类型</div>
-            <input
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-              value={m.docType}
-              onChange={(e) => m.setDocType(e.target.value)}
-              disabled={m.creating}
-            />
           </div>
 
           <div>
@@ -173,7 +172,7 @@ const OutboundManualDocsPage: React.FC = () => {
               return (
                 <div
                   key={`line-${index}`}
-                  className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 md:grid-cols-[minmax(0,2fr)_1.2fr_1fr_auto]"
+                  className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1.2fr)_minmax(0,1fr)_auto]"
                 >
                   <div>
                     <div className="mb-1 text-xs text-slate-500">商品</div>
@@ -194,13 +193,20 @@ const OutboundManualDocsPage: React.FC = () => {
                         </option>
                       ))}
                     </select>
+                  </div>
 
-                    {selectedItem ? (
-                      <div className="mt-1 text-xs text-slate-500">
-                        SKU：{selectedItem.sku}
-                        {selectedItem.spec ? ` · 规格：${selectedItem.spec}` : ""}
-                      </div>
-                    ) : null}
+                  <div>
+                    <div className="mb-1 text-xs text-slate-500">SKU</div>
+                    <div className={readonlyFieldClassName}>
+                      {itemSkuText(selectedItem)}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 text-xs text-slate-500">规格</div>
+                    <div className={readonlyFieldClassName}>
+                      {itemSpecText(selectedItem)}
+                    </div>
                   </div>
 
                   <div>
@@ -213,7 +219,9 @@ const OutboundManualDocsPage: React.FC = () => {
                       }}
                       disabled={m.creating || !line.itemId}
                     >
-                      <option value="">{line.itemId ? "请选择包装单位" : "先选择商品"}</option>
+                      <option value="">
+                        {line.itemId ? "请选择包装单位" : "先选择商品"}
+                      </option>
                       {uoms.map((uom) => (
                         <option key={uom.id} value={String(uom.id)}>
                           {uom.display_name || uom.uom}
@@ -469,6 +477,8 @@ const OutboundManualDocsPage: React.FC = () => {
                   <tr>
                     <th className="px-3 py-2 text-left">line_no</th>
                     <th className="px-3 py-2 text-left">商品</th>
+                    <th className="px-3 py-2 text-left">SKU</th>
+                    <th className="px-3 py-2 text-left">规格</th>
                     <th className="px-3 py-2 text-left">包装单位</th>
                     <th className="px-3 py-2 text-right">数量</th>
                   </tr>
@@ -477,7 +487,7 @@ const OutboundManualDocsPage: React.FC = () => {
                   {m.detail.lines.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={4}
+                        colSpan={6}
                         className="px-3 py-8 text-center text-slate-500"
                       >
                         当前单据暂无行
@@ -488,10 +498,13 @@ const OutboundManualDocsPage: React.FC = () => {
                       <tr key={line.id} className="text-slate-800">
                         <td className="px-3 py-2 font-mono">{line.line_no}</td>
                         <td className="px-3 py-2">
-                          <div>{line.item_name_snapshot || `item_id: ${line.item_id}`}</div>
-                          <div className="text-xs text-slate-500">
-                            {line.item_spec_snapshot || "-"}
-                          </div>
+                          {line.item_name_snapshot || `item_id: ${line.item_id}`}
+                        </td>
+                        <td className="px-3 py-2">
+                          {line.item_sku_snapshot || "-"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {line.item_spec_snapshot || "-"}
                         </td>
                         <td className="px-3 py-2">
                           {line.uom_name_snapshot || `uom_id: ${line.item_uom_id}`}
