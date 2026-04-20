@@ -161,7 +161,7 @@ const ReceivingManualPage: React.FC = () => {
                   submitLabel="提交手动收货"
                   submitting={m.submitting}
                   refreshDisabled={m.submitting}
-                  submitDisabled={m.submitting}
+                  submitDisabled={m.submitting || !m.canSubmit}
                   onRefresh={m.refreshCurrent}
                   onSubmit={() => {
                     void m.submit();

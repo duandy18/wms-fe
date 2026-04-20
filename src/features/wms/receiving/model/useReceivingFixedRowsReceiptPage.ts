@@ -71,9 +71,18 @@ export function useReceivingFixedRowsReceiptPage(options: Options) {
     null,
   );
 
+  const executableRows = useMemo<ReceivingTaskListItemOut[]>(() => {
+    return rows.filter((row) => {
+      const remaining = Number(row.total_remaining_qty ?? "0");
+      return Number.isFinite(remaining) && remaining > BASE_EPSILON;
+    });
+  }, [rows]);
+
   const selectedRow = useMemo<ReceivingTaskListItemOut | null>(() => {
-    return rows.find((row) => row.receipt_no === selectedReceiptNo) ?? null;
-  }, [rows, selectedReceiptNo]);
+    return (
+      executableRows.find((row) => row.receipt_no === selectedReceiptNo) ?? null
+    );
+  }, [executableRows, selectedReceiptNo]);
 
   const selectedDetail = useMemo(() => {
     return selectedReceiptNo ? detailByReceiptNo[selectedReceiptNo] ?? null : null;
@@ -90,6 +99,12 @@ export function useReceivingFixedRowsReceiptPage(options: Options) {
     setEntriesByLineNo({});
     setUomOptionsByLineNo({});
   }, [selectedReceiptNo]);
+
+  useEffect(() => {
+    if (!selectedReceiptNo) return;
+    if (executableRows.some((row) => row.receipt_no === selectedReceiptNo)) return;
+    setSelectedReceiptNo("");
+  }, [executableRows, selectedReceiptNo]);
 
   useEffect(() => {
     if (!selectedDetail) return;
@@ -410,13 +425,76 @@ export function useReceivingFixedRowsReceiptPage(options: Options) {
     uomOptionsByLineNo,
   ]);
 
+  const canSubmit = useMemo(() => {
+    if (!selectedDetail || submitting) return false;
+
+    let hasAnyEntry = false;
+
+    for (const line of selectedDetail.lines) {
+      const drafts = entriesByLineNo[line.line_no] ?? [];
+      const showDateFields = receivingLineShowsDateFields(line);
+      const batchRequired = receivingLineRequiresBatchField(line);
+
+      let lineActualBaseTotal = 0;
+      let lineHasEntries = false;
+
+      for (const draft of drafts) {
+        const touched = isEntryTouched(draft);
+        if (!touched) continue;
+
+        hasAnyEntry = true;
+        lineHasEntries = true;
+
+        const qtyText = draft.qty_inbound.trim();
+        if (!qtyText) return false;
+
+        const qty = Number(qtyText);
+        if (!Number.isFinite(qty) || qty <= 0) return false;
+
+        if (draft.actual_item_uom_id == null) return false;
+
+        const actualRatio = draft.actual_ratio_to_base_snapshot;
+        if (
+          actualRatio == null ||
+          !Number.isFinite(actualRatio) ||
+          actualRatio <= 0
+        ) {
+          return false;
+        }
+
+        if (batchRequired && !draft.batch_no.trim()) return false;
+
+        if (
+          showDateFields &&
+          !draft.production_date.trim() &&
+          !draft.expiry_date.trim()
+        ) {
+          return false;
+        }
+
+        lineActualBaseTotal += qty * actualRatio;
+      }
+
+      const remainingBase = Number(line.remaining_qty_base);
+      if (
+        lineHasEntries &&
+        Number.isFinite(remainingBase) &&
+        lineActualBaseTotal - remainingBase > BASE_EPSILON
+      ) {
+        return false;
+      }
+    }
+
+    return hasAnyEntry;
+  }, [entriesByLineNo, selectedDetail, submitting]);
+
   const refreshCurrent = useCallback(() => {
     if (!selectedDetail) return;
     void refreshDetail(selectedDetail.receipt_no);
   }, [refreshDetail, selectedDetail]);
 
   return {
-    rows,
+    rows: executableRows,
     loading,
     error,
     detailLoadingByReceiptNo,
@@ -428,6 +506,7 @@ export function useReceivingFixedRowsReceiptPage(options: Options) {
     setRemark,
     entriesByLineNo,
     uomOptionsByLineNo,
+    canSubmit,
     submitting,
     submitError,
     submitSuccess,

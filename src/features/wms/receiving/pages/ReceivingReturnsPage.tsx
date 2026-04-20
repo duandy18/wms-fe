@@ -161,7 +161,7 @@ const ReceivingReturnsPage: React.FC = () => {
                   submitLabel="提交退货收货"
                   submitting={m.submitting}
                   refreshDisabled={m.submitting}
-                  submitDisabled={m.submitting}
+                  submitDisabled={m.submitting || !m.canSubmit}
                   onRefresh={m.refreshCurrent}
                   onSubmit={() => {
                     void m.submit();
