@@ -4,6 +4,8 @@ import PageTitle from "../../../../components/ui/PageTitle";
 import {
   formatDateTime,
   formatManualOutboundDocStatus,
+  type PublicItemBasicOut,
+  type PublicSupplierBasicOut,
 } from "../contracts/outbound";
 import { useOutboundManualDocsPage } from "../model/useOutboundManualDocsPage";
 
@@ -11,6 +13,20 @@ function warehouseLabel(item: { id: number; name: string; code?: string | null }
   const code =
     typeof item.code === "string" && item.code.trim() ? item.code.trim() : "";
   return code ? `${item.name}（${code}）` : item.name;
+}
+
+function supplierLabel(item: PublicSupplierBasicOut) {
+  const code =
+    typeof item.code === "string" && item.code.trim() ? item.code.trim() : "";
+  return code ? `${item.name}（${code}）` : item.name;
+}
+
+function itemLabel(item: PublicItemBasicOut) {
+  const parts = [item.name, item.sku];
+  if (item.spec && item.spec.trim()) {
+    parts.push(item.spec.trim());
+  }
+  return parts.join(" · ");
 }
 
 const OutboundManualDocsPage: React.FC = () => {
@@ -47,7 +63,19 @@ const OutboundManualDocsPage: React.FC = () => {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {m.suppliersError ? (
+          <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {m.suppliersError}
+          </div>
+        ) : null}
+
+        {m.itemsError ? (
+          <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {m.itemsError}
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div>
             <div className="mb-1 text-xs text-slate-500">仓库</div>
             <select
@@ -89,28 +117,6 @@ const OutboundManualDocsPage: React.FC = () => {
           </div>
 
           <div>
-            <div className="mb-1 text-xs text-slate-500">领用类型</div>
-            <input
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-              value={m.recipientType}
-              onChange={(e) => m.setRecipientType(e.target.value)}
-              disabled={m.creating}
-              placeholder="可选"
-            />
-          </div>
-
-          <div>
-            <div className="mb-1 text-xs text-slate-500">领用备注</div>
-            <input
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-              value={m.recipientNote}
-              onChange={(e) => m.setRecipientNote(e.target.value)}
-              disabled={m.creating}
-              placeholder="可选"
-            />
-          </div>
-
-          <div>
             <div className="mb-1 text-xs text-slate-500">单据备注</div>
             <input
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -122,68 +128,126 @@ const OutboundManualDocsPage: React.FC = () => {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <div className="mb-1 text-xs text-slate-500">供货商筛选</div>
+            <select
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={m.supplierId}
+              onChange={(e) => m.setSupplierId(e.target.value)}
+              disabled={m.creating || m.suppliersLoading}
+            >
+              <option value="">
+                {m.suppliersLoading ? "供应商加载中…" : "全部供应商"}
+              </option>
+              {m.suppliers.map((supplier) => (
+                <option key={supplier.id} value={String(supplier.id)}>
+                  {supplierLabel(supplier)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs text-slate-500">商品搜索</div>
+            <input
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={m.itemQuery}
+              onChange={(e) => m.setItemQuery(e.target.value)}
+              disabled={m.creating}
+              placeholder="按商品名 / SKU / 规格搜索"
+            />
+          </div>
+        </div>
+
         <div className="space-y-3">
           <div className="text-xs font-semibold tracking-wide text-slate-500">
             单据行
           </div>
 
           <div className="space-y-3">
-            {m.lineDrafts.map((line, index) => (
-              <div
-                key={`line-${index}`}
-                className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 md:grid-cols-[1fr_1fr_2fr_auto]"
-              >
-                <div>
-                  <div className="mb-1 text-xs text-slate-500">item_id</div>
-                  <input
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                    value={line.itemId}
-                    onChange={(e) => {
-                      m.updateLineDraft(index, { itemId: e.target.value });
-                    }}
-                    disabled={m.creating}
-                    placeholder="请输入商品 ID"
-                  />
-                </div>
+            {m.lineDrafts.map((line, index) => {
+              const selectedItem = m.getItemOptionById(line.itemId);
+              const uoms = m.getUomOptionsByItemId(line.itemId);
 
-                <div>
-                  <div className="mb-1 text-xs text-slate-500">requested_qty</div>
-                  <input
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                    value={line.requestedQty}
-                    onChange={(e) => {
-                      m.updateLineDraft(index, { requestedQty: e.target.value });
-                    }}
-                    disabled={m.creating}
-                    placeholder="请输入数量"
-                  />
-                </div>
+              return (
+                <div
+                  key={`line-${index}`}
+                  className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 md:grid-cols-[minmax(0,2fr)_1.2fr_1fr_auto]"
+                >
+                  <div>
+                    <div className="mb-1 text-xs text-slate-500">商品</div>
+                    <select
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      value={line.itemId}
+                      onChange={(e) => {
+                        void m.selectLineItem(index, e.target.value);
+                      }}
+                      disabled={m.creating || m.itemsLoading}
+                    >
+                      <option value="">
+                        {m.itemsLoading ? "商品加载中…" : "请选择商品"}
+                      </option>
+                      {m.items.map((item) => (
+                        <option key={item.id} value={String(item.id)}>
+                          {itemLabel(item)}
+                        </option>
+                      ))}
+                    </select>
 
-                <div>
-                  <div className="mb-1 text-xs text-slate-500">行备注</div>
-                  <input
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                    value={line.remark}
-                    onChange={(e) => {
-                      m.updateLineDraft(index, { remark: e.target.value });
-                    }}
-                    disabled={m.creating}
-                    placeholder="可选"
-                  />
-                </div>
+                    {selectedItem ? (
+                      <div className="mt-1 text-xs text-slate-500">
+                        SKU：{selectedItem.sku}
+                        {selectedItem.spec ? ` · 规格：${selectedItem.spec}` : ""}
+                      </div>
+                    ) : null}
+                  </div>
 
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    className="rounded-md border border-slate-300 px-3 py-2 text-xs hover:bg-slate-100 disabled:opacity-60"
-                    onClick={() => m.removeLineDraft(index)}
-                    disabled={m.creating || m.lineDrafts.length <= 1}
-                  >
-                    删除
-                  </button>
+                  <div>
+                    <div className="mb-1 text-xs text-slate-500">包装单位</div>
+                    <select
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      value={line.itemUomId}
+                      onChange={(e) => {
+                        m.updateLineDraft(index, { itemUomId: e.target.value });
+                      }}
+                      disabled={m.creating || !line.itemId}
+                    >
+                      <option value="">{line.itemId ? "请选择包装单位" : "先选择商品"}</option>
+                      {uoms.map((uom) => (
+                        <option key={uom.id} value={String(uom.id)}>
+                          {uom.display_name || uom.uom}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 text-xs text-slate-500">数量</div>
+                    <input
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      value={line.requestedQty}
+                      onChange={(e) => {
+                        m.updateLineDraft(index, { requestedQty: e.target.value });
+                      }}
+                      disabled={m.creating}
+                      placeholder="请输入数量"
+                    />
+                  </div>
+
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      className="rounded-md border border-slate-300 px-3 py-2 text-xs hover:bg-slate-100 disabled:opacity-60"
+                      onClick={() => m.removeLineDraft(index)}
+                      disabled={m.creating || m.lineDrafts.length <= 1}
+                    >
+                      删除
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -404,9 +468,9 @@ const OutboundManualDocsPage: React.FC = () => {
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>
                     <th className="px-3 py-2 text-left">line_no</th>
-                    <th className="px-3 py-2 text-left">item_id</th>
-                    <th className="px-3 py-2 text-right">requested_qty</th>
-                    <th className="px-3 py-2 text-left">备注</th>
+                    <th className="px-3 py-2 text-left">商品</th>
+                    <th className="px-3 py-2 text-left">包装单位</th>
+                    <th className="px-3 py-2 text-right">数量</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -423,11 +487,18 @@ const OutboundManualDocsPage: React.FC = () => {
                     m.detail.lines.map((line) => (
                       <tr key={line.id} className="text-slate-800">
                         <td className="px-3 py-2 font-mono">{line.line_no}</td>
-                        <td className="px-3 py-2 font-mono">{line.item_id}</td>
+                        <td className="px-3 py-2">
+                          <div>{line.item_name_snapshot || `item_id: ${line.item_id}`}</div>
+                          <div className="text-xs text-slate-500">
+                            {line.item_spec_snapshot || "-"}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          {line.uom_name_snapshot || `uom_id: ${line.item_uom_id}`}
+                        </td>
                         <td className="px-3 py-2 text-right font-mono">
                           {line.requested_qty}
                         </td>
-                        <td className="px-3 py-2">{line.remark || "-"}</td>
                       </tr>
                     ))
                   )}

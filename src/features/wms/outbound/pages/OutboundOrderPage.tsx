@@ -1,6 +1,5 @@
 import React from "react";
 import PageTitle from "../../../../components/ui/PageTitle";
-import OutboundExecutionInfoCard from "../components/OutboundExecutionInfoCard";
 import OutboundOrderEditableLines from "../components/OutboundOrderEditableLines";
 import OutboundSourceSelect from "../components/OutboundSourceSelect";
 import OutboundSubmitActions from "../components/OutboundSubmitActions";
@@ -19,25 +18,10 @@ const OutboundOrderPage: React.FC = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <PageTitle
-        title="订单出库"
-        description="参考采购收货页：一张主卡完成选单、看单、扫码识别与录入实际出库数量。"
-      />
+      <PageTitle title="订单出库" />
 
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
         <div className="text-sm font-semibold text-slate-900">订单出库输入</div>
-
-        {m.ordersError ? (
-          <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            {m.ordersError}
-          </div>
-        ) : null}
-
-        {m.warehousesError ? (
-          <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            {m.warehousesError}
-          </div>
-        ) : null}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <OutboundSourceSelect
@@ -63,19 +47,31 @@ const OutboundOrderPage: React.FC = () => {
               value: String(warehouse.id),
               label: warehouseLabel(warehouse),
             }))}
-            onChange={m.setSelectedWarehouseId}
+            onChange={m.selectWarehouseId}
           />
         </div>
 
+        {m.ordersError ? (
+          <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {m.ordersError}
+          </div>
+        ) : null}
+
+        {m.warehousesError ? (
+          <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {m.warehousesError}
+          </div>
+        ) : null}
+
         {!m.selectedOrderId ? (
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-            请先选择订单，再展开订单出库主卡。
+            请先选择订单。
           </div>
         ) : null}
 
         {m.detailLoading ? (
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-            正在加载订单出库视图…
+            正在展开订单出库单…
           </div>
         ) : null}
 
@@ -87,31 +83,69 @@ const OutboundOrderPage: React.FC = () => {
 
         {m.detail ? (
           <>
-            <OutboundExecutionInfoCard
-              title="订单头参考"
-              items={[
-                { label: "订单号", value: m.detail.order.ext_order_no },
-                {
-                  label: "平台/店铺",
-                  value: `${m.detail.order.platform} · ${m.detail.order.shop_id}`,
-                },
-                { label: "状态", value: m.detail.order.status || "-" },
-                { label: "买家", value: m.detail.order.buyer_name || "-" },
-                { label: "手机号", value: m.detail.order.buyer_phone || "-" },
-                {
-                  label: "订单金额",
-                  value: formatMaybeMoney(m.detail.order.order_amount),
-                },
-                {
-                  label: "实付金额",
-                  value: formatMaybeMoney(m.detail.order.pay_amount),
-                },
-                {
-                  label: "创建时间",
-                  value: formatDateTime(m.detail.order.created_at),
-                },
-              ]}
-            />
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="mb-2 text-xs font-semibold tracking-wide text-slate-500">
+                订单头参考
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div>
+                  <div className="text-xs text-slate-500">订单号</div>
+                  <div className="text-sm text-slate-900">
+                    {m.detail.order.ext_order_no}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-500">平台 / 店铺</div>
+                  <div className="text-sm text-slate-900">
+                    {m.detail.order.platform} · {m.detail.order.shop_id}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-500">状态</div>
+                  <div className="text-sm text-slate-900">
+                    {m.detail.order.status || "-"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-500">买家</div>
+                  <div className="text-sm text-slate-900">
+                    {m.detail.order.buyer_name || "-"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-500">手机号</div>
+                  <div className="text-sm text-slate-900">
+                    {m.detail.order.buyer_phone || "-"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-500">订单金额</div>
+                  <div className="text-sm text-slate-900">
+                    {formatMaybeMoney(m.detail.order.order_amount)}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-500">实付金额</div>
+                  <div className="text-sm text-slate-900">
+                    {formatMaybeMoney(m.detail.order.pay_amount)}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-500">创建时间</div>
+                  <div className="text-sm text-slate-900">
+                    {formatDateTime(m.detail.order.created_at)}
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <OutboundOrderEditableLines
               lines={m.detail.lines}
@@ -119,16 +153,22 @@ const OutboundOrderPage: React.FC = () => {
               qtyByLineId={m.qtyByLineId}
               hintByLineId={m.lineHintByLineId}
               resolvedByLineId={m.resolvedByLineId}
+              lotCandidatesByLineId={m.lotCandidatesByLineId}
+              selectedLotByLineId={m.selectedLotByLineId}
               resolvingLineId={m.resolvingLineId}
               onChangeBarcode={m.updateBarcode}
               onResolveBarcode={m.resolveBarcode}
               onChangeQty={m.updateQty}
+              onSelectLot={m.selectLot}
             />
 
             <OutboundSubmitFeedback message={m.submitMessage} />
 
             <OutboundSubmitActions
               summaryText={`当前已录入 ${m.enteredLinesCount} 条本次出库数量。`}
+              reloadCurrentLabel="刷新当前订单"
+              submitLabel="提交出库"
+              showReloadList={false}
               onReloadList={m.reloadOrders}
               onReloadCurrent={m.reloadDetail}
               onSubmit={m.handleSubmitPlaceholder}
