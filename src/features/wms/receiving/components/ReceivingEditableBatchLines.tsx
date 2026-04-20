@@ -14,6 +14,7 @@ type SharedProps = {
   entriesByLineNo: Record<number, ReceivingEntryDraft[]>;
   uomOptionsByLineNo: Record<number, ReceivingActualUomOption[]>;
   resolvingEntryKey: string | null;
+  interactionDisabled?: boolean;
   onChangeEntry: (
     lineNo: number,
     index: number,
@@ -83,6 +84,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
     entriesByLineNo,
     uomOptionsByLineNo,
     resolvingEntryKey,
+    interactionDisabled = false,
     onChangeEntry,
     onResolveBarcode,
     showRemarkField = true,
@@ -256,6 +258,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
                     entry.expiry_date.trim() ||
                     entry.remark.trim(),
                 );
+                const identityResolved = entry.barcode_input.trim().length > 0;
 
                 const actualItemName = hasActualActivity
                   ? line.item_name_snapshot || `商品 ${line.item_id}`
@@ -301,6 +304,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
                             className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900"
                             placeholder="在本行扫码或手输后回车"
                             value={getScanInputValue(line.line_no, index, entry)}
+                            disabled={interactionDisabled || isResolving}
                             onChange={(e) =>
                               setScanInputValue(
                                 line.line_no,
@@ -322,7 +326,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
                           <button
                             type="button"
                             className="rounded-md border border-slate-300 px-3 py-2 text-xs hover:bg-slate-50 disabled:opacity-50"
-                            disabled={isResolving}
+                            disabled={interactionDisabled || isResolving}
                             onClick={() => {
                               void handleResolveCurrent(line.line_no, index, entry);
                             }}
@@ -344,6 +348,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
                         ) : (
                           <select
                             className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900"
+                            disabled={interactionDisabled}
                             value={
                               entry.actual_item_uom_id != null
                                 ? String(entry.actual_item_uom_id)
@@ -380,6 +385,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
                           min="0"
                           className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900"
                           value={entry.qty_inbound}
+                          disabled={interactionDisabled || !identityResolved}
                           onChange={(e) =>
                             onChangeEntry(line.line_no, index, {
                               qty_inbound: e.target.value,
@@ -402,6 +408,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
                             type="text"
                             className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900"
                             value={entry.batch_no}
+                            disabled={interactionDisabled || !identityResolved}
                             onChange={(e) =>
                               onChangeEntry(line.line_no, index, {
                                 batch_no: e.target.value,
@@ -418,6 +425,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
                             type="date"
                             className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900"
                             value={entry.production_date}
+                            disabled={interactionDisabled || !identityResolved}
                             onChange={(e) =>
                               onChangeEntry(line.line_no, index, {
                                 production_date: e.target.value,
@@ -434,6 +442,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
                             type="date"
                             className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900"
                             value={entry.expiry_date}
+                            disabled={interactionDisabled || !identityResolved}
                             onChange={(e) =>
                               onChangeEntry(line.line_no, index, {
                                 expiry_date: e.target.value,
@@ -454,6 +463,7 @@ const ReceivingEditableBatchLines: React.FC<Props> = (props) => {
                             type="text"
                             className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900"
                             value={entry.remark}
+                            disabled={interactionDisabled || !identityResolved}
                             onChange={(e) =>
                               onChangeEntry(line.line_no, index, {
                                 remark: e.target.value,

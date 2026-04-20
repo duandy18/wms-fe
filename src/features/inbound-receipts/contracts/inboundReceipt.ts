@@ -6,6 +6,7 @@ export type InboundReceiptSourceType =
 export type InboundReceiptStatus =
   | "DRAFT"
   | "RELEASED"
+  | "COMPLETED"
   | "VOIDED";
 
 export interface InboundReceiptLineReadOut {
@@ -51,6 +52,11 @@ export interface InboundReceiptListItemOut {
   status: InboundReceiptStatus;
   remark: string | null;
   released_at: string | null;
+  last_operated_at: string | null;
+  line_count: number;
+  total_planned_qty: string;
+  total_received_qty: string;
+  total_remaining_qty: string;
 }
 
 export interface InboundReceiptListOut {
@@ -127,6 +133,8 @@ export function formatInboundStatus(status: InboundReceiptStatus): string {
       return "草稿";
     case "RELEASED":
       return "已发布";
+    case "COMPLETED":
+      return "已完成";
     case "VOIDED":
       return "已作废";
     default:

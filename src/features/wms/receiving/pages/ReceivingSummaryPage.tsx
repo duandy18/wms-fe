@@ -20,7 +20,7 @@ const ReceivingSummaryPage: React.FC = () => {
     <div className="space-y-6 p-6">
       <PageTitle
         title="收货汇总"
-        description="展示全部已发布收货单的实际收货情况；点击行内展开，查看当前收货单与收货行进度。"
+        description="展示全部已发布或已完成收货单的实际收货情况；点击行内展开，查看当前收货单与收货行进度。"
       />
 
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
@@ -54,7 +54,7 @@ const ReceivingSummaryPage: React.FC = () => {
                 <th className="px-3 py-2 text-left">仓库</th>
                 <th className="px-3 py-2 text-left">对方</th>
                 <th className="px-3 py-2 text-left">状态</th>
-                <th className="px-3 py-2 text-left">发布时间</th>
+                <th className="px-3 py-2 text-left">最近收货时间</th>
                 <th className="px-3 py-2 text-right">行数</th>
                 <th className="px-3 py-2 text-right">任务数量</th>
                 <th className="px-3 py-2 text-right">累计已收</th>
@@ -72,7 +72,7 @@ const ReceivingSummaryPage: React.FC = () => {
               ) : m.rows.length === 0 ? (
                 <tr>
                   <td colSpan={12} className="px-3 py-8 text-center text-slate-500">
-                    暂无已发布收货单
+                    暂无收货单
                   </td>
                 </tr>
               ) : (
@@ -87,7 +87,9 @@ const ReceivingSummaryPage: React.FC = () => {
                       </td>
                       <td className="px-3 py-2">{row.counterparty_name_snapshot || "-"}</td>
                       <td className="px-3 py-2">{formatReceivingStatus(row.status)}</td>
-                      <td className="px-3 py-2">{formatDateTime(row.released_at)}</td>
+                      <td className="px-3 py-2">
+                        {formatDateTime(row.last_operated_at)}
+                      </td>
                       <td className="px-3 py-2 text-right font-mono">{row.line_count}</td>
                       <td className="px-3 py-2 text-right font-mono">
                         {formatQty(row.total_planned_qty)}

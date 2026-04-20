@@ -13,6 +13,13 @@ function formatDateTime(value: string | null): string {
   return value.replace("T", " ").replace("Z", "");
 }
 
+function formatQty(value: string | number | null | undefined): string {
+  if (value == null) return "0";
+  const n = Number(value);
+  if (Number.isFinite(n)) return String(n);
+  return String(value);
+}
+
 type Props = {
   title: string;
   description: string;
@@ -64,20 +71,24 @@ const InboundReceiptsPageShell: React.FC<Props> = ({
                 <th className="px-3 py-2 text-left">仓库</th>
                 <th className="px-3 py-2 text-left">对方</th>
                 <th className="px-3 py-2 text-left">状态</th>
-                <th className="px-3 py-2 text-left">发布时间</th>
+                <th className="px-3 py-2 text-left">最近收货时间</th>
+                <th className="px-3 py-2 text-right">行数</th>
+                <th className="px-3 py-2 text-right">任务数量</th>
+                <th className="px-3 py-2 text-right">累计已收</th>
+                <th className="px-3 py-2 text-right">剩余待收</th>
                 <th className="px-3 py-2 text-left">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {m.loading ? (
                 <tr>
-                  <td colSpan={8} className="px-3 py-8 text-center text-slate-500">
+                  <td colSpan={12} className="px-3 py-8 text-center text-slate-500">
                     正在加载入库单列表...
                   </td>
                 </tr>
               ) : m.rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-3 py-8 text-center text-slate-500">
+                  <td colSpan={12} className="px-3 py-8 text-center text-slate-500">
                     暂无入库单
                   </td>
                 </tr>
@@ -86,14 +97,32 @@ const InboundReceiptsPageShell: React.FC<Props> = ({
                   <React.Fragment key={row.id}>
                     <tr className="text-slate-800">
                       <td className="px-3 py-2 font-mono">{row.receipt_no}</td>
-                      <td className="px-3 py-2">{formatInboundSourceType(row.source_type)}</td>
+                      <td className="px-3 py-2">
+                        {formatInboundSourceType(row.source_type)}
+                      </td>
                       <td className="px-3 py-2">{row.source_doc_no_snapshot || "-"}</td>
                       <td className="px-3 py-2">
                         {row.warehouse_name_snapshot || `仓库 ${row.warehouse_id}`}
                       </td>
-                      <td className="px-3 py-2">{row.counterparty_name_snapshot || "-"}</td>
+                      <td className="px-3 py-2">
+                        {row.counterparty_name_snapshot || "-"}
+                      </td>
                       <td className="px-3 py-2">{formatInboundStatus(row.status)}</td>
-                      <td className="px-3 py-2">{formatDateTime(row.released_at)}</td>
+                      <td className="px-3 py-2">
+                        {formatDateTime(row.last_operated_at)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {row.line_count}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatQty(row.total_planned_qty)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatQty(row.total_received_qty)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatQty(row.total_remaining_qty)}
+                      </td>
                       <td className="px-3 py-2">
                         <div className="flex gap-2">
                           <button
@@ -113,7 +142,7 @@ const InboundReceiptsPageShell: React.FC<Props> = ({
 
                     {expandedReceiptId === row.id ? (
                       <tr>
-                        <td colSpan={8} className="bg-white px-3 py-3">
+                        <td colSpan={12} className="bg-white px-3 py-3">
                           <InboundReceiptInlineDetail receiptId={row.id} />
                         </td>
                       </tr>

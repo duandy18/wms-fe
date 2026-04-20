@@ -410,6 +410,69 @@ export function useReceivingTaskPage() {
     }
   }, [entriesByLineNo, remark, task, uomOptionsByLineNo]);
 
+  const canSubmit = useMemo(() => {
+    if (!task || submitting) return false;
+
+    let hasAnyEntry = false;
+
+    for (const line of task.lines) {
+      const drafts = entriesByLineNo[line.line_no] ?? [];
+      const showDateFields = receivingLineShowsDateFields(line);
+      const batchRequired = receivingLineRequiresBatchField(line);
+
+      let lineActualBaseTotal = 0;
+      let lineHasEntries = false;
+
+      for (const draft of drafts) {
+        const touched = isEntryTouched(draft);
+        if (!touched) continue;
+
+        hasAnyEntry = true;
+        lineHasEntries = true;
+
+        const qtyText = draft.qty_inbound.trim();
+        if (!qtyText) return false;
+
+        const qty = Number(qtyText);
+        if (!Number.isFinite(qty) || qty <= 0) return false;
+
+        if (draft.actual_item_uom_id == null) return false;
+
+        const actualRatio = draft.actual_ratio_to_base_snapshot;
+        if (
+          actualRatio == null ||
+          !Number.isFinite(actualRatio) ||
+          actualRatio <= 0
+        ) {
+          return false;
+        }
+
+        if (batchRequired && !draft.batch_no.trim()) return false;
+
+        if (
+          showDateFields &&
+          !draft.production_date.trim() &&
+          !draft.expiry_date.trim()
+        ) {
+          return false;
+        }
+
+        lineActualBaseTotal += qty * actualRatio;
+      }
+
+      const remainingBase = Number(line.remaining_qty_base);
+      if (
+        lineHasEntries &&
+        Number.isFinite(remainingBase) &&
+        lineActualBaseTotal - remainingBase > BASE_EPSILON
+      ) {
+        return false;
+      }
+    }
+
+    return hasAnyEntry;
+  }, [entriesByLineNo, task, submitting]);
+
   const remainingTotal = useMemo(() => {
     if (!task) return "0";
     const total = task.lines.reduce((sum, line) => {
@@ -429,6 +492,7 @@ export function useReceivingTaskPage() {
     uomOptionsByLineNo,
     loading,
     error,
+    canSubmit,
     submitting,
     submitError,
     submitSuccess,

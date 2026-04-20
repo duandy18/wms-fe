@@ -94,7 +94,7 @@ const ReceivingTaskPage: React.FC = () => {
               submitLabel="提交收货作业"
               submitting={m.submitting}
               refreshDisabled={m.loading || m.submitting}
-              submitDisabled={m.submitting}
+              submitDisabled={m.submitting || !m.canSubmit}
               onRefresh={m.reload}
               onSubmit={() => {
                 if (!window.confirm(`确认提交收货作业：${m.task?.receipt_no}？`)) return;

@@ -6,6 +6,7 @@ export type ReceivingSourceType =
 export type ReceivingStatus =
   | "DRAFT"
   | "RELEASED"
+  | "COMPLETED"
   | "VOIDED";
 
 export type ReceivingExpiryPolicy = "NONE" | "REQUIRED";
@@ -23,6 +24,7 @@ export interface ReceivingTaskListItemOut {
   counterparty_name_snapshot: string | null;
   status: ReceivingStatus;
   released_at: string | null;
+  last_operated_at: string | null;
   line_count: number;
   total_planned_qty: string;
   total_received_qty: string;
@@ -223,6 +225,8 @@ export function formatReceivingStatus(status: ReceivingStatus): string {
       return "草稿";
     case "RELEASED":
       return "已发布";
+    case "COMPLETED":
+      return "已完成";
     case "VOIDED":
       return "已作废";
     default:

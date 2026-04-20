@@ -116,6 +116,7 @@ const ReceivingPurchasePage: React.FC = () => {
               entriesByLineNo={m.entriesByLineNo}
               uomOptionsByLineNo={m.uomOptionsByLineNo}
               resolvingEntryKey={m.resolvingEntryKey}
+              interactionDisabled={m.submitting}
               onResolveBarcode={m.resolveBarcodeAtEntry}
               showRemarkField={false}
               showLineHint={false}
@@ -134,7 +135,7 @@ const ReceivingPurchasePage: React.FC = () => {
               submitLabel="提交采购单收货"
               submitting={m.submitting}
               refreshDisabled={m.submitting}
-              submitDisabled={m.submitting}
+              submitDisabled={m.submitting || !m.canSubmit}
               onRefresh={m.refreshCurrent}
               onSubmit={() => {
                 void m.submit();
