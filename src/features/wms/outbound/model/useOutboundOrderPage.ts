@@ -7,6 +7,7 @@ import {
   fetchOrderOutboundView,
   fetchOutboundLotCandidates,
   fetchPublicItemAggregate,
+  submitOrderOutbound,
   type OrderOutboundOptionOut,
 } from "../api/outboundApi";
 import type {
@@ -100,6 +101,7 @@ export function useOutboundOrderPage() {
   const [resolvingLineId, setResolvingLineId] = useState<number | null>(null);
 
   const [submitMessage, setSubmitMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedOrder = useMemo(() => {
     const id = Number(selectedOrderId);
@@ -440,7 +442,31 @@ export function useOutboundOrderPage() {
     }).length;
   }, [qtyByLineId]);
 
-  const handleSubmitPlaceholder = useCallback(() => {
+  const canSubmit = useMemo(() => {
+    if (!selectedOrder || !selectedWarehouse || !detail || isSubmitting) return false;
+
+    const qtyLines = detail.lines.filter((line) => {
+      const qty = Number(qtyByLineId[line.id] || "0");
+      return Number.isFinite(qty) && qty > 0;
+    });
+    if (qtyLines.length <= 0) return false;
+
+    return qtyLines.every((line) => {
+      const qty = Number(qtyByLineId[line.id] || "0");
+      const selectedLot = selectedLotByLineId[line.id];
+      if (!selectedLot) return false;
+      return qty <= Number(selectedLot.available_qty ?? 0);
+    });
+  }, [
+    detail,
+    isSubmitting,
+    qtyByLineId,
+    selectedLotByLineId,
+    selectedOrder,
+    selectedWarehouse,
+  ]);
+
+  const handleSubmitPlaceholder = useCallback(async () => {
     if (!selectedOrder) {
       setSubmitMessage("请先选择订单。");
       return;
@@ -449,24 +475,81 @@ export function useOutboundOrderPage() {
       setSubmitMessage("请先选择执行仓库。");
       return;
     }
+    if (!detail) {
+      setSubmitMessage("当前订单详情未加载完成。");
+      return;
+    }
     if (enteredLinesCount <= 0) {
       setSubmitMessage("请至少录入一条本次出库数量。");
       return;
     }
 
-    const missingLotLines = Object.entries(qtyByLineId).filter(([key, value]) => {
-      const qty = Number(value);
-      if (!Number.isFinite(qty) || qty <= 0) return false;
-      return !selectedLotByLineId[Number(key)];
+    const qtyLines = detail.lines.filter((line) => {
+      const qty = Number(qtyByLineId[line.id] || "0");
+      return Number.isFinite(qty) && qty > 0;
     });
 
-    if (missingLotLines.length > 0) {
-      setSubmitMessage("已录入本次出库数量的行仍未选择 lot。");
+    if (qtyLines.length <= 0) {
+      setSubmitMessage("请至少录入一条本次出库数量。");
       return;
     }
 
-    setSubmitMessage("当前页已接入 lot 候选读取与选择；下一轮继续接真实提交。");
-  }, [enteredLinesCount, qtyByLineId, selectedLotByLineId, selectedOrder, selectedWarehouse]);
+    const missingLotLine = qtyLines.find((line) => !selectedLotByLineId[line.id]);
+    if (missingLotLine) {
+      setSubmitMessage(`行 ${missingLotLine.id} 已录入本次出库数量，但仍未选择 lot。`);
+      return;
+    }
+
+    const overAvailableLine = qtyLines.find((line) => {
+      const qty = Number(qtyByLineId[line.id] || "0");
+      const selectedLot = selectedLotByLineId[line.id];
+      return qty > Number(selectedLot?.available_qty ?? 0);
+    });
+    if (overAvailableLine) {
+      setSubmitMessage(`行 ${overAvailableLine.id} 本次出库数量超过已选 lot 可出数量。`);
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const payload = {
+        warehouse_id: selectedWarehouse.id,
+        remark: null,
+        lines: qtyLines.map((line) => {
+          const selectedLot = selectedLotByLineId[line.id];
+          return {
+            order_line_id: line.id,
+            item_id: line.item_id,
+            qty_outbound: Number(qtyByLineId[line.id] || "0"),
+            lot_id: selectedLot.lot_id,
+            lot_code: selectedLot.lot_code ?? null,
+            remark: null,
+          };
+        }),
+      };
+
+      const result = await submitOrderOutbound(selectedOrder.id, payload);
+      setSubmitMessage(
+        `提交成功：已生成出库事件 ${result.event_id}，共 ${result.lines_count} 行。`,
+      );
+      await loadDetail(selectedOrder.id);
+      await loadOrders();
+    } catch (error) {
+      setSubmitMessage(getErrorMessage(error, "提交订单出库失败"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    detail,
+    enteredLinesCount,
+    loadDetail,
+    loadOrders,
+    qtyByLineId,
+    selectedLotByLineId,
+    selectedOrder,
+    selectedWarehouse,
+  ]);
 
   return {
     orders,
@@ -501,6 +584,8 @@ export function useOutboundOrderPage() {
     selectLot,
 
     enteredLinesCount,
+    canSubmit,
+    isSubmitting,
     submitMessage,
     handleSubmitPlaceholder,
 

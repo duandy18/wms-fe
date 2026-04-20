@@ -149,7 +149,9 @@ const OutboundOrderPage: React.FC = () => {
 
             <OutboundOrderEditableLines
               lines={m.detail.lines}
+              warehouseSelected={Boolean(m.selectedWarehouse)}
               barcodeByLineId={m.barcodeByLineId}
+              submitLocked={m.isSubmitting}
               qtyByLineId={m.qtyByLineId}
               hintByLineId={m.lineHintByLineId}
               resolvedByLineId={m.resolvedByLineId}
@@ -167,12 +169,13 @@ const OutboundOrderPage: React.FC = () => {
             <OutboundSubmitActions
               summaryText={`当前已录入 ${m.enteredLinesCount} 条本次出库数量。`}
               reloadCurrentLabel="刷新当前订单"
-              submitLabel="提交出库"
+              submitLabel={m.isSubmitting ? "提交中…" : "提交出库"}
               showReloadList={false}
               onReloadList={m.reloadOrders}
               onReloadCurrent={m.reloadDetail}
               onSubmit={m.handleSubmitPlaceholder}
-              reloadCurrentDisabled={!m.selectedOrder}
+              reloadCurrentDisabled={!m.selectedOrder || m.isSubmitting}
+              submitDisabled={!m.canSubmit}
             />
           </>
         ) : null}
