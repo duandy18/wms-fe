@@ -68,15 +68,6 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="count"
-            element={
-              <RequirePermission permission="page.wms.read">
-                <P.CountCockpitPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
             path="outbound"
             element={
               <RequirePermission permission="page.wms.read">
@@ -167,6 +158,47 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="page.wms.read">
                 <P.InventoryLedgerPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="inventory-adjustment"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.InventoryAdjustmentSummaryPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inventory-adjustment/count"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.InventoryCountPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inventory-adjustment/inbound-reversal"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.InventoryInboundReversalPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inventory-adjustment/outbound-reversal"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.InventoryOutboundReversalPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="inventory-adjustment/return-inbound"
+            element={
+              <RequirePermission permission="page.wms.read">
+                <P.InventoryReturnInboundPage />
               </RequirePermission>
             }
           />
@@ -453,14 +485,6 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="inbound-receipts/returns"
-            element={
-              <RequirePermission permission="page.inbound.read">
-                <P.InboundReceiptsReturnsPage />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="inbound-receipts/manual"
             element={
               <RequirePermission permission="page.inbound.read">
@@ -489,14 +513,6 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="page.wms.read">
                 <P.ReceivingManualPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="receiving/returns"
-            element={
-              <RequirePermission permission="page.wms.read">
-                <P.ReceivingReturnsPage />
               </RequirePermission>
             }
           />

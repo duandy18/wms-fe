@@ -33,18 +33,26 @@ vi.mock("../lazyPages", () => {
     InventoryPage: page("InventoryPage mock view"),
     InventoryLedgerPage: page("InventoryLedgerPage mock view"),
 
+    InventoryAdjustmentSummaryPage: page(
+      "InventoryAdjustmentSummaryPage mock view",
+    ),
+    InventoryCountPage: page("InventoryCountPage mock view"),
+    InventoryInboundReversalPage: page(
+      "InventoryInboundReversalPage mock view",
+    ),
+    InventoryOutboundReversalPage: page(
+      "InventoryOutboundReversalPage mock view",
+    ),
+    InventoryReturnInboundPage: page("InventoryReturnInboundPage mock view"),
+
     InboundReceiptsSummaryPage: page("InboundReceiptsSummaryPage mock view"),
     InboundReceiptsPurchasePage: page("InboundReceiptsPurchasePage mock view"),
-    InboundReceiptsReturnsPage: page("InboundReceiptsReturnsPage mock view"),
     InboundReceiptsManualPage: page("InboundReceiptsManualPage mock view"),
 
     ReceivingSummaryPage: page("ReceivingSummaryPage mock view"),
     ReceivingPurchasePage: page("ReceivingPurchasePage mock view"),
     ReceivingManualPage: page("ReceivingManualPage mock view"),
-    ReceivingReturnsPage: page("ReceivingReturnsPage mock view"),
     ReceivingTaskPage: page("ReceivingTaskPage mock view"),
-
-    CountCockpitPage: page("CountCockpitPage mock view"),
 
     OutboundSummaryPage: page("OutboundSummaryPage mock view"),
     OutboundOrderPage: page("OutboundOrderPage mock view"),
@@ -131,6 +139,39 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders InventoryAdjustmentSummaryPage on /inventory-adjustment", async () => {
+    renderWithRoute("/inventory-adjustment");
+    expect(
+      await screen.findByText("InventoryAdjustmentSummaryPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders InventoryCountPage on /inventory-adjustment/count", async () => {
+    renderWithRoute("/inventory-adjustment/count");
+    expect(await screen.findByText("InventoryCountPage mock view")).toBeInTheDocument();
+  });
+
+  it("renders InventoryInboundReversalPage on /inventory-adjustment/inbound-reversal", async () => {
+    renderWithRoute("/inventory-adjustment/inbound-reversal");
+    expect(
+      await screen.findByText("InventoryInboundReversalPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders InventoryOutboundReversalPage on /inventory-adjustment/outbound-reversal", async () => {
+    renderWithRoute("/inventory-adjustment/outbound-reversal");
+    expect(
+      await screen.findByText("InventoryOutboundReversalPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders InventoryReturnInboundPage on /inventory-adjustment/return-inbound", async () => {
+    renderWithRoute("/inventory-adjustment/return-inbound");
+    expect(
+      await screen.findByText("InventoryReturnInboundPage mock view"),
+    ).toBeInTheDocument();
+  });
+
   it("renders InboundReceiptsSummaryPage on /inbound-receipts", async () => {
     renderWithRoute("/inbound-receipts");
     expect(
@@ -142,13 +183,6 @@ describe("AppRouter inventory routes", () => {
     renderWithRoute("/inbound-receipts/purchase");
     expect(
       await screen.findByText("InboundReceiptsPurchasePage mock view"),
-    ).toBeInTheDocument();
-  });
-
-  it("renders InboundReceiptsReturnsPage on /inbound-receipts/returns", async () => {
-    renderWithRoute("/inbound-receipts/returns");
-    expect(
-      await screen.findByText("InboundReceiptsReturnsPage mock view"),
     ).toBeInTheDocument();
   });
 
@@ -241,6 +275,16 @@ describe("AppRouter inventory routes", () => {
     expect(
       await screen.findByText("OutboundManualDocsPage mock view"),
     ).toBeInTheDocument();
+  });
+
+  it("falls back to /inventory after old /count route is retired", async () => {
+    renderWithRoute("/count");
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
+  });
+
+  it("falls back to /inventory after old /inbound-receipts/returns route is retired", async () => {
+    renderWithRoute("/inbound-receipts/returns");
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
   it("falls back to /inventory for unknown route", async () => {
