@@ -9,17 +9,11 @@ import { lazy } from "react";
 export const LoginPage = lazy(() => import("../../features/auth/LoginPage"));
 
 // 作业台 (Cockpits)
-export const CountCockpitPage = lazy(
-  () => import("../../features/wms/count/CountCockpitPage"),
-);
 export const InboundReceiptsSummaryPage = lazy(
   () => import("../../features/inbound-receipts/pages/InboundReceiptsSummaryPage"),
 );
 export const InboundReceiptsPurchasePage = lazy(
   () => import("../../features/inbound-receipts/pages/InboundReceiptsPurchasePage"),
-);
-export const InboundReceiptsReturnsPage = lazy(
-  () => import("../../features/inbound-receipts/pages/InboundReceiptsReturnsPage"),
 );
 export const InboundReceiptsManualPage = lazy(
   () => import("../../features/inbound-receipts/pages/InboundReceiptsManualPage"),
@@ -32,9 +26,6 @@ export const ReceivingPurchasePage = lazy(
 );
 export const ReceivingManualPage = lazy(
   () => import("../../features/wms/receiving/pages/ReceivingManualPage"),
-);
-export const ReceivingReturnsPage = lazy(
-  () => import("../../features/wms/receiving/pages/ReceivingReturnsPage"),
 );
 export const ReceivingTaskPage = lazy(
   () => import("../../features/wms/receiving/pages/ReceivingTaskPage"),
@@ -72,6 +63,36 @@ export const InventoryPage = lazy(
 // 库存台账（业务页）
 export const InventoryLedgerPage = lazy(
   () => import("../../features/wms/inventory/ledger/InventoryLedgerPage"),
+);
+
+// 库存调节（阶段一：前端骨架）
+export const InventoryAdjustmentSummaryPage = lazy(
+  () =>
+    import(
+      "../../features/wms/inventory-adjustment/pages/InventoryAdjustmentSummaryPage"
+    ),
+);
+export const InventoryCountPage = lazy(
+  () =>
+    import("../../features/wms/inventory-adjustment/pages/InventoryCountPage"),
+);
+export const InventoryInboundReversalPage = lazy(
+  () =>
+    import(
+      "../../features/wms/inventory-adjustment/pages/InventoryInboundReversalPage"
+    ),
+);
+export const InventoryOutboundReversalPage = lazy(
+  () =>
+    import(
+      "../../features/wms/inventory-adjustment/pages/InventoryOutboundReversalPage"
+    ),
+);
+export const InventoryReturnInboundPage = lazy(
+  () =>
+    import(
+      "../../features/wms/inventory-adjustment/pages/InventoryReturnInboundPage"
+    ),
 );
 
 // 物流：运价管理 / 运价模板 / 发货成本报表 / 发货账本详情
