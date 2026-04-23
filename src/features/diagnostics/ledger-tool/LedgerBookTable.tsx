@@ -107,7 +107,7 @@ const columns: ColumnDef<LedgerRow>[] = [
       <div className="flex flex-wrap justify-end gap-1 text-[11px]">
         <a
           href={`/tools/stocks?item_id=${row.item_id}&warehouse_id=${row.warehouse_id}&batch_code=${encodeURIComponent(
-            row.batch_code,
+            row.batch_code ?? "",
           )}`}
           className="inline-flex items-center rounded border border-slate-300 px-2 py-0.5 text-[11px] text-slate-700 hover:bg-slate-50"
         >
