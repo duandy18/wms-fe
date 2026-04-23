@@ -27,6 +27,11 @@ export type LedgerRow = {
   item_name?: string | null;
 
   warehouse_id: number;
+
+  // ✅ 新增：基础单位解释口径
+  base_item_uom_id?: number | null;
+  base_uom_name?: string | null;
+
   batch_code: string | null;
 
   trace_id: string | null;

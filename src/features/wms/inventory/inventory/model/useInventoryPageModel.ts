@@ -23,6 +23,10 @@ type SortAction =
   | { type: "CHANGE_SORT"; key: SortKey }
   | { type: "RESET"; key?: SortKey; dir?: SortDir };
 
+type DetailMap = Record<string, InventoryDetailResponse | undefined>;
+type DetailLoadingMap = Record<string, boolean>;
+type DetailErrorMap = Record<string, string>;
+
 function parsePositiveInt(v: string | null): number | null {
   if (!v) return null;
   const n = Number(v);
@@ -51,6 +55,18 @@ function sortReducer(state: SortState, action: SortAction): SortState {
   return state;
 }
 
+function buildRowKey(row: InventoryRow): string {
+  return `${row.warehouse_id}-${row.item_id}-${row.lot_code ?? "NOLOT"}`;
+}
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  const e = err as ApiErrorShape;
+  if (e?.message && String(e.message).trim()) {
+    return String(e.message);
+  }
+  return fallback;
+}
+
 export function useInventoryPageModel() {
   const [sp, setSp] = useSearchParams();
 
@@ -63,16 +79,15 @@ export function useInventoryPageModel() {
   const [itemIdFilter, setItemIdFilter] = useState<number | null>(null);
   const [warehouseIdFilter, setWarehouseIdFilter] = useState<number | null>(null);
   const [lotCodeFilter, setLotCodeFilter] = useState<string>("");
+  const [nearOnly, setNearOnly] = useState(false);
 
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerItem, setDrawerItem] = useState<InventoryDetailResponse | null>(null);
-  const [drawerLoading, setDrawerLoading] = useState(false);
-  const [drawerItemId, setDrawerItemId] = useState<number | null>(null);
-
-  const [nearOnly, setNearOnly] = useState(false);
+  const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
+  const [detailByRowKey, setDetailByRowKey] = useState<DetailMap>({});
+  const [detailLoadingByRowKey, setDetailLoadingByRowKey] = useState<DetailLoadingMap>({});
+  const [detailErrorByRowKey, setDetailErrorByRowKey] = useState<DetailErrorMap>({});
 
   const [sortState, dispatchSort] = useReducer(sortReducer, {
     key: "item_name",
@@ -119,9 +134,8 @@ export function useInventoryPageModel() {
         setTotal(res.total);
       } catch (err) {
         if (cancelled) return;
-        const e = err as ApiErrorShape;
         console.error("Failed to fetch inventory:", err);
-        setError(e?.message || "加载库存失败");
+        setError(getErrorMessage(err, "加载库存失败"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -146,6 +160,14 @@ export function useInventoryPageModel() {
     };
   }, [triggerRefresh]);
 
+  useEffect(() => {
+    if (!expandedRowKey) return;
+    const stillExists = rows.some((row) => buildRowKey(row) === expandedRowKey);
+    if (!stillExists) {
+      setExpandedRowKey(null);
+    }
+  }, [expandedRowKey, rows]);
+
   const sortedRows = useMemo(
     () => sortInventoryRows(rows, sortState.key, sortState.dir),
     [rows, sortState.key, sortState.dir],
@@ -154,35 +176,60 @@ export function useInventoryPageModel() {
   const canPrev = offset > 0;
   const canNext = offset + PAGE_SIZE < total;
 
-  const loadItemDetail = useCallback(async (itemId: number) => {
-    setDrawerLoading(true);
-    setDrawerItem(null);
-    try {
-      const data = await fetchInventoryItemDetail(itemId);
-      setDrawerItem(data);
-    } catch (err) {
-      console.error("Failed to fetch inventory item detail:", err);
-    } finally {
-      setDrawerLoading(false);
-    }
-  }, []);
+  const loadItemDetail = useCallback(
+    async (row: InventoryRow, force = false) => {
+      const rowKey = buildRowKey(row);
 
-  const openItemDetail = useCallback(
-    async (row: InventoryRow) => {
-      setDrawerOpen(true);
-      setDrawerItemId(row.item_id);
-      await loadItemDetail(row.item_id);
+      if (!force) {
+        if (detailByRowKey[rowKey] || detailLoadingByRowKey[rowKey]) {
+          return;
+        }
+      }
+
+      setDetailLoadingByRowKey((prev) => ({ ...prev, [rowKey]: true }));
+      setDetailErrorByRowKey((prev) => ({ ...prev, [rowKey]: "" }));
+
+      try {
+        const data = await fetchInventoryItemDetail(row.item_id, {
+          warehouse_id: row.warehouse_id,
+          lot_code: row.lot_code ?? undefined,
+          pools: ["MAIN"],
+        });
+        setDetailByRowKey((prev) => ({ ...prev, [rowKey]: data }));
+      } catch (err) {
+        console.error("Failed to fetch inventory item detail:", err);
+        setDetailErrorByRowKey((prev) => ({
+          ...prev,
+          [rowKey]: getErrorMessage(err, "加载当前库存切片明细失败"),
+        }));
+      } finally {
+        setDetailLoadingByRowKey((prev) => ({ ...prev, [rowKey]: false }));
+      }
     },
-    [loadItemDetail],
+    [detailByRowKey, detailLoadingByRowKey],
   );
 
-  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+  const toggleExpand = useCallback(
+    async (row: InventoryRow) => {
+      const rowKey = buildRowKey(row);
+      if (expandedRowKey === rowKey) {
+        setExpandedRowKey(null);
+        return;
+      }
 
-  const refreshDrawer = useCallback(async () => {
-    if (!drawerItemId) return;
-    await loadItemDetail(drawerItemId);
-    triggerRefresh();
-  }, [drawerItemId, loadItemDetail, triggerRefresh]);
+      setExpandedRowKey(rowKey);
+      await loadItemDetail(row, false);
+    },
+    [expandedRowKey, loadItemDetail],
+  );
+
+  const refreshDetail = useCallback(
+    async (row: InventoryRow) => {
+      await loadItemDetail(row, true);
+      triggerRefresh();
+    },
+    [loadItemDetail, triggerRefresh],
+  );
 
   const changeSort = useCallback((key: SortKey) => {
     dispatchSort({ type: "CHANGE_SORT", key });
@@ -227,11 +274,11 @@ export function useInventoryPageModel() {
 
     triggerRefresh,
 
-    drawerOpen,
-    drawerItem,
-    drawerLoading,
-    openItemDetail,
-    closeDrawer,
-    refreshDrawer,
+    expandedRowKey,
+    detailByRowKey,
+    detailLoadingByRowKey,
+    detailErrorByRowKey,
+    toggleExpand,
+    refreshDetail,
   };
 }

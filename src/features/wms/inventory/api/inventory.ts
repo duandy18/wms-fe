@@ -1,7 +1,9 @@
-import { apiGet } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 import type {
   InventoryDetailQuery,
   InventoryDetailResponse,
+  InventoryExplainIn,
+  InventoryExplainResponse,
   InventoryPageQuery,
   InventoryResponse,
 } from "./contracts";
@@ -40,4 +42,10 @@ export async function fetchInventoryItemDetail(
   return apiGet<InventoryDetailResponse>(
     `/stock/inventory/${itemId}/detail?${params.toString()}`,
   );
+}
+
+export async function fetchInventoryExplain(
+  payload: InventoryExplainIn,
+): Promise<InventoryExplainResponse> {
+  return apiPost<InventoryExplainResponse>("/stock/inventory/explain", payload);
 }
