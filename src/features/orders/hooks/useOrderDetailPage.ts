@@ -142,7 +142,7 @@ export function useOrderDetailPage() {
     setCreatingRma(true);
     setError(null);
     try {
-      navigate(`/inventory-adjustment/return-inbound?order_key=${encodeURIComponent(orderRef)}`);
+      navigate(`/inventory-adjustment/inbound-reversal?days=7&source_type=RETURN`);
     } catch (err: unknown) {
       console.error("open returns receipt page failed", err);
       setError(getErrorMessage(err, "打开退货入库单页面失败"));

@@ -138,12 +138,10 @@ export const OrderReturnTaskPanel: React.FC<Props> = ({ orderId }) => {
       return;
     }
 
-    const orderRef = `ORD:${platform}:${shopId}:${extOrderNo}`;
-
     setOpeningReceiptPage(true);
     setCreateError(null);
     try {
-      navigate(`/inventory-adjustment/return-inbound?order_key=${encodeURIComponent(orderRef)}`);
+      navigate(`/inventory-adjustment/inbound-reversal?days=7&source_type=RETURN`);
     } catch (err: unknown) {
       console.error("OrderReturnTaskPanel: open returns receipt page failed", err);
       setCreateError(getErrorMessage(err, "打开退货入库单页面失败"));

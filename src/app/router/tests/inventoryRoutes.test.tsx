@@ -43,7 +43,6 @@ vi.mock("../lazyPages", () => {
     InventoryOutboundReversalPage: page(
       "InventoryOutboundReversalPage mock view",
     ),
-    InventoryReturnInboundPage: page("InventoryReturnInboundPage mock view"),
 
     InboundReceiptsSummaryPage: page("InboundReceiptsSummaryPage mock view"),
     InboundReceiptsPurchasePage: page("InboundReceiptsPurchasePage mock view"),
@@ -162,13 +161,6 @@ describe("AppRouter inventory routes", () => {
     renderWithRoute("/inventory-adjustment/outbound-reversal");
     expect(
       await screen.findByText("InventoryOutboundReversalPage mock view"),
-    ).toBeInTheDocument();
-  });
-
-  it("renders InventoryReturnInboundPage on /inventory-adjustment/return-inbound", async () => {
-    renderWithRoute("/inventory-adjustment/return-inbound");
-    expect(
-      await screen.findByText("InventoryReturnInboundPage mock view"),
     ).toBeInTheDocument();
   });
 
