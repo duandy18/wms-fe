@@ -195,15 +195,6 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="inventory-adjustment/return-inbound"
-            element={
-              <RequirePermission permission="page.wms.read">
-                <P.InventoryReturnInboundPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
             path="orders"
             element={<Navigate to="/oms/pdd/orders" replace />}
           />

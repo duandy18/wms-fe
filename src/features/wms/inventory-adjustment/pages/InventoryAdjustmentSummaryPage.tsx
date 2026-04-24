@@ -16,13 +16,8 @@ const cards = [
     desc: "对错误出库事实做反向补回。",
     route: "/inventory-adjustment/outbound-reversal",
   },
-  {
-    title: "退单入库",
-    desc: "选择已出库且仍可退的订单，生成退单入库单并完成回仓执行。",
-    route: "/inventory-adjustment/return-inbound",
-  },
-];
 
+];
 const InventoryAdjustmentSummaryPage: React.FC = () => {
   return (
     <div className="space-y-6 p-4">
