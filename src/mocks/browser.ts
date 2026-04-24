@@ -1,5 +1,4 @@
 import { setupWorker } from 'msw/browser'
-import { outboundHandlers } from './handlers/outbound'
 import { taskHandlers } from './handlers/tasks'
 import { batchHandlers } from './handlers/batches'
 import { moveHandlers } from './handlers/moves'
@@ -8,7 +7,6 @@ import { moveHandlers } from './handlers/moves'
 // 禁止使用旧 snapshot mock，避免隐性汇总结构复活
 
 export const worker = setupWorker(
-  ...outboundHandlers,
   ...taskHandlers,
   ...batchHandlers,
   ...moveHandlers,

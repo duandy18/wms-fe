@@ -116,18 +116,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          <Route
-            path="outbound/dashboard"
-            element={
-              <RequirePermission permission="page.wms.read">
-                <Navigate to="/outbound/summary" replace />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="inventory/outbound-dashboard"
-            element={<Navigate to="/outbound/summary" replace />}
-          />
 
           <Route
             path="inventory"

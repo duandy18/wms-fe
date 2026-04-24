@@ -241,20 +241,6 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("redirects legacy /outbound/dashboard to /outbound/summary", async () => {
-    renderWithRoute("/outbound/dashboard");
-    expect(
-      await screen.findByText("OutboundSummaryPage mock view"),
-    ).toBeInTheDocument();
-  });
-
-  it("redirects legacy /inventory/outbound-dashboard to /outbound/summary", async () => {
-    renderWithRoute("/inventory/outbound-dashboard");
-    expect(
-      await screen.findByText("OutboundSummaryPage mock view"),
-    ).toBeInTheDocument();
-  });
-
   it("falls back to /inventory after old /count route is retired", async () => {
     renderWithRoute("/count");
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
