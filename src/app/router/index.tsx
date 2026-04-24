@@ -109,26 +109,10 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="outbound/pick-tasks"
-            element={
-              <RequirePermission permission="page.wms.read">
-                <Navigate to="/outbound/order" replace />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="outbound/ship"
             element={
               <RequirePermission permission="page.tms.read">
                 <Navigate to="/tms/shipment-prepare" replace />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="outbound/internal-outbound"
-            element={
-              <RequirePermission permission="page.wms.read">
-                <Navigate to="/outbound/manual-docs" replace />
               </RequirePermission>
             }
           />

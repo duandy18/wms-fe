@@ -255,20 +255,6 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("redirects legacy /outbound/pick-tasks to /outbound/order", async () => {
-    renderWithRoute("/outbound/pick-tasks");
-    expect(
-      await screen.findByText("OutboundOrderPage mock view"),
-    ).toBeInTheDocument();
-  });
-
-  it("redirects legacy /outbound/internal-outbound to /outbound/manual-docs", async () => {
-    renderWithRoute("/outbound/internal-outbound");
-    expect(
-      await screen.findByText("OutboundManualDocsPage mock view"),
-    ).toBeInTheDocument();
-  });
-
   it("falls back to /inventory after old /count route is retired", async () => {
     renderWithRoute("/count");
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
