@@ -143,7 +143,6 @@ export interface OrderOutboundSubmitLineIn {
   item_id: number;
   qty_outbound: number;
   lot_id: number;
-  lot_code?: string | null;
   remark?: string | null;
 }
 
@@ -220,7 +219,6 @@ export interface ManualOutboundSubmitLineIn {
   item_id: number;
   qty_outbound: number;
   lot_id: number;
-  lot_code?: string | null;
   remark?: string | null;
 }
 

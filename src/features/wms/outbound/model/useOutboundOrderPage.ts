@@ -523,7 +523,6 @@ export function useOutboundOrderPage() {
             item_id: line.item_id,
             qty_outbound: Number(qtyByLineId[line.id] || "0"),
             lot_id: selectedLot.lot_id,
-            lot_code: selectedLot.lot_code ?? null,
             remark: null,
           };
         }),
