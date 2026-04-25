@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/preview/quotePreviewResultHelpers.tsx
+// src/features/tms/pricingTemplates/workbench/explain/quotePreviewResultHelpers.tsx
 
 import React from "react";
 import type { CalcOut } from "./types";

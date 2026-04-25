@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/table/cards/quote-explain/weight.ts
+// src/features/tms/pricingTemplates/workbench/explain/quote-explain/weight.ts
 
 import type { Dims } from "../types";
 

@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/preview/types.ts
+// src/features/tms/pricingTemplates/workbench/explain/types.ts
 
 export type QuoteStatus = "OK" | "MANUAL_REQUIRED" | string;
 

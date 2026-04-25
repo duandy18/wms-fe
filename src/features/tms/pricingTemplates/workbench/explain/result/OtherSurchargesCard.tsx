@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/preview/result/OtherSurchargesCard.tsx
+// src/features/tms/pricingTemplates/workbench/explain/result/OtherSurchargesCard.tsx
 
 import React from "react";
 import type { QuoteSurchargeOut } from "../types";

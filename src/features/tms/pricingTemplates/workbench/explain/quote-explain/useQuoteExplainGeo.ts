@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/table/cards/quote-explain/useQuoteExplainGeo.ts
+// src/features/tms/pricingTemplates/workbench/explain/quote-explain/useQuoteExplainGeo.ts
 
 import { useEffect, useMemo, useState } from "react";
 import { apiGet } from "../../../../../../lib/api";

@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/preview/result/QuoteFinalBreakdownCard.tsx
+// src/features/tms/pricingTemplates/workbench/explain/result/QuoteFinalBreakdownCard.tsx
 
 import React from "react";
 import { safeMoney } from "../utils";

@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/table/cards/quote-explain/useQuoteExplainWarehouses.ts
+// src/features/tms/pricingTemplates/workbench/explain/quote-explain/useQuoteExplainWarehouses.ts
 
 import { useEffect, useMemo, useState } from "react";
 import { fetchActiveWarehouses } from "../../../../../wms/warehouses/api";

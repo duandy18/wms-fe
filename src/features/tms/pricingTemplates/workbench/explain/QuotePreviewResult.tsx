@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/preview/QuotePreviewResult.tsx
+// src/features/tms/pricingTemplates/workbench/explain/QuotePreviewResult.tsx
 
 import React, { useMemo } from "react";
 import type { CalcOut } from "./types";
