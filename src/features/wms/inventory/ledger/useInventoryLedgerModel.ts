@@ -9,7 +9,7 @@ type Hint = {
   item_id: number | null;
   item_keyword: string | null;
   warehouse_id: number | null;
-  batch_code: string | null;
+  lot_code: string | null;
   reason: string | null;
   reason_canon: string | null;
   sub_reason: string | null;
@@ -24,7 +24,7 @@ function buildHint(sp: URLSearchParams): Hint {
     item_id: parsePositiveInt(sp.get("item_id")),
     item_keyword: cleanStr(sp.get("item_keyword")),
     warehouse_id: parsePositiveInt(sp.get("warehouse_id")),
-    batch_code: cleanStr(sp.get("batch_code")),
+    lot_code: cleanStr(sp.get("lot_code")),
     reason: cleanStr(sp.get("reason")),
     reason_canon: cleanStr(sp.get("reason_canon")),
     sub_reason: cleanStr(sp.get("sub_reason")),
@@ -64,7 +64,7 @@ export function useInventoryLedgerModel() {
     hint.item_id ||
       hint.item_keyword ||
       hint.warehouse_id ||
-      hint.batch_code ||
+      hint.lot_code ||
       hint.reason ||
       hint.reason_canon ||
       hint.sub_reason ||
@@ -87,7 +87,7 @@ export function useInventoryLedgerModel() {
   const [itemId, setItemId] = useState<string>(hint.item_id ? String(hint.item_id) : "");
   const [itemKeyword, setItemKeyword] = useState<string>(hint.item_keyword ?? "");
   const [warehouseId, setWarehouseId] = useState<string>(hint.warehouse_id ? String(hint.warehouse_id) : "");
-  const [batchCode, setBatchCode] = useState<string>(hint.batch_code ?? "");
+  const [lotCode, setLotCode] = useState<string>(hint.lot_code ?? "");
 
   // 原始 / 口径 / 具体操作
   const [reason, setReason] = useState<string>(hint.reason ?? "");
@@ -109,7 +109,7 @@ export function useInventoryLedgerModel() {
     if (hint.item_id) setItemId(String(hint.item_id));
     if (hint.item_keyword) setItemKeyword(hint.item_keyword);
     if (hint.warehouse_id) setWarehouseId(String(hint.warehouse_id));
-    if (hint.batch_code) setBatchCode(hint.batch_code);
+    if (hint.lot_code) setLotCode(hint.lot_code);
     if (hint.reason) setReason(hint.reason);
     if (hint.reason_canon) setReasonCanon(hint.reason_canon);
     if (hint.sub_reason) setSubReason(hint.sub_reason);
@@ -125,7 +125,7 @@ export function useInventoryLedgerModel() {
       "item_id",
       "item_keyword",
       "warehouse_id",
-      "batch_code",
+      "lot_code",
       "reason",
       "reason_canon",
       "sub_reason",
@@ -141,7 +141,7 @@ export function useInventoryLedgerModel() {
     setItemId("");
     setItemKeyword("");
     setWarehouseId("");
-    setBatchCode("");
+    setLotCode("");
     setReason("");
     setReasonCanon("");
     setSubReason("");
@@ -169,7 +169,7 @@ export function useInventoryLedgerModel() {
       else if (itemKeyword.trim()) payload.item_keyword = itemKeyword.trim();
 
       if (wid) payload.warehouse_id = wid;
-      if (batchCode.trim()) payload.batch_code = batchCode.trim();
+      if (lotCode.trim()) payload.lot_code = lotCode.trim();
 
       if (reason.trim()) payload.reason = reason.trim();
       if (reasonCanon.trim()) payload.reason_canon = reasonCanon.trim();
@@ -261,8 +261,8 @@ export function useInventoryLedgerModel() {
     setItemKeyword,
     warehouseId,
     setWarehouseId,
-    batchCode,
-    setBatchCode,
+    lotCode,
+    setLotCode,
 
     reason,
     setReason,

@@ -16,6 +16,10 @@ type Props = {
   rows: LedgerRow[];
 };
 
+function displayLotCode(row: LedgerRow): string {
+  return row.lot_code ?? row.batch_code ?? "-";
+}
+
 export const LedgerTable: React.FC<Props> = ({ loading, rows }) => {
   return (
     <div className="rounded-xl border border-slate-200 bg-white">
@@ -89,7 +93,7 @@ export const LedgerTable: React.FC<Props> = ({ loading, rows }) => {
                       {r.item_name ?? "-"}
                     </td>
 
-                    <td className="px-3 py-2 font-mono text-[12px]">{r.batch_code ?? "-"}</td>
+                    <td className="px-3 py-2 font-mono text-[12px]">{displayLotCode(r)}</td>
 
                     <td className="px-3 py-2">{textOrDash(r.base_uom_name)}</td>
 

@@ -35,9 +35,9 @@ export const LedgerHintBanner: React.FC<Props> = ({ hint, hasHint, onApply, onCl
           </span>
         ) : null}
 
-        {hint.batch_code ? (
+        {hint.lot_code ? (
           <span className="rounded-full bg-white px-2 py-0.5 border border-slate-200">
-            batch_code={hint.batch_code}
+            lot_code={hint.lot_code}
           </span>
         ) : null}
 

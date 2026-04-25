@@ -17,10 +17,18 @@ interface Props {
   onRefresh?: () => void;
 }
 
+type LedgerQueryPayloadWithLotCode = LedgerQueryPayload & {
+  lot_code?: string | null;
+};
+
 function pickExplainSlice(slices: InventoryDetailSlice[]): InventoryDetailSlice | null {
   if (!slices || slices.length === 0) return null;
   const top = slices.find((s) => s.is_top);
   return top ?? slices[0];
+}
+
+function displayLedgerLotCode(row: LedgerRow): string {
+  return row.lot_code ?? row.batch_code ?? "-";
 }
 
 export default function InventoryDrawer({
@@ -40,10 +48,10 @@ export default function InventoryDrawer({
 
   const ledgerFilter = useMemo(() => {
     if (!item) return null;
-    const base: Partial<LedgerQueryPayload> = { item_id: item.item_id };
+    const base: Partial<LedgerQueryPayloadWithLotCode> = { item_id: item.item_id };
     if (explainSlice) {
       base.warehouse_id = explainSlice.warehouse_id;
-      base.batch_code = explainSlice.lot_code ?? undefined;
+      base.lot_code = explainSlice.lot_code ?? undefined;
     }
     return base;
   }, [item, explainSlice]);
@@ -59,7 +67,7 @@ export default function InventoryDrawer({
       setLatest(null);
 
       try {
-        const payload: LedgerQueryPayload = {
+        const payload: LedgerQueryPayloadWithLotCode = {
           ...ledgerFilter,
           limit: 1,
           offset: 0,
@@ -177,7 +185,7 @@ export default function InventoryDrawer({
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 mb-1">批次</div>
-                      <div className="text-slate-900">{latest.batch_code}</div>
+                      <div className="text-slate-900">{displayLedgerLotCode(latest)}</div>
                     </div>
                   </div>
                 )}
