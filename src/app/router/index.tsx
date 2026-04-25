@@ -341,40 +341,32 @@ const AppRouter: React.FC = () => {
           <Route
             path="finance"
             element={
-              <RequirePermission permission="page.analytics.read">
+              <RequirePermission permission="page.finance.read">
                 <P.FinanceOverviewPage />
               </RequirePermission>
             }
           />
           <Route
-            path="finance/overview"
+            path="finance/order-sales"
             element={
-              <RequirePermission permission="page.analytics.read">
-                <P.FinanceOverviewPage />
+              <RequirePermission permission="page.finance.read">
+                <P.FinanceOrderSalesPage />
               </RequirePermission>
             }
           />
           <Route
-            path="finance/shop"
+            path="finance/purchase-costs"
             element={
-              <RequirePermission permission="page.analytics.read">
-                <P.FinanceShopPage />
+              <RequirePermission permission="page.finance.read">
+                <P.FinancePurchaseCostPage />
               </RequirePermission>
             }
           />
           <Route
-            path="finance/sku"
+            path="finance/shipping-costs"
             element={
-              <RequirePermission permission="page.analytics.read">
-                <P.FinanceSkuPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="finance/order-unit"
-            element={
-              <RequirePermission permission="page.analytics.read">
-                <P.FinanceOrderUnitPage />
+              <RequirePermission permission="page.finance.read">
+                <P.FinanceShippingCostPage />
               </RequirePermission>
             }
           />
