@@ -45,14 +45,14 @@ export type ActivatePricingBindingInput = PricingBindingRef & {
 };
 
 export async function fetchPricingList(): Promise<PricingListResponse> {
-  return await apiGet<PricingListResponse>("/tms/pricing/list");
+  return await apiGet<PricingListResponse>("/shipping-assist/pricing/list");
 }
 
 export async function fetchPricingProviderOptions(): Promise<
   PricingProviderOption[]
 > {
   const res = await apiGet<ListResponse<ShippingProviderLite>>(
-    "/shipping-providers",
+    "/shipping-assist/pricing/providers",
   );
   const providers = Array.isArray(res?.data) ? res.data : [];
 
@@ -81,7 +81,7 @@ export async function bindPricing({
   active = false,
   activeTemplateId,
 }: CreatePricingBindingInput): Promise<void> {
-  await apiPost(`/tms/pricing/warehouses/${warehouseId}/bindings`, {
+  await apiPost(`/shipping-assist/pricing/warehouses/${warehouseId}/bindings`, {
     shipping_provider_id: providerId,
     active,
     priority: 0,
@@ -108,7 +108,7 @@ export async function updatePricingBinding({
   }
 
   await apiPatch(
-    `/tms/pricing/warehouses/${warehouseId}/bindings/${providerId}`,
+    `/shipping-assist/pricing/warehouses/${warehouseId}/bindings/${providerId}`,
     payload,
   );
 }
@@ -119,7 +119,7 @@ export async function activatePricingBinding({
   effectiveFrom,
 }: ActivatePricingBindingInput): Promise<void> {
   await apiPost(
-    `/tms/pricing/warehouses/${warehouseId}/bindings/${providerId}/activate`,
+    `/shipping-assist/pricing/warehouses/${warehouseId}/bindings/${providerId}/activate`,
     {
       effective_from: effectiveFrom ?? null,
     },
@@ -131,7 +131,7 @@ export async function deactivatePricingBinding({
   providerId,
 }: PricingBindingRef): Promise<void> {
   await apiPost(
-    `/tms/pricing/warehouses/${warehouseId}/bindings/${providerId}/deactivate`,
+    `/shipping-assist/pricing/warehouses/${warehouseId}/bindings/${providerId}/deactivate`,
     {},
   );
 }
@@ -141,7 +141,7 @@ export async function fetchPricingBindingTemplateCandidates({
   providerId,
 }: PricingBindingRef): Promise<PricingBindingTemplateCandidate[]> {
   const res = await apiGet<ListResponse<PricingBindingTemplateCandidate>>(
-    `/tms/pricing/warehouses/${warehouseId}/bindings/${providerId}/template-candidates`,
+    `/shipping-assist/pricing/warehouses/${warehouseId}/bindings/${providerId}/template-candidates`,
   );
   return Array.isArray(res?.data) ? res.data : [];
 }

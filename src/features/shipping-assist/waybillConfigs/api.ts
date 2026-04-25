@@ -21,14 +21,14 @@ export async function fetchWaybillConfigs(params?: {
   if (params?.q) qs.set("q", params.q);
 
   const query = qs.toString();
-  const path = query ? `/ship/waybill-configs?${query}` : "/ship/waybill-configs";
+  const path = query ? `/shipping-assist/settings/waybill-configs?${query}` : "/shipping-assist/settings/waybill-configs";
 
   const res = await apiGet<ListResponse<WaybillConfig>>(path);
   return res.data;
 }
 
 export async function fetchWaybillConfigDetail(id: number): Promise<WaybillConfig> {
-  const res = await apiGet<OneResponse<WaybillConfig>>(`/ship/waybill-configs/${id}`);
+  const res = await apiGet<OneResponse<WaybillConfig>>(`/shipping-assist/settings/waybill-configs/${id}`);
   return res.data;
 }
 
@@ -46,7 +46,7 @@ export async function createWaybillConfig(payload: {
   sender_address?: string | null;
   active?: boolean;
 }): Promise<WaybillConfig> {
-  const res = await apiPost<OneResponse<WaybillConfig>>("/ship/waybill-configs", payload);
+  const res = await apiPost<OneResponse<WaybillConfig>>("/shipping-assist/settings/waybill-configs", payload);
   return res.data;
 }
 
@@ -69,6 +69,6 @@ export async function updateWaybillConfig(
   id: number,
   payload: UpdateWaybillConfigPayload,
 ): Promise<WaybillConfig> {
-  const res = await apiPatch<OneResponse<WaybillConfig>>(`/ship/waybill-configs/${id}`, payload);
+  const res = await apiPatch<OneResponse<WaybillConfig>>(`/shipping-assist/settings/waybill-configs/${id}`, payload);
   return res.data;
 }

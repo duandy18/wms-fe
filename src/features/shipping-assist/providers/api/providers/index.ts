@@ -8,13 +8,13 @@ export async function fetchShippingProviders(params?: { active?: boolean; q?: st
   if (params?.active !== undefined) qs.set("active", String(params.active));
   if (params?.q) qs.set("q", params.q);
   const query = qs.toString();
-  const path = query ? `/shipping-providers?${query}` : "/shipping-providers";
+  const path = query ? `/shipping-assist/pricing/providers?${query}` : "/shipping-assist/pricing/providers";
   const res = await apiGet<ListResponse<ShippingProvider>>(path);
   return res.data;
 }
 
 export async function fetchShippingProviderDetail(id: number): Promise<ShippingProvider> {
-  const res = await apiGet<OneResponse<ShippingProvider>>(`/shipping-providers/${id}`);
+  const res = await apiGet<OneResponse<ShippingProvider>>(`/shipping-assist/pricing/providers/${id}`);
   return res.data;
 }
 
@@ -30,7 +30,7 @@ export async function createShippingProvider(payload: {
   active?: boolean;
   priority?: number;
 }): Promise<ShippingProvider> {
-  const res = await apiPost<OneResponse<ShippingProvider>>("/shipping-providers", payload);
+  const res = await apiPost<OneResponse<ShippingProvider>>("/shipping-assist/pricing/providers", payload);
   return res.data;
 }
 
@@ -45,6 +45,6 @@ export type UpdateShippingProviderPayload = Partial<{
 }>;
 
 export async function updateShippingProvider(id: number, payload: UpdateShippingProviderPayload): Promise<ShippingProvider> {
-  const res = await apiPatch<OneResponse<ShippingProvider>>(`/shipping-providers/${id}`, payload);
+  const res = await apiPatch<OneResponse<ShippingProvider>>(`/shipping-assist/pricing/providers/${id}`, payload);
   return res.data;
 }

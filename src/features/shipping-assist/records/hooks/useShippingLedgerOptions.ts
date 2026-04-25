@@ -111,7 +111,7 @@ export function useShippingLedgerOptions() {
 
     try {
       const [providersRes, warehousesRes] = await Promise.all([
-        apiGet<ProvidersListResponse>("/shipping-providers"),
+        apiGet<ProvidersListResponse>("/shipping-assist/pricing/providers"),
         apiGet<WarehousesListResponse>("/warehouses"),
       ]);
 

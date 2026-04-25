@@ -133,7 +133,7 @@ export async function importShipmentPrepareOrder(
   payload: ShipPrepareImportRequest,
 ): Promise<ShipPrepareImportResponse> {
   return apiPost<ShipPrepareImportResponse>(
-    "/ship/prepare/orders/import",
+    "/shipping-assist/shipping/prepare/orders/import",
     payload,
   );
 }
@@ -142,7 +142,7 @@ export async function fetchShipmentPrepareOrders(
   limit = 50,
 ): Promise<ShipPrepareOrdersListResponse> {
   return apiGet<ShipPrepareOrdersListResponse>(
-    `/ship/prepare/orders?limit=${limit}`,
+    `/shipping-assist/shipping/prepare/orders?limit=${limit}`,
   );
 }
 
@@ -152,7 +152,7 @@ export async function fetchShipmentPrepareOrderDetail(
   ext_order_no: string,
 ): Promise<ShipPrepareOrderDetailResponse> {
   return apiGet<ShipPrepareOrderDetailResponse>(
-    `/ship/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
+    `/shipping-assist/shipping/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
       shop_id,
     )}/${encodeURIComponent(ext_order_no)}`,
   );
@@ -164,7 +164,7 @@ export async function confirmShipmentPrepareOrderAddress(
   ext_order_no: string,
 ): Promise<ShipPrepareOrderDetailResponse> {
   return apiPost<ShipPrepareOrderDetailResponse>(
-    `/ship/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
+    `/shipping-assist/shipping/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
       shop_id,
     )}/${encodeURIComponent(ext_order_no)}/address-confirm`,
     {
@@ -179,7 +179,7 @@ export async function fetchShipmentPreparePackages(
   ext_order_no: string,
 ): Promise<ShipPreparePackagesResponse> {
   return apiGet<ShipPreparePackagesResponse>(
-    `/ship/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
+    `/shipping-assist/shipping/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
       shop_id,
     )}/${encodeURIComponent(ext_order_no)}/packages`,
   );
@@ -191,7 +191,7 @@ export async function createShipmentPreparePackage(
   ext_order_no: string,
 ): Promise<ShipPreparePackageCreateResponse> {
   return apiPost<ShipPreparePackageCreateResponse>(
-    `/ship/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
+    `/shipping-assist/shipping/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
       shop_id,
     )}/${encodeURIComponent(ext_order_no)}/packages`,
     {},
@@ -206,7 +206,7 @@ export async function updateShipmentPreparePackage(
   payload: ShipPreparePackageUpdateRequest,
 ): Promise<ShipPreparePackageUpdateResponse> {
   return apiPatch<ShipPreparePackageUpdateResponse>(
-    `/ship/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
+    `/shipping-assist/shipping/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
       shop_id,
     )}/${encodeURIComponent(ext_order_no)}/packages/${package_no}`,
     payload,
@@ -220,7 +220,7 @@ export async function quoteShipmentPreparePackage(
   package_no: number,
 ): Promise<ShipPreparePackageQuoteResponse> {
   return apiPost<ShipPreparePackageQuoteResponse>(
-    `/ship/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
+    `/shipping-assist/shipping/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
       shop_id,
     )}/${encodeURIComponent(ext_order_no)}/packages/${package_no}/quote`,
     {},
@@ -235,7 +235,7 @@ export async function confirmShipmentPreparePackageQuote(
   payload: ShipPreparePackageQuoteConfirmRequest,
 ): Promise<ShipPreparePackageQuoteConfirmResponse> {
   return apiPost<ShipPreparePackageQuoteConfirmResponse>(
-    `/ship/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
+    `/shipping-assist/shipping/prepare/orders/${encodeURIComponent(platform)}/${encodeURIComponent(
       shop_id,
     )}/${encodeURIComponent(ext_order_no)}/packages/${package_no}/quote/confirm`,
     payload,
