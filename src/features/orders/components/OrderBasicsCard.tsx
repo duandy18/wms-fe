@@ -8,21 +8,17 @@ type Order = OrderView["order"];
 
 export const OrderBasicsCard: React.FC<{
   order: Order;
-  traceId: string | null;
   hasRemainingRefundable: boolean;
   reconcileLoading: boolean;
   creatingRma: boolean;
-  onViewTrace: () => void;
   onReconcile: () => void;
   onCreateRma: () => void;
   onViewLedger: () => void;
 }> = ({
   order,
-  traceId,
   hasRemainingRefundable,
   reconcileLoading,
   creatingRma,
-  onViewTrace,
   onReconcile,
   onCreateRma,
   onViewLedger,
@@ -58,11 +54,6 @@ export const OrderBasicsCard: React.FC<{
         </div>
 
         <div>
-          <div className="text-[11px] text-slate-500">trace_id</div>
-          <div className="font-mono text-[11px]">{traceId ?? "（暂无）"}</div>
-        </div>
-
-        <div>
           <div className="text-[11px] text-slate-500">退货状态提示</div>
           <div className="text-[11px]">
             {hasRemainingRefundable ? (
@@ -79,11 +70,9 @@ export const OrderBasicsCard: React.FC<{
       </div>
 
       <OrderDetailActionsBar
-        traceId={traceId}
         hasRemainingRefundable={hasRemainingRefundable}
         reconcileLoading={reconcileLoading}
         creatingRma={creatingRma}
-        onViewTrace={onViewTrace}
         onReconcile={onReconcile}
         onCreateRma={onCreateRma}
         onViewLedger={onViewLedger}

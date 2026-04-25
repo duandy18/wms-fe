@@ -42,9 +42,6 @@ export function useOrderDetailPage() {
 
   const order = orderView?.order ?? null;
 
-  // 先保持 null；后续若正式合同补 trace_id，再接入
-  const traceId: string | null = null;
-
   const hasRemainingRefundable = useMemo(() => {
     if (!facts?.items?.length) return false;
     return facts.items.some((i) => i.qty_remaining_refundable > 0);
@@ -151,33 +148,13 @@ export function useOrderDetailPage() {
     }
   }, [order, facts, makeOrderRef, navigate]);
 
-  const handleViewStock = useCallback(
-    (itemId: number) => {
-      const qs = new URLSearchParams();
-      qs.set("item_id", String(itemId));
-      navigate(`/tools/stocks?${qs.toString()}`);
-    },
-    [navigate],
-  );
-
   const handleViewLedger = useCallback(() => {
     const ref = makeOrderRef();
     if (!ref) return;
     const qs = new URLSearchParams();
     qs.set("ref", ref);
-    if (traceId) qs.set("trace_id", traceId);
-    navigate(`/tools/ledger?${qs.toString()}`);
-  }, [makeOrderRef, traceId, navigate]);
-
-  const handleViewTrace = useCallback(() => {
-    if (!traceId) {
-      setError("当前订单详情未提供 trace_id，无法打开 Trace 视图。");
-      return;
-    }
-    const qs = new URLSearchParams();
-    qs.set("trace_id", traceId);
-    navigate(`/trace?${qs.toString()}`);
-  }, [traceId, navigate]);
+    navigate(`/inventory/ledger?${qs.toString()}`);
+  }, [makeOrderRef, navigate]);
 
   return {
     orderId,
@@ -193,16 +170,13 @@ export function useOrderDetailPage() {
     error,
 
     order,
-    traceId,
     hasRemainingRefundable,
     totals,
 
     load,
     handleReconcile,
     handleCreateRma,
-    handleViewStock,
     handleViewLedger,
-    handleViewTrace,
     backToList: () => navigate(navState.orderId ? "/orders" : "/orders"),
   };
 }

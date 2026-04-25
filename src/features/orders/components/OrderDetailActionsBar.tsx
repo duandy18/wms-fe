@@ -2,36 +2,22 @@
 import React from "react";
 
 export const OrderDetailActionsBar: React.FC<{
-  traceId: string | null;
   hasRemainingRefundable: boolean;
   reconcileLoading: boolean;
   creatingRma: boolean;
-  onViewTrace: () => void;
   onReconcile: () => void;
   onCreateRma: () => void;
   onViewLedger: () => void;
 }> = ({
-  traceId,
   hasRemainingRefundable,
   reconcileLoading,
   creatingRma,
-  onViewTrace,
   onReconcile,
   onCreateRma,
   onViewLedger,
 }) => {
   return (
     <div className="flex flex-wrap gap-2 pt-1 text-xs">
-      {traceId && (
-        <button
-          type="button"
-          onClick={onViewTrace}
-          className="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-[11px] text-slate-700 hover:bg-slate-100"
-        >
-          查看链路（Trace 页）
-        </button>
-      )}
-
       <button
         type="button"
         onClick={onReconcile}
@@ -57,7 +43,7 @@ export const OrderDetailActionsBar: React.FC<{
         onClick={onViewLedger}
         className="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-[11px] text-slate-700 hover:bg-slate-100"
       >
-        查看账本（按 ORD:ref）
+        查看库存台账（按 ORD:ref）
       </button>
     </div>
   );

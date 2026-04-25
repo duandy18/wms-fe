@@ -13,7 +13,7 @@ const OrderDetailPage: React.FC = () => {
     <div className="p-6 space-y-5">
       <PageTitle
         title={`订单详情 #${m.orderId}`}
-        description="订单头信息、行事实（数量四件套）以及退货 / 对账 / 链路 / 库存 / 台账入口。"
+        description="订单头信息、行事实（数量四件套）以及退货 / 对账 / 库存台账入口。"
       />
 
       <button
@@ -31,11 +31,9 @@ const OrderDetailPage: React.FC = () => {
         <>
           <OrderBasicsCard
             order={m.order}
-            traceId={m.traceId}
             hasRemainingRefundable={m.hasRemainingRefundable}
             reconcileLoading={m.reconcileLoading}
             creatingRma={m.creatingRma}
-            onViewTrace={m.handleViewTrace}
             onReconcile={m.handleReconcile}
             onCreateRma={m.handleCreateRma}
             onViewLedger={m.handleViewLedger}
@@ -46,7 +44,6 @@ const OrderDetailPage: React.FC = () => {
               facts={m.facts}
               totals={m.totals}
               reconcile={m.reconcile}
-              onViewStock={m.handleViewStock}
               onViewLedger={m.handleViewLedger}
             />
           )}

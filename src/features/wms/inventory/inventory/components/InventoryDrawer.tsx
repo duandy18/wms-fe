@@ -3,11 +3,11 @@ import type {
   InventoryDetailResponse,
   InventoryDetailSlice,
 } from "@/features/wms/inventory/api/contracts";
-import { fetchLedgerList } from "@/features/diagnostics/ledger-tool/api";
+import { apiPost } from "@/lib/api";
 import type {
-  LedgerQueryPayload,
+  LedgerListResp,
   LedgerRow,
-} from "@/features/diagnostics/ledger-tool/types";
+} from "@/features/wms/inventory/ledger/types";
 
 interface Props {
   open: boolean;
@@ -17,8 +17,15 @@ interface Props {
   onRefresh?: () => void;
 }
 
-type LedgerQueryPayloadWithLotCode = LedgerQueryPayload & {
+type LatestLedgerFilter = {
+  item_id: number;
+  warehouse_id?: number;
   lot_code?: string | null;
+};
+
+type LatestLedgerQueryPayload = LatestLedgerFilter & {
+  limit: number;
+  offset: number;
 };
 
 function pickExplainSlice(slices: InventoryDetailSlice[]): InventoryDetailSlice | null {
@@ -29,6 +36,12 @@ function pickExplainSlice(slices: InventoryDetailSlice[]): InventoryDetailSlice 
 
 function displayLedgerLotCode(row: LedgerRow): string {
   return row.lot_code ?? "-";
+}
+
+async function fetchLatestLedgerList(
+  payload: LatestLedgerQueryPayload,
+): Promise<LedgerListResp> {
+  return apiPost<LedgerListResp>("/stock/ledger/query", payload);
 }
 
 export default function InventoryDrawer({
@@ -46,9 +59,9 @@ export default function InventoryDrawer({
     return item ? pickExplainSlice(item.slices) : null;
   }, [item]);
 
-  const ledgerFilter = useMemo(() => {
+  const ledgerFilter = useMemo<LatestLedgerFilter | null>(() => {
     if (!item) return null;
-    const base: Partial<LedgerQueryPayloadWithLotCode> = { item_id: item.item_id };
+    const base: LatestLedgerFilter = { item_id: item.item_id };
     if (explainSlice) {
       base.warehouse_id = explainSlice.warehouse_id;
       base.lot_code = explainSlice.lot_code ?? undefined;
@@ -67,12 +80,12 @@ export default function InventoryDrawer({
       setLatest(null);
 
       try {
-        const payload: LedgerQueryPayloadWithLotCode = {
+        const payload: LatestLedgerQueryPayload = {
           ...ledgerFilter,
           limit: 1,
           offset: 0,
         };
-        const res = await fetchLedgerList(payload);
+        const res = await fetchLatestLedgerList(payload);
         if (cancelled) return;
         setLatest(res.items?.[0] ?? null);
       } catch (err) {
