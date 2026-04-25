@@ -80,9 +80,9 @@ vi.mock("../lazyPages", () => {
     ReconciliationPage: page("ReconciliationPage mock view"),
 
     FinanceOverviewPage: page("FinanceOverviewPage mock view"),
-    FinanceShopPage: page("FinanceShopPage mock view"),
-    FinanceSkuPage: page("FinanceSkuPage mock view"),
-    FinanceOrderUnitPage: page("FinanceOrderUnitPage mock view"),
+    FinanceOrderSalesPage: page("FinanceOrderSalesPage mock view"),
+    FinancePurchaseCostPage: page("FinancePurchaseCostPage mock view"),
+    FinanceShippingCostPage: page("FinanceShippingCostPage mock view"),
 
     UsersManagePage: page("UsersManagePage mock view"),
 
@@ -231,6 +231,39 @@ describe("AppRouter inventory routes", () => {
     expect(
       await screen.findByText("OutboundManualPage mock view"),
     ).toBeInTheDocument();
+  });
+
+  it("renders FinanceOverviewPage on /finance", async () => {
+    renderWithRoute("/finance");
+    expect(
+      await screen.findByText("FinanceOverviewPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders FinanceOrderSalesPage on /finance/order-sales", async () => {
+    renderWithRoute("/finance/order-sales");
+    expect(
+      await screen.findByText("FinanceOrderSalesPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders FinancePurchaseCostPage on /finance/purchase-costs", async () => {
+    renderWithRoute("/finance/purchase-costs");
+    expect(
+      await screen.findByText("FinancePurchaseCostPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders FinanceShippingCostPage on /finance/shipping-costs", async () => {
+    renderWithRoute("/finance/shipping-costs");
+    expect(
+      await screen.findByText("FinanceShippingCostPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("falls back to /inventory after old finance routes are retired", async () => {
+    renderWithRoute("/finance/shop");
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
   it("redirects /outbound to /outbound/summary", async () => {

@@ -220,14 +220,14 @@ export const ReturnTaskDetailPage = lazy(
 
 // 财务分析
 export const FinanceOverviewPage = lazy(
-  () => import("../../features/finance/FinanceOverviewPage"),
+  () => import("../../features/finance/pages/FinanceOverviewPage"),
 );
-export const FinanceShopPage = lazy(
-  () => import("../../features/finance/FinanceShopPage"),
+export const FinanceOrderSalesPage = lazy(
+  () => import("../../features/finance/pages/FinanceOrderSalesPage"),
 );
-export const FinanceSkuPage = lazy(
-  () => import("../../features/finance/FinanceSkuPage"),
+export const FinancePurchaseCostPage = lazy(
+  () => import("../../features/finance/pages/FinancePurchaseCostPage"),
 );
-export const FinanceOrderUnitPage = lazy(
-  () => import("../../features/finance/FinanceOrderUnitPage"),
+export const FinanceShippingCostPage = lazy(
+  () => import("../../features/finance/pages/FinanceShippingCostPage"),
 );
