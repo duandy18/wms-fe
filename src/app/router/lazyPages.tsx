@@ -46,13 +46,13 @@ export const OutboundManualPage = lazy(
 );
 
 export const ShipmentPreparePage = lazy(
-  () => import("../../features/tms/shipment/pages/ShipmentPreparePage"),
+  () => import("../../features/shipping-assist/shipment/pages/ShipmentPreparePage"),
 );
 export const ShipmentCockpitPage = lazy(
-  () => import("../../features/tms/shipment/pages/ShipmentCockpitPage"),
+  () => import("../../features/shipping-assist/shipment/pages/ShipmentCockpitPage"),
 );
 export const ShippingLabelPrintPage = lazy(
-  () => import("../../features/tms/shipment/pages/ShippingLabelPrintPage"),
+  () => import("../../features/shipping-assist/shipment/pages/ShippingLabelPrintPage"),
 );
 
 // 库存 & 报表
@@ -97,27 +97,27 @@ export const InventoryReturnInboundPage = lazy(
 
 // 发货辅助：运价管理 / 运价表 / 发货记录 / 快递账单 / 费用对账
 export const PricingPage = lazy(
-  () => import("../../features/tms/pricing/pages/PricingPage"),
+  () => import("../../features/shipping-assist/pricing/pages/PricingPage"),
 );
 export const TemplatesPage = lazy(
-  () => import("../../features/tms/pricingTemplates/pages/TemplatesPage"),
+  () => import("../../features/shipping-assist/pricingTemplates/pages/TemplatesPage"),
 );
 export const TemplateWorkbenchPage = lazy(
   () =>
-    import("../../features/tms/pricingTemplates/workbench/TemplateWorkbenchPage"),
+    import("../../features/shipping-assist/pricingTemplates/workbench/TemplateWorkbenchPage"),
 );
 export const TransportReportsPage = lazy(
-  () => import("../../features/tms/reports/pages/TransportReportsPage"),
+  () => import("../../features/shipping-assist/reports/pages/TransportReportsPage"),
 );
 export const ShippingLedgerPage = lazy(
-  () => import("../../features/tms/records/pages/ShippingLedgerPage"),
+  () => import("../../features/shipping-assist/records/pages/ShippingLedgerPage"),
 );
 
 export const BillingItemsPage = lazy(
-  () => import("../../features/tms/billing/pages/BillingItemsPage"),
+  () => import("../../features/shipping-assist/billing/pages/BillingItemsPage"),
 );
 export const ReconciliationPage = lazy(
-  () => import("../../features/tms/reconciliation/pages/ReconciliationPage"),
+  () => import("../../features/shipping-assist/reconciliation/pages/ReconciliationPage"),
 );
 
 // OMS：平台接入 / 商铺管理 / 商铺商品组合 / 订单解析 / 统计分析
@@ -184,22 +184,22 @@ export const SuppliersListPage = lazy(
 
 // 发货辅助 / 快递网点
 export const ShippingProvidersListPage = lazy(
-  () => import("../../features/tms/providers/ShippingProvidersListPage"),
+  () => import("../../features/shipping-assist/providers/ShippingProvidersListPage"),
 );
 
 // 快递网点编辑页（仅维护网点基本信息 / 联系人）
 export const ShippingProviderEditPage = lazy(
-  () => import("../../features/tms/providers/pages/ShippingProviderEditPage"),
+  () => import("../../features/shipping-assist/providers/pages/ShippingProviderEditPage"),
 );
 
 // 快递网点详情页（当前收敛到编辑页入口）
 export const ShippingProviderDetailPage = lazy(
-  () => import("../../features/tms/providers/pages/ShippingProviderDetailPage"),
+  () => import("../../features/shipping-assist/providers/pages/ShippingProviderDetailPage"),
 );
 
 // 电子面单配置
 export const ElectronicWaybillConfigPage = lazy(
-  () => import("../../features/tms/waybillConfigs/pages/ElectronicWaybillConfigPage"),
+  () => import("../../features/shipping-assist/waybillConfigs/pages/ElectronicWaybillConfigPage"),
 );
 
 // 采购系统
