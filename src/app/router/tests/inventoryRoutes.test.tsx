@@ -75,7 +75,6 @@ vi.mock("../lazyPages", () => {
     PricingPage: page("PricingPage mock view"),
     TemplatesPage: page("TemplatesPage mock view"),
     TemplateWorkbenchPage: page("TemplateWorkbenchPage mock view"),
-    TransportReportsPage: page("TransportReportsPage mock view"),
     ShippingLedgerPage: page("ShippingLedgerPage mock view"),
     BillingItemsPage: page("BillingItemsPage mock view"),
     ReconciliationPage: page("ReconciliationPage mock view"),
