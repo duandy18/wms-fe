@@ -32,11 +32,8 @@ export type LedgerRow = {
   base_item_uom_id?: number | null;
   base_uom_name?: string | null;
 
-  // 正名展示码：后端 ledger 读面已同时返回 lot_code + batch_code。
+  // 批次展示码：来自后端 lot_code。
   lot_code: string | null;
-
-  // 历史展示兼容字段：只作为响应 fallback，不再作为库存台账主查询入参。
-  batch_code?: string | null;
 
   trace_id: string | null;
 

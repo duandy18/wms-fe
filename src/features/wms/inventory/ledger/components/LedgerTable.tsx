@@ -17,7 +17,7 @@ type Props = {
 };
 
 function displayLotCode(row: LedgerRow): string {
-  return row.lot_code ?? row.batch_code ?? "-";
+  return row.lot_code ?? "-";
 }
 
 export const LedgerTable: React.FC<Props> = ({ loading, rows }) => {
