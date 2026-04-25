@@ -9,8 +9,8 @@ import { Navigate, useParams } from "react-router-dom";
 const ShippingProviderDetailPage: React.FC = () => {
   const { providerId } = useParams<{ providerId: string }>();
   const pid = (providerId ?? "").trim();
-  if (!pid) return <Navigate to="/tms/providers" replace />;
-  return <Navigate to={`/tms/providers/${pid}/edit`} replace />;
+  if (!pid) return <Navigate to="/shipping-assist/pricing/providers" replace />;
+  return <Navigate to={`/shipping-assist/pricing/providers/${pid}/edit`} replace />;
 };
 
 export default ShippingProviderDetailPage;

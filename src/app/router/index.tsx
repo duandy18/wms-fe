@@ -16,8 +16,8 @@ import * as P from "./lazyPages";
 /* 统一入口：收敛到“编辑快递网点”页 */
 function RedirectToProviderEdit() {
   const { providerId } = useParams();
-  if (!providerId) return <Navigate to="/tms/providers" replace />;
-  return <Navigate to={`/tms/providers/${providerId}/edit`} replace />;
+  if (!providerId) return <Navigate to="/shipping-assist/pricing/providers" replace />;
+  return <Navigate to={`/shipping-assist/pricing/providers/${providerId}/edit`} replace />;
 }
 
 /* 路由入口 */
@@ -111,8 +111,8 @@ const AppRouter: React.FC = () => {
           <Route
             path="outbound/ship"
             element={
-              <RequirePermission permission="page.tms.read">
-                <Navigate to="/tms/shipment-prepare" replace />
+              <RequirePermission permission="page.shipping_assist.read">
+                <Navigate to="/shipping-assist/shipping/quote" replace />
               </RequirePermission>
             }
           />
@@ -273,66 +273,66 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="tms/shipment-prepare"
+            path="shipping-assist/shipping/quote"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.ShipmentPreparePage />
               </RequirePermission>
             }
           />
           <Route
-            path="tms/dispatch"
+            path="shipping-assist/shipping/quote/workbench"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.ShipmentCockpitPage />
               </RequirePermission>
             }
           />
           <Route
-            path="tms/pricing"
+            path="shipping-assist/pricing/bindings"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.PricingPage />
               </RequirePermission>
             }
           />
           <Route
-            path="tms/templates"
+            path="shipping-assist/pricing/templates"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.TemplatesPage />
               </RequirePermission>
             }
           />
           <Route
-            path="tms/templates/:templateId"
+            path="shipping-assist/pricing/templates/:templateId"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.TemplateWorkbenchPage />
               </RequirePermission>
             }
           />
           <Route
-            path="tms/records"
+            path="shipping-assist/shipping/records"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.ShippingLedgerPage />
               </RequirePermission>
             }
           />
 
           <Route
-            path="tms/billing/items"
+            path="shipping-assist/billing/items"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.BillingItemsPage />
               </RequirePermission>
             }
           />
           <Route
-            path="tms/reconciliation"
+            path="shipping-assist/billing/reconciliation"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.ReconciliationPage />
               </RequirePermission>
             }
@@ -541,45 +541,45 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="tms/providers"
+            path="shipping-assist/pricing/providers"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.ShippingProvidersListPage />
               </RequirePermission>
             }
           />
 
           <Route
-            path="tms/waybill-configs"
+            path="shipping-assist/settings/waybill"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.ElectronicWaybillConfigPage />
               </RequirePermission>
             }
           />
 
           <Route
-            path="tms/providers/:providerId"
+            path="shipping-assist/pricing/providers/:providerId"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <RedirectToProviderEdit />
               </RequirePermission>
             }
           />
 
           <Route
-            path="tms/providers/new"
+            path="shipping-assist/pricing/providers/new"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.ShippingProviderEditPage />
               </RequirePermission>
             }
           />
 
           <Route
-            path="tms/providers/:providerId/edit"
+            path="shipping-assist/pricing/providers/:providerId/edit"
             element={
-              <RequirePermission permission="page.tms.read">
+              <RequirePermission permission="page.shipping_assist.read">
                 <P.ShippingProviderEditPage />
               </RequirePermission>
             }

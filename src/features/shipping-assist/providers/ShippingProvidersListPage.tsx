@@ -75,8 +75,8 @@ const ShippingProvidersListPage: React.FC = () => {
         onRefresh={() => {
           void vm.providersHook.loadProviders();
         }}
-        onCreateProvider={() => navigate("/tms/providers/new")}
-        onEditProvider={(p) => navigate(`/tms/providers/${p.id}/edit`)}
+        onCreateProvider={() => navigate("/shipping-assist/pricing/providers/new")}
+        onEditProvider={(p) => navigate(`/shipping-assist/pricing/providers/${p.id}/edit`)}
         onToggleProviderActive={(p) => {
           if (!canWrite) return;
           void vm.providersHook.toggleProviderActive(p);
