@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/preview/QuotePreviewForm.tsx
+// src/features/tms/pricingTemplates/workbench/explain/QuotePreviewForm.tsx
 
 import React, { useMemo } from "react";
 import { UI } from "../ui";

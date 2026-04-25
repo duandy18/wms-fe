@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/table/cards/quote-explain/geo.ts
+// src/features/tms/pricingTemplates/workbench/explain/quote-explain/geo.ts
 
 export function isMunicipalityProvinceCode(provinceCode: string): boolean {
   const pc = (provinceCode || "").trim();

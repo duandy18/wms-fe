@@ -3,5 +3,3 @@ export * from "./types";
 export * from "./providers";
 export * from "./contacts";
 export * from "./bindings";
-export * from "./schemes";
-export * from "./zones";

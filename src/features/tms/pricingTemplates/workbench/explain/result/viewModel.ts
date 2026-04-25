@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/preview/result/viewModel.ts
+// src/features/tms/pricingTemplates/workbench/explain/result/viewModel.ts
 
 import { safeText } from "../utils";
 import type { CalcOut, QuoteSurchargeOut } from "../types";

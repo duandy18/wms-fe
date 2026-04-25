@@ -1,9 +1,8 @@
 // src/features/tms/providers/pages/edit/useShippingProviderEditModel.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { ShippingProvider, ShippingProviderContact, PricingScheme } from "../../api/types";
+import type { ShippingProvider, ShippingProviderContact } from "../../api/types";
 import { fetchShippingProviderDetail } from "../../api/providers";
-import { fetchPricingSchemes } from "../../api/schemes";
 import { createShippingProviderContact, updateShippingProviderContact, deleteShippingProviderContact } from "../../api/contacts";
 
 function toErrMsg(e: unknown, fallback: string): string {
@@ -25,16 +24,6 @@ export function useShippingProviderEditModel(providerId: number | null) {
   const [provider, setProvider] = useState<ShippingProvider | null>(null);
   const [loadingProvider, setLoadingProvider] = useState(false);
   const [providerError, setProviderError] = useState<string | null>(null);
-
-  const [schemes, setSchemes] = useState<PricingScheme[]>([]);
-  const [loadingSchemes, setLoadingSchemes] = useState(false);
-  const [schemesError, setSchemesError] = useState<string | null>(null);
-
-  // ✅ Phase 6+：收费标准列表读链路开关（默认只看“当前可用”）
-  // - include_inactive=true：把停用历史也拉回来
-  // - include_archived=true：把归档也拉回来
-  const [includeInactiveSchemes, setIncludeInactiveSchemes] = useState(false);
-  const [includeArchivedSchemes, setIncludeArchivedSchemes] = useState(false);
 
   const [savingContact, setSavingContact] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
@@ -68,32 +57,9 @@ export function useShippingProviderEditModel(providerId: number | null) {
     }
   }, [providerId]);
 
-  const refreshSchemes = useCallback(async () => {
-    if (!providerId) return;
-    setLoadingSchemes(true);
-    setSchemesError(null);
-    try {
-      const list = await fetchPricingSchemes(providerId, {
-        include_inactive: includeInactiveSchemes,
-        include_archived: includeArchivedSchemes,
-      });
-      setSchemes(list ?? []);
-    } catch (e: unknown) {
-      setSchemes([]);
-      setSchemesError(toErrMsg(e, "加载运价方案失败"));
-    } finally {
-      setLoadingSchemes(false);
-    }
-  }, [providerId, includeInactiveSchemes, includeArchivedSchemes]);
-
   useEffect(() => {
     void refreshProvider();
   }, [refreshProvider]);
-
-  // ✅ 关键：当 providerId 或“读链路开关”变化时，自动刷新列表
-  useEffect(() => {
-    void refreshSchemes();
-  }, [refreshSchemes]);
 
   const contacts = useMemo<ShippingProviderContact[]>(() => provider?.contacts ?? [], [provider]);
 
@@ -181,16 +147,6 @@ export function useShippingProviderEditModel(providerId: number | null) {
     loadingProvider,
     providerError,
 
-    schemes,
-    loadingSchemes,
-    schemesError,
-
-    // ✅ 暴露读链路开关（给 UI 两个 checkbox）
-    includeInactiveSchemes,
-    setIncludeInactiveSchemes,
-    includeArchivedSchemes,
-    setIncludeArchivedSchemes,
-
     contacts,
 
     draft,
@@ -203,6 +159,5 @@ export function useShippingProviderEditModel(providerId: number | null) {
     removeContact,
 
     refreshProvider,
-    refreshSchemes,
   };
 }

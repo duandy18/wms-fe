@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/preview/utils.ts
+// src/features/tms/pricingTemplates/workbench/explain/utils.ts
 import type { CalcOut, WeightInfo, BreakdownBase } from "./types";
 
 export function safeText(v: unknown): string {

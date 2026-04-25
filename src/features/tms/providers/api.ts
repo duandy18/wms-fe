@@ -5,10 +5,7 @@
 // - 内部实现全部走子目录（领域目录）
 
 export * from "./api/types";
-export * from "./api/zones";
 
 export * from "./api/providers";
 export * from "./api/contacts";
 export * from "./api/bindings";
-export * from "./api/schemes";
-export * from "./api/surcharges";

@@ -1,4 +1,4 @@
-// src/features/tms/providers/scheme/preview/result/QuoteMainFlowCard.tsx
+// src/features/tms/pricingTemplates/workbench/explain/result/QuoteMainFlowCard.tsx
 
 import React, { useMemo } from "react";
 import type { CalcOut } from "../types";
