@@ -298,7 +298,7 @@ const TemplatesPage: React.FC = () => {
         successState={successState}
         error={error}
         onRefresh={() => void loadTemplates()}
-        onBackToPricing={() => navigate("/tms/pricing")}
+        onBackToPricing={() => navigate("/shipping-assist/pricing/bindings")}
         onChangeField={updateCreateField}
         onSubmit={handleSubmit}
         onReset={() => {
@@ -313,7 +313,7 @@ const TemplatesPage: React.FC = () => {
         loading={loading}
         actingTemplateId={actingTemplateId}
         highlightTemplateId={successState?.templateId ?? null}
-        onOpenWorkbench={(templateId) => navigate(`/tms/templates/${templateId}`)}
+        onOpenWorkbench={(templateId) => navigate(`/shipping-assist/pricing/templates/${templateId}`)}
         onArchive={handleListArchive}
       />
     </div>

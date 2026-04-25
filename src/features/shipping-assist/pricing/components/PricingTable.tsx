@@ -263,7 +263,7 @@ const PricingTable: React.FC<Props> = ({
                             className="rounded border border-sky-300 px-3 py-1 text-xs text-sky-700"
                             onClick={() =>
                               nav(
-                                `/tms/templates/${row.active_template_id}?provider_id=${row.provider_id}&warehouse_id=${row.warehouse_id}`,
+                                `/shipping-assist/pricing/templates/${row.active_template_id}?provider_id=${row.provider_id}&warehouse_id=${row.warehouse_id}`,
                               )
                             }
                           >

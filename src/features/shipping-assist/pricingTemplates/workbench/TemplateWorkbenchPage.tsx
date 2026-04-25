@@ -1,7 +1,7 @@
 // src/features/shipping-assist/pricingTemplates/workbench/TemplateWorkbenchPage.tsx
 //
 // ✅ 运价表详情页（Template 主线）
-// - 正式入口：/tms/templates/:templateId
+// - 正式入口：/shipping-assist/pricing/templates/:templateId
 // - 页面顺序：
 //   1) 模板编辑工作台（四卡：重量段 / 区域范围 / 价格矩阵 / 附加费）
 //   2) 算价解释（只读）
@@ -46,7 +46,7 @@ export const TemplateWorkbenchPage: React.FC = () => {
       return;
     }
 
-    navigate("/tms/templates", { replace: true });
+    navigate("/shipping-assist/pricing/templates", { replace: true });
   };
 
   const handleSubmitValidation = React.useCallback(() => {

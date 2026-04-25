@@ -172,9 +172,9 @@ const ShippingProviderEditPage: React.FC = () => {
         });
         const createdId = created?.id;
         if (typeof createdId === "number" && createdId > 0) {
-          nav(`/tms/providers/${createdId}/edit`, { replace: true });
+          nav(`/shipping-assist/pricing/providers/${createdId}/edit`, { replace: true });
         } else {
-          nav("/tms/providers", { replace: true });
+          nav("/shipping-assist/pricing/providers", { replace: true });
         }
         return;
       }
@@ -229,7 +229,7 @@ const ShippingProviderEditPage: React.FC = () => {
     <div className={UI.page}>
       <div className="flex items-center justify-between gap-3">
         <PageTitle title={isCreate ? "新建快递网点" : "编辑快递网点"} />
-        <button type="button" className={UI.btnSecondary} onClick={() => nav("/tms/providers")}>
+        <button type="button" className={UI.btnSecondary} onClick={() => nav("/shipping-assist/pricing/providers")}>
           返回列表
         </button>
       </div>

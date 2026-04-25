@@ -142,7 +142,7 @@ const ShipmentPreparePage: React.FC = () => {
   function handleGoDispatch(row: ShipPrepareOrderListItem) {
     const addressSummary = row.address_summary || formatAddressSummary(row) || "-";
 
-    navigate("/tms/dispatch", {
+    navigate("/shipping-assist/shipping/quote/workbench", {
       state: {
         order_id: row.order_id,
         platform: row.platform,
