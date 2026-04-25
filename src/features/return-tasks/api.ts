@@ -10,7 +10,7 @@ export interface ReturnTaskLine {
   item_id: number;
   item_name: string | null;
 
-  batch_code: string; // ✅ 必填（系统自动回原批次）
+  lot_code_snapshot: string; // ✅ 必填（系统自动回原批次）
   expected_qty: number | null;
 
   picked_qty: number;
@@ -99,7 +99,7 @@ export interface ReturnOrderRefSummaryLine {
   item_id: number;
   /** ✅ 作业人员视角：商品名（后端 join items.name 得到；可能为空） */
   item_name?: string | null;
-  batch_code: string;
+  lot_code_snapshot: string;
   shipped_qty: number;
 }
 

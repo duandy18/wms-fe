@@ -10,7 +10,7 @@ export interface ReturnOrderRefSummaryLineOut {
   warehouse_id: number;
   item_id: number;
   item_name: string | null;
-  batch_code: string;
+  lot_code_snapshot: string;
   shipped_qty: number;
 }
 
