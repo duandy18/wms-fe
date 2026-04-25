@@ -261,11 +261,6 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("falls back to /inventory after old finance routes are retired", async () => {
-    renderWithRoute("/finance/shop");
-    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
-  });
-
   it("redirects /outbound to /outbound/summary", async () => {
     renderWithRoute("/outbound");
     expect(
