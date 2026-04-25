@@ -379,7 +379,7 @@ export async function fetchPricingTemplates(
   query?: PricingTemplateListQuery,
 ): Promise<PricingTemplate[]> {
   const res = await apiGet<PricingTemplateListResponse>(
-    `/tms/pricing/templates${buildTemplateListQuery(query)}`,
+    `/shipping-assist/pricing/templates${buildTemplateListQuery(query)}`,
   );
   return Array.isArray(res.data) ? res.data.map(normalizePricingTemplateRow) : [];
 }
@@ -388,7 +388,7 @@ export async function createPricingTemplate(
   payload: PricingTemplateCreateInput,
 ): Promise<PricingTemplateDetail> {
   const res = await apiPost<PricingTemplateDetailResponse>(
-    "/tms/pricing/templates",
+    "/shipping-assist/pricing/templates",
     normalizeCreateInput(payload),
   );
   return normalizePricingTemplateDetail(res.data);
@@ -398,7 +398,7 @@ export async function fetchPricingTemplateDetail(
   templateId: number,
 ): Promise<PricingTemplateDetail> {
   const res = await apiGet<PricingTemplateDetailResponse>(
-    `/tms/pricing/templates/${templateId}`,
+    `/shipping-assist/pricing/templates/${templateId}`,
   );
   return normalizePricingTemplateDetail(res.data);
 }
@@ -407,7 +407,7 @@ export async function submitPricingTemplateValidation(
   templateId: number,
 ): Promise<PricingTemplateDetail> {
   const res = await apiPost<PricingTemplateDetailResponse>(
-    `/tms/pricing/templates/${templateId}/submit-validation`,
+    `/shipping-assist/pricing/templates/${templateId}/submit-validation`,
     { confirm_validated: true },
   );
   return normalizePricingTemplateDetail(res.data);
@@ -417,7 +417,7 @@ export async function archivePricingTemplate(
   templateId: number,
 ): Promise<PricingTemplateDetail> {
   const res = await apiPatch<PricingTemplateDetailResponse>(
-    `/tms/pricing/templates/${templateId}`,
+    `/shipping-assist/pricing/templates/${templateId}`,
     { status: "archived" },
   );
   return normalizePricingTemplateDetail(res.data);
@@ -427,7 +427,7 @@ export async function fetchPricingTemplateRanges(
   templateId: number,
 ): Promise<TemplateRangesResponse> {
   return apiGet<TemplateRangesResponse>(
-    `/tms/pricing/templates/${templateId}/ranges`,
+    `/shipping-assist/pricing/templates/${templateId}/ranges`,
   );
 }
 
@@ -436,7 +436,7 @@ export async function putPricingTemplateRanges(
   payload: TemplateRangesPutPayload,
 ): Promise<TemplateRangesResponse> {
   return apiPut<TemplateRangesResponse>(
-    `/tms/pricing/templates/${templateId}/ranges`,
+    `/shipping-assist/pricing/templates/${templateId}/ranges`,
     payload,
   );
 }
@@ -445,7 +445,7 @@ export async function fetchPricingTemplateGroups(
   templateId: number,
 ): Promise<TemplateGroupsResponse> {
   return apiGet<TemplateGroupsResponse>(
-    `/tms/pricing/templates/${templateId}/groups`,
+    `/shipping-assist/pricing/templates/${templateId}/groups`,
   );
 }
 
@@ -454,7 +454,7 @@ export async function createPricingTemplateGroup(
   payload: TemplateGroupWritePayload,
 ): Promise<TemplateGroupSingleResponse> {
   return apiPost<TemplateGroupSingleResponse>(
-    `/tms/pricing/templates/${templateId}/groups`,
+    `/shipping-assist/pricing/templates/${templateId}/groups`,
     payload,
   );
 }
@@ -465,7 +465,7 @@ export async function updatePricingTemplateGroup(
   payload: TemplateGroupWritePayload,
 ): Promise<TemplateGroupSingleResponse> {
   return apiPut<TemplateGroupSingleResponse>(
-    `/tms/pricing/templates/${templateId}/groups/${groupId}`,
+    `/shipping-assist/pricing/templates/${templateId}/groups/${groupId}`,
     payload,
   );
 }
@@ -475,7 +475,7 @@ export async function deletePricingTemplateGroup(
   groupId: number,
 ): Promise<TemplateGroupDeleteResponse> {
   return apiDelete<TemplateGroupDeleteResponse>(
-    `/tms/pricing/templates/${templateId}/groups/${groupId}`,
+    `/shipping-assist/pricing/templates/${templateId}/groups/${groupId}`,
   );
 }
 
@@ -483,7 +483,7 @@ export async function fetchPricingTemplateMatrixCells(
   templateId: number,
 ): Promise<TemplateMatrixCellsResponse> {
   return apiGet<TemplateMatrixCellsResponse>(
-    `/tms/pricing/templates/${templateId}/matrix-cells`,
+    `/shipping-assist/pricing/templates/${templateId}/matrix-cells`,
   );
 }
 
@@ -492,7 +492,7 @@ export async function putPricingTemplateMatrixCells(
   payload: TemplateMatrixCellsPutPayload,
 ): Promise<TemplateMatrixCellsResponse> {
   return apiPut<TemplateMatrixCellsResponse>(
-    `/tms/pricing/templates/${templateId}/matrix-cells`,
+    `/shipping-assist/pricing/templates/${templateId}/matrix-cells`,
     payload,
   );
 }
@@ -502,7 +502,7 @@ export async function createPricingTemplateSurchargeConfig(
   payload: SurchargeConfigCreatePayload,
 ): Promise<PricingTemplateSurchargeConfig> {
   return apiPost<PricingTemplateSurchargeConfig>(
-    `/tms/pricing/templates/${templateId}/surcharge-configs`,
+    `/shipping-assist/pricing/templates/${templateId}/surcharge-configs`,
     normalizeCreatePayload(payload),
   );
 }
@@ -512,7 +512,7 @@ export async function batchCreatePricingTemplateProvinceSurchargeConfigs(
   payload: SurchargeBatchProvinceCreatePayload,
 ): Promise<SurchargeBatchProvinceCreateResult> {
   return apiPost<SurchargeBatchProvinceCreateResult>(
-    `/tms/pricing/templates/${templateId}/surcharge-configs/batch-province`,
+    `/shipping-assist/pricing/templates/${templateId}/surcharge-configs/batch-province`,
     normalizeBatchProvincePayload(payload),
   );
 }
@@ -522,7 +522,7 @@ export async function createPricingTemplateSurchargeCityContainer(
   payload: SurchargeCityContainerCreatePayload,
 ): Promise<PricingTemplateSurchargeConfig> {
   return apiPost<PricingTemplateSurchargeConfig>(
-    `/tms/pricing/templates/${templateId}/surcharge-configs/city-container`,
+    `/shipping-assist/pricing/templates/${templateId}/surcharge-configs/city-container`,
     normalizeCityContainerPayload(payload),
   );
 }
@@ -532,7 +532,7 @@ export async function patchPricingTemplateSurchargeConfig(
   payload: SurchargeConfigUpdatePayload,
 ): Promise<PricingTemplateSurchargeConfig> {
   return apiPatch<PricingTemplateSurchargeConfig>(
-    `/tms/pricing/surcharge-configs/${configId}`,
+    `/shipping-assist/pricing/surcharge-configs/${configId}`,
     normalizeUpdatePayload(payload),
   );
 }
@@ -541,7 +541,7 @@ export async function deletePricingTemplateSurchargeConfig(
   configId: number,
 ): Promise<{ ok: boolean }> {
   return apiDelete<{ ok: boolean }>(
-    `/tms/pricing/surcharge-configs/${configId}`,
+    `/shipping-assist/pricing/surcharge-configs/${configId}`,
   );
 }
 
@@ -550,7 +550,7 @@ export async function clonePricingTemplate(
   payload?: PricingTemplateCloneInput,
 ): Promise<PricingTemplateDetail> {
   const res = await apiPost<PricingTemplateDetailResponse>(
-    `/tms/pricing/templates/${templateId}/clone`,
+    `/shipping-assist/pricing/templates/${templateId}/clone`,
     normalizeCloneInput(payload),
   );
   return normalizePricingTemplateDetail(res.data);

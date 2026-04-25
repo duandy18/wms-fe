@@ -13,7 +13,7 @@
 //   - 地址问题统一返回 OMS 处理
 //   - 本页定位为订单汇总与导流，不承担复杂操作
 // - 当前限制：
-//   - 后端尚未提供 /ship/prepare/orders/sync
+//   - 后端尚未提供 /shipping-assist/shipping/prepare/orders/sync
 //   - 因此前端本页“同步 OMS 订单快照”按钮当前以刷新发货算价池列表作为占位行为
 
 import React, { useEffect, useMemo, useState } from "react";

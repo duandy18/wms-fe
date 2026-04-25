@@ -5,7 +5,7 @@
 //   - ranges
 //   - groups
 //   - matrix-cells
-// - 已统一走新后端前缀：/tms/pricing/templates
+// - 已统一走新后端前缀：/shipping-assist/pricing/templates
 // - 严禁再使用旧路径 /templates
 
 import { apiGet, apiPost, apiPut, apiDelete } from "../../../../../lib/api";
@@ -21,7 +21,7 @@ import type {
 
 export async function fetchTemplateRanges(templateId: number) {
   return apiGet<ModuleRangesResponse>(
-    `/tms/pricing/templates/${templateId}/ranges`,
+    `/shipping-assist/pricing/templates/${templateId}/ranges`,
   );
 }
 
@@ -30,7 +30,7 @@ export async function putTemplateRanges(
   payload: unknown,
 ) {
   return apiPut<ModuleRangesResponse>(
-    `/tms/pricing/templates/${templateId}/ranges`,
+    `/shipping-assist/pricing/templates/${templateId}/ranges`,
     payload,
   );
 }
@@ -39,7 +39,7 @@ export async function putTemplateRanges(
 
 export async function fetchTemplateGroups(templateId: number) {
   return apiGet<ModuleGroupsResponse>(
-    `/tms/pricing/templates/${templateId}/groups`,
+    `/shipping-assist/pricing/templates/${templateId}/groups`,
   );
 }
 
@@ -48,7 +48,7 @@ export async function createTemplateGroup(
   payload: unknown,
 ) {
   return apiPost<ModuleGroupSingleResponse>(
-    `/tms/pricing/templates/${templateId}/groups`,
+    `/shipping-assist/pricing/templates/${templateId}/groups`,
     payload,
   );
 }
@@ -59,7 +59,7 @@ export async function updateTemplateGroup(
   payload: unknown,
 ) {
   return apiPut<ModuleGroupSingleResponse>(
-    `/tms/pricing/templates/${templateId}/groups/${groupId}`,
+    `/shipping-assist/pricing/templates/${templateId}/groups/${groupId}`,
     payload,
   );
 }
@@ -69,7 +69,7 @@ export async function deleteTemplateGroup(
   groupId: number,
 ) {
   return apiDelete<ModuleGroupDeleteResponse>(
-    `/tms/pricing/templates/${templateId}/groups/${groupId}`,
+    `/shipping-assist/pricing/templates/${templateId}/groups/${groupId}`,
   );
 }
 
@@ -77,7 +77,7 @@ export async function deleteTemplateGroup(
 
 export async function fetchTemplateMatrixCells(templateId: number) {
   return apiGet<ModuleMatrixCellsResponse>(
-    `/tms/pricing/templates/${templateId}/matrix-cells`,
+    `/shipping-assist/pricing/templates/${templateId}/matrix-cells`,
   );
 }
 
@@ -86,7 +86,7 @@ export async function putTemplateMatrixCells(
   payload: unknown,
 ) {
   return apiPut<ModuleMatrixCellsResponse>(
-    `/tms/pricing/templates/${templateId}/matrix-cells`,
+    `/shipping-assist/pricing/templates/${templateId}/matrix-cells`,
     payload,
   );
 }

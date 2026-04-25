@@ -14,7 +14,7 @@ export async function createShippingProviderContact(
     active?: boolean;
   },
 ): Promise<ShippingProviderContact> {
-  return apiPost<ShippingProviderContact>(`/shipping-providers/${providerId}/contacts`, payload);
+  return apiPost<ShippingProviderContact>(`/shipping-assist/pricing/providers/${providerId}/contacts`, payload);
 }
 
 export async function updateShippingProviderContact(
@@ -29,9 +29,9 @@ export async function updateShippingProviderContact(
     active: boolean;
   }>,
 ): Promise<ShippingProviderContact> {
-  return apiPatch<ShippingProviderContact>(`/shipping-provider-contacts/${contactId}`, payload);
+  return apiPatch<ShippingProviderContact>(`/shipping-assist/pricing/provider-contacts/${contactId}`, payload);
 }
 
 export async function deleteShippingProviderContact(contactId: number): Promise<{ ok: boolean }> {
-  return apiDelete<{ ok: boolean }>(`/shipping-provider-contacts/${contactId}`);
+  return apiDelete<{ ok: boolean }>(`/shipping-assist/pricing/provider-contacts/${contactId}`);
 }

@@ -52,7 +52,7 @@ export type UpdateWarehouseShippingProviderPayload = Partial<{
 }>;
 
 export async function listWarehouseShippingProviders(warehouseId: number): Promise<WarehouseShippingProvider[]> {
-  const res = await apiGet<ListResponse<WarehouseShippingProvider>>(`/warehouses/${warehouseId}/shipping-providers`);
+  const res = await apiGet<ListResponse<WarehouseShippingProvider>>(`/warehouses/${warehouseId}/shipping-assist/pricing/providers`);
   return res.data ?? [];
 }
 
@@ -60,7 +60,7 @@ export async function bindProviderToWarehouse(
   warehouseId: number,
   payload: BindWarehouseShippingProviderPayload,
 ): Promise<WarehouseShippingProvider> {
-  const res = await apiPost<OneResponse<WarehouseShippingProvider>>(`/warehouses/${warehouseId}/shipping-providers/bind`, {
+  const res = await apiPost<OneResponse<WarehouseShippingProvider>>(`/warehouses/${warehouseId}/shipping-assist/pricing/providers/bind`, {
     shipping_provider_id: payload.shipping_provider_id,
     active: payload.active ?? true,
     priority: payload.priority ?? 100,
@@ -87,13 +87,13 @@ export async function updateWarehouseProviderBinding(
   }
 
   const res = await apiPatch<OneResponse<WarehouseShippingProvider>>(
-    `/warehouses/${warehouseId}/shipping-providers/${providerId}`,
+    `/warehouses/${warehouseId}/shipping-assist/pricing/providers/${providerId}`,
     next,
   );
   return res.data;
 }
 
 export async function unbindProviderFromWarehouse(warehouseId: number, providerId: number): Promise<DeleteResponse["data"]> {
-  const res = await apiDelete<DeleteResponse>(`/warehouses/${warehouseId}/shipping-providers/${providerId}`);
+  const res = await apiDelete<DeleteResponse>(`/warehouses/${warehouseId}/shipping-assist/pricing/providers/${providerId}`);
   return res.data;
 }

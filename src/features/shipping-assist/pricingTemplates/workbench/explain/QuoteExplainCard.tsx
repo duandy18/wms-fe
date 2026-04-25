@@ -178,7 +178,7 @@ export const QuoteExplainCard: React.FC<{
         body["height_cm"] = dims.height_cm;
       }
 
-      const res = await apiPost<CalcOut>("/shipping-quote/calc", body);
+      const res = await apiPost<CalcOut>("/shipping-assist/shipping/quote/calc", body);
       toReasonsList(res);
       setResult(res);
       onError("");

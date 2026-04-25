@@ -37,14 +37,14 @@ function buildExportQueryString(query: ShippingLedgerQuery): string {
 export async function fetchShippingLedger(
   query: ShippingLedgerQuery,
 ): Promise<ShippingLedgerListResponse> {
-  return await apiGet<ShippingLedgerListResponse>("/tms/records", query);
+  return await apiGet<ShippingLedgerListResponse>("/shipping-assist/shipping/records", query);
 }
 
 export async function exportShippingLedgerCsv(
   query: ShippingLedgerQuery,
 ): Promise<Blob> {
   const qs = buildExportQueryString(query);
-  const path = qs ? `/tms/records/export?${qs}` : "/tms/records/export";
+  const path = qs ? `/shipping-assist/shipping/records/export?${qs}` : "/shipping-assist/shipping/records/export";
 
   return await apiRequestBlob(path, {
     method: "GET",
