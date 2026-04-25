@@ -17,9 +17,8 @@ export const OrderFactsTable: React.FC<{
   facts: OrderFacts;
   totals: Totals;
   reconcile: OrderReconcileResult;
-  onViewStock: (itemId: number) => void;
   onViewLedger: () => void;
-}> = ({ facts, totals, reconcile, onViewStock, onViewLedger }) => {
+}> = ({ facts, totals, reconcile, onViewLedger }) => {
   return (
     <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">
       <div className="flex items-center justify-between">
@@ -72,16 +71,9 @@ export const OrderFactsTable: React.FC<{
                     <button
                       type="button"
                       className="rounded border border-slate-300 px-2 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
-                      onClick={() => onViewStock(f.item_id)}
-                    >
-                      库存
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded border border-slate-300 px-2 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
                       onClick={onViewLedger}
                     >
-                      账本
+                      库存台账
                     </button>
                   </div>
                 </td>
