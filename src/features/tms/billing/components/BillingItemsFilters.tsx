@@ -27,7 +27,7 @@ const BillingItemsFilters: React.FC<Props> = ({
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <label className="space-y-1">
-          <div className="text-xs text-slate-600">承运商代码</div>
+          <div className="text-xs text-slate-600">快递公司代码</div>
           <input
             value={query.carrier_code ?? ""}
             onChange={(e) => onChange("carrier_code", e.target.value)}

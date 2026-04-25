@@ -95,7 +95,7 @@ export const InventoryReturnInboundPage = lazy(
     ),
 );
 
-// 物流：运价管理 / 运价模板 / 发货成本报表 / 发货账本详情
+// 发货辅助：运价管理 / 运价表 / 发货记录 / 快递账单 / 费用对账
 export const PricingPage = lazy(
   () => import("../../features/tms/pricing/pages/PricingPage"),
 );
@@ -182,7 +182,7 @@ export const SuppliersListPage = lazy(
   () => import("../../features/pms/suppliers/pages/SuppliersListPage"),
 );
 
-// 物流 / 快递网点
+// 发货辅助 / 快递网点
 export const ShippingProvidersListPage = lazy(
   () => import("../../features/tms/providers/ShippingProvidersListPage"),
 );

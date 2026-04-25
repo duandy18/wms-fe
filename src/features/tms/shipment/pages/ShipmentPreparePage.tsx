@@ -1,20 +1,20 @@
 // src/features/tms/shipment/pages/ShipmentPreparePage.tsx
 //
 // 分拆说明：
-// - 本页是“发运准备”独立页面，不再和“发货作业”混在一个 cockpit 中。
+// - 本页是“发货算价”入口页面，不再和完整发货执行台混在一起。
 // - 页面语义已收口为：
-//   1) 汇集展示待进入发货作业的订单清单
-//   2) 从列表进入单订单发货作业页
+//   1) 汇集展示待发货算价的订单清单
+//   2) 从列表进入单订单发货辅助台
 //   3) 第一张卡收口为“同步 OMS 订单快照”入口
 // - 维护约束：
-//   - TMS 不负责地址解析
-//   - TMS 不负责地址人工核验
-//   - TMS 不负责地址修改
+//   - 发货辅助不负责地址解析
+//   - 发货辅助不负责地址人工核验
+//   - 发货辅助不负责地址修改
 //   - 地址问题统一返回 OMS 处理
 //   - 本页定位为订单汇总与导流，不承担复杂操作
 // - 当前限制：
 //   - 后端尚未提供 /ship/prepare/orders/sync
-//   - 因此前端本页“同步 OMS 订单快照”按钮当前以刷新发运准备池列表作为占位行为
+//   - 因此前端本页“同步 OMS 订单快照”按钮当前以刷新发货算价池列表作为占位行为
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -114,7 +114,7 @@ const ShipmentPreparePage: React.FC = () => {
       const res = await fetchShipmentPrepareOrders(50);
       setRows(Array.isArray(res.items) ? res.items : []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载发运准备列表失败");
+      setError(err instanceof Error ? err.message : "加载发货算价列表失败");
     } finally {
       setLoading(false);
     }
@@ -131,9 +131,9 @@ const ShipmentPreparePage: React.FC = () => {
     setMessage("");
     try {
       await loadList();
-      setMessage("已刷新发运准备池快照。当前后端尚未接入专用 OMS 同步接口。");
+      setMessage("已刷新发货算价池快照。当前后端尚未接入专用 OMS 同步接口。");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "刷新发运准备池快照失败");
+      setError(err instanceof Error ? err.message : "刷新发货算价池快照失败");
     } finally {
       setSyncing(false);
     }
@@ -162,8 +162,8 @@ const ShipmentPreparePage: React.FC = () => {
   return (
     <div className="space-y-4 p-4 md:p-6">
       <PageTitle
-        title="发运准备"
-        description="汇集待进入发货作业的订单，并从列表进入单订单处理页面"
+        title="发货算价"
+        description="汇集待算价订单，并从列表进入单订单发货辅助台"
       />
 
       <section className={cardClass}>
@@ -171,7 +171,7 @@ const ShipmentPreparePage: React.FC = () => {
           <div>
             <h2 className={h2Class}>同步 OMS 订单快照</h2>
             <div className={helperClass}>
-              订单与地址以 OMS 为准，TMS 只保存发运准备所需快照。当前页面先以刷新发运准备池列表作为同步结果展示。
+              订单与地址以 OMS 为准，发货辅助只保存算价与发货所需快照。当前页面先以刷新发货算价池列表作为同步结果展示。
             </div>
           </div>
 
@@ -188,7 +188,7 @@ const ShipmentPreparePage: React.FC = () => {
         </div>
 
         <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
-          本页只做订单汇总与导流；地址处理、拆包、算价、快递公司选择、运单号申请等动作统一在发货作业页完成。
+          本页只做待算价订单汇总与导流；地址处理、拆包、算价、快递公司选择、运单号申请等动作统一在发货辅助台完成。
         </div>
 
         {message ? (
@@ -209,7 +209,7 @@ const ShipmentPreparePage: React.FC = () => {
           <div>
             <h2 className={h2Class}>订单列表</h2>
             <div className={helperClass}>
-              这里仅汇集展示订单基础信息，供进入单订单发货作业页继续处理。
+              这里仅汇集展示订单基础信息，供进入单订单发货辅助台继续处理。
             </div>
           </div>
 
@@ -310,7 +310,7 @@ const ShipmentPreparePage: React.FC = () => {
                         className={btnPrimaryClass}
                         onClick={() => handleGoDispatch(row)}
                       >
-                        进入发货作业
+                        进入发货辅助台
                       </button>
                     </td>
                   </tr>
@@ -323,7 +323,7 @@ const ShipmentPreparePage: React.FC = () => {
                     colSpan={6}
                     className="px-3 py-8 text-center text-sm text-slate-500"
                   >
-                    暂无符合条件的发运准备订单。
+                    暂无符合条件的待算价订单。
                   </td>
                 </tr>
               ) : null}
@@ -334,7 +334,7 @@ const ShipmentPreparePage: React.FC = () => {
                     colSpan={6}
                     className="px-3 py-8 text-center text-sm text-slate-500"
                   >
-                    正在加载发运准备列表...
+                    正在加载发货算价列表...
                   </td>
                 </tr>
               ) : null}
@@ -343,7 +343,7 @@ const ShipmentPreparePage: React.FC = () => {
         </div>
 
         <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm text-sky-900">
-          发运准备页只负责订单汇总与导流；单订单的包裹方案、算价、快递公司选择、运单号申请等处理统一在发货作业页完成。
+          发货算价页只负责订单汇总与导流；单订单的包裹方案、算价、快递公司选择、运单号申请等处理统一在发货辅助台完成。
         </div>
       </section>
     </div>

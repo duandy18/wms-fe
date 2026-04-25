@@ -14,7 +14,7 @@ interface Props {
 const TransportReportsByCarrierTable: React.FC<Props> = ({ rows }) => {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-slate-800">按承运商统计</h3>
+      <h3 className="mb-3 text-sm font-semibold text-slate-800">按快递公司统计</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-sm">
           <thead className="bg-slate-50">

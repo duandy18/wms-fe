@@ -221,7 +221,7 @@ const ElectronicWaybillConfigPage: React.FC = () => {
 
       <div className={cardCls}>
         <div className="text-sm text-slate-600">
-          本页只维护店铺维度电子面单配置，发货作业页只消费配置，不在作业页内维护。
+          本页只维护店铺维度电子面单配置，发货辅助台只消费配置，不在发货辅助台内维护。
         </div>
       </div>
 

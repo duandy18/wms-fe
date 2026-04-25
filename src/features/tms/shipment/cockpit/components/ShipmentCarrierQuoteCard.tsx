@@ -1,8 +1,8 @@
 // src/features/tms/shipment/cockpit/components/ShipmentCarrierQuoteCard.tsx
 //
 // 分拆说明：
-// - 本组件负责顺序卡 3：报价与承运商。
-// - 第一轮展示每个包裹的当前报价状态、当前承运商和候选列表占位。
+// - 本组件负责顺序卡 3：报价与快递网点。
+// - 第一轮展示每个包裹的当前报价状态、当前快递网点和候选列表占位。
 // - 不做推荐逻辑，不出现“推荐方案”语义。
 
 import React from "react";
@@ -41,8 +41,8 @@ const ShipmentCarrierQuoteCard: React.FC<Props> = ({
         <div className={UI.cardTitleWrap}>
           <span className={UI.stageNo}>3</span>
           <div>
-            <h2 className={UI.h2}>报价与承运商</h2>
-            <div className={UI.helper}>每个包裹独立获取候选报价，再由人工选择承运商</div>
+            <h2 className={UI.h2}>报价与快递网点</h2>
+            <div className={UI.helper}>每个包裹独立获取候选报价，再由人工选择快递网点</div>
           </div>
         </div>
 
@@ -83,7 +83,7 @@ const ShipmentCarrierQuoteCard: React.FC<Props> = ({
                       </span>
                     </div>
                     <div className={UI.kvRow}>
-                      <span className={UI.kvLabel}>承运商</span>
+                      <span className={UI.kvLabel}>快递网点</span>
                       <span className={UI.kvValue}>{pkg.carrierName || "未选择"}</span>
                     </div>
                     <div className={UI.kvRow}>
@@ -98,7 +98,7 @@ const ShipmentCarrierQuoteCard: React.FC<Props> = ({
                     <table className={UI.table}>
                       <thead className={UI.thead}>
                         <tr>
-                          <th className={UI.th}>承运商</th>
+                          <th className={UI.th}>快递网点</th>
                           <th className={UI.th}>服务</th>
                           <th className={UI.th}>价格</th>
                           <th className={UI.th}>时效</th>

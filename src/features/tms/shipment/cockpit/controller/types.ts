@@ -1,7 +1,7 @@
 // src/features/tms/shipment/cockpit/controller/types.ts
 //
 // 分拆说明：
-// - 本文件承载发运作业控制器领域类型。
+// - 本文件承载发货辅助台控制器领域类型。
 // - 维护约束：
 //   - 页面展示类型、路由上下文类型、内部状态类型统一收口在此
 //   - 纯类型定义留在本文件，不混入副作用逻辑
@@ -39,7 +39,7 @@ export type ShipmentWorkbenchOrder = {
 export type ShipmentPackagePlan = {
   packageNo: number;
   actualWeightKg: string;
-  packageStatus: "待录重量" | "待报价" | "待选承运商" | "已就绪";
+  packageStatus: "待录重量" | "待报价" | "待选快递网点" | "已就绪";
   quoteStatus: "未报价" | "待重新报价" | "有效";
   quoteAmount: string;
   carrierName: string;

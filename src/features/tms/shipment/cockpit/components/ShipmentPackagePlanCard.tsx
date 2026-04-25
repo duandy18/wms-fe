@@ -2,27 +2,27 @@
 //
 // 分拆说明：
 // - 本组件负责顺序卡 2：订单拆包与报价。
-// - 本卡已从“包裹与重量” + “报价与承运商”两张卡合并而来。
+// - 本卡已从“包裹与重量” + “报价与快递网点”两张卡合并而来。
 // - 当前页面语义收口为：
 //   1) 增加包裹
 //   2) 每个包裹录入重量
 //   3) 每个包裹选择发货仓
 //   4) 每个包裹独立算价
-//   5) 每个包裹查看候选报价并人工选择承运商
+//   5) 每个包裹查看候选报价并人工选择快递网点
 // - 当前已接真实联动：
 //   - 新增包裹
 //   - 更新重量 / 发货仓
 //   - 包裹级算价
-//   - 包裹级确认承运商
+//   - 包裹级确认快递网点
 // - 本轮收口：
 //   - 发货仓改为活动仓库下拉，不再手填仓库 ID
 //   - 保存按钮完成态绑定真实已保存的重量 + 发货仓
-//   - 保存成功 / 选择承运商成功提示改为 controller 真成功后回写
-//   - 已选择承运商后，按钮改为“已选择”
+//   - 保存成功 / 选择快递网点成功提示改为 controller 真成功后回写
+//   - 已选择快递网点后，按钮改为“已选择”
 // - 维护约束：
 //   - 不再使用“1包 / 2包 / 3包”预设按钮
 //   - 一个包裹卡就是一个完整处理单元
-//   - 包裹保存 与 承运商选择 仍按后端接口边界拆开
+//   - 包裹保存 与 快递网点选择 仍按后端接口边界拆开
 
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchActiveWarehouses } from "../../../../wms/warehouses/api";
@@ -64,7 +64,7 @@ function packageStatusBadgeClass(
   status: ShipmentPackagePlan["packageStatus"],
 ): string {
   if (status === "已就绪") return `${UI.badgeBase} ${UI.badgeGreen}`;
-  if (status === "待选承运商") return `${UI.badgeBase} ${UI.badgeAmber}`;
+  if (status === "待选快递网点") return `${UI.badgeBase} ${UI.badgeAmber}`;
   if (status === "待报价") return `${UI.badgeBase} ${UI.badgeBlue}`;
   return `${UI.badgeBase} ${UI.badgeSlate}`;
 }
@@ -258,7 +258,7 @@ const ShipmentPackagePlanCard: React.FC<Props> = ({
           <div>
             <h2 className={UI.h2}>订单拆包与报价</h2>
             <div className={UI.helper}>
-              逐个包裹完成重量、发货仓、算价和承运商选择
+              逐个包裹完成重量、发货仓、算价和快递网点选择
             </div>
           </div>
         </div>
@@ -397,7 +397,7 @@ const ShipmentPackagePlanCard: React.FC<Props> = ({
                       </span>
                     </div>
                     <div className={UI.kvRow}>
-                      <span className={UI.kvLabel}>承运商</span>
+                      <span className={UI.kvLabel}>快递网点</span>
                       <span className={UI.kvValue}>{pkg.carrierName || "未选择"}</span>
                     </div>
                     <div className={UI.kvRow}>
@@ -407,7 +407,7 @@ const ShipmentPackagePlanCard: React.FC<Props> = ({
                       </span>
                     </div>
                     <div className={UI.kvRow}>
-                      <span className={UI.kvLabel}>已选承运商ID</span>
+                      <span className={UI.kvLabel}>已选快递网点ID</span>
                       <span className={`${UI.kvValue} ${UI.mono}`}>
                         {pkg.selectedProviderId ?? "—"}
                       </span>
@@ -420,7 +420,7 @@ const ShipmentPackagePlanCard: React.FC<Props> = ({
                     <table className={`${UI.table} table-fixed`}>
                       <thead className={UI.thead}>
                         <tr>
-                          <th className={`${UI.th} w-1/2 text-left`}>承运商</th>
+                          <th className={`${UI.th} w-1/2 text-left`}>快递网点</th>
                           <th className={`${UI.th} w-1/4 text-right`}>价格</th>
                           <th className={`${UI.th} w-1/4 text-center`}>操作</th>
                         </tr>
@@ -490,7 +490,7 @@ const ShipmentPackagePlanCard: React.FC<Props> = ({
       </div>
 
       <div className={UI.sectionNote}>
-        当前已接真实链路：新增包裹、保存重量/仓库、包裹级算价、人工确认承运商。
+        当前已接真实链路：新增包裹、保存重量/仓库、包裹级算价、人工确认快递网点。
       </div>
     </section>
   );

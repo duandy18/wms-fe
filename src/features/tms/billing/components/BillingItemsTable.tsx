@@ -43,7 +43,7 @@ const BillingItemsTable: React.FC<Props> = ({ rows, loading, error }) => {
               <tr>
                 <th className="px-3 py-2 text-left text-slate-600">序号</th>
                 <th className="px-3 py-2 text-left text-slate-600">账单月份</th>
-                <th className="px-3 py-2 text-left text-slate-600">承运商</th>
+                <th className="px-3 py-2 text-left text-slate-600">快递公司</th>
                 <th className="px-3 py-2 text-left text-slate-600">运单号</th>
                 <th className="px-3 py-2 text-left text-slate-600">业务时间</th>
                 <th className="px-3 py-2 text-left text-slate-600">寄件人</th>

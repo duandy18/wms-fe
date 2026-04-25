@@ -31,7 +31,7 @@ const TransportReportsPage: React.FC = () => {
     <div className="space-y-4 p-6">
       <PageTitle
         title="快递成本分析"
-        description="按账单成本或台帐预估成本进行轻量分析，展示承运商分布与按天趋势。"
+        description="按账单成本或台帐预估成本进行轻量分析，展示快递公司分布与按天趋势。"
       />
 
       <TransportReportsOverview

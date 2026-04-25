@@ -248,7 +248,7 @@ export function buildPrintWaybillHtml(params: {
     <div class="page">
       <div class="sheet">
         <div class="header">
-          <div class="title">物流面单</div>
+          <div class="title">快递面单</div>
           <div class="meta">
             <div>包裹：${esc(String(packageNo))}</div>
             <div>模板打印预览</div>

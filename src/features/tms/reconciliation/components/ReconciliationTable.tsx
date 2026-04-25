@@ -66,9 +66,9 @@ const ReconciliationTable: React.FC<Props> = ({
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-3 py-2 text-left text-slate-600">状态</th>
-                <th className="px-3 py-2 text-left text-slate-600">承运商</th>
+                <th className="px-3 py-2 text-left text-slate-600">快递公司</th>
                 <th className="px-3 py-2 text-left text-slate-600">运单号</th>
-                <th className="px-3 py-2 text-right text-slate-600">物流记录ID</th>
+                <th className="px-3 py-2 text-right text-slate-600">发货记录ID</th>
                 <th className="px-3 py-2 text-right text-slate-600">账单明细ID</th>
                 <th className="px-3 py-2 text-right text-slate-600">重量差</th>
                 <th className="px-3 py-2 text-right text-slate-600">成本差</th>

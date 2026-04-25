@@ -1,7 +1,7 @@
 // src/features/tms/shipment/cockpit/components/ShipmentOrdersQueueCard.tsx
 //
 // 分拆说明：
-// - 本组件负责发运作业台顶部“订单队列表”卡片。
+// - 本组件负责发货辅助台顶部“订单队列表”卡片。
 // - 第一轮只做静态展示，不接点击切换、不做筛选逻辑。
 // - 后续可在不改页面骨架的前提下补充筛选、选中、高亮、自动下一单。
 

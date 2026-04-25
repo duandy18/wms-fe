@@ -1,7 +1,7 @@
 // src/features/tms/pricingTemplates/workbench/usePricingWorkbench.ts
 //
 // 分拆说明：
-// - 本文件是“运价模板工作台主 hook 装配层”，由原先超长单文件状态总控继续收口而来。
+// - 本文件是“运价表工作台主 hook 装配层”，由原先超长单文件状态总控继续收口而来。
 // - 当前只负责：
 //   1) 挂接 React 状态
 //   2) 装配 ranges / groups / matrix / surcharge_configs 四块状态
