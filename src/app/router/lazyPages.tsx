@@ -106,9 +106,6 @@ export const TemplateWorkbenchPage = lazy(
   () =>
     import("../../features/shipping-assist/pricingTemplates/workbench/TemplateWorkbenchPage"),
 );
-export const TransportReportsPage = lazy(
-  () => import("../../features/shipping-assist/reports/pages/TransportReportsPage"),
-);
 export const ShippingLedgerPage = lazy(
   () => import("../../features/shipping-assist/records/pages/ShippingLedgerPage"),
 );
