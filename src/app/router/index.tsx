@@ -313,14 +313,6 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="tms/reports"
-            element={
-              <RequirePermission permission="page.tms.read">
-                <P.TransportReportsPage />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="tms/records"
             element={
               <RequirePermission permission="page.tms.read">
