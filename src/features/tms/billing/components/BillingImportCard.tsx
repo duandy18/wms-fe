@@ -127,7 +127,7 @@ const BillingImportCard: React.FC<Props> = ({
       {result ? (
         <div className="mt-4 space-y-3">
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            导入完成：承运商 <span className="font-semibold">{result.carrier_code}</span>，成功{" "}
+            导入完成：快递公司 <span className="font-semibold">{result.carrier_code}</span>，成功{" "}
             {result.imported_count}，跳过 {result.skipped_count}，错误 {result.error_count}
           </div>
 

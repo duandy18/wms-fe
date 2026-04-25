@@ -1,6 +1,6 @@
 // src/features/tms/pricingTemplates/workbench/TemplateWorkbenchPage.tsx
 //
-// ✅ 运价模板详情页（Template 主线）
+// ✅ 运价表详情页（Template 主线）
 // - 正式入口：/tms/templates/:templateId
 // - 页面顺序：
 //   1) 模板编辑工作台（四卡：重量段 / 区域范围 / 价格矩阵 / 附加费）

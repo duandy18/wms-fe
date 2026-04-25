@@ -72,7 +72,7 @@ const ShipmentExecutionCard: React.FC<Props> = ({
               <thead className={UI.thead}>
                 <tr>
                   <th className={UI.th}>包裹</th>
-                  <th className={UI.th}>承运商</th>
+                  <th className={UI.th}>快递网点</th>
                   <th className={UI.th}>运单号</th>
                   <th className={UI.th}>面单状态</th>
                   <th className={`${UI.th} text-center`}>操作</th>

@@ -1,7 +1,7 @@
 // src/features/tms/shipment/cockpit/controller/mappers.ts
 //
 // 分拆说明：
-// - 本文件负责发运作业页数据映射：
+// - 本文件负责发货辅助台数据映射：
 //   1) route state -> skeleton order
 //   2) 后端详情/包裹 -> 页面展示模型
 //   3) quote confirm / quote candidate -> 页面展示模型
@@ -139,7 +139,7 @@ export function buildConfirmedQuoteState(
   const carrierName =
     normalizeRouteText(selectedQuote?.carrier_name) ||
     normalizeRouteText(selectedQuote?.carrier_code) ||
-    `承运商ID:${confirmed.selected_provider_id}`;
+    `快递网点ID:${confirmed.selected_provider_id}`;
 
   const totalAmount = selectedQuote?.total_amount;
   const amount =
@@ -179,7 +179,7 @@ function mapPackageStatus(
     return "待报价";
   }
   if (!hasProvider) {
-    return "待选承运商";
+    return "待选快递网点";
   }
   return "已就绪";
 }
@@ -207,7 +207,7 @@ export function mapPackageToPlan(
     waybill?.carrierName ||
     confirmed?.carrierName ||
     (typeof pkg.selected_provider_id === "number"
-      ? `承运商ID:${pkg.selected_provider_id}`
+      ? `快递网点ID:${pkg.selected_provider_id}`
       : "");
 
   return {

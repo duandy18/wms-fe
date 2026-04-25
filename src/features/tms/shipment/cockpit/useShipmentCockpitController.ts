@@ -1,7 +1,7 @@
 // src/features/tms/shipment/cockpit/useShipmentCockpitController.ts
 //
 // 分拆说明：
-// - 本文件已从“发运作业页真实数据链控制器”继续收口为薄控制器入口。
+// - 本文件已从“发货辅助台真实数据链控制器”继续收口为薄控制器入口。
 // - 当前只负责：
 //   1) 组织页面级 state
 //   2) 编排真实接口调用
@@ -260,7 +260,7 @@ export function useShipmentCockpitController() {
   const requestWaybill = useCallback(
     async (packageNo: number) => {
       if (!context) {
-        setError("缺少订单上下文：请从发运准备页进入发货作业页。");
+        setError("缺少订单上下文：请从发货算价页进入发货辅助台。");
         return;
       }
 

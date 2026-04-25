@@ -17,7 +17,7 @@ type HeaderSummary = {
 function buildHeaderTitle(args: { templateName?: string | null }): string {
   const templateName = (args.templateName ?? "").trim();
   if (templateName) return templateName;
-  return "运价模板工作台";
+  return "运价表工作台";
 }
 
 function buildStatusText(status: HeaderSummary["status"]): string {

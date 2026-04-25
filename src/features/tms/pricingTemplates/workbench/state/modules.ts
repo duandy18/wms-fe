@@ -58,7 +58,7 @@ export function useModuleLoadActions(args: Args) {
       setGroups(() => nextGroups);
       setCells(() => nextCells);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "加载运价模板工作台失败";
+      const msg = e instanceof Error ? e.message : "加载运价表工作台失败";
       setLoadError(msg);
     } finally {
       setLoading(() => false);

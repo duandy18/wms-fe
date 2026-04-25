@@ -1,15 +1,15 @@
 // src/features/tms/shipment/pages/ShipmentCockpitPage.tsx
 //
 // 分拆说明：
-// - 本页从旧的“三列执行台”改为“单列顺序式发运作业台”。
+// - 本页从旧的“三列作业台”改为“单列顺序式发货辅助台”。
 // - 页面当前负责装配以下顺序卡片：
 //   1) 订单与地址
 //   2) 订单拆包与报价
 //   3) 执行区
-// - 顶部“订单队列表”已移除：发货作业页收口为“单订单作业台”，
-//   订单汇总与进入作业的职责统一留在发运准备页。
-// - 原“报价与承运商”已并入“订单拆包与报价”大卡，按包裹完成：
-//   重量录入 / 发货仓选择 / 算价 / 候选报价查看 / 承运商选择。
+// - 顶部“订单队列表”已移除：发货辅助台收口为“单订单算价与发货辅助页”，
+//   订单汇总与进入作业的职责统一留在发货算价页。
+// - 原“报价与快递网点”已并入“订单拆包与报价”大卡，按包裹完成：
+//   重量录入 / 发货仓选择 / 算价 / 候选报价查看 / 快递网点选择。
 // - 当前页已改为接真实 controller，不再使用静态 mock。
 
 import React from "react";
@@ -27,13 +27,13 @@ const ShipmentCockpitPage: React.FC = () => {
 
   return (
     <div className={UI.page}>
-      <PageTitle title="发货作业" description="单订单发运作业台" />
+      <PageTitle title="发货辅助台" description="单订单发货算价、快递网点选择与面单辅助" />
 
       {c.error && <div className={UI.errorBox}>{c.error}</div>}
 
       {c.loading ? (
         <div className={UI.card}>
-          <div className={UI.helper}>正在加载发货作业数据...</div>
+          <div className={UI.helper}>正在加载发货辅助数据...</div>
         </div>
       ) : null}
 

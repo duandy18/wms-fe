@@ -34,15 +34,15 @@ function mapCalcErrorToCn(e: unknown, fallback: string): string {
   const m = raw.toLowerCase();
 
   if (m.includes("template not found")) {
-    return "未找到该运价模板，请刷新页面后重试。";
+    return "未找到该运价表，请刷新页面后重试。";
   }
 
   if (m.includes("template archived")) {
-    return "该运价模板已归档，不能用于试算；请改用其他模板或先克隆为草稿。";
+    return "该运价表已归档，不能用于试算；请改用其他模板或先克隆为草稿。";
   }
 
   if (m.includes("template not effective")) {
-    return "该运价模板当前未生效或不在有效期内，不能用于试算。";
+    return "该运价表当前未生效或不在有效期内，不能用于试算。";
   }
 
   if (
