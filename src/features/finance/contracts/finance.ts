@@ -14,6 +14,15 @@ export type FinanceSkuPurchaseLedgerQuery = FinanceDateRangeQuery & {
   item_keyword?: string;
 };
 
+export type FinanceShippingLedgerQuery = FinanceDateRangeQuery & {
+  platform?: string;
+  shop_id?: string;
+  warehouse_id?: number;
+  shipping_provider_id?: number;
+  order_keyword?: string;
+  tracking_no?: string;
+};
+
 export type FinanceOverviewSummary = {
   revenue: number;
   purchase_cost: number;
@@ -178,41 +187,60 @@ export type SkuPurchaseLedgerOptionsResponse = {
   warehouses: SkuPurchaseLedgerWarehouseOption[];
 };
 
-export type ShippingCostSummary = {
-  shipment_count: number;
-  estimated_shipping_cost: number;
-  billed_shipping_cost: number;
-  cost_diff: number;
-  adjusted_cost: number;
-};
 
-export type ShippingCostDailyRow = {
-  day: string;
-  shipment_count: number;
-  estimated_shipping_cost: number;
-  billed_shipping_cost: number;
-  cost_diff: number;
-  adjusted_cost: number;
-};
+export type ShippingCostLedgerRow = {
+  shipping_record_id: number;
 
-export type ShippingCostCarrierRow = {
-  carrier_code: string;
-  shipment_count: number;
-  estimated_shipping_cost: number;
-  billed_shipping_cost: number;
-};
-
-export type ShippingCostShopRow = {
   platform: string;
   shop_id: string;
-  shipment_count: number;
-  estimated_shipping_cost: number;
-  billed_shipping_cost: number;
+  shop_name: string | null;
+
+  order_ref: string;
+  package_no: number;
+  tracking_no: string | null;
+
+  warehouse_id: number;
+  warehouse_name: string;
+
+  shipping_provider_id: number;
+  shipping_provider_code: string | null;
+  shipping_provider_name: string | null;
+
+  shipped_time: string;
+  shipped_date: string;
+
+  dest_province: string | null;
+  dest_city: string | null;
+
+  gross_weight_kg: number | null;
+  freight_estimated: number | null;
+  surcharge_estimated: number | null;
+  cost_estimated: number | null;
 };
 
-export type ShippingCostResponse = {
-  summary: ShippingCostSummary;
-  daily: ShippingCostDailyRow[];
-  by_carrier: ShippingCostCarrierRow[];
-  by_shop: ShippingCostShopRow[];
+export type ShippingCostLedgerResponse = {
+  rows: ShippingCostLedgerRow[];
+};
+
+export type ShippingCostLedgerShopOption = {
+  platform: string;
+  shop_id: string;
+  shop_name: string | null;
+};
+
+export type ShippingCostLedgerWarehouseOption = {
+  warehouse_id: number;
+  warehouse_name: string;
+};
+
+export type ShippingCostLedgerProviderOption = {
+  shipping_provider_id: number;
+  shipping_provider_code: string | null;
+  shipping_provider_name: string | null;
+};
+
+export type ShippingCostLedgerOptionsResponse = {
+  shops: ShippingCostLedgerShopOption[];
+  warehouses: ShippingCostLedgerWarehouseOption[];
+  providers: ShippingCostLedgerProviderOption[];
 };
