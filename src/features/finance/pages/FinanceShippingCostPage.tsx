@@ -15,16 +15,16 @@ const errorMessage = (err: unknown, fallback: string): string =>
   err instanceof Error ? err.message : fallback;
 
 const emptyOptions: ShippingCostLedgerOptionsResponse = {
-  shops: [],
+  stores: [],
   warehouses: [],
   providers: [],
 };
 
-function shopLabel(shop: ShippingCostLedgerOptionsResponse["shops"][number]) {
+function storeLabel(store: ShippingCostLedgerOptionsResponse["stores"][number]) {
   const parts = [
-    shop.platform,
-    shop.shop_id,
-    shop.shop_name ? `店铺:${shop.shop_name}` : "",
+    store.platform,
+    store.store_code,
+    store.store_name ? `店铺:${store.store_name}` : "",
   ].filter(Boolean);
   return parts.join(" · ");
 }
@@ -58,27 +58,27 @@ function parseOptionalId(value: string, label: string): number | undefined {
   return parsed;
 }
 
-function splitShopValue(
+function splitStoreValue(
   value: string,
-): Pick<FinanceShippingLedgerQuery, "platform" | "shop_id"> {
+): Pick<FinanceShippingLedgerQuery, "platform" | "store_code"> {
   const trimmed = value.trim();
   if (!trimmed) return {};
-  const [platform, shopId] = trimmed.split("::");
-  if (!platform || !shopId) return {};
-  return { platform, shop_id: shopId };
+  const [platform, storeCode] = trimmed.split("::");
+  if (!platform || !storeCode) return {};
+  return { platform, store_code: storeCode };
 }
 
-function shopValue(shop: ShippingCostLedgerOptionsResponse["shops"][number]) {
-  return `${shop.platform}::${shop.shop_id}`;
+function storeValue(store: ShippingCostLedgerOptionsResponse["stores"][number]) {
+  return `${store.platform}::${store.store_code}`;
 }
 
 function platformOptionsFrom(
-  shops: ShippingCostLedgerOptionsResponse["shops"],
+  stores: ShippingCostLedgerOptionsResponse["stores"],
 ): string[] {
   return Array.from(
     new Set(
-      shops
-        .map((shop) => shop.platform.trim())
+      stores
+        .map((store) => store.platform.trim())
         .filter((platform) => platform.length > 0),
     ),
   ).sort((a, b) => a.localeCompare(b, "zh-CN"));
@@ -102,7 +102,7 @@ export default function FinanceShippingCostPage() {
     useState<ShippingCostLedgerOptionsResponse>(emptyOptions);
 
   const [platformText, setPlatformText] = useState("");
-  const [shopText, setShopText] = useState("");
+  const [storeText, setStoreText] = useState("");
   const [warehouseIdText, setWarehouseIdText] = useState("");
   const [shippingProviderIdText, setShippingProviderIdText] = useState("");
   const [orderKeyword, setOrderKeyword] = useState("");
@@ -114,28 +114,28 @@ export default function FinanceShippingCostPage() {
   const [optionsError, setOptionsError] = useState<string | null>(null);
 
   const platformOptions = useMemo(
-    () => platformOptionsFrom(baseOptions.shops),
-    [baseOptions.shops],
+    () => platformOptionsFrom(baseOptions.stores),
+    [baseOptions.stores],
   );
 
-  const shopOptions = useMemo(() => {
-    const source = options.shops.length > 0 ? options.shops : baseOptions.shops;
+  const storeOptions = useMemo(() => {
+    const source = options.stores.length > 0 ? options.stores : baseOptions.stores;
     if (!platformText) return source;
-    return source.filter((shop) => shop.platform === platformText);
-  }, [baseOptions.shops, options.shops, platformText]);
+    return source.filter((store) => store.platform === platformText);
+  }, [baseOptions.stores, options.stores, platformText]);
 
   const buildSelectedOptionQuery = useCallback((): FinanceShippingLedgerQuery => {
-    const shopQuery = splitShopValue(shopText);
+    const storeQuery = splitStoreValue(storeText);
     return {
-      platform: shopQuery.platform ?? (platformText || undefined),
-      shop_id: shopQuery.shop_id,
+      platform: storeQuery.platform ?? (platformText || undefined),
+      store_code: storeQuery.store_code,
       warehouse_id: parseOptionalId(warehouseIdText, "仓库"),
       shipping_provider_id: parseOptionalId(
         shippingProviderIdText,
         "物流网点",
       ),
     };
-  }, [platformText, shippingProviderIdText, shopText, warehouseIdText]);
+  }, [platformText, shippingProviderIdText, storeText, warehouseIdText]);
 
   const loadBaseOptions = useCallback(async () => {
     try {
@@ -198,7 +198,7 @@ export default function FinanceShippingCostPage() {
 
   const resetFilters = useCallback(() => {
     setPlatformText("");
-    setShopText("");
+    setStoreText("");
     setWarehouseIdText("");
     setShippingProviderIdText("");
     setOrderKeyword("");
@@ -228,7 +228,7 @@ export default function FinanceShippingCostPage() {
                   disabled={optionsLoading}
                   onChange={(e) => {
                     setPlatformText(e.target.value);
-                    setShopText("");
+                    setStoreText("");
                   }}
                 >
                   <option value="">
@@ -246,9 +246,9 @@ export default function FinanceShippingCostPage() {
                 <span>店铺</span>
                 <select
                   className="w-64 rounded-md border border-slate-300 px-2 py-1 text-xs"
-                  value={shopText}
+                  value={storeText}
                   disabled={optionsLoading || !platformText}
-                  onChange={(e) => setShopText(e.target.value)}
+                  onChange={(e) => setStoreText(e.target.value)}
                 >
                   <option value="">
                     {!platformText
@@ -257,9 +257,9 @@ export default function FinanceShippingCostPage() {
                         ? "店铺加载中…"
                         : "全部店铺"}
                   </option>
-                  {shopOptions.map((shop) => (
-                    <option key={shopValue(shop)} value={shopValue(shop)}>
-                      {shopLabel(shop)}
+                  {storeOptions.map((store) => (
+                    <option key={storeValue(store)} value={storeValue(store)}>
+                      {storeLabel(store)}
                     </option>
                   ))}
                 </select>
@@ -402,7 +402,7 @@ export default function FinanceShippingCostPage() {
                   平台
                 </th>
                 <th className="px-3 py-2 text-left font-semibold text-slate-500">
-                  店铺 ID
+                  店铺编码
                 </th>
                 <th className="px-3 py-2 text-left font-semibold text-slate-500">
                   店铺名称
@@ -471,10 +471,10 @@ export default function FinanceShippingCostPage() {
                       {row.platform}
                     </td>
                     <td className="px-3 py-2 font-mono text-[11px]">
-                      {row.shop_id}
+                      {row.store_code}
                     </td>
                     <td className="px-3 py-2 text-slate-800">
-                      {row.shop_name || "-"}
+                      {row.store_name || "-"}
                     </td>
                     <td className="px-3 py-2 font-mono text-[11px] text-slate-800">
                       {row.order_ref}
