@@ -20,7 +20,7 @@ const errorMessage = (err: unknown, fallback: string): string =>
 export default function FinanceOverviewPage() {
   const [range, setRange] = useState<DateRange>(() => getDefaultDateRange(30));
   const [platform, setPlatform] = useState("");
-  const [shopId, setShopId] = useState("");
+  const [storeCode, setStoreCode] = useState("");
   const [data, setData] = useState<FinanceOverviewResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export default function FinanceOverviewPage() {
       const res = await fetchFinanceOverview({
         ...range,
         platform: platform || undefined,
-        shop_id: shopId || undefined,
+        store_code: storeCode || undefined,
       });
       setData(res);
     } catch (err: unknown) {
@@ -42,7 +42,7 @@ export default function FinanceOverviewPage() {
     } finally {
       setLoading(false);
     }
-  }, [range, platform, shopId]);
+  }, [range, platform, storeCode]);
 
   useEffect(() => {
     void load();
@@ -102,11 +102,11 @@ export default function FinanceOverviewPage() {
         onRefresh={() => void load()}
         loading={loading}
         error={error}
-        showPlatformShop
+        showPlatformStore
         platform={platform}
-        shopId={shopId}
+        storeCode={storeCode}
         onPlatformChange={setPlatform}
-        onShopIdChange={setShopId}
+        onStoreCodeChange={setStoreCode}
       />
 
       <FinanceMetricCards cards={cards} />

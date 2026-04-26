@@ -3,9 +3,15 @@ export type FinanceDateRangeQuery = {
   to_date?: string;
 };
 
-export type FinancePlatformShopQuery = FinanceDateRangeQuery & {
+export type FinanceStoreQuery = FinanceDateRangeQuery & {
   platform?: string;
-  shop_id?: string;
+  store_code?: string;
+};
+
+export type FinanceOrderSalesQuery = FinanceStoreQuery & {
+  order_no?: string;
+  limit?: number;
+  offset?: number;
 };
 
 export type FinanceSkuPurchaseLedgerQuery = FinanceDateRangeQuery & {
@@ -16,7 +22,7 @@ export type FinanceSkuPurchaseLedgerQuery = FinanceDateRangeQuery & {
 
 export type FinanceShippingLedgerQuery = FinanceDateRangeQuery & {
   platform?: string;
-  shop_id?: string;
+  store_code?: string;
   warehouse_id?: number;
   shipping_provider_id?: number;
   order_keyword?: string;
@@ -49,6 +55,8 @@ export type FinanceOverviewResponse = {
 
 export type OrderSalesSummary = {
   order_count: number;
+  line_count: number;
+  qty_sold: number;
   revenue: number;
   avg_order_value: number | null;
   median_order_value: number | null;
@@ -57,13 +65,18 @@ export type OrderSalesSummary = {
 export type OrderSalesDailyRow = {
   day: string;
   order_count: number;
+  line_count: number;
+  qty_sold: number;
   revenue: number;
 };
 
-export type OrderSalesShopRow = {
+export type OrderSalesStoreRow = {
   platform: string;
-  shop_id: string;
+  store_code: string;
+  store_name: string | null;
   order_count: number;
+  line_count: number;
+  qty_sold: number;
   revenue: number;
 };
 
@@ -75,21 +88,48 @@ export type OrderSalesItemRow = {
   revenue: number;
 };
 
-export type OrderSalesTopOrderRow = {
+export type OrderSalesLineRow = {
+  id: number;
   order_id: number;
+  order_item_id: number;
+
   platform: string;
-  shop_id: string;
+  store_id: number;
+  store_code: string;
+  store_name: string | null;
+
   ext_order_no: string;
-  order_value: number;
-  created_at: string;
+  order_ref: string;
+  order_status: string | null;
+  order_created_at: string;
+  order_date: string;
+
+  receiver_province: string | null;
+  receiver_city: string | null;
+  receiver_district: string | null;
+
+  item_id: number;
+  sku_id: string | null;
+  title: string | null;
+
+  qty_sold: number;
+  unit_price: number | null;
+  discount_amount: number | null;
+  line_amount: number;
+
+  order_amount: number | null;
+  pay_amount: number | null;
 };
 
 export type OrderSalesResponse = {
   summary: OrderSalesSummary;
   daily: OrderSalesDailyRow[];
-  by_shop: OrderSalesShopRow[];
+  by_store: OrderSalesStoreRow[];
   by_item: OrderSalesItemRow[];
-  top_orders: OrderSalesTopOrderRow[];
+  items: OrderSalesLineRow[];
+  total: number;
+  limit: number;
+  offset: number;
 };
 
 export type PurchaseCostSummary = {
@@ -187,13 +227,12 @@ export type SkuPurchaseLedgerOptionsResponse = {
   warehouses: SkuPurchaseLedgerWarehouseOption[];
 };
 
-
 export type ShippingCostLedgerRow = {
   shipping_record_id: number;
 
   platform: string;
-  shop_id: string;
-  shop_name: string | null;
+  store_code: string;
+  store_name: string | null;
 
   order_ref: string;
   package_no: number;
@@ -222,10 +261,10 @@ export type ShippingCostLedgerResponse = {
   rows: ShippingCostLedgerRow[];
 };
 
-export type ShippingCostLedgerShopOption = {
+export type ShippingCostLedgerStoreOption = {
   platform: string;
-  shop_id: string;
-  shop_name: string | null;
+  store_code: string;
+  store_name: string | null;
 };
 
 export type ShippingCostLedgerWarehouseOption = {
@@ -240,7 +279,7 @@ export type ShippingCostLedgerProviderOption = {
 };
 
 export type ShippingCostLedgerOptionsResponse = {
-  shops: ShippingCostLedgerShopOption[];
+  stores: ShippingCostLedgerStoreOption[];
   warehouses: ShippingCostLedgerWarehouseOption[];
   providers: ShippingCostLedgerProviderOption[];
 };

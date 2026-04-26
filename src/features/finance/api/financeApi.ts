@@ -1,10 +1,11 @@
 import { apiGet } from "../../../lib/api";
 import type {
   FinanceDateRangeQuery,
+  FinanceOrderSalesQuery,
   FinanceOverviewResponse,
-  FinancePlatformShopQuery,
   FinanceShippingLedgerQuery,
   FinanceSkuPurchaseLedgerQuery,
+  FinanceStoreQuery,
   OrderSalesResponse,
   PurchaseCostResponse,
   ShippingCostLedgerOptionsResponse,
@@ -16,7 +17,8 @@ import type {
 type MoneyLike = number | string | null | undefined;
 
 type FinanceQueryParams = Partial<
-  FinancePlatformShopQuery &
+  FinanceStoreQuery &
+    FinanceOrderSalesQuery &
     FinanceSkuPurchaseLedgerQuery &
     FinanceShippingLedgerQuery
 >;
@@ -42,6 +44,8 @@ type FinanceOverviewResponseRaw = {
 type OrderSalesResponseRaw = {
   summary: {
     order_count: number | string | null;
+    line_count: number | string | null;
+    qty_sold: number | string | null;
     revenue: MoneyLike;
     avg_order_value: MoneyLike;
     median_order_value: MoneyLike;
@@ -49,12 +53,17 @@ type OrderSalesResponseRaw = {
   daily: Array<{
     day: string;
     order_count: number | string | null;
+    line_count: number | string | null;
+    qty_sold: number | string | null;
     revenue: MoneyLike;
   }>;
-  by_shop: Array<{
+  by_store: Array<{
     platform: string | null;
-    shop_id: string | null;
+    store_code: string | null;
+    store_name: string | null;
     order_count: number | string | null;
+    line_count: number | string | null;
+    qty_sold: number | string | null;
     revenue: MoneyLike;
   }>;
   by_item: Array<{
@@ -64,14 +73,35 @@ type OrderSalesResponseRaw = {
     qty_sold: number | string | null;
     revenue: MoneyLike;
   }>;
-  top_orders: Array<{
+  items: Array<{
+    id: number | string;
     order_id: number | string;
+    order_item_id: number | string;
     platform: string | null;
-    shop_id: string | null;
+    store_id: number | string;
+    store_code: string | null;
+    store_name: string | null;
     ext_order_no: string | null;
-    order_value: MoneyLike;
-    created_at: string;
+    order_ref: string | null;
+    order_status: string | null;
+    order_created_at: string;
+    order_date: string;
+    receiver_province: string | null;
+    receiver_city: string | null;
+    receiver_district: string | null;
+    item_id: number | string;
+    sku_id: string | null;
+    title: string | null;
+    qty_sold: number | string | null;
+    unit_price: MoneyLike;
+    discount_amount: MoneyLike;
+    line_amount: MoneyLike;
+    order_amount: MoneyLike;
+    pay_amount: MoneyLike;
   }>;
+  total: number | string | null;
+  limit: number | string | null;
+  offset: number | string | null;
 };
 
 type PurchaseCostResponseRaw = {
@@ -151,8 +181,8 @@ type ShippingCostLedgerResponseRaw = {
   rows: Array<{
     shipping_record_id: number | string;
     platform: string | null;
-    shop_id: string | null;
-    shop_name: string | null;
+    store_code: string | null;
+    store_name: string | null;
     order_ref: string;
     package_no: number | string;
     tracking_no: string | null;
@@ -173,10 +203,10 @@ type ShippingCostLedgerResponseRaw = {
 };
 
 type ShippingCostLedgerOptionsResponseRaw = {
-  shops: Array<{
+  stores: Array<{
     platform: string | null;
-    shop_id: string | null;
-    shop_name: string | null;
+    store_code: string | null;
+    store_name: string | null;
   }>;
   warehouses: Array<{
     warehouse_id: number | string;
@@ -210,7 +240,7 @@ const buildQuery = (params: FinanceQueryParams): string => {
   if (params.from_date) qs.set("from_date", params.from_date);
   if (params.to_date) qs.set("to_date", params.to_date);
   if (params.platform) qs.set("platform", params.platform);
-  if (params.shop_id) qs.set("shop_id", params.shop_id);
+  if (params.store_code) qs.set("store_code", params.store_code);
 
   if (typeof params.supplier_id === "number") {
     qs.set("supplier_id", String(params.supplier_id));
@@ -221,9 +251,16 @@ const buildQuery = (params: FinanceQueryParams): string => {
   if (typeof params.shipping_provider_id === "number") {
     qs.set("shipping_provider_id", String(params.shipping_provider_id));
   }
+  if (typeof params.limit === "number") {
+    qs.set("limit", String(params.limit));
+  }
+  if (typeof params.offset === "number") {
+    qs.set("offset", String(params.offset));
+  }
 
   if (params.item_keyword) qs.set("item_keyword", params.item_keyword);
   if (params.order_keyword) qs.set("order_keyword", params.order_keyword);
+  if (params.order_no) qs.set("order_no", params.order_no);
   if (params.tracking_no) qs.set("tracking_no", params.tracking_no);
 
   const query = qs.toString();
@@ -231,7 +268,7 @@ const buildQuery = (params: FinanceQueryParams): string => {
 };
 
 export async function fetchFinanceOverview(
-  params: FinancePlatformShopQuery,
+  params: FinanceStoreQuery,
 ): Promise<FinanceOverviewResponse> {
   const raw = await apiGet<FinanceOverviewResponseRaw>(
     `/finance/overview${buildQuery(params)}`,
@@ -259,7 +296,7 @@ export async function fetchFinanceOverview(
 }
 
 export async function fetchFinanceOrderSales(
-  params: FinancePlatformShopQuery,
+  params: FinanceOrderSalesQuery,
 ): Promise<OrderSalesResponse> {
   const raw = await apiGet<OrderSalesResponseRaw>(
     `/finance/order-sales${buildQuery(params)}`,
@@ -268,6 +305,8 @@ export async function fetchFinanceOrderSales(
   return {
     summary: {
       order_count: toNumber(raw.summary.order_count),
+      line_count: toNumber(raw.summary.line_count),
+      qty_sold: toNumber(raw.summary.qty_sold),
       revenue: toNumber(raw.summary.revenue),
       avg_order_value: toNumberOrNull(raw.summary.avg_order_value),
       median_order_value: toNumberOrNull(raw.summary.median_order_value),
@@ -275,12 +314,17 @@ export async function fetchFinanceOrderSales(
     daily: raw.daily.map((row) => ({
       day: row.day,
       order_count: toNumber(row.order_count),
+      line_count: toNumber(row.line_count),
+      qty_sold: toNumber(row.qty_sold),
       revenue: toNumber(row.revenue),
     })),
-    by_shop: raw.by_shop.map((row) => ({
+    by_store: raw.by_store.map((row) => ({
       platform: toStringValue(row.platform),
-      shop_id: toStringValue(row.shop_id),
+      store_code: toStringValue(row.store_code),
+      store_name: row.store_name,
       order_count: toNumber(row.order_count),
+      line_count: toNumber(row.line_count),
+      qty_sold: toNumber(row.qty_sold),
       revenue: toNumber(row.revenue),
     })),
     by_item: raw.by_item.map((row) => ({
@@ -290,14 +334,35 @@ export async function fetchFinanceOrderSales(
       qty_sold: toNumber(row.qty_sold),
       revenue: toNumber(row.revenue),
     })),
-    top_orders: raw.top_orders.map((row) => ({
+    items: raw.items.map((row) => ({
+      id: toNumber(row.id),
       order_id: toNumber(row.order_id),
+      order_item_id: toNumber(row.order_item_id),
       platform: toStringValue(row.platform),
-      shop_id: toStringValue(row.shop_id),
+      store_id: toNumber(row.store_id),
+      store_code: toStringValue(row.store_code),
+      store_name: row.store_name,
       ext_order_no: toStringValue(row.ext_order_no),
-      order_value: toNumber(row.order_value),
-      created_at: row.created_at,
+      order_ref: toStringValue(row.order_ref),
+      order_status: row.order_status,
+      order_created_at: row.order_created_at,
+      order_date: row.order_date,
+      receiver_province: row.receiver_province,
+      receiver_city: row.receiver_city,
+      receiver_district: row.receiver_district,
+      item_id: toNumber(row.item_id),
+      sku_id: row.sku_id,
+      title: row.title,
+      qty_sold: toNumber(row.qty_sold),
+      unit_price: toNumberOrNull(row.unit_price),
+      discount_amount: toNumberOrNull(row.discount_amount),
+      line_amount: toNumber(row.line_amount),
+      order_amount: toNumberOrNull(row.order_amount),
+      pay_amount: toNumberOrNull(row.pay_amount),
     })),
+    total: toNumber(raw.total),
+    limit: toNumber(raw.limit),
+    offset: toNumber(raw.offset),
   };
 }
 
@@ -409,8 +474,8 @@ export async function fetchFinanceShippingLedger(
     rows: raw.rows.map((row) => ({
       shipping_record_id: toNumber(row.shipping_record_id),
       platform: toStringValue(row.platform),
-      shop_id: toStringValue(row.shop_id),
-      shop_name: row.shop_name,
+      store_code: toStringValue(row.store_code),
+      store_name: row.store_name,
       order_ref: row.order_ref,
       package_no: toNumber(row.package_no),
       tracking_no: row.tracking_no,
@@ -439,10 +504,10 @@ export async function fetchFinanceShippingLedgerOptions(
   );
 
   return {
-    shops: raw.shops.map((shop) => ({
-      platform: toStringValue(shop.platform),
-      shop_id: toStringValue(shop.shop_id),
-      shop_name: shop.shop_name,
+    stores: raw.stores.map((store) => ({
+      platform: toStringValue(store.platform),
+      store_code: toStringValue(store.store_code),
+      store_name: store.store_name,
     })),
     warehouses: raw.warehouses.map((warehouse) => ({
       warehouse_id: toNumber(warehouse.warehouse_id),

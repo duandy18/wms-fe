@@ -7,11 +7,11 @@ type FinanceFiltersProps = {
   onRefresh: () => void;
   loading: boolean;
   error: string | null;
-  showPlatformShop?: boolean;
+  showPlatformStore?: boolean;
   platform?: string;
-  shopId?: string;
+  storeCode?: string;
   onPlatformChange?: (value: string) => void;
-  onShopIdChange?: (value: string) => void;
+  onStoreCodeChange?: (value: string) => void;
 };
 
 export function FinanceFilters({
@@ -21,11 +21,11 @@ export function FinanceFilters({
   onRefresh,
   loading,
   error,
-  showPlatformShop = false,
+  showPlatformStore = false,
   platform = "",
-  shopId = "",
+  storeCode = "",
   onPlatformChange,
-  onShopIdChange,
+  onStoreCodeChange,
 }: FinanceFiltersProps) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -67,7 +67,7 @@ export function FinanceFilters({
             </button>
           </div>
 
-          {showPlatformShop && (
+          {showPlatformStore && (
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
               <div className="flex items-center gap-1">
                 <span>平台</span>
@@ -79,12 +79,12 @@ export function FinanceFilters({
                 />
               </div>
               <div className="flex items-center gap-1">
-                <span>店铺 ID</span>
+                <span>店铺编码</span>
                 <input
-                  className="w-32 rounded-md border border-slate-300 px-2 py-1 text-xs"
-                  placeholder="可选"
-                  value={shopId}
-                  onChange={(e) => onShopIdChange?.(e.target.value)}
+                  className="w-40 rounded-md border border-slate-300 px-2 py-1 text-xs"
+                  placeholder="store_code"
+                  value={storeCode}
+                  onChange={(e) => onStoreCodeChange?.(e.target.value)}
                 />
               </div>
             </div>
