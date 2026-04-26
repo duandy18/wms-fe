@@ -3,18 +3,23 @@ import type {
   FinanceDateRangeQuery,
   FinanceOverviewResponse,
   FinancePlatformShopQuery,
+  FinanceShippingLedgerQuery,
   FinanceSkuPurchaseLedgerQuery,
   OrderSalesResponse,
   PurchaseCostResponse,
-  ShippingCostResponse,
+  ShippingCostLedgerOptionsResponse,
+  ShippingCostLedgerResponse,
   SkuPurchaseLedgerOptionsResponse,
   SkuPurchaseLedgerResponse,
 } from "../contracts/finance";
 
 type MoneyLike = number | string | null | undefined;
 
-type FinanceQueryParams = FinancePlatformShopQuery &
-  FinanceSkuPurchaseLedgerQuery;
+type FinanceQueryParams = Partial<
+  FinancePlatformShopQuery &
+    FinanceSkuPurchaseLedgerQuery &
+    FinanceShippingLedgerQuery
+>;
 
 type FinanceOverviewSummaryRaw = {
   revenue: MoneyLike;
@@ -142,34 +147,45 @@ type SkuPurchaseLedgerOptionsResponseRaw = {
   }>;
 };
 
-type ShippingCostResponseRaw = {
-  summary: {
-    shipment_count: number | string | null;
-    estimated_shipping_cost: MoneyLike;
-    billed_shipping_cost: MoneyLike;
-    cost_diff: MoneyLike;
-    adjusted_cost: MoneyLike;
-  };
-  daily: Array<{
-    day: string;
-    shipment_count: number | string | null;
-    estimated_shipping_cost: MoneyLike;
-    billed_shipping_cost: MoneyLike;
-    cost_diff: MoneyLike;
-    adjusted_cost: MoneyLike;
-  }>;
-  by_carrier: Array<{
-    carrier_code: string | null;
-    shipment_count: number | string | null;
-    estimated_shipping_cost: MoneyLike;
-    billed_shipping_cost: MoneyLike;
-  }>;
-  by_shop: Array<{
+type ShippingCostLedgerResponseRaw = {
+  rows: Array<{
+    shipping_record_id: number | string;
     platform: string | null;
     shop_id: string | null;
-    shipment_count: number | string | null;
-    estimated_shipping_cost: MoneyLike;
-    billed_shipping_cost: MoneyLike;
+    shop_name: string | null;
+    order_ref: string;
+    package_no: number | string;
+    tracking_no: string | null;
+    warehouse_id: number | string;
+    warehouse_name: string;
+    shipping_provider_id: number | string;
+    shipping_provider_code: string | null;
+    shipping_provider_name: string | null;
+    shipped_time: string;
+    shipped_date: string;
+    dest_province: string | null;
+    dest_city: string | null;
+    gross_weight_kg: MoneyLike;
+    freight_estimated: MoneyLike;
+    surcharge_estimated: MoneyLike;
+    cost_estimated: MoneyLike;
+  }>;
+};
+
+type ShippingCostLedgerOptionsResponseRaw = {
+  shops: Array<{
+    platform: string | null;
+    shop_id: string | null;
+    shop_name: string | null;
+  }>;
+  warehouses: Array<{
+    warehouse_id: number | string;
+    warehouse_name: string;
+  }>;
+  providers: Array<{
+    shipping_provider_id: number | string;
+    shipping_provider_code: string | null;
+    shipping_provider_name: string | null;
   }>;
 };
 
@@ -186,22 +202,30 @@ const toNumberOrNull = (value: unknown): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const toStringValue = (value: string | null | undefined): string =>
-  String(value ?? "");
+const toStringValue = (value: unknown): string => String(value ?? "");
 
 const buildQuery = (params: FinanceQueryParams): string => {
   const qs = new URLSearchParams();
+
   if (params.from_date) qs.set("from_date", params.from_date);
   if (params.to_date) qs.set("to_date", params.to_date);
   if (params.platform) qs.set("platform", params.platform);
   if (params.shop_id) qs.set("shop_id", params.shop_id);
+
   if (typeof params.supplier_id === "number") {
     qs.set("supplier_id", String(params.supplier_id));
   }
   if (typeof params.warehouse_id === "number") {
     qs.set("warehouse_id", String(params.warehouse_id));
   }
+  if (typeof params.shipping_provider_id === "number") {
+    qs.set("shipping_provider_id", String(params.shipping_provider_id));
+  }
+
   if (params.item_keyword) qs.set("item_keyword", params.item_keyword);
+  if (params.order_keyword) qs.set("order_keyword", params.order_keyword);
+  if (params.tracking_no) qs.set("tracking_no", params.tracking_no);
+
   const query = qs.toString();
   return query ? `?${query}` : "";
 };
@@ -374,41 +398,60 @@ export async function fetchFinanceSkuPurchaseLedgerOptions(): Promise<SkuPurchas
   };
 }
 
-export async function fetchFinanceShippingCosts(
-  params: FinancePlatformShopQuery,
-): Promise<ShippingCostResponse> {
-  const raw = await apiGet<ShippingCostResponseRaw>(
-    `/finance/shipping-costs${buildQuery(params)}`,
+export async function fetchFinanceShippingLedger(
+  params: FinanceShippingLedgerQuery,
+): Promise<ShippingCostLedgerResponse> {
+  const raw = await apiGet<ShippingCostLedgerResponseRaw>(
+    `/finance/shipping-costs/shipping-ledger${buildQuery(params)}`,
   );
 
   return {
-    summary: {
-      shipment_count: toNumber(raw.summary.shipment_count),
-      estimated_shipping_cost: toNumber(raw.summary.estimated_shipping_cost),
-      billed_shipping_cost: toNumber(raw.summary.billed_shipping_cost),
-      cost_diff: toNumber(raw.summary.cost_diff),
-      adjusted_cost: toNumber(raw.summary.adjusted_cost),
-    },
-    daily: raw.daily.map((row) => ({
-      day: row.day,
-      shipment_count: toNumber(row.shipment_count),
-      estimated_shipping_cost: toNumber(row.estimated_shipping_cost),
-      billed_shipping_cost: toNumber(row.billed_shipping_cost),
-      cost_diff: toNumber(row.cost_diff),
-      adjusted_cost: toNumber(row.adjusted_cost),
-    })),
-    by_carrier: raw.by_carrier.map((row) => ({
-      carrier_code: toStringValue(row.carrier_code),
-      shipment_count: toNumber(row.shipment_count),
-      estimated_shipping_cost: toNumber(row.estimated_shipping_cost),
-      billed_shipping_cost: toNumber(row.billed_shipping_cost),
-    })),
-    by_shop: raw.by_shop.map((row) => ({
+    rows: raw.rows.map((row) => ({
+      shipping_record_id: toNumber(row.shipping_record_id),
       platform: toStringValue(row.platform),
       shop_id: toStringValue(row.shop_id),
-      shipment_count: toNumber(row.shipment_count),
-      estimated_shipping_cost: toNumber(row.estimated_shipping_cost),
-      billed_shipping_cost: toNumber(row.billed_shipping_cost),
+      shop_name: row.shop_name,
+      order_ref: row.order_ref,
+      package_no: toNumber(row.package_no),
+      tracking_no: row.tracking_no,
+      warehouse_id: toNumber(row.warehouse_id),
+      warehouse_name: row.warehouse_name,
+      shipping_provider_id: toNumber(row.shipping_provider_id),
+      shipping_provider_code: row.shipping_provider_code,
+      shipping_provider_name: row.shipping_provider_name,
+      shipped_time: row.shipped_time,
+      shipped_date: row.shipped_date,
+      dest_province: row.dest_province,
+      dest_city: row.dest_city,
+      gross_weight_kg: toNumberOrNull(row.gross_weight_kg),
+      freight_estimated: toNumberOrNull(row.freight_estimated),
+      surcharge_estimated: toNumberOrNull(row.surcharge_estimated),
+      cost_estimated: toNumberOrNull(row.cost_estimated),
+    })),
+  };
+}
+
+export async function fetchFinanceShippingLedgerOptions(
+  params: FinanceShippingLedgerQuery = {},
+): Promise<ShippingCostLedgerOptionsResponse> {
+  const raw = await apiGet<ShippingCostLedgerOptionsResponseRaw>(
+    `/finance/shipping-costs/shipping-ledger/options${buildQuery(params)}`,
+  );
+
+  return {
+    shops: raw.shops.map((shop) => ({
+      platform: toStringValue(shop.platform),
+      shop_id: toStringValue(shop.shop_id),
+      shop_name: shop.shop_name,
+    })),
+    warehouses: raw.warehouses.map((warehouse) => ({
+      warehouse_id: toNumber(warehouse.warehouse_id),
+      warehouse_name: warehouse.warehouse_name,
+    })),
+    providers: raw.providers.map((provider) => ({
+      shipping_provider_id: toNumber(provider.shipping_provider_id),
+      shipping_provider_code: provider.shipping_provider_code,
+      shipping_provider_name: provider.shipping_provider_name,
     })),
   };
 }
