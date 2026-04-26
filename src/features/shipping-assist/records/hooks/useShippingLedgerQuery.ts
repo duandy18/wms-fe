@@ -8,7 +8,7 @@ const DEFAULT_QUERY: ShippingLedgerQuery = {
   to_date: "",
   order_ref: "",
   tracking_no: "",
-  carrier_code: "",
+  shipping_provider_code: "",
   province: "",
   city: "",
   warehouse_id: undefined,

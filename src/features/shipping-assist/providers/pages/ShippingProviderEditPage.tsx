@@ -123,7 +123,7 @@ const ShippingProviderEditPage: React.FC = () => {
     setState((s) => ({
       ...s,
       editName: p.name ?? "",
-      editCode: p.code ?? "",
+      editCode: p.shipping_provider_code ?? "",
       editCompanyCode: p.company_code ?? "",
       editResourceCode: p.resource_code ?? "",
       editAddress: p.address ?? "",
@@ -163,7 +163,7 @@ const ShippingProviderEditPage: React.FC = () => {
       if (isCreate) {
         const created = await createShippingProvider({
           name,
-          code: codeTrim,
+          shipping_provider_code: codeTrim,
           company_code: companyCodeTrim ? companyCodeTrim : undefined,
           resource_code: resourceCodeTrim ? resourceCodeTrim : undefined,
           address: addrTrim ? addrTrim : undefined,
@@ -183,7 +183,7 @@ const ShippingProviderEditPage: React.FC = () => {
 
       await updateShippingProvider(safePid, {
         name,
-        code: codeTrim,
+        shipping_provider_code: codeTrim,
         company_code: companyCodeTrim ? companyCodeTrim : null,
         resource_code: resourceCodeTrim ? resourceCodeTrim : null,
         address: addrTrim ? addrTrim : null,

@@ -86,8 +86,8 @@ export interface ShipPreparePackageUpdateResponse {
 
 export interface ShipPrepareQuoteCandidateItem {
   provider_id: number;
-  carrier_code?: string | null;
-  carrier_name: string;
+  shipping_provider_code?: string | null;
+  shipping_provider_name: string;
   template_id: number;
   template_name?: string | null;
   quote_status: string;

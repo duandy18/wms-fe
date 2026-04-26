@@ -137,8 +137,8 @@ export function buildConfirmedQuoteState(
   );
 
   const carrierName =
-    normalizeRouteText(selectedQuote?.carrier_name) ||
-    normalizeRouteText(selectedQuote?.carrier_code) ||
+    normalizeRouteText(selectedQuote?.shipping_provider_name) ||
+    normalizeRouteText(selectedQuote?.shipping_provider_code) ||
     `快递网点ID:${confirmed.selected_provider_id}`;
 
   const totalAmount = selectedQuote?.total_amount;
@@ -240,10 +240,10 @@ export function mapQuoteCandidate(
   return {
     packageNo,
     providerId: candidate.provider_id,
-    carrierName: normalizeRouteText(candidate.carrier_name) || "-",
+    carrierName: normalizeRouteText(candidate.shipping_provider_name) || "-",
     serviceName:
       normalizeRouteText(candidate.template_name) ||
-      normalizeRouteText(candidate.carrier_code) ||
+      normalizeRouteText(candidate.shipping_provider_code) ||
       `模板ID:${candidate.template_id}`,
     amount:
       typeof candidate.est_cost === "number"

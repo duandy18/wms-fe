@@ -9,7 +9,7 @@ import type {
 } from "../types";
 
 const DEFAULT_QUERY: ShippingBillReconciliationHistoriesQuery = {
-  carrier_code: "",
+  shipping_provider_code: "",
   tracking_no: "",
   result_status: "",
   limit: 50,
@@ -33,7 +33,7 @@ function getInitialQuery(): ShippingBillReconciliationHistoriesQuery {
 
   return {
     ...DEFAULT_QUERY,
-    carrier_code: params.get("history_carrier_code") ?? "",
+    shipping_provider_code: params.get("history_shipping_provider_code") ?? "",
     tracking_no: params.get("history_tracking_no") ?? "",
     result_status: normalizedResultStatus,
   };

@@ -8,7 +8,7 @@ import type {
 } from "../types";
 
 const DEFAULT_QUERY: ShippingBillReconciliationsQuery = {
-  carrier_code: "",
+  shipping_provider_code: "",
   tracking_no: "",
   status: "",
   limit: 50,
@@ -25,7 +25,7 @@ function getInitialQuery(): ShippingBillReconciliationsQuery {
 
   return {
     ...DEFAULT_QUERY,
-    carrier_code: params.get("carrier_code") ?? "",
+    shipping_provider_code: params.get("shipping_provider_code") ?? "",
     tracking_no: params.get("tracking_no") ?? "",
     status: status === "diff" || status === "bill_only" ? status : "",
   };
@@ -34,8 +34,8 @@ function getInitialQuery(): ShippingBillReconciliationsQuery {
 export function useReconciliationList(initialCarrierCode?: string) {
   const [query, setQuery] = useState<ShippingBillReconciliationsQuery>(() => {
     const initial = getInitialQuery();
-    if (initialCarrierCode && !initial.carrier_code) {
-      return { ...initial, carrier_code: initialCarrierCode };
+    if (initialCarrierCode && !initial.shipping_provider_code) {
+      return { ...initial, shipping_provider_code: initialCarrierCode };
     }
     return initial;
   });
@@ -64,7 +64,7 @@ export function useReconciliationList(initialCarrierCode?: string) {
   function setCarrierCode(carrierCode: string): void {
     setQuery((prev) => ({
       ...prev,
-      carrier_code: carrierCode,
+      shipping_provider_code: carrierCode,
       offset: 0,
     }));
   }
@@ -72,7 +72,7 @@ export function useReconciliationList(initialCarrierCode?: string) {
   function reset(): void {
     setQuery({
       ...DEFAULT_QUERY,
-      carrier_code: initialCarrierCode ?? "",
+      shipping_provider_code: initialCarrierCode ?? "",
     });
   }
 

@@ -90,8 +90,8 @@ const ApproveReconciliationDialog: React.FC<Props> = ({
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <div className="text-xs text-slate-500">快递公司</div>
-              <div className="mt-1 text-sm font-medium text-slate-900">{row.carrier_code}</div>
+              <div className="text-xs text-slate-500">物流网点</div>
+              <div className="mt-1 text-sm font-medium text-slate-900">{row.shipping_provider_code}</div>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">

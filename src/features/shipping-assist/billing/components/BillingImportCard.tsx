@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import type { CarrierBillImportResult } from "../types";
 
 type ProviderOption = {
-  code: string;
+  shipping_provider_code: string;
   name: string;
 };
 
@@ -23,7 +23,7 @@ interface Props {
 }
 
 function formatProviderLabel(option: ProviderOption): string {
-  return `${option.name}（${option.code}）`;
+  return `${option.name}（${option.shipping_provider_code}）`;
 }
 
 const BillingImportCard: React.FC<Props> = ({
@@ -47,7 +47,7 @@ const BillingImportCard: React.FC<Props> = ({
         <h2 className="text-base font-semibold text-slate-900">账单导入</h2>
         <div className="mt-1 text-sm text-slate-600">
           先选择快递网点，再上传账单文件。导入按{" "}
-          <span className="font-mono">carrier_code + tracking_no</span> 幂等写入。
+          <span className="font-mono">shipping_provider_code + tracking_no</span> 幂等写入。
         </div>
       </div>
 
@@ -64,7 +64,7 @@ const BillingImportCard: React.FC<Props> = ({
               {providersLoading ? "正在加载快递网点…" : "请选择快递网点"}
             </option>
             {providerOptions.map((option) => (
-              <option key={option.code} value={option.code}>
+              <option key={option.shipping_provider_code} value={option.shipping_provider_code}>
                 {formatProviderLabel(option)}
               </option>
             ))}
@@ -127,7 +127,7 @@ const BillingImportCard: React.FC<Props> = ({
       {result ? (
         <div className="mt-4 space-y-3">
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            导入完成：快递公司 <span className="font-semibold">{result.carrier_code}</span>，成功{" "}
+            导入完成：物流网点 <span className="font-semibold">{result.shipping_provider_code}</span>，成功{" "}
             {result.imported_count}，跳过 {result.skipped_count}，错误 {result.error_count}
           </div>
 

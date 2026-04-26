@@ -62,7 +62,7 @@ const ShippingLedgerFilters: React.FC<ShippingLedgerFiltersProps> = ({
             </option>
             {providers.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.name}（{item.code || "-"}）
+                {item.name}（{item.shipping_provider_code || "-"}）
               </option>
             ))}
           </select>

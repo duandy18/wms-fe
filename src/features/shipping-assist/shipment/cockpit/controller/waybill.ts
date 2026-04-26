@@ -28,8 +28,8 @@ export function buildWaybillState(
       typeof result.shipping_provider_id === "number"
         ? result.shipping_provider_id
         : null,
-    carrierCode: String(result.carrier_code || "").trim(),
-    carrierName: String(result.carrier_name || "").trim(),
+    carrierCode: String(result.shipping_provider_code || "").trim(),
+    carrierName: String(result.shipping_provider_name || "").trim(),
     status: String(result.status || "").trim(),
     printData:
       result.print_data && typeof result.print_data === "object"

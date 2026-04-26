@@ -116,7 +116,7 @@ const ShippingLedgerTable: React.FC<ShippingLedgerTableProps> = ({
                   </td>
 
                   <td className="px-3 py-2 text-xs">
-                    {formatProvider(row.carrier_name, row.carrier_code)}
+                    {formatProvider(row.shipping_provider_name, row.shipping_provider_code)}
                   </td>
 
                   <td className="px-3 py-2 font-mono text-xs">

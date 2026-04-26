@@ -24,8 +24,8 @@ export interface ShipWithWaybillResponse {
   package_no: number;
   tracking_no: string;
   shipping_provider_id: number;
-  carrier_code?: string | null;
-  carrier_name?: string | null;
+  shipping_provider_code?: string | null;
+  shipping_provider_name?: string | null;
   status: string;
   print_data?: Record<string, unknown> | null;
   template_url?: string | null;

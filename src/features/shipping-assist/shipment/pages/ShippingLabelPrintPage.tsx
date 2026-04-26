@@ -20,8 +20,8 @@ const ShippingLabelPrintPage: React.FC = () => {
 
   const trackingNo = query.get("tracking_no") ?? "";
   const orderRef = query.get("order_ref") ?? "";
-  const carrierCode = query.get("carrier_code") ?? "";
-  const carrierName = query.get("carrier_name") ?? "";
+  const carrierCode = query.get("shipping_provider_code") ?? "";
+  const carrierName = query.get("shipping_provider_name") ?? "";
   const receiverName = query.get("receiver_name") ?? "";
   const receiverPhone = query.get("receiver_phone") ?? "";
   const province = query.get("province") ?? "";
@@ -62,7 +62,7 @@ const ShippingLabelPrintPage: React.FC = () => {
       >
         <div className="mb-1 flex items-center justify-between border-b border-slate-300 pb-1">
           <div className="text-xs font-semibold">
-            {carrierName || "快递公司"}
+            {carrierName || "物流网点"}
             {carrierCode ? ` (${carrierCode})` : ""}
           </div>
           <div className="max-w-[180px] truncate text-right text-[10px] text-slate-600">

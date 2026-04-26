@@ -6,10 +6,10 @@ import type { ReconciliationCarrierOption } from "../types";
 function toCarrierOption(
   provider: ShippingProvider,
 ): ReconciliationCarrierOption | null {
-  const code = String(provider.code ?? "").trim();
+  const code = String(provider.shipping_provider_code ?? "").trim();
   const name = String(provider.name ?? "").trim();
   if (!code || !name) return null;
-  return { code, name };
+  return { shipping_provider_code: code, name };
 }
 
 export function useReconciliationCarrierOptions() {
@@ -33,7 +33,7 @@ export function useReconciliationCarrierOptions() {
         );
       setOptions(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载快递公司失败");
+      setError(err instanceof Error ? err.message : "加载物流网点失败");
       setOptions([]);
     } finally {
       setLoading(false);

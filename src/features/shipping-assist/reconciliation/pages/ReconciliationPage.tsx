@@ -21,7 +21,7 @@ import type {
 } from "../types";
 
 function buildReconcileResultText(result: ReconcileCarrierBillResult): string {
-  return `对账完成：${result.carrier_code} ｜ 账单 ${result.bill_item_count} ｜ 已平 ${result.matched_count} ｜ 我方缺记录 ${result.bill_only_count} ｜ 差异 ${result.diff_count} ｜ 更新 ${result.updated_count}`;
+  return `对账完成：${result.shipping_provider_code} ｜ 账单 ${result.bill_item_count} ｜ 已平 ${result.matched_count} ｜ 我方缺记录 ${result.bill_only_count} ｜ 差异 ${result.diff_count} ｜ 更新 ${result.updated_count}`;
 }
 
 const ReconciliationPage: React.FC = () => {
@@ -63,9 +63,9 @@ const ReconciliationPage: React.FC = () => {
   }
 
   async function handleReconcile(): Promise<void> {
-    const carrierCode = (current.query.carrier_code ?? "").trim();
+    const carrierCode = (current.query.shipping_provider_code ?? "").trim();
     if (!carrierCode) {
-      window.alert("请先选择快递公司。");
+      window.alert("请先选择物流网点。");
       return;
     }
 
@@ -73,7 +73,7 @@ const ReconciliationPage: React.FC = () => {
       setReconciling(true);
 
       const result = await reconcileShippingBill({
-        carrier_code: carrierCode,
+        shipping_provider_code: carrierCode,
       });
 
       await current.reload();

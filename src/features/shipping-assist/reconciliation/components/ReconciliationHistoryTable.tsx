@@ -54,7 +54,7 @@ const ReconciliationHistoryTable: React.FC<Props> = ({ rows, loading, error }) =
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-3 py-2 text-left text-slate-600">归档结果</th>
-                <th className="px-3 py-2 text-left text-slate-600">快递公司</th>
+                <th className="px-3 py-2 text-left text-slate-600">物流网点</th>
                 <th className="px-3 py-2 text-left text-slate-600">运单号</th>
                 <th className="px-3 py-2 text-right text-slate-600">发货记录ID</th>
                 <th className="px-3 py-2 text-right text-slate-600">账单明细ID</th>
@@ -70,7 +70,7 @@ const ReconciliationHistoryTable: React.FC<Props> = ({ rows, loading, error }) =
               {rows.map((row) => (
                 <tr key={row.id} className="border-t border-slate-100">
                   <td className="px-3 py-2 text-xs">{resultStatusText(row.result_status)}</td>
-                  <td className="px-3 py-2 text-xs">{row.carrier_code}</td>
+                  <td className="px-3 py-2 text-xs">{row.shipping_provider_code}</td>
                   <td className="px-3 py-2 font-mono text-xs">{row.tracking_no}</td>
                   <td className="px-3 py-2 text-right font-mono text-xs">
                     {row.shipping_record_id ?? "-"}

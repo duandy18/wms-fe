@@ -14,7 +14,7 @@ export function useBillingImport() {
 
   async function submit(): Promise<void> {
     if (!carrierCode.trim()) {
-      setError("请选择快递公司");
+      setError("请选择物流网点");
       return;
     }
     if (!file) {
@@ -28,7 +28,7 @@ export function useBillingImport() {
 
     try {
       const formData = new FormData();
-      formData.append("carrier_code", carrierCode.trim());
+      formData.append("shipping_provider_code", carrierCode.trim());
       formData.append("file", file);
 
       const res = await importCarrierBill(formData);

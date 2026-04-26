@@ -20,7 +20,7 @@ export async function fetchShippingProviderDetail(id: number): Promise<ShippingP
 
 export async function createShippingProvider(payload: {
   name: string;
-  code: string;
+  shipping_provider_code: string;
   company_code?: string;
   resource_code?: string;
 
@@ -36,7 +36,7 @@ export async function createShippingProvider(payload: {
 
 export type UpdateShippingProviderPayload = Partial<{
   name: string;
-  code: string;
+  shipping_provider_code: string;
   company_code: string | null;
   resource_code: string | null;
   address: string | null;

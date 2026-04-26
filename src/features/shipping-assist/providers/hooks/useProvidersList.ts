@@ -50,7 +50,7 @@ export function useProvidersList() {
       }
 
       const nameHit = (p.name ?? "").toLowerCase().includes(q);
-      const codeHit = (p.code ?? "").toLowerCase().includes(q);
+      const codeHit = (p.shipping_provider_code ?? "").toLowerCase().includes(q);
       const addressHit = (p.address ?? "").toLowerCase().includes(q);
       const contactHit = (p.contacts ?? []).some((c) => {
         const cn = (c.name ?? "").toLowerCase();
@@ -100,7 +100,7 @@ export function useProvidersList() {
       try {
         await createShippingProvider({
           name: n,
-          code: codeTrimmed,
+          shipping_provider_code: codeTrimmed,
           active: true,
           priority: 100,
         });
