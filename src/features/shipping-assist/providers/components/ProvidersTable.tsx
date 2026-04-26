@@ -141,7 +141,7 @@ export const ProvidersTable: React.FC<Props> = ({
                   <tr key={p.id} className={UI.tr}>
                     <td className={UI.tdMono}>{p.id}</td>
                     <td className={UI.td}>{renderText(p.name)}</td>
-                    <td className={UI.tdMono}>{renderText(p.code ?? null)}</td>
+                    <td className={UI.tdMono}>{renderText(p.shipping_provider_code ?? null)}</td>
                     <td className={UI.tdMono}>{renderText(p.company_code ?? null)}</td>
                     <td className={UI.tdMono}>{renderText(p.resource_code ?? null)}</td>
                     <td className={UI.td}>{renderText(p.address ?? null)}</td>

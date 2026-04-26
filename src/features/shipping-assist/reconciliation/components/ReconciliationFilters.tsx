@@ -32,7 +32,7 @@ const ReconciliationFilters: React.FC<Props> = ({
   onReconcile,
 }) => {
   const reconcileDisabled =
-    reconciling || carrierOptionsLoading || !String(query.carrier_code ?? "").trim();
+    reconciling || carrierOptionsLoading || !String(query.shipping_provider_code ?? "").trim();
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -46,19 +46,19 @@ const ReconciliationFilters: React.FC<Props> = ({
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <label className="space-y-1">
-          <div className="text-xs text-slate-600">快递公司</div>
+          <div className="text-xs text-slate-600">物流网点</div>
           <select
-            value={query.carrier_code ?? ""}
-            onChange={(e) => onChange("carrier_code", e.target.value)}
+            value={query.shipping_provider_code ?? ""}
+            onChange={(e) => onChange("shipping_provider_code", e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             disabled={carrierOptionsLoading}
           >
             <option value="">
-              {carrierOptionsLoading ? "快递公司加载中…" : "请选择快递公司"}
+              {carrierOptionsLoading ? "物流网点加载中…" : "请选择物流网点"}
             </option>
             {carrierOptions.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.name}（{option.code}）
+              <option key={option.shipping_provider_code} value={option.shipping_provider_code}>
+                {option.name}（{option.shipping_provider_code}）
               </option>
             ))}
           </select>

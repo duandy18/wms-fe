@@ -5,7 +5,7 @@ import { fetchCarrierBillItems } from "../api";
 import type { CarrierBillItem, CarrierBillItemsQuery } from "../types";
 
 const DEFAULT_QUERY: CarrierBillItemsQuery = {
-  carrier_code: "",
+  shipping_provider_code: "",
   tracking_no: "",
   limit: 50,
   offset: 0,
@@ -19,7 +19,7 @@ function getInitialQuery(): CarrierBillItemsQuery {
   const params = new URLSearchParams(window.location.search);
   return {
     ...DEFAULT_QUERY,
-    carrier_code: params.get("carrier_code") ?? "",
+    shipping_provider_code: params.get("shipping_provider_code") ?? "",
     tracking_no: params.get("tracking_no") ?? "",
   };
 }

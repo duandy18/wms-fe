@@ -7,7 +7,7 @@ export interface CarrierBillImportRowError {
 
 export interface CarrierBillImportResult {
   ok: boolean;
-  carrier_code: string;
+  shipping_provider_code: string;
   imported_count: number;
   skipped_count: number;
   error_count: number;
@@ -16,7 +16,7 @@ export interface CarrierBillImportResult {
 
 export interface CarrierBillItem {
   id: number;
-  carrier_code: string;
+  shipping_provider_code: string;
   bill_month: string | null;
   tracking_no: string;
   business_time: string | null;
@@ -43,7 +43,7 @@ export interface CarrierBillItemsResponse {
 }
 
 export interface CarrierBillItemsQuery {
-  carrier_code?: string;
+  shipping_provider_code?: string;
   tracking_no?: string;
   limit: number;
   offset: number;

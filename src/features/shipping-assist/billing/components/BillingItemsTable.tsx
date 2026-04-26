@@ -43,7 +43,7 @@ const BillingItemsTable: React.FC<Props> = ({ rows, loading, error }) => {
               <tr>
                 <th className="px-3 py-2 text-left text-slate-600">序号</th>
                 <th className="px-3 py-2 text-left text-slate-600">账单月份</th>
-                <th className="px-3 py-2 text-left text-slate-600">快递公司</th>
+                <th className="px-3 py-2 text-left text-slate-600">物流网点</th>
                 <th className="px-3 py-2 text-left text-slate-600">运单号</th>
                 <th className="px-3 py-2 text-left text-slate-600">业务时间</th>
                 <th className="px-3 py-2 text-left text-slate-600">寄件人</th>
@@ -62,7 +62,7 @@ const BillingItemsTable: React.FC<Props> = ({ rows, loading, error }) => {
                 <tr key={row.id} className="border-t border-slate-100">
                   <td className="px-3 py-2 font-mono text-xs">{row.id}</td>
                   <td className="px-3 py-2 text-xs">{row.bill_month ?? "-"}</td>
-                  <td className="px-3 py-2 text-xs">{row.carrier_code}</td>
+                  <td className="px-3 py-2 text-xs">{row.shipping_provider_code}</td>
                   <td className="px-3 py-2 font-mono text-xs">{row.tracking_no}</td>
                   <td className="px-3 py-2 font-mono text-xs">
                     {formatDateTime(row.business_time)}

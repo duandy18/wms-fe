@@ -6,7 +6,7 @@ import { apiGet } from "../../../../lib/api";
 export interface ShippingLedgerProviderOption {
   id: number;
   name: string;
-  code: string;
+  shipping_provider_code: string;
 }
 
 export interface ShippingLedgerWarehouseOption {
@@ -17,8 +17,8 @@ export interface ShippingLedgerWarehouseOption {
 interface ProvidersListResponseItem {
   id?: number;
   shipping_provider_id?: number;
+  shipping_provider_code?: string | null;
   name?: string;
-  code?: string;
 }
 
 interface ProvidersListResponse {
@@ -58,7 +58,7 @@ function toProviderOptions(payload: ProvidersListResponse): ShippingLedgerProvid
             ? item.shipping_provider_id
             : null;
       const name = typeof item.name === "string" ? item.name.trim() : "";
-      const code = typeof item.code === "string" ? item.code.trim() : "";
+      const code = typeof item.shipping_provider_code === "string" ? item.shipping_provider_code.trim() : "";
 
       if (id == null || !name) {
         return null;
@@ -67,7 +67,7 @@ function toProviderOptions(payload: ProvidersListResponse): ShippingLedgerProvid
       return {
         id,
         name,
-        code,
+        shipping_provider_code: code,
       };
     })
     .filter((item): item is ShippingLedgerProviderOption => item !== null);

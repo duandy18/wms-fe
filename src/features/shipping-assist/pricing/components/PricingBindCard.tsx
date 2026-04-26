@@ -78,9 +78,9 @@ const PricingBindCard: React.FC<Props> = ({
             <option value="">请选择快递网点</option>
             {providerOptions.map((item) => (
               <option key={item.provider_id} value={String(item.provider_id)}>
-                {item.provider_code
-                  ? `${item.provider_code} ${item.provider_name}`
-                  : item.provider_name}
+                {item.shipping_provider_code
+                  ? `${item.shipping_provider_code} ${item.shipping_provider_name}`
+                  : item.shipping_provider_name}
                 {item.provider_active ? "" : "（已停用）"}
               </option>
             ))}

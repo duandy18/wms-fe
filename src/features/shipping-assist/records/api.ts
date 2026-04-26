@@ -23,7 +23,7 @@ function buildExportQueryString(query: ShippingLedgerQuery): string {
   appendIfPresent("to_date", query.to_date);
   appendIfPresent("order_ref", query.order_ref);
   appendIfPresent("tracking_no", query.tracking_no);
-  appendIfPresent("carrier_code", query.carrier_code);
+  appendIfPresent("shipping_provider_code", query.shipping_provider_code);
   appendIfPresent("shipping_provider_id", query.shipping_provider_id);
   appendIfPresent("province", query.province);
   appendIfPresent("city", query.city);

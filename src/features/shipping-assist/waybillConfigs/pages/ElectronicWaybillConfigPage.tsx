@@ -80,7 +80,7 @@ const ElectronicWaybillConfigPage: React.FC = () => {
     () =>
       providers.map((p) => ({
         id: p.id,
-        label: `${p.name}${p.code ? ` (${p.code})` : ""}`,
+        label: `${p.name}${p.shipping_provider_code ? ` (${p.shipping_provider_code})` : ""}`,
       })),
     [providers],
   );

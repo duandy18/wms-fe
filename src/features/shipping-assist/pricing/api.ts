@@ -14,14 +14,14 @@ type ListResponse<T> = {
 type ShippingProviderLite = {
   id: number;
   name: string;
-  code?: string | null;
+  shipping_provider_code?: string | null;
   active?: boolean;
 };
 
 export type PricingProviderOption = {
   provider_id: number;
-  provider_name: string;
-  provider_code: string;
+  shipping_provider_name: string;
+  shipping_provider_code: string;
   provider_active: boolean;
 };
 
@@ -59,8 +59,8 @@ export async function fetchPricingProviderOptions(): Promise<
   return providers
     .map((item) => ({
       provider_id: item.id,
-      provider_name: item.name,
-      provider_code: String(item.code ?? ""),
+      shipping_provider_name: item.name,
+      shipping_provider_code: String(item.shipping_provider_code ?? ""),
       provider_active: Boolean(item.active),
     }))
     .sort((a, b) => {
@@ -68,10 +68,10 @@ export async function fetchPricingProviderOptions(): Promise<
       const bInactive = b.provider_active ? 0 : 1;
       if (aInactive !== bInactive) return aInactive - bInactive;
 
-      const byCode = a.provider_code.localeCompare(b.provider_code, "zh-CN");
+      const byCode = a.shipping_provider_code.localeCompare(b.shipping_provider_code, "zh-CN");
       if (byCode !== 0) return byCode;
 
-      return a.provider_name.localeCompare(b.provider_name, "zh-CN");
+      return a.shipping_provider_name.localeCompare(b.shipping_provider_name, "zh-CN");
     });
 }
 

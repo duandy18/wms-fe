@@ -41,8 +41,8 @@ export interface ShippingProvider {
   // 基础状态
   active?: boolean;
 
-  // 历史 / UI 使用字段
-  code?: string | null;
+  // 物流网点编号 / 网点编码
+  shipping_provider_code?: string | null;
   company_code?: string | null;
   resource_code?: string | null;
   address?: string | null;

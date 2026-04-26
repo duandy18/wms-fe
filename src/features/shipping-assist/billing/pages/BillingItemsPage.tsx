@@ -11,12 +11,12 @@ import { fetchShippingProviders } from "../../providers/api/providers";
 import type { ShippingProvider } from "../../providers/api/types";
 
 type ProviderOption = {
-  code: string;
+  shipping_provider_code: string;
   name: string;
 };
 
 function toProviderOption(provider: ShippingProvider): ProviderOption | null {
-  const code = String(provider.code ?? "").trim();
+  const code = String(provider.shipping_provider_code ?? "").trim();
   const name = String(provider.name ?? "").trim();
 
   if (!code || !name) {
@@ -24,7 +24,7 @@ function toProviderOption(provider: ShippingProvider): ProviderOption | null {
   }
 
   return {
-    code,
+    shipping_provider_code: code,
     name,
   };
 }
@@ -63,7 +63,7 @@ const BillingItemsPage: React.FC = () => {
     if (!importResult) {
       return;
     }
-    setField("carrier_code", importResult.carrier_code);
+    setField("shipping_provider_code", importResult.shipping_provider_code);
     setField("tracking_no", "");
   }, [importResult, setField]);
 

@@ -116,7 +116,7 @@ const CreateTemplateCard: React.FC<Props> = ({
 
           <label className="block">
             <div className="mb-1 text-sm font-medium text-slate-700">
-              快递公司
+              物流网点
             </div>
             <select
               value={createForm.shipping_provider_id}
@@ -127,13 +127,13 @@ const CreateTemplateCard: React.FC<Props> = ({
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-0 focus:border-slate-500 disabled:cursor-not-allowed disabled:bg-slate-100"
             >
               <option value="">
-                {providersLoading ? "快递公司加载中..." : "请选择快递公司"}
+                {providersLoading ? "物流网点加载中..." : "请选择物流网点"}
               </option>
               {providerOptions.map((item) => (
                 <option key={item.provider_id} value={String(item.provider_id)}>
-                  {item.provider_code
-                    ? `${item.provider_code} ${item.provider_name}`
-                    : item.provider_name}
+                  {item.shipping_provider_code
+                    ? `${item.shipping_provider_code} ${item.shipping_provider_name}`
+                    : item.shipping_provider_name}
                   {item.provider_active ? "" : "（已停用）"}
                 </option>
               ))}
@@ -155,9 +155,9 @@ const CreateTemplateCard: React.FC<Props> = ({
               >
                 <option value="">
                   {noProviderSelected
-                    ? "请先选择快递公司"
+                    ? "请先选择物流网点"
                     : noCloneableTemplates
-                      ? "当前快递公司下没有可克隆模板"
+                      ? "当前物流网点下没有可克隆模板"
                       : "请选择基础模板"}
                 </option>
                 {visibleSourceTemplates.map((item) => (
@@ -220,13 +220,13 @@ const CreateTemplateCard: React.FC<Props> = ({
 
         {cloneMode && noProviderSelected ? (
           <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-            请先选择快递公司，再选择基础模板。
+            请先选择物流网点，再选择基础模板。
           </div>
         ) : null}
 
         {cloneMode && noCloneableTemplates ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            当前快递公司下没有可克隆模板。基础模板来源以后端 capabilities 为准；
+            当前物流网点下没有可克隆模板。基础模板来源以后端 capabilities 为准；
             只有后端判定 can_clone=true 的模板才会出现在这里。
           </div>
         ) : null}

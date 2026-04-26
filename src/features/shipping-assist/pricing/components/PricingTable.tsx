@@ -180,10 +180,10 @@ const PricingTable: React.FC<Props> = ({
                   <tr key={key} className="border-t border-slate-100">
                     <td className="px-3 py-3 align-top">
                       <div className="font-medium text-slate-900">
-                        {row.provider_name}
+                        {row.shipping_provider_name}
                       </div>
                       <div className="text-xs text-slate-500">
-                        {row.provider_code}
+                        {row.shipping_provider_code}
                       </div>
                     </td>
 
