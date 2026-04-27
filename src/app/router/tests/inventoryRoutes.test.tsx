@@ -58,17 +58,17 @@ vi.mock("../lazyPages", () => {
     OutboundManualDocsPage: page("OutboundManualDocsPage mock view"),
     OutboundManualPage: page("OutboundManualPage mock view"),
 
-    AnalyticsPage: page("AnalyticsPage mock view"),
+    PlatformOrderIngestionOverviewPage: page(
+      "PlatformOrderIngestionOverviewPage mock view",
+    ),
+    PddOrderCollectPage: page("PddOrderCollectPage mock view"),
+    PddNativeOrdersPage: page("PddNativeOrdersPage mock view"),
+    TaobaoOrderCollectPage: page("TaobaoOrderCollectPage mock view"),
+    TaobaoNativeOrdersPage: page("TaobaoNativeOrdersPage mock view"),
+    JdOrderCollectPage: page("JdOrderCollectPage mock view"),
+    JdNativeOrdersPage: page("JdNativeOrdersPage mock view"),
 
-    PddStoresPage: page("PddStoresPage mock view"),
-    PddOrdersPage: page("PddOrdersPage mock view"),
-    PddOrderDetailPage: page("PddOrderDetailPage mock view"),
-    TaobaoStoresPage: page("TaobaoStoresPage mock view"),
-    TaobaoOrdersPage: page("TaobaoOrdersPage mock view"),
-    TaobaoOrderDetailPage: page("TaobaoOrderDetailPage mock view"),
-    JdStoresPage: page("JdStoresPage mock view"),
-    JdOrdersPage: page("JdOrdersPage mock view"),
-    JdOrderDetailPage: page("JdOrderDetailPage mock view"),
+    AnalyticsPage: page("AnalyticsPage mock view"),
 
     ShipmentPreparePage: page("ShipmentPreparePage mock view"),
     ShipmentCockpitPage: page("ShipmentCockpitPage mock view"),
@@ -233,6 +233,76 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders PlatformOrderIngestionOverviewPage on /platform-order-ingestion", async () => {
+    renderWithRoute("/platform-order-ingestion");
+    expect(
+      await screen.findByText("PlatformOrderIngestionOverviewPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("redirects /platform-order-ingestion/pdd to PddOrderCollectPage", async () => {
+    renderWithRoute("/platform-order-ingestion/pdd");
+    expect(
+      await screen.findByText("PddOrderCollectPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders PddOrderCollectPage on /platform-order-ingestion/pdd/collect", async () => {
+    renderWithRoute("/platform-order-ingestion/pdd/collect");
+    expect(
+      await screen.findByText("PddOrderCollectPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders PddNativeOrdersPage on /platform-order-ingestion/pdd/native-orders", async () => {
+    renderWithRoute("/platform-order-ingestion/pdd/native-orders");
+    expect(
+      await screen.findByText("PddNativeOrdersPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("redirects /platform-order-ingestion/taobao to TaobaoOrderCollectPage", async () => {
+    renderWithRoute("/platform-order-ingestion/taobao");
+    expect(
+      await screen.findByText("TaobaoOrderCollectPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders TaobaoOrderCollectPage on /platform-order-ingestion/taobao/collect", async () => {
+    renderWithRoute("/platform-order-ingestion/taobao/collect");
+    expect(
+      await screen.findByText("TaobaoOrderCollectPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders TaobaoNativeOrdersPage on /platform-order-ingestion/taobao/native-orders", async () => {
+    renderWithRoute("/platform-order-ingestion/taobao/native-orders");
+    expect(
+      await screen.findByText("TaobaoNativeOrdersPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("redirects /platform-order-ingestion/jd to JdOrderCollectPage", async () => {
+    renderWithRoute("/platform-order-ingestion/jd");
+    expect(
+      await screen.findByText("JdOrderCollectPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders JdOrderCollectPage on /platform-order-ingestion/jd/collect", async () => {
+    renderWithRoute("/platform-order-ingestion/jd/collect");
+    expect(
+      await screen.findByText("JdOrderCollectPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders JdNativeOrdersPage on /platform-order-ingestion/jd/native-orders", async () => {
+    renderWithRoute("/platform-order-ingestion/jd/native-orders");
+    expect(
+      await screen.findByText("JdNativeOrdersPage mock view"),
+    ).toBeInTheDocument();
+  });
+
   it("renders FinanceOverviewPage on /finance", async () => {
     renderWithRoute("/finance");
     expect(
@@ -275,6 +345,27 @@ describe("AppRouter inventory routes", () => {
 
   it("falls back to /inventory after old /inbound-receipts/returns route is retired", async () => {
     renderWithRoute("/inbound-receipts/returns");
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
+  });
+
+  it.each([
+    "/orders",
+    "/shops",
+    "/platforms",
+    "/platforms/1",
+    "/shop-bundles",
+    "/parsing",
+    "/oms/pdd/stores",
+    "/oms/pdd/orders",
+    "/oms/pdd/orders/1",
+    "/oms/taobao/stores",
+    "/oms/taobao/orders",
+    "/oms/taobao/orders/1",
+    "/oms/jd/stores",
+    "/oms/jd/orders",
+    "/oms/jd/orders/1",
+  ])("falls back to /inventory after old platform route %s is retired", async (route) => {
+    renderWithRoute(route);
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
