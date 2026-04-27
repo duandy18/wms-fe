@@ -15,9 +15,7 @@ export interface PlatformOrderIngestionStoreOption {
 }
 
 function normalizePlatform(value: string): string {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "tb") return "taobao";
-  return normalized;
+  return value.trim().toLowerCase();
 }
 
 export async function fetchPlatformOrderIngestionStores(
