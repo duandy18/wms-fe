@@ -227,12 +227,12 @@ const PddOrderCollectPage: React.FC = () => {
               <option value="">请选择店铺</option>
               {stores.map((store) => (
                 <option key={store.id} value={store.id}>
-                  {store.name} / {store.shop_id} / #{store.id}
+                  {store.store_name} / {store.store_code} / #{store.id}
                 </option>
               ))}
             </select>
           </label>
-          <FieldView label="当前店铺" value={selectedStore?.name ?? null} />
+          <FieldView label="当前店铺" value={selectedStore?.store_name ?? null} />
           <FieldView label="店铺状态" value={selectedStore?.active ?? null} badge />
         </div>
       </section>
