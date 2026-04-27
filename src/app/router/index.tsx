@@ -166,31 +166,7 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-          <Route
-            path="orders"
-            element={<Navigate to="/oms/pdd/orders" replace />}
-          />
-          <Route
-            path="shops"
-            element={<Navigate to="/oms/pdd/stores" replace />}
-          />
 
-          <Route
-            path="platforms"
-            element={<Navigate to="/oms/pdd/stores" replace />}
-          />
-          <Route
-            path="platforms/:storeId"
-            element={<Navigate to="/oms/pdd/stores" replace />}
-          />
-          <Route
-            path="shop-bundles"
-            element={<Navigate to="/oms/pdd/orders" replace />}
-          />
-          <Route
-            path="parsing"
-            element={<Navigate to="/oms/pdd/orders" replace />}
-          />
           <Route
             path="analytics"
             element={
@@ -201,77 +177,86 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="oms/pdd/stores"
+            path="platform-order-ingestion"
             element={
-              <RequirePermission permission="page.oms.read">
-                <P.PddStoresPage />
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <P.PlatformOrderIngestionOverviewPage />
               </RequirePermission>
             }
           />
           <Route
-            path="oms/pdd/orders"
+            path="platform-order-ingestion/pdd"
             element={
-              <RequirePermission permission="page.oms.read">
-                <P.PddOrdersPage />
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <Navigate to="/platform-order-ingestion/pdd/collect" replace />
               </RequirePermission>
             }
           />
           <Route
-            path="oms/pdd/orders/:pddOrderId"
+            path="platform-order-ingestion/pdd/collect"
             element={
-              <RequirePermission permission="page.oms.read">
-                <P.PddOrderDetailPage />
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <P.PddOrderCollectPage />
               </RequirePermission>
             }
           />
           <Route
-            path="oms/taobao/stores"
+            path="platform-order-ingestion/pdd/native-orders"
             element={
-              <RequirePermission permission="page.oms.read">
-                <P.TaobaoStoresPage />
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <P.PddNativeOrdersPage />
               </RequirePermission>
             }
           />
           <Route
-            path="oms/taobao/orders"
+            path="platform-order-ingestion/taobao"
             element={
-              <RequirePermission permission="page.oms.read">
-                <P.TaobaoOrdersPage />
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <Navigate to="/platform-order-ingestion/taobao/collect" replace />
               </RequirePermission>
             }
           />
           <Route
-            path="oms/taobao/orders/:taobaoOrderId"
+            path="platform-order-ingestion/taobao/collect"
             element={
-              <RequirePermission permission="page.oms.read">
-                <P.TaobaoOrderDetailPage />
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <P.TaobaoOrderCollectPage />
               </RequirePermission>
             }
           />
           <Route
-            path="oms/jd/stores"
+            path="platform-order-ingestion/taobao/native-orders"
             element={
-              <RequirePermission permission="page.oms.read">
-                <P.JdStoresPage />
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <P.TaobaoNativeOrdersPage />
               </RequirePermission>
             }
           />
           <Route
-            path="oms/jd/orders"
+            path="platform-order-ingestion/jd"
             element={
-              <RequirePermission permission="page.oms.read">
-                <P.JdOrdersPage />
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <Navigate to="/platform-order-ingestion/jd/collect" replace />
               </RequirePermission>
             }
           />
           <Route
-            path="oms/jd/orders/:jdOrderId"
+            path="platform-order-ingestion/jd/collect"
             element={
-              <RequirePermission permission="page.oms.read">
-                <P.JdOrderDetailPage />
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <P.JdOrderCollectPage />
               </RequirePermission>
             }
           />
+          <Route
+            path="platform-order-ingestion/jd/native-orders"
+            element={
+              <RequirePermission permission="page.platform_order_ingestion.read">
+                <P.JdNativeOrdersPage />
+              </RequirePermission>
+            }
+          />
+
           <Route
             path="shipping-assist/shipping/quote"
             element={

@@ -65,7 +65,7 @@ export const InventoryLedgerPage = lazy(
   () => import("../../features/wms/inventory/ledger/InventoryLedgerPage"),
 );
 
-// 库存调节（阶段一：前端骨架）
+// 库存调节
 export const InventoryAdjustmentSummaryPage = lazy(
   () =>
     import(
@@ -73,8 +73,7 @@ export const InventoryAdjustmentSummaryPage = lazy(
     ),
 );
 export const InventoryCountPage = lazy(
-  () =>
-    import("../../features/wms/inventory-adjustment/pages/InventoryCountPage"),
+  () => import("../../features/wms/inventory-adjustment/pages/InventoryCountPage"),
 );
 export const InventoryInboundReversalPage = lazy(
   () =>
@@ -117,37 +116,53 @@ export const ReconciliationPage = lazy(
   () => import("../../features/shipping-assist/reconciliation/pages/ReconciliationPage"),
 );
 
-// OMS：平台接入 / 商铺管理 / 商铺商品组合 / 订单解析 / 统计分析
-export const AnalyticsPage = lazy(
-  () => import("../../features/oms/analytics/AnalyticsPage"),
+// 平台订单采集
+export const PlatformOrderIngestionOverviewPage = lazy(
+  () =>
+    import(
+      "../../features/platform-order-ingestion/overview/pages/PlatformOrderIngestionOverviewPage"
+    ),
+);
+export const PddOrderCollectPage = lazy(
+  () =>
+    import(
+      "../../features/platform-order-ingestion/pdd/collect/pages/PddOrderCollectPage"
+    ),
+);
+export const PddNativeOrdersPage = lazy(
+  () =>
+    import(
+      "../../features/platform-order-ingestion/pdd/native-orders/pages/PddNativeOrdersPage"
+    ),
+);
+export const TaobaoOrderCollectPage = lazy(
+  () =>
+    import(
+      "../../features/platform-order-ingestion/taobao/collect/pages/TaobaoOrderCollectPage"
+    ),
+);
+export const TaobaoNativeOrdersPage = lazy(
+  () =>
+    import(
+      "../../features/platform-order-ingestion/taobao/native-orders/pages/TaobaoNativeOrdersPage"
+    ),
+);
+export const JdOrderCollectPage = lazy(
+  () =>
+    import(
+      "../../features/platform-order-ingestion/jd/collect/pages/JdOrderCollectPage"
+    ),
+);
+export const JdNativeOrdersPage = lazy(
+  () =>
+    import(
+      "../../features/platform-order-ingestion/jd/native-orders/pages/JdNativeOrdersPage"
+    ),
 );
 
-export const PddStoresPage = lazy(
-  () => import("../../features/oms/pdd/pages/PddStoresPage"),
-);
-export const PddOrdersPage = lazy(
-  () => import("../../features/oms/pdd/pages/PddOrdersPage"),
-);
-export const PddOrderDetailPage = lazy(
-  () => import("../../features/oms/pdd/pages/PddOrderDetailPage"),
-);
-export const TaobaoStoresPage = lazy(
-  () => import("../../features/oms/taobao/pages/TaobaoStoresPage"),
-);
-export const TaobaoOrdersPage = lazy(
-  () => import("../../features/oms/taobao/pages/TaobaoOrdersPage"),
-);
-export const TaobaoOrderDetailPage = lazy(
-  () => import("../../features/oms/taobao/pages/TaobaoOrderDetailPage"),
-);
-export const JdStoresPage = lazy(
-  () => import("../../features/oms/jd/pages/JdStoresPage"),
-);
-export const JdOrdersPage = lazy(
-  () => import("../../features/oms/jd/pages/JdOrdersPage"),
-);
-export const JdOrderDetailPage = lazy(
-  () => import("../../features/oms/jd/pages/JdOrderDetailPage"),
+// OMS：内部订单相关能力后续单独建设；旧平台店铺/平台订单页面不再从路由直达
+export const AnalyticsPage = lazy(
+  () => import("../../features/oms/analytics/AnalyticsPage"),
 );
 
 // 主数据
