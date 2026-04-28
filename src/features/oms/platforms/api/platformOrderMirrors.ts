@@ -60,6 +60,35 @@ export interface ImportFromCollectorResult {
   mirror_id: number;
 }
 
+export interface SyncFromCollectorRequest {
+  limit?: number;
+  offset?: number;
+}
+
+export interface SyncFromCollectorItem {
+  collector_order_id: number;
+  mirror_id: number;
+  imported: boolean;
+}
+
+export interface SyncFromCollectorError {
+  collector_order_id?: number | null;
+  error_code: string;
+  message: string;
+}
+
+export interface SyncFromCollectorResult {
+  ok: boolean;
+  platform: OmsPlatformKey;
+  limit: number;
+  offset: number;
+  fetched_count: number;
+  imported_count: number;
+  failed_count: number;
+  items: SyncFromCollectorItem[];
+  errors: SyncFromCollectorError[];
+}
+
 function assertOkEnvelope<T>(
   value: { ok: boolean; data: T },
   label: string,
@@ -86,6 +115,21 @@ function assertImportResult(
   return value;
 }
 
+function assertSyncResult(
+  value: SyncFromCollectorResult,
+  label: string,
+): SyncFromCollectorResult {
+  if (value.ok !== true) {
+    throw new Error(`合同不匹配：${label}.ok 非 true`);
+  }
+
+  if (!Array.isArray(value.items) || !Array.isArray(value.errors)) {
+    throw new Error(`合同不匹配：${label}.items/errors 非数组`);
+  }
+
+  return value;
+}
+
 export async function importPlatformOrderMirrorFromCollector(
   platform: OmsPlatformKey,
   collectorOrderId: number,
@@ -100,6 +144,24 @@ export async function importPlatformOrderMirrorFromCollector(
   return assertImportResult(
     result,
     `POST /oms/${platform}/platform-order-mirrors/import-from-collector`,
+  );
+}
+
+export async function syncPlatformOrderMirrorsFromCollector(
+  platform: OmsPlatformKey,
+  request: SyncFromCollectorRequest,
+): Promise<SyncFromCollectorResult> {
+  const result = await apiPost<SyncFromCollectorResult>(
+    `/oms/${platform}/platform-order-mirrors/sync-from-collector`,
+    {
+      limit: request.limit ?? 50,
+      offset: request.offset ?? 0,
+    },
+  );
+
+  return assertSyncResult(
+    result,
+    `POST /oms/${platform}/platform-order-mirrors/sync-from-collector`,
   );
 }
 

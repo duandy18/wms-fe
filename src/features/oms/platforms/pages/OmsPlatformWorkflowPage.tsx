@@ -7,6 +7,7 @@ import {
   getPlatformOrderMirrorDetail,
   importPlatformOrderMirrorFromCollector,
   listPlatformOrderMirrors,
+  syncPlatformOrderMirrorsFromCollector,
   type OmsPlatformKey,
   type PlatformOrderMirror,
 } from "../api/platformOrderMirrors";
@@ -63,12 +64,28 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [syncLimit, setSyncLimit] = useState("50");
+  const [syncOffset, setSyncOffset] = useState("0");
+  const [syncSubmitting, setSyncSubmitting] = useState(false);
+  const [syncResult, setSyncResult] = useState("");
+  const [syncError, setSyncError] = useState("");
+
   const [collectorOrderId, setCollectorOrderId] = useState("");
   const [importSubmitting, setImportSubmitting] = useState(false);
   const [importResult, setImportResult] = useState("");
   const [importError, setImportError] = useState("");
 
   const platformLabel = PLATFORM_LABELS[platform];
+
+  const parsedSyncLimit = useMemo(() => {
+    const n = Number(syncLimit);
+    return Number.isInteger(n) && n >= 1 && n <= 1000 ? n : null;
+  }, [syncLimit]);
+
+  const parsedSyncOffset = useMemo(() => {
+    const n = Number(syncOffset);
+    return Number.isInteger(n) && n >= 0 ? n : null;
+  }, [syncOffset]);
 
   const parsedCollectorOrderId = useMemo(() => {
     const n = Number(collectorOrderId);
@@ -111,10 +128,49 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
     }
   }
 
+  async function handleSync(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSyncResult("");
+    setSyncError("");
+    setImportResult("");
+    setImportError("");
+
+    if (parsedSyncLimit === null) {
+      setSyncError("请输入 1 到 1000 之间的同步数量。");
+      return;
+    }
+
+    if (parsedSyncOffset === null) {
+      setSyncError("请输入有效的 offset。");
+      return;
+    }
+
+    setSyncSubmitting(true);
+
+    try {
+      const data = await syncPlatformOrderMirrorsFromCollector(platform, {
+        limit: parsedSyncLimit,
+        offset: parsedSyncOffset,
+      });
+
+      setSyncResult(
+        `同步完成：拉取 ${data.fetched_count} 张，写入 ${data.imported_count} 张，失败 ${data.failed_count} 张。`,
+      );
+
+      await loadList(data.items[0]?.mirror_id);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "同步失败");
+    } finally {
+      setSyncSubmitting(false);
+    }
+  }
+
   async function handleImport(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setImportResult("");
     setImportError("");
+    setSyncResult("");
+    setSyncError("");
 
     if (parsedCollectorOrderId === null) {
       setImportError("请输入有效的 collector_order_id。");
@@ -130,12 +186,12 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
       );
 
       setImportResult(
-        `导入成功：collector_order_id=${data.collector_order_id}，mirror_id=${data.mirror_id}`,
+        `补拉成功：collector_order_id=${data.collector_order_id}，mirror_id=${data.mirror_id}`,
       );
 
       await loadList(data.mirror_id);
     } catch (err) {
-      setImportError(err instanceof Error ? err.message : "导入失败");
+      setImportError(err instanceof Error ? err.message : "补拉失败");
     } finally {
       setImportSubmitting(false);
     }
@@ -150,45 +206,96 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
   return (
     <section className="space-y-6">
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-950">
-              从 Collector 导入{platformLabel}订单
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              输入 Collector Export 的 collector_order_id，后端会按平台调用 Collector Export
-              合同，并写入 OMS 平台订单镜像。导入成功后会自动刷新并选中新镜像。
-            </p>
-          </div>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-950">
+            从 Collector 同步{platformLabel}订单
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            日常拉单使用批量同步。WMS 会按平台调用 Collector Export 列表合同，
+            并逐单写入 OMS 平台订单镜像；单票 collector_order_id 仅用于运维补拉。
+          </p>
         </div>
 
-        <form className="mt-5 flex flex-col gap-3 md:flex-row" onSubmit={handleImport}>
-          <input
-            value={collectorOrderId}
-            onChange={(event) => setCollectorOrderId(event.target.value)}
-            placeholder="collector_order_id，例如 1"
-            className="min-h-11 flex-1 rounded-xl border border-slate-300 px-4 text-sm outline-none focus:border-slate-900"
-          />
+        <form className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]" onSubmit={handleSync}>
+          <label className="block">
+            <div className="mb-1 text-xs font-medium text-slate-500">同步数量</div>
+            <input
+              value={syncLimit}
+              onChange={(event) => setSyncLimit(event.target.value)}
+              placeholder="50"
+              className="min-h-11 w-full rounded-xl border border-slate-300 px-4 text-sm outline-none focus:border-slate-900"
+            />
+          </label>
+
           <button
             type="submit"
-            disabled={importSubmitting}
-            className="min-h-11 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+            disabled={syncSubmitting}
+            className="min-h-11 self-end rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
           >
-            {importSubmitting ? "导入中..." : "从 Collector 导入并查看"}
+            {syncSubmitting ? "同步中..." : "同步最近订单"}
           </button>
         </form>
 
-        {importResult ? (
+        {syncResult ? (
           <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-            {importResult}
+            {syncResult}
           </div>
         ) : null}
 
-        {importError ? (
+        {syncError ? (
           <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {importError}
+            {syncError}
           </div>
         ) : null}
+
+        <details className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+            高级：按 collector_order_id 单票补拉
+          </summary>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-[1fr_2fr]">
+            <label className="block">
+              <div className="mb-1 text-xs font-medium text-slate-500">同步分页 offset</div>
+              <input
+                value={syncOffset}
+                onChange={(event) => setSyncOffset(event.target.value)}
+                placeholder="0"
+                className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
+              />
+            </label>
+            <div className="self-end text-xs leading-5 text-slate-500">
+              offset 只用于运维补同步下一页；日常同步保持 0。
+            </div>
+          </div>
+
+          <form className="mt-4 flex flex-col gap-3 md:flex-row" onSubmit={handleImport}>
+            <input
+              value={collectorOrderId}
+              onChange={(event) => setCollectorOrderId(event.target.value)}
+              placeholder="collector_order_id，例如 1"
+              className="min-h-11 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
+            />
+            <button
+              type="submit"
+              disabled={importSubmitting}
+              className="min-h-11 rounded-xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+            >
+              {importSubmitting ? "补拉中..." : "单票补拉并查看"}
+            </button>
+          </form>
+
+          {importResult ? (
+            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+              {importResult}
+            </div>
+          ) : null}
+
+          {importError ? (
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              {importError}
+            </div>
+          ) : null}
+        </details>
       </div>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
