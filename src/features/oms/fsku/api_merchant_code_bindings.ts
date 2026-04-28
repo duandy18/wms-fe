@@ -37,13 +37,13 @@ function parseFskuLite(v: unknown, ctx: string): { id: number; code: string; nam
   return { id, code, name, status };
 }
 
-function parseStoreLite(v: unknown, ctx: string): { id: number; name: string } {
+function parseStoreLite(v: unknown, ctx: string): { id: number; store_name: string } {
   if (!isObject(v)) throw new Error(`合同不匹配：${ctx} 为 ${kindOf(v)}，期望对象`);
   const id = asInt(v.id);
-  const name = asStr(v.name);
+  const storeName = asStr((v as { store_name?: unknown }).store_name);
   if (id == null) throw new Error(`合同不匹配：${ctx}.id 非法`);
-  if (!name) throw new Error(`合同不匹配：${ctx}.name 缺失或非法`);
-  return { id, name };
+  if (!storeName) throw new Error(`合同不匹配：${ctx}.store_name 缺失或非法`);
+  return { id, store_name: storeName };
 }
 
 function parseMerchantCodeBindingRow(r: unknown, idx: number): MerchantCodeBindingRow {
@@ -55,9 +55,9 @@ function parseMerchantCodeBindingRow(r: unknown, idx: number): MerchantCodeBindi
   const platform = asStr(r.platform);
   if (!platform) throw new Error(`合同不匹配：merchant-code-bindings.items[${idx}].platform 缺失或非法`);
 
-  // ✅ shop_id 为 string（后端/DB TEXT）
-  const shopId = asStr(r.shop_id);
-  if (!shopId) throw new Error(`合同不匹配：merchant-code-bindings.items[${idx}].shop_id 缺失或非法（期望 string）`);
+  // ✅ store_code 为 string（后端/DB TEXT）
+  const storeCode = asStr(r.store_code);
+  if (!storeCode) throw new Error(`合同不匹配：merchant-code-bindings.items[${idx}].store_code 缺失或非法（期望 string）`);
 
   const store = parseStoreLite((r as { store?: unknown }).store, `merchant-code-bindings.items[${idx}].store`);
 
@@ -80,7 +80,7 @@ function parseMerchantCodeBindingRow(r: unknown, idx: number): MerchantCodeBindi
   return {
     id,
     platform,
-    shop_id: shopId,
+    store_code: storeCode,
     store,
     merchant_code: merchantCode,
     fsku_id: fskuId,
@@ -118,7 +118,7 @@ function unwrapMerchantCodeBindingsList(raw: unknown): MerchantCodeBindingsList 
 
 export async function apiListMerchantCodeBindings(args: {
   platform?: string;
-  shop_id?: string;
+  store_code?: string;
   merchant_code?: string;
   current_only?: boolean; // current-only 模型下该参数被后端忽略；保留兼容
   fsku_id?: number;
@@ -128,7 +128,7 @@ export async function apiListMerchantCodeBindings(args: {
 }): Promise<MerchantCodeBindingsList> {
   const q = qs({
     platform: args.platform,
-    shop_id: args.shop_id,
+    store_code: args.store_code,
     merchant_code: args.merchant_code,
     current_only: args.current_only ?? true,
     fsku_id: args.fsku_id,
@@ -143,7 +143,7 @@ export async function apiListMerchantCodeBindings(args: {
 
 export async function apiBindMerchantCode(args: {
   platform: string;
-  shop_id: string;
+  store_code: string;
   merchant_code: string;
   fsku_id: number;
   reason: string;
@@ -152,7 +152,7 @@ export async function apiBindMerchantCode(args: {
     method: "POST",
     body: JSON.stringify({
       platform: args.platform,
-      shop_id: args.shop_id,
+      store_code: args.store_code,
       merchant_code: args.merchant_code,
       fsku_id: args.fsku_id,
       reason: args.reason,
@@ -172,14 +172,14 @@ export async function apiBindMerchantCode(args: {
  */
 export async function apiUnbindMerchantCodeBinding(args: {
   platform: string;
-  shop_id: string;
+  store_code: string;
   merchant_code: string;
 }): Promise<MerchantCodeBindingRow> {
   const raw = await apiFetchJson<unknown>("/oms/merchant-code-bindings/close", {
     method: "POST",
     body: JSON.stringify({
       platform: args.platform,
-      shop_id: args.shop_id,
+      store_code: args.store_code,
       merchant_code: args.merchant_code,
     }),
   });
@@ -194,7 +194,7 @@ export async function apiUnbindMerchantCodeBinding(args: {
 // 兼容旧命名：close == unbind（delete）
 export async function apiCloseMerchantCodeBinding(args: {
   platform: string;
-  shop_id: string;
+  store_code: string;
   merchant_code: string;
 }): Promise<MerchantCodeBindingRow> {
   return apiUnbindMerchantCodeBinding(args);
