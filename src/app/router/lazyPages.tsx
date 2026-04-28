@@ -117,9 +117,6 @@ export const ReconciliationPage = lazy(
 );
 
 // 平台订单采集
-export const OmsPddImportPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsPddImportPage"),
-);
 export const OmsPddPlatformOrderMirrorPage = lazy(
   () => import("../../features/oms/platforms/pages/OmsPddPlatformOrderMirrorPage"),
 );
@@ -130,9 +127,6 @@ export const OmsPddFulfillmentOrderConversionPage = lazy(
   () => import("../../features/oms/platforms/pages/OmsPddFulfillmentOrderConversionPage"),
 );
 
-export const OmsTaobaoImportPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsTaobaoImportPage"),
-);
 export const OmsTaobaoPlatformOrderMirrorPage = lazy(
   () => import("../../features/oms/platforms/pages/OmsTaobaoPlatformOrderMirrorPage"),
 );
@@ -143,9 +137,6 @@ export const OmsTaobaoFulfillmentOrderConversionPage = lazy(
   () => import("../../features/oms/platforms/pages/OmsTaobaoFulfillmentOrderConversionPage"),
 );
 
-export const OmsJdImportPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsJdImportPage"),
-);
 export const OmsJdPlatformOrderMirrorPage = lazy(
   () => import("../../features/oms/platforms/pages/OmsJdPlatformOrderMirrorPage"),
 );
