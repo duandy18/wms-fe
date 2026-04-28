@@ -162,8 +162,7 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
     }
   }
 
-  async function handleSync(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function doSync(options: { useDateRange: boolean }) {
     setSyncResult("");
     setSyncError("");
     setImportResult("");
@@ -174,19 +173,34 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
       return;
     }
 
-    if (syncSinceDate && !syncSinceValue) {
-      setSyncError("请输入有效的开始日期。");
-      return;
-    }
+    let since: string | undefined;
+    let until: string | undefined;
+    let rangeText = "";
 
-    if (syncUntilDate && !syncUntilValue) {
-      setSyncError("请输入有效的结束日期。");
-      return;
-    }
+    if (options.useDateRange) {
+      if (!hasTimeWindow) {
+        setSyncError("请选择开始日期或结束日期后再按日期范围同步。");
+        return;
+      }
 
-    if (syncSinceValue && syncUntilValue && syncSinceValue >= syncUntilValue) {
-      setSyncError("结束日期不能早于开始日期。");
-      return;
+      if (syncSinceDate && !syncSinceValue) {
+        setSyncError("请输入有效的开始日期。");
+        return;
+      }
+
+      if (syncUntilDate && !syncUntilValue) {
+        setSyncError("请输入有效的结束日期。");
+        return;
+      }
+
+      if (syncSinceValue && syncUntilValue && syncSinceValue >= syncUntilValue) {
+        setSyncError("结束日期不能早于开始日期。");
+        return;
+      }
+
+      since = syncSinceValue || undefined;
+      until = syncUntilValue || undefined;
+      rangeText = ` 日期范围：${syncSinceDate || "未设置"} 至 ${syncUntilDate || "未设置"}。`;
     }
 
     setSyncSubmitting(true);
@@ -194,13 +208,9 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
     try {
       const data = await syncPlatformOrderMirrorsFromCollector(platform, {
         limit: parsedSyncLimit,
-        since: syncSinceValue || undefined,
-        until: syncUntilValue || undefined,
+        since,
+        until,
       });
-
-      const rangeText = hasTimeWindow
-        ? ` 日期范围：${syncSinceDate || "未设置"} 至 ${syncUntilDate || "未设置"}。`
-        : "";
 
       setSyncResult(
         `同步完成：拉取 ${data.fetched_count} 张，写入 ${data.imported_count} 张，失败 ${data.failed_count} 张。${rangeText}`,
@@ -212,6 +222,16 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
     } finally {
       setSyncSubmitting(false);
     }
+  }
+
+  async function handleRecentSync(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await doSync({ useDateRange: false });
+  }
+
+  async function handleDateRangeSync(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await doSync({ useDateRange: true });
   }
 
   async function handleImport(event: React.FormEvent<HTMLFormElement>) {
@@ -265,7 +285,7 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
           </p>
         </div>
 
-        <form className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]" onSubmit={handleSync}>
+        <form className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]" onSubmit={handleRecentSync}>
           <label className="block">
             <div className="mb-1 text-xs font-medium text-slate-500">同步数量</div>
             <input
@@ -281,7 +301,7 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
             disabled={syncSubmitting}
             className="min-h-11 self-end rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
           >
-            {syncSubmitting ? "同步中..." : hasTimeWindow ? "按时间范围同步" : "同步最近订单"}
+            {syncSubmitting ? "同步中..." : "同步最近订单"}
           </button>
         </form>
 
@@ -302,31 +322,42 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
             高级同步选项
           </summary>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <label className="block">
-              <div className="mb-1 text-xs font-medium text-slate-500">开始日期</div>
-              <input
-                type="date"
-                value={syncSince}
-                onChange={(event) => setSyncSince(event.target.value)}
-                className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
-              />
-            </label>
+          <form className="mt-4 space-y-3" onSubmit={handleDateRangeSync}>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="block">
+                <div className="mb-1 text-xs font-medium text-slate-500">开始日期</div>
+                <input
+                  type="date"
+                  value={syncSince}
+                  onChange={(event) => setSyncSince(event.target.value)}
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
+                />
+              </label>
 
-            <label className="block">
-              <div className="mb-1 text-xs font-medium text-slate-500">结束日期（含当天）</div>
-              <input
-                type="date"
-                value={syncUntil}
-                onChange={(event) => setSyncUntil(event.target.value)}
-                className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
-              />
-            </label>
-          </div>
+              <label className="block">
+                <div className="mb-1 text-xs font-medium text-slate-500">结束日期（含当天）</div>
+                <input
+                  type="date"
+                  value={syncUntil}
+                  onChange={(event) => setSyncUntil(event.target.value)}
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
+                />
+              </label>
+            </div>
 
-          <p className="mt-2 text-xs leading-5 text-slate-500">
-            日期范围用于批量同步 Collector Export 列表；开始日期包含当天，结束日期也包含当天。留空则同步最近订单。
-          </p>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <p className="text-xs leading-5 text-slate-500">
+                日期范围用于批量同步 Collector Export 列表；开始日期包含当天，结束日期也包含当天。
+              </p>
+              <button
+                type="submit"
+                disabled={syncSubmitting || !hasTimeWindow}
+                className="min-h-10 rounded-xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+              >
+                {syncSubmitting ? "同步中..." : "按日期范围同步"}
+              </button>
+            </div>
+          </form>
 
           <form className="mt-4 flex flex-col gap-3 md:flex-row" onSubmit={handleImport}>
             <input
