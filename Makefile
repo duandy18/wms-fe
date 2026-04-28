@@ -70,4 +70,4 @@ clean:
 # 一键：安装 + Lint + Test（本地自检）
 .PHONY: check
 check: install lint-core test
-	@echo "[check] wms-fe install + lint-core + test OK"
+	@echo "[check] wms-web install + lint-core + test OK"
