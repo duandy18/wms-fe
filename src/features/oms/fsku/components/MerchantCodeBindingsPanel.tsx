@@ -88,7 +88,7 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
     try {
       const data = await apiListMerchantCodeBindings({
         platform,
-        shop_id: shopId.trim() ? shopId.trim() : undefined,
+        store_code: shopId.trim() ? shopId.trim() : undefined,
         merchant_code: qMerchantCode.trim() ? qMerchantCode.trim() : undefined,
         current_only: currentOnly,
         fsku_id: qFskuIdNum ?? undefined,
@@ -115,7 +115,7 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
   async function handleBind() {
     const mc = newMerchantCode.trim();
     if (!mc) return setBanner({ kind: "error", message: "商家后端规格编码为必填。" });
-    if (!shopId.trim()) return setBanner({ kind: "error", message: "shop_id 为必填（字符串）。" });
+    if (!shopId.trim()) return setBanner({ kind: "error", message: "store_code 为必填（字符串）。" });
     if (!newReason.trim()) return setBanner({ kind: "error", message: "reason 为必填。" });
 
     const fskuId = isStoreMode ? bindFskuIdNum : (props as PropsGlobal).selectedFskuId;
@@ -137,7 +137,7 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
     try {
       await apiBindMerchantCode({
         platform,
-        shop_id: shopId,
+        store_code: shopId,
         merchant_code: mc,
         fsku_id: fskuId,
         reason: newReason.trim(),
@@ -161,7 +161,7 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
     try {
       await apiUnbindMerchantCodeBinding({
         platform: r.platform,
-        shop_id: r.shop_id,
+        store_code: r.store_code,
         merchant_code: r.merchant_code,
       });
       setBanner({ kind: "success", message: "已解绑：绑定已删除（delete）。" });

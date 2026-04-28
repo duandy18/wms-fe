@@ -91,7 +91,7 @@ export const MerchantCodeBindingsTable: React.FC<{
             <tr className="border-b border-slate-200 text-[11px] text-slate-600">
               <th className="px-3 py-2 text-left">行号</th>
               {showContextCols ? <th className="px-3 py-2 text-left">platform</th> : null}
-              {showContextCols ? <th className="px-3 py-2 text-left">shop_id</th> : null}
+              {showContextCols ? <th className="px-3 py-2 text-left">store_code</th> : null}
               {showContextCols ? <th className="px-3 py-2 text-left">店铺名称</th> : null}
               <th className="px-3 py-2 text-left">商家后端规格编码</th>
               <th className="px-3 py-2 text-left">fsku_id</th>
@@ -225,8 +225,8 @@ export const MerchantCodeBindingsTable: React.FC<{
                     <td className="px-3 py-2 font-mono text-[11px] text-slate-500">{b.id}</td>
 
                     {showContextCols ? <td className="px-3 py-2 font-mono text-[11px] text-slate-800">{b.platform}</td> : null}
-                    {showContextCols ? <td className="px-3 py-2 font-mono text-[11px] text-slate-800">{b.shop_id}</td> : null}
-                    {showContextCols ? <td className="px-3 py-2 text-[11px] text-slate-700">{b.store.name}</td> : null}
+                    {showContextCols ? <td className="px-3 py-2 font-mono text-[11px] text-slate-800">{b.store_code}</td> : null}
+                    {showContextCols ? <td className="px-3 py-2 text-[11px] text-slate-700">{b.store.store_name}</td> : null}
 
                     <td className="px-3 py-2 font-mono text-[11px] text-slate-900">{b.merchant_code}</td>
                     <td className="px-3 py-2 font-mono text-[11px] text-slate-900">{b.fsku_id}</td>

@@ -86,7 +86,7 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     try {
       const data = await apiListMerchantCodeBindings({
         platform,
-        shop_id: shopId,
+        store_code: shopId,
         current_only: true,
         limit: 200,
         offset: 0,
@@ -162,7 +162,7 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     try {
       await apiBindMerchantCode({
         platform,
-        shop_id: shopId,
+        store_code: shopId,
         merchant_code: mc,
         fsku_id: f.id,
         reason: reason.trim(),
@@ -205,7 +205,7 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
         const mc = (rowState[String(f.id)]?.merchantCode ?? "").trim();
         await apiBindMerchantCode({
           platform,
-          shop_id: shopId,
+          store_code: shopId,
           merchant_code: mc,
           fsku_id: f.id,
           reason: reason.trim(),
@@ -234,7 +234,7 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     try {
       await apiUnbindMerchantCodeBinding({
         platform,
-        shop_id: shopId,
+        store_code: shopId,
         merchant_code: mc,
       });
       setBanner({ kind: "success", message: `已解绑：${mc}` });

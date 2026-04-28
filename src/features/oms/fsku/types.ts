@@ -86,13 +86,13 @@ export type FskuLite = {
 
 export type StoreLite = {
   id: number;
-  name: string;
+  store_name: string;
 };
 
 export type MerchantCodeBindingRow = {
   id: number;
   platform: string;
-  shop_id: string;
+  store_code: string;
 
   store: StoreLite;
 
