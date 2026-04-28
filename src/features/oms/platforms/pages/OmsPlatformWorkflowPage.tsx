@@ -222,7 +222,7 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
     setSyncError("");
 
     if (parsedCollectorOrderId === null) {
-      setImportError("请输入有效的 collector_order_id。");
+      setImportError("请先填写 collector_order_id；日常同步请使用上方同步按钮。");
       return;
     }
 
@@ -332,12 +332,12 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
             <input
               value={collectorOrderId}
               onChange={(event) => setCollectorOrderId(event.target.value)}
-              placeholder="collector_order_id，例如 1"
+              placeholder="仅单票补拉使用：collector_order_id，例如 1"
               className="min-h-11 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
             />
             <button
               type="submit"
-              disabled={importSubmitting}
+              disabled={importSubmitting || parsedCollectorOrderId === null}
               className="min-h-11 rounded-xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
             >
               {importSubmitting ? "补拉中..." : "单票补拉并查看"}
