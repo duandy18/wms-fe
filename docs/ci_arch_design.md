@@ -1,6 +1,6 @@
 🧱 CI 架构设计说明
 
-duandy18 / wms-du
+duandy18 / wms-api
 Version 1.0 · 2025-10-12
 
 一、设计目标

@@ -1,5 +1,5 @@
 {
-  "name": "wms-fe",
+  "name": "wms-web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,7 +14,7 @@
     "test:watch": "vitest --watch",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
-    "sync:openapi": "python3 -m json.tool ../wms-du/openapi/_current.json > openapi/_current.json && cp openapi/_current.json openapi/v1.json",
+    "sync:openapi": "python3 -m json.tool ../wms-api/openapi/_current.json > openapi/_current.json && cp openapi/_current.json openapi/v1.json",
     "gen:contracts": "openapi-zod-client \"openapi/_current.json\" -o \"src/contracts/generated/api.ts\" --export-schemas --export-types && python3 scripts/contracts/postprocess_openapi_zod_client.py"
   },
   "dependencies": {
