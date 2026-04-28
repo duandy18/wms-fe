@@ -1,6 +1,14 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-type PlatformKey = "pdd" | "taobao" | "jd";
+import {
+  getPlatformOrderMirrorDetail,
+  importPlatformOrderMirrorFromCollector,
+  listPlatformOrderMirrors,
+  type OmsPlatformKey,
+  type PlatformOrderMirror,
+} from "../api/platformOrderMirrors";
+
+type PlatformKey = OmsPlatformKey;
 
 type StageKey =
   | "import"
@@ -23,7 +31,7 @@ const STAGE_LABELS: Record<StageKey, string> = {
 
 const STAGE_DESCRIPTIONS: Record<StageKey, string> = {
   import:
-    "从 Collector 获取可导入的平台订单事实，写入 OMS 自己的平台订单镜像，不直接读取 Collector 原生表。",
+    "从 Collector Export 获取平台订单事实，写入 OMS 自己的平台订单镜像。",
   platform_order_mirror:
     "查看已导入到 OMS 的平台订单镜像，包括订单头、地址、金额、平台商品行和原始引用。",
   fsku_mapping:
@@ -48,6 +56,344 @@ interface OmsPlatformWorkflowPageProps {
   stage: StageKey;
 }
 
+function formatOptional(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "-";
+  return String(value);
+}
+
+function formatJson(value: unknown): string {
+  if (value === null || value === undefined) return "{}";
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+const StageFlow: React.FC<{ stage: StageKey }> = ({ stage }) => (
+  <section className="grid gap-4 md:grid-cols-4">
+    {FLOW.map((item, index) => {
+      const active = item.key === stage;
+
+      return (
+        <div
+          key={item.key}
+          className={[
+            "rounded-2xl border bg-white p-4 shadow-sm",
+            active ? "border-slate-900" : "border-slate-200",
+          ].join(" ")}
+        >
+          <div className="text-xs font-semibold text-slate-400">
+            STEP {index + 1}
+          </div>
+          <div className="mt-2 text-base font-semibold text-slate-900">
+            {item.label}
+          </div>
+          <div className="mt-2 text-xs leading-5 text-slate-500">
+            {item.note}
+          </div>
+        </div>
+      );
+    })}
+  </section>
+);
+
+const JsonBlock: React.FC<{ title: string; value: unknown }> = ({
+  title,
+  value,
+}) => (
+  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+    <div className="mb-2 text-sm font-semibold text-slate-700">{title}</div>
+    <pre className="max-h-72 overflow-auto whitespace-pre-wrap text-xs leading-5 text-slate-600">
+      {formatJson(value)}
+    </pre>
+  </div>
+);
+
+const ImportStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
+  const [collectorOrderId, setCollectorOrderId] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<string>("");
+  const [error, setError] = useState<string>("");
+
+  const platformLabel = PLATFORM_LABELS[platform];
+
+  const parsedId = useMemo(() => {
+    const n = Number(collectorOrderId);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  }, [collectorOrderId]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setResult("");
+    setError("");
+
+    if (parsedId === null) {
+      setError("请输入有效的 collector_order_id。");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const data = await importPlatformOrderMirrorFromCollector(platform, parsedId);
+      setResult(
+        `导入成功：platform=${data.platform} collector_order_id=${data.collector_order_id} mirror_id=${data.mirror_id}`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "导入失败");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 className="text-lg font-semibold text-slate-950">
+        {platformLabel}订单导入
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        输入 Collector Export 的 collector_order_id，WMS 后端会按平台调用 Collector Export
+        合同，并写入 OMS 平台订单镜像。
+      </p>
+
+      <form className="mt-5 flex flex-col gap-3 md:flex-row" onSubmit={handleSubmit}>
+        <input
+          value={collectorOrderId}
+          onChange={(event) => setCollectorOrderId(event.target.value)}
+          placeholder="collector_order_id，例如 1"
+          className="min-h-11 flex-1 rounded-xl border border-slate-300 px-4 text-sm outline-none focus:border-slate-900"
+        />
+        <button
+          type="submit"
+          disabled={submitting}
+          className="min-h-11 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+        >
+          {submitting ? "导入中..." : "从 Collector 导入"}
+        </button>
+      </form>
+
+      {result ? (
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+          {result}
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+    </section>
+  );
+};
+
+const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
+  const [items, setItems] = useState<PlatformOrderMirror[]>([]);
+  const [selected, setSelected] = useState<PlatformOrderMirror | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function loadList() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const rows = await listPlatformOrderMirrors(platform);
+      setItems(rows);
+      if (rows.length > 0) {
+        const detail = await getPlatformOrderMirrorDetail(platform, rows[0].id);
+        setSelected(detail);
+      } else {
+        setSelected(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载平台订单镜像失败");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadDetail(mirrorId: number) {
+    setDetailLoading(true);
+    setError("");
+
+    try {
+      const detail = await getPlatformOrderMirrorDetail(platform, mirrorId);
+      setSelected(detail);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载镜像详情失败");
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadList();
+    // platform 变化时重新加载；loadList 内部只依赖 platform。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platform]);
+
+  return (
+    <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-950">
+              {PLATFORM_LABELS[platform]}平台订单镜像
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              来自 OMS 自有镜像表，不直接读取 Collector 原生表。
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadList()}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
+          >
+            {loading ? "刷新中..." : "刷新"}
+          </button>
+        </div>
+
+        {error ? (
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        <div className="mt-5 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-3">镜像ID</th>
+                <th className="px-3 py-3">平台订单号</th>
+                <th className="px-3 py-3">平台状态</th>
+                <th className="px-3 py-3">Collector店铺</th>
+                <th className="px-3 py-3">WMS店铺</th>
+                <th className="px-3 py-3">同步时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => {
+                const active = selected?.id === item.id;
+
+                return (
+                  <tr
+                    key={item.id}
+                    className={[
+                      "cursor-pointer border-b border-slate-100 hover:bg-slate-50",
+                      active ? "bg-slate-50" : "",
+                    ].join(" ")}
+                    onClick={() => void loadDetail(item.id)}
+                  >
+                    <td className="px-3 py-3 font-medium text-slate-900">
+                      {item.id}
+                    </td>
+                    <td className="px-3 py-3">{item.platform_order_no}</td>
+                    <td className="px-3 py-3">{formatOptional(item.platform_status)}</td>
+                    <td className="px-3 py-3">{item.collector_store_code}</td>
+                    <td className="px-3 py-3">{formatOptional(item.wms_store_id)}</td>
+                    <td className="px-3 py-3">{formatOptional(item.last_synced_at)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {!loading && items.length === 0 ? (
+            <div className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">
+              暂无平台订单镜像。
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <aside className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h3 className="text-base font-semibold text-slate-950">镜像详情</h3>
+        {detailLoading ? (
+          <p className="mt-4 text-sm text-slate-500">加载详情中...</p>
+        ) : null}
+
+        {selected ? (
+          <div className="mt-4 space-y-5">
+            <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-sm">
+              <div>
+                <div className="text-xs text-slate-400">平台订单号</div>
+                <div className="font-medium text-slate-900">
+                  {selected.platform_order_no}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-400">Collector订单ID</div>
+                <div className="font-medium text-slate-900">
+                  {selected.collector_order_id}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-400">导入状态</div>
+                <div className="font-medium text-slate-900">
+                  {selected.import_status}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-400">镜像状态</div>
+                <div className="font-medium text-slate-900">
+                  {selected.mirror_status}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-semibold text-slate-700">订单行</div>
+              <div className="space-y-2">
+                {selected.lines.map((line: PlatformOrderMirror["lines"][number]) => (
+                  <div
+                    key={line.id}
+                    className="rounded-xl border border-slate-200 p-3 text-sm"
+                  >
+                    <div className="font-medium text-slate-900">
+                      {formatOptional(line.title)}
+                    </div>
+                    <div className="mt-1 text-xs leading-5 text-slate-500">
+                      merchant_sku={formatOptional(line.merchant_sku)}，
+                      platform_sku_id={formatOptional(line.platform_sku_id)}，
+                      quantity={line.quantity}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <JsonBlock title="收件信息" value={selected.receiver} />
+            <JsonBlock title="金额信息" value={selected.amounts} />
+            <JsonBlock title="平台字段" value={selected.platform_fields} />
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-slate-500">请选择一条镜像记录。</p>
+        )}
+      </aside>
+    </section>
+  );
+};
+
+const PlaceholderStage: React.FC<{
+  platform: PlatformKey;
+  stage: StageKey;
+}> = ({ platform, stage }) => (
+  <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <h2 className="text-lg font-semibold text-slate-950">当前阶段</h2>
+    <p className="mt-3 text-sm leading-6 text-slate-600">
+      当前页面先作为 {STAGE_LABELS[stage]} 入口占位。后续将继续按 {PLATFORM_LABELS[platform]} 平台单独接入刚性合同。
+    </p>
+    <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+      <div>平台：{PLATFORM_LABELS[platform]}</div>
+      <div>阶段：{STAGE_LABELS[stage]}</div>
+      <div>边界：不做平台授权、不保存平台 token、不直接拉平台订单。</div>
+    </div>
+  </section>
+);
+
 export const OmsPlatformWorkflowPage: React.FC<OmsPlatformWorkflowPageProps> = ({
   platform,
   stage,
@@ -70,43 +416,15 @@ export const OmsPlatformWorkflowPage: React.FC<OmsPlatformWorkflowPageProps> = (
           </p>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-4">
-          {FLOW.map((item, index) => {
-            const active = item.key === stage;
+        <StageFlow stage={stage} />
 
-            return (
-              <div
-                key={item.key}
-                className={[
-                  "rounded-2xl border bg-white p-4 shadow-sm",
-                  active ? "border-slate-900" : "border-slate-200",
-                ].join(" ")}
-              >
-                <div className="text-xs font-semibold text-slate-400">
-                  STEP {index + 1}
-                </div>
-                <div className="mt-2 text-base font-semibold text-slate-900">
-                  {item.label}
-                </div>
-                <div className="mt-2 text-xs leading-5 text-slate-500">
-                  {item.note}
-                </div>
-              </div>
-            );
-          })}
-        </section>
-
-        <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h2 className="text-lg font-semibold text-slate-950">当前阶段</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            当前页面先作为 OMS 新工作流入口占位。下一步补后端刚性合同、读模型和页面真实表格。
-          </p>
-          <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-            <div>平台：{platformLabel}</div>
-            <div>阶段：{stageLabel}</div>
-            <div>边界：不做平台授权、不保存平台 token、不直接拉平台订单。</div>
-          </div>
-        </section>
+        {stage === "import" ? <ImportStage platform={platform} /> : null}
+        {stage === "platform_order_mirror" ? (
+          <MirrorListStage platform={platform} />
+        ) : null}
+        {stage === "fsku_mapping" || stage === "fulfillment_order_conversion" ? (
+          <PlaceholderStage platform={platform} stage={stage} />
+        ) : null}
       </section>
     </main>
   );
