@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import { FskuMappingStage } from "../components/FskuMappingStage";
+import { FulfillmentConversionStage } from "../components/FulfillmentConversionStage";
 
 import {
   getPlatformOrderMirrorDetail,
@@ -379,23 +380,6 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
   );
 };
 
-const PlaceholderStage: React.FC<{
-  platform: PlatformKey;
-  stage: StageKey;
-}> = ({ platform, stage }) => (
-  <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-    <h2 className="text-lg font-semibold text-slate-950">当前阶段</h2>
-    <p className="mt-3 text-sm leading-6 text-slate-600">
-      当前页面先作为 {STAGE_LABELS[stage]} 入口占位。后续将继续按 {PLATFORM_LABELS[platform]} 平台单独接入刚性合同。
-    </p>
-    <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-      <div>平台：{PLATFORM_LABELS[platform]}</div>
-      <div>阶段：{STAGE_LABELS[stage]}</div>
-      <div>边界：不做平台授权、不保存平台 token、不直接拉平台订单。</div>
-    </div>
-  </section>
-);
-
 export const OmsPlatformWorkflowPage: React.FC<OmsPlatformWorkflowPageProps> = ({
   platform,
   stage,
@@ -426,7 +410,7 @@ export const OmsPlatformWorkflowPage: React.FC<OmsPlatformWorkflowPageProps> = (
         ) : null}
         {stage === "fsku_mapping" ? <FskuMappingStage platform={platform} /> : null}
         {stage === "fulfillment_order_conversion" ? (
-          <PlaceholderStage platform={platform} stage={stage} />
+          <FulfillmentConversionStage platform={platform} />
         ) : null}
       </section>
     </main>
