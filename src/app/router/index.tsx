@@ -180,7 +180,7 @@ const AppRouter: React.FC = () => {
             path="oms"
             element={
               <RequirePermission permission="page.oms.read">
-                <Navigate to="/oms/pdd/import" replace />
+                <Navigate to="/oms/pdd" replace />
               </RequirePermission>
             }
           />
@@ -189,15 +189,7 @@ const AppRouter: React.FC = () => {
             path="oms/pdd"
             element={
               <RequirePermission permission="page.oms.read">
-                <Navigate to="/oms/pdd/import" replace />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/pdd/import"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsPddImportPage />
+                <P.OmsPddPlatformOrderMirrorPage />
               </RequirePermission>
             }
           />
@@ -230,15 +222,7 @@ const AppRouter: React.FC = () => {
             path="oms/taobao"
             element={
               <RequirePermission permission="page.oms.read">
-                <Navigate to="/oms/taobao/import" replace />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/taobao/import"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsTaobaoImportPage />
+                <P.OmsTaobaoPlatformOrderMirrorPage />
               </RequirePermission>
             }
           />
@@ -271,15 +255,7 @@ const AppRouter: React.FC = () => {
             path="oms/jd"
             element={
               <RequirePermission permission="page.oms.read">
-                <Navigate to="/oms/jd/import" replace />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/jd/import"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsJdImportPage />
+                <P.OmsJdPlatformOrderMirrorPage />
               </RequirePermission>
             }
           />
