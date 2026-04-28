@@ -177,82 +177,133 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="platform-order-ingestion"
+            path="oms"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <P.PlatformOrderIngestionOverviewPage />
+              <RequirePermission permission="page.oms.read">
+                <Navigate to="/oms/pdd/import" replace />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="oms/pdd"
+            element={
+              <RequirePermission permission="page.oms.read">
+                <Navigate to="/oms/pdd/import" replace />
               </RequirePermission>
             }
           />
           <Route
-            path="platform-order-ingestion/pdd"
+            path="oms/pdd/import"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <Navigate to="/platform-order-ingestion/pdd/collect" replace />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsPddImportPage />
               </RequirePermission>
             }
           />
           <Route
-            path="platform-order-ingestion/pdd/collect"
+            path="oms/pdd/platform-order-mirror"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <P.PddOrderCollectPage />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsPddPlatformOrderMirrorPage />
               </RequirePermission>
             }
           />
           <Route
-            path="platform-order-ingestion/pdd/native-orders"
+            path="oms/pdd/fsku-mapping"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <P.PddNativeOrdersPage />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsPddFskuMappingPage />
               </RequirePermission>
             }
           />
           <Route
-            path="platform-order-ingestion/taobao"
+            path="oms/pdd/fulfillment-order-conversion"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <Navigate to="/platform-order-ingestion/taobao/collect" replace />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsPddFulfillmentOrderConversionPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="oms/taobao"
+            element={
+              <RequirePermission permission="page.oms.read">
+                <Navigate to="/oms/taobao/import" replace />
               </RequirePermission>
             }
           />
           <Route
-            path="platform-order-ingestion/taobao/collect"
+            path="oms/taobao/import"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <P.TaobaoOrderCollectPage />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsTaobaoImportPage />
               </RequirePermission>
             }
           />
           <Route
-            path="platform-order-ingestion/taobao/native-orders"
+            path="oms/taobao/platform-order-mirror"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <P.TaobaoNativeOrdersPage />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsTaobaoPlatformOrderMirrorPage />
               </RequirePermission>
             }
           />
           <Route
-            path="platform-order-ingestion/jd"
+            path="oms/taobao/fsku-mapping"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <Navigate to="/platform-order-ingestion/jd/collect" replace />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsTaobaoFskuMappingPage />
               </RequirePermission>
             }
           />
           <Route
-            path="platform-order-ingestion/jd/collect"
+            path="oms/taobao/fulfillment-order-conversion"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <P.JdOrderCollectPage />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsTaobaoFulfillmentOrderConversionPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="oms/jd"
+            element={
+              <RequirePermission permission="page.oms.read">
+                <Navigate to="/oms/jd/import" replace />
               </RequirePermission>
             }
           />
           <Route
-            path="platform-order-ingestion/jd/native-orders"
+            path="oms/jd/import"
             element={
-              <RequirePermission permission="page.platform_order_ingestion.read">
-                <P.JdNativeOrdersPage />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsJdImportPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="oms/jd/platform-order-mirror"
+            element={
+              <RequirePermission permission="page.oms.read">
+                <P.OmsJdPlatformOrderMirrorPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="oms/jd/fsku-mapping"
+            element={
+              <RequirePermission permission="page.oms.read">
+                <P.OmsJdFskuMappingPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="oms/jd/fulfillment-order-conversion"
+            element={
+              <RequirePermission permission="page.oms.read">
+                <P.OmsJdFulfillmentOrderConversionPage />
               </RequirePermission>
             }
           />

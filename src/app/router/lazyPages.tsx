@@ -117,50 +117,45 @@ export const ReconciliationPage = lazy(
 );
 
 // 平台订单采集
-export const PlatformOrderIngestionOverviewPage = lazy(
-  () =>
-    import(
-      "../../features/platform-order-ingestion/overview/pages/PlatformOrderIngestionOverviewPage"
-    ),
+export const OmsPddImportPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsPddImportPage"),
 );
-export const PddOrderCollectPage = lazy(
-  () =>
-    import(
-      "../../features/platform-order-ingestion/pdd/collect/pages/PddOrderCollectPage"
-    ),
+export const OmsPddPlatformOrderMirrorPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsPddPlatformOrderMirrorPage"),
 );
-export const PddNativeOrdersPage = lazy(
-  () =>
-    import(
-      "../../features/platform-order-ingestion/pdd/native-orders/pages/PddNativeOrdersPage"
-    ),
+export const OmsPddFskuMappingPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsPddFskuMappingPage"),
 );
-export const TaobaoOrderCollectPage = lazy(
-  () =>
-    import(
-      "../../features/platform-order-ingestion/taobao/collect/pages/TaobaoOrderCollectPage"
-    ),
-);
-export const TaobaoNativeOrdersPage = lazy(
-  () =>
-    import(
-      "../../features/platform-order-ingestion/taobao/native-orders/pages/TaobaoNativeOrdersPage"
-    ),
-);
-export const JdOrderCollectPage = lazy(
-  () =>
-    import(
-      "../../features/platform-order-ingestion/jd/collect/pages/JdOrderCollectPage"
-    ),
-);
-export const JdNativeOrdersPage = lazy(
-  () =>
-    import(
-      "../../features/platform-order-ingestion/jd/native-orders/pages/JdNativeOrdersPage"
-    ),
+export const OmsPddFulfillmentOrderConversionPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsPddFulfillmentOrderConversionPage"),
 );
 
-// OMS：内部订单相关能力后续单独建设；旧平台店铺/平台订单页面不再从路由直达
+export const OmsTaobaoImportPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsTaobaoImportPage"),
+);
+export const OmsTaobaoPlatformOrderMirrorPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsTaobaoPlatformOrderMirrorPage"),
+);
+export const OmsTaobaoFskuMappingPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsTaobaoFskuMappingPage"),
+);
+export const OmsTaobaoFulfillmentOrderConversionPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsTaobaoFulfillmentOrderConversionPage"),
+);
+
+export const OmsJdImportPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsJdImportPage"),
+);
+export const OmsJdPlatformOrderMirrorPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsJdPlatformOrderMirrorPage"),
+);
+export const OmsJdFskuMappingPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsJdFskuMappingPage"),
+);
+export const OmsJdFulfillmentOrderConversionPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsJdFulfillmentOrderConversionPage"),
+);
+
 export const AnalyticsPage = lazy(
   () => import("../../features/oms/analytics/AnalyticsPage"),
 );
