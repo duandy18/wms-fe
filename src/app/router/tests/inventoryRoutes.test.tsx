@@ -57,16 +57,18 @@ vi.mock("../lazyPages", () => {
     OutboundOrderPage: page("OutboundOrderPage mock view"),
     OutboundManualDocsPage: page("OutboundManualDocsPage mock view"),
     OutboundManualPage: page("OutboundManualPage mock view"),
-
-    PlatformOrderIngestionOverviewPage: page(
-      "PlatformOrderIngestionOverviewPage mock view",
-    ),
-    PddOrderCollectPage: page("PddOrderCollectPage mock view"),
-    PddNativeOrdersPage: page("PddNativeOrdersPage mock view"),
-    TaobaoOrderCollectPage: page("TaobaoOrderCollectPage mock view"),
-    TaobaoNativeOrdersPage: page("TaobaoNativeOrdersPage mock view"),
-    JdOrderCollectPage: page("JdOrderCollectPage mock view"),
-    JdNativeOrdersPage: page("JdNativeOrdersPage mock view"),
+    OmsPddImportPage: page("OmsPddImportPage mock view"),
+    OmsPddPlatformOrderMirrorPage: page("OmsPddPlatformOrderMirrorPage mock view"),
+    OmsPddFskuMappingPage: page("OmsPddFskuMappingPage mock view"),
+    OmsPddFulfillmentOrderConversionPage: page("OmsPddFulfillmentOrderConversionPage mock view"),
+    OmsTaobaoImportPage: page("OmsTaobaoImportPage mock view"),
+    OmsTaobaoPlatformOrderMirrorPage: page("OmsTaobaoPlatformOrderMirrorPage mock view"),
+    OmsTaobaoFskuMappingPage: page("OmsTaobaoFskuMappingPage mock view"),
+    OmsTaobaoFulfillmentOrderConversionPage: page("OmsTaobaoFulfillmentOrderConversionPage mock view"),
+    OmsJdImportPage: page("OmsJdImportPage mock view"),
+    OmsJdPlatformOrderMirrorPage: page("OmsJdPlatformOrderMirrorPage mock view"),
+    OmsJdFskuMappingPage: page("OmsJdFskuMappingPage mock view"),
+    OmsJdFulfillmentOrderConversionPage: page("OmsJdFulfillmentOrderConversionPage mock view"),
 
     AnalyticsPage: page("AnalyticsPage mock view"),
 
@@ -233,74 +235,44 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders PlatformOrderIngestionOverviewPage on /platform-order-ingestion", async () => {
-    renderWithRoute("/platform-order-ingestion");
-    expect(
-      await screen.findByText("PlatformOrderIngestionOverviewPage mock view"),
-    ).toBeInTheDocument();
+  it("renders OmsPddImportPage on /oms", async () => {
+    renderWithRoute("/oms");
+    expect(await screen.findByText("OmsPddImportPage mock view")).toBeInTheDocument();
   });
 
-  it("redirects /platform-order-ingestion/pdd to PddOrderCollectPage", async () => {
-    renderWithRoute("/platform-order-ingestion/pdd");
-    expect(
-      await screen.findByText("PddOrderCollectPage mock view"),
-    ).toBeInTheDocument();
+  it("renders OmsPddImportPage on /oms/pdd", async () => {
+    renderWithRoute("/oms/pdd");
+    expect(await screen.findByText("OmsPddImportPage mock view")).toBeInTheDocument();
   });
 
-  it("renders PddOrderCollectPage on /platform-order-ingestion/pdd/collect", async () => {
-    renderWithRoute("/platform-order-ingestion/pdd/collect");
-    expect(
-      await screen.findByText("PddOrderCollectPage mock view"),
-    ).toBeInTheDocument();
+  it("renders OmsPddImportPage on /oms/pdd/import", async () => {
+    renderWithRoute("/oms/pdd/import");
+    expect(await screen.findByText("OmsPddImportPage mock view")).toBeInTheDocument();
   });
 
-  it("renders PddNativeOrdersPage on /platform-order-ingestion/pdd/native-orders", async () => {
-    renderWithRoute("/platform-order-ingestion/pdd/native-orders");
-    expect(
-      await screen.findByText("PddNativeOrdersPage mock view"),
-    ).toBeInTheDocument();
+  it("renders OmsPddPlatformOrderMirrorPage on /oms/pdd/platform-order-mirror", async () => {
+    renderWithRoute("/oms/pdd/platform-order-mirror");
+    expect(await screen.findByText("OmsPddPlatformOrderMirrorPage mock view")).toBeInTheDocument();
   });
 
-  it("redirects /platform-order-ingestion/taobao to TaobaoOrderCollectPage", async () => {
-    renderWithRoute("/platform-order-ingestion/taobao");
-    expect(
-      await screen.findByText("TaobaoOrderCollectPage mock view"),
-    ).toBeInTheDocument();
+  it("renders OmsPddFskuMappingPage on /oms/pdd/fsku-mapping", async () => {
+    renderWithRoute("/oms/pdd/fsku-mapping");
+    expect(await screen.findByText("OmsPddFskuMappingPage mock view")).toBeInTheDocument();
   });
 
-  it("renders TaobaoOrderCollectPage on /platform-order-ingestion/taobao/collect", async () => {
-    renderWithRoute("/platform-order-ingestion/taobao/collect");
-    expect(
-      await screen.findByText("TaobaoOrderCollectPage mock view"),
-    ).toBeInTheDocument();
+  it("renders OmsPddFulfillmentOrderConversionPage on /oms/pdd/fulfillment-order-conversion", async () => {
+    renderWithRoute("/oms/pdd/fulfillment-order-conversion");
+    expect(await screen.findByText("OmsPddFulfillmentOrderConversionPage mock view")).toBeInTheDocument();
   });
 
-  it("renders TaobaoNativeOrdersPage on /platform-order-ingestion/taobao/native-orders", async () => {
-    renderWithRoute("/platform-order-ingestion/taobao/native-orders");
-    expect(
-      await screen.findByText("TaobaoNativeOrdersPage mock view"),
-    ).toBeInTheDocument();
+  it("renders OmsTaobaoImportPage on /oms/taobao/import", async () => {
+    renderWithRoute("/oms/taobao/import");
+    expect(await screen.findByText("OmsTaobaoImportPage mock view")).toBeInTheDocument();
   });
 
-  it("redirects /platform-order-ingestion/jd to JdOrderCollectPage", async () => {
-    renderWithRoute("/platform-order-ingestion/jd");
-    expect(
-      await screen.findByText("JdOrderCollectPage mock view"),
-    ).toBeInTheDocument();
-  });
-
-  it("renders JdOrderCollectPage on /platform-order-ingestion/jd/collect", async () => {
-    renderWithRoute("/platform-order-ingestion/jd/collect");
-    expect(
-      await screen.findByText("JdOrderCollectPage mock view"),
-    ).toBeInTheDocument();
-  });
-
-  it("renders JdNativeOrdersPage on /platform-order-ingestion/jd/native-orders", async () => {
-    renderWithRoute("/platform-order-ingestion/jd/native-orders");
-    expect(
-      await screen.findByText("JdNativeOrdersPage mock view"),
-    ).toBeInTheDocument();
+  it("renders OmsJdImportPage on /oms/jd/import", async () => {
+    renderWithRoute("/oms/jd/import");
+    expect(await screen.findByText("OmsJdImportPage mock view")).toBeInTheDocument();
   });
 
   it("renders FinanceOverviewPage on /finance", async () => {
