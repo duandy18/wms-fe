@@ -45,6 +45,38 @@ function formatJson(value: unknown): string {
   }
 }
 
+function formatDatePart(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+function nextDateText(dateText: string): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateText);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  const next = new Date(Date.UTC(year, month - 1, day + 1));
+
+  return [
+    next.getUTCFullYear(),
+    formatDatePart(next.getUTCMonth() + 1),
+    formatDatePart(next.getUTCDate()),
+  ].join("-");
+}
+
+function toShanghaiDayStart(dateText: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateText)) return null;
+  return `${dateText}T00:00:00+08:00`;
+}
+
+function toShanghaiExclusiveDayEnd(dateText: string): string | null {
+  const next = nextDateText(dateText);
+  if (!next) return null;
+  return `${next}T00:00:00+08:00`;
+}
+
 const JsonBlock: React.FC<{ title: string; value: unknown }> = ({
   title,
   value,
@@ -88,9 +120,11 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
     return Number.isInteger(n) && n > 0 ? n : null;
   }, [collectorOrderId]);
 
-  const syncSinceValue = syncSince.trim();
-  const syncUntilValue = syncUntil.trim();
-  const hasTimeWindow = syncSinceValue !== "" || syncUntilValue !== "";
+  const syncSinceDate = syncSince.trim();
+  const syncUntilDate = syncUntil.trim();
+  const syncSinceValue = syncSinceDate ? toShanghaiDayStart(syncSinceDate) : "";
+  const syncUntilValue = syncUntilDate ? toShanghaiExclusiveDayEnd(syncUntilDate) : "";
+  const hasTimeWindow = syncSinceDate !== "" || syncUntilDate !== "";
 
   async function loadList(preferMirrorId?: number) {
     setLoading(true);
@@ -140,6 +174,21 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
       return;
     }
 
+    if (syncSinceDate && !syncSinceValue) {
+      setSyncError("请输入有效的开始日期。");
+      return;
+    }
+
+    if (syncUntilDate && !syncUntilValue) {
+      setSyncError("请输入有效的结束日期。");
+      return;
+    }
+
+    if (syncSinceValue && syncUntilValue && syncSinceValue >= syncUntilValue) {
+      setSyncError("结束日期不能早于开始日期。");
+      return;
+    }
+
     setSyncSubmitting(true);
 
     try {
@@ -150,7 +199,7 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
       });
 
       const rangeText = hasTimeWindow
-        ? ` 时间范围：${syncSinceValue || "未设置"} 至 ${syncUntilValue || "未设置"}。`
+        ? ` 日期范围：${syncSinceDate || "未设置"} 至 ${syncUntilDate || "未设置"}。`
         : "";
 
       setSyncResult(
@@ -250,33 +299,33 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
 
         <details className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <summary className="cursor-pointer text-sm font-semibold text-slate-700">
-            高级：按 collector_order_id 单票补拉
+            高级同步选项
           </summary>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <label className="block">
-              <div className="mb-1 text-xs font-medium text-slate-500">开始时间 since</div>
+              <div className="mb-1 text-xs font-medium text-slate-500">开始日期</div>
               <input
+                type="date"
                 value={syncSince}
                 onChange={(event) => setSyncSince(event.target.value)}
-                placeholder="2026-04-28T00:00:00+08:00"
                 className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
               />
             </label>
 
             <label className="block">
-              <div className="mb-1 text-xs font-medium text-slate-500">结束时间 until</div>
+              <div className="mb-1 text-xs font-medium text-slate-500">结束日期（含当天）</div>
               <input
+                type="date"
                 value={syncUntil}
                 onChange={(event) => setSyncUntil(event.target.value)}
-                placeholder="2026-04-29T00:00:00+08:00"
                 className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
               />
             </label>
           </div>
 
           <p className="mt-2 text-xs leading-5 text-slate-500">
-            时间范围用于批量同步 Collector Export 列表；since 为包含边界，until 为不包含边界。留空则同步最近订单。
+            日期范围用于批量同步 Collector Export 列表；开始日期包含当天，结束日期也包含当天。留空则同步最近订单。
           </p>
 
           <form className="mt-4 flex flex-col gap-3 md:flex-row" onSubmit={handleImport}>
