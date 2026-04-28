@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
+import { FskuMappingStage } from "../components/FskuMappingStage";
+
 import {
   getPlatformOrderMirrorDetail,
   importPlatformOrderMirrorFromCollector,
@@ -422,7 +424,8 @@ export const OmsPlatformWorkflowPage: React.FC<OmsPlatformWorkflowPageProps> = (
         {stage === "platform_order_mirror" ? (
           <MirrorListStage platform={platform} />
         ) : null}
-        {stage === "fsku_mapping" || stage === "fulfillment_order_conversion" ? (
+        {stage === "fsku_mapping" ? <FskuMappingStage platform={platform} /> : null}
+        {stage === "fulfillment_order_conversion" ? (
           <PlaceholderStage platform={platform} stage={stage} />
         ) : null}
       </section>
