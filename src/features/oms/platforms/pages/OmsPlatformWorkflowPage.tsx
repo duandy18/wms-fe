@@ -65,7 +65,8 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
   const [error, setError] = useState("");
 
   const [syncLimit, setSyncLimit] = useState("50");
-  const [syncOffset, setSyncOffset] = useState("0");
+  const [syncSince, setSyncSince] = useState("");
+  const [syncUntil, setSyncUntil] = useState("");
   const [syncSubmitting, setSyncSubmitting] = useState(false);
   const [syncResult, setSyncResult] = useState("");
   const [syncError, setSyncError] = useState("");
@@ -82,15 +83,14 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
     return Number.isInteger(n) && n >= 1 && n <= 1000 ? n : null;
   }, [syncLimit]);
 
-  const parsedSyncOffset = useMemo(() => {
-    const n = Number(syncOffset);
-    return Number.isInteger(n) && n >= 0 ? n : null;
-  }, [syncOffset]);
-
   const parsedCollectorOrderId = useMemo(() => {
     const n = Number(collectorOrderId);
     return Number.isInteger(n) && n > 0 ? n : null;
   }, [collectorOrderId]);
+
+  const syncSinceValue = syncSince.trim();
+  const syncUntilValue = syncUntil.trim();
+  const hasTimeWindow = syncSinceValue !== "" || syncUntilValue !== "";
 
   async function loadList(preferMirrorId?: number) {
     setLoading(true);
@@ -140,21 +140,21 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
       return;
     }
 
-    if (parsedSyncOffset === null) {
-      setSyncError("请输入有效的 offset。");
-      return;
-    }
-
     setSyncSubmitting(true);
 
     try {
       const data = await syncPlatformOrderMirrorsFromCollector(platform, {
         limit: parsedSyncLimit,
-        offset: parsedSyncOffset,
+        since: syncSinceValue || undefined,
+        until: syncUntilValue || undefined,
       });
 
+      const rangeText = hasTimeWindow
+        ? ` 时间范围：${syncSinceValue || "未设置"} 至 ${syncUntilValue || "未设置"}。`
+        : "";
+
       setSyncResult(
-        `同步完成：拉取 ${data.fetched_count} 张，写入 ${data.imported_count} 张，失败 ${data.failed_count} 张。`,
+        `同步完成：拉取 ${data.fetched_count} 张，写入 ${data.imported_count} 张，失败 ${data.failed_count} 张。${rangeText}`,
       );
 
       await loadList(data.items[0]?.mirror_id);
@@ -232,7 +232,7 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
             disabled={syncSubmitting}
             className="min-h-11 self-end rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
           >
-            {syncSubmitting ? "同步中..." : "同步最近订单"}
+            {syncSubmitting ? "同步中..." : hasTimeWindow ? "按时间范围同步" : "同步最近订单"}
           </button>
         </form>
 
@@ -253,20 +253,31 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
             高级：按 collector_order_id 单票补拉
           </summary>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-[1fr_2fr]">
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
             <label className="block">
-              <div className="mb-1 text-xs font-medium text-slate-500">同步分页 offset</div>
+              <div className="mb-1 text-xs font-medium text-slate-500">开始时间 since</div>
               <input
-                value={syncOffset}
-                onChange={(event) => setSyncOffset(event.target.value)}
-                placeholder="0"
+                value={syncSince}
+                onChange={(event) => setSyncSince(event.target.value)}
+                placeholder="2026-04-28T00:00:00+08:00"
                 className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
               />
             </label>
-            <div className="self-end text-xs leading-5 text-slate-500">
-              offset 只用于运维补同步下一页；日常同步保持 0。
-            </div>
+
+            <label className="block">
+              <div className="mb-1 text-xs font-medium text-slate-500">结束时间 until</div>
+              <input
+                value={syncUntil}
+                onChange={(event) => setSyncUntil(event.target.value)}
+                placeholder="2026-04-29T00:00:00+08:00"
+                className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-slate-900"
+              />
+            </label>
           </div>
+
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            时间范围用于批量同步 Collector Export 列表；since 为包含边界，until 为不包含边界。留空则同步最近订单。
+          </p>
 
           <form className="mt-4 flex flex-col gap-3 md:flex-row" onSubmit={handleImport}>
             <input

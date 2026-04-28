@@ -63,6 +63,8 @@ export interface ImportFromCollectorResult {
 export interface SyncFromCollectorRequest {
   limit?: number;
   offset?: number;
+  since?: string;
+  until?: string;
 }
 
 export interface SyncFromCollectorItem {
@@ -82,6 +84,8 @@ export interface SyncFromCollectorResult {
   platform: OmsPlatformKey;
   limit: number;
   offset: number;
+  since?: string | null;
+  until?: string | null;
   fetched_count: number;
   imported_count: number;
   failed_count: number;
@@ -151,12 +155,27 @@ export async function syncPlatformOrderMirrorsFromCollector(
   platform: OmsPlatformKey,
   request: SyncFromCollectorRequest,
 ): Promise<SyncFromCollectorResult> {
+  const payload: {
+    limit: number;
+    offset: number;
+    since?: string;
+    until?: string;
+  } = {
+    limit: request.limit ?? 50,
+    offset: request.offset ?? 0,
+  };
+
+  if (request.since) {
+    payload.since = request.since;
+  }
+
+  if (request.until) {
+    payload.until = request.until;
+  }
+
   const result = await apiPost<SyncFromCollectorResult>(
     `/oms/${platform}/platform-order-mirrors/sync-from-collector`,
-    {
-      limit: request.limit ?? 50,
-      offset: request.offset ?? 0,
-    },
+    payload,
   );
 
   return assertSyncResult(
