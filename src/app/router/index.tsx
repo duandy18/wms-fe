@@ -536,6 +536,31 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
+            path="items/sku-coding"
+            element={
+              <RequirePermission permission="page.pms.read">
+                <Navigate to="/items/sku-coding/generator" replace />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="items/sku-coding/generator"
+            element={
+              <RequirePermission permission="page.pms.read">
+                <P.SkuCodingGeneratorPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="items/sku-coding/dictionaries"
+            element={
+              <RequirePermission permission="page.pms.read">
+                <P.SkuCodingDictionariesPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
             path="suppliers"
             element={
               <RequirePermission permission="page.pms.read">

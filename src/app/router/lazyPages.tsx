@@ -158,6 +158,12 @@ export const ItemsPage = lazy(
 export const ItemBarcodesPage = lazy(
   () => import("../../features/pms/items/pages/ItemBarcodesPage"),
 );
+export const SkuCodingGeneratorPage = lazy(
+  () => import("../../features/pms/sku-coding/pages/SkuCodingGeneratorPage"),
+);
+export const SkuCodingDictionariesPage = lazy(
+  () => import("../../features/pms/sku-coding/pages/SkuCodingDictionariesPage"),
+);
 
 // 系统管理：admin/users
 export const UsersManagePage = lazy(
