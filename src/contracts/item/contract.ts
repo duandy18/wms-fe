@@ -2,36 +2,26 @@
 /**
  * Item 主数据合同（稳定入口）
  *
- * Phase M-5：终态收口原则
- * - 业务模块只从 "@/contracts/item/contract" 导入类型
- * - 不在前端引入 zod schema 作为“第二真相源”
- * - 后端可以返回额外字段（展示/兼容），但业务代码只依赖终态字段
+ * 终态收口原则：
+ * - item_id 是商品内部身份真相
+ * - items.sku 是当前主 SKU 投影
+ * - item_sku_codes 是 SKU 编码治理真相
+ * - brand_id/category_id 是 PMS 主数据引用
+ * - brand/category 是只读展示投影
  */
 
 export type ShelfLifeUnit = "DAY" | "WEEK" | "MONTH" | "YEAR";
 
-/**
- * 终态 Item（items 表为主）
- *
- * 终态合同红线：
- * - Items 不承载“条码事实 / 单位事实”
- * - 条码真相：item_barcodes
- * - 单位真相：item_uoms
- *
- * 若后端响应中仍出现 barcode/primary_barcode/requires_* 等历史字段：
- * - 前端业务逻辑不得依赖其语义
- * - 仅允许作为展示冗余（read-only）并逐步移除
- *
- * 若后端响应中仍出现 weight_kg：
- * - 这是兼容读取字段
- * - 真实来源已切到 base item_uom.net_weight_kg
- */
 export type Item = {
   id: number;
   sku: string;
   name: string;
 
   spec?: string | null;
+
+  brand_id?: number | null;
+  category_id?: number | null;
+
   brand?: string | null;
   category?: string | null;
 
@@ -59,8 +49,9 @@ export type ItemCreateInput = {
   name: string;
 
   spec?: string | null;
-  brand?: string | null;
-  category?: string | null;
+
+  brand_id?: number | null;
+  category_id?: number | null;
 
   enabled?: boolean;
 

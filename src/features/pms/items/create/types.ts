@@ -3,10 +3,6 @@
 export type StatusMode = "enabled" | "disabled";
 export type ShelfLifeUnit = "DAY" | "WEEK" | "MONTH" | "YEAR";
 
-/**
- * 这些类型仍保留，供其它包装/条码治理代码复用；
- * 但商品管理页表单 FormState 不再承载这些字段。
- */
 export interface UomDraft {
   uom: string;
   ratio_to_base: string;
@@ -28,8 +24,9 @@ export interface FormState {
   sku: string;
   name: string;
   spec: string;
-  brand: string;
-  category: string;
+
+  brand_id: string;
+  category_id: string;
 
   supplier_id: string;
 
@@ -48,8 +45,9 @@ export const EMPTY_FORM: FormState = {
   sku: "",
   name: "",
   spec: "",
-  brand: "",
-  category: "",
+
+  brand_id: "",
+  category_id: "",
 
   supplier_id: "",
 

@@ -158,6 +158,18 @@ export const ItemsPage = lazy(
 export const ItemBarcodesPage = lazy(
   () => import("../../features/pms/items/pages/ItemBarcodesPage"),
 );
+export const PmsBrandsPage = lazy(
+  () => import("../../features/pms/master-data/pages/PmsBrandsPage"),
+);
+export const PmsCategoriesPage = lazy(
+  () => import("../../features/pms/master-data/pages/PmsCategoriesPage"),
+);
+export const PmsAttributeDefsPage = lazy(
+  () => import("../../features/pms/master-data/pages/PmsAttributeDefsPage"),
+);
+export const PmsItemUomsPage = lazy(
+  () => import("../../features/pms/master-data/pages/PmsItemUomsPage"),
+);
 export const SkuCodingGeneratorPage = lazy(
   () => import("../../features/pms/sku-coding/pages/SkuCodingGeneratorPage"),
 );

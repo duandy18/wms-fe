@@ -34,8 +34,8 @@ export async function submitCreateItem(args: {
     sku,
     name,
     spec: form.spec.trim() || null,
-    brand: form.brand.trim() || null,
-    category: form.category.trim() || null,
+    brand_id: form.brand_id.trim() ? Number(form.brand_id) : null,
+    category_id: form.category_id.trim() ? Number(form.category_id) : null,
 
     supplier_id: form.supplier_id.trim() ? Number(form.supplier_id.trim()) : null,
 

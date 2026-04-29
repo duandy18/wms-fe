@@ -6,7 +6,7 @@ import { asRecord } from "./itemEditorUtils";
 
 /**
  * 编辑模式下只回填 item 本体字段。
- * 商品页不再承载包装单位 / 条码 / 单位换算治理。
+ * 品牌/分类写入真相是 brand_id/category_id；brand/category 只做展示。
  */
 export function buildEditForm(args: { selectedItem: Item; emptyForm: FormState }): FormState {
   const { selectedItem, emptyForm } = args;
@@ -19,8 +19,9 @@ export function buildEditForm(args: { selectedItem: Item; emptyForm: FormState }
     sku: selectedItem.sku ?? "",
     name: selectedItem.name ?? "",
     spec: (selectedItem.spec ?? "").trim(),
-    brand: (selectedItem.brand ?? "").trim(),
-    category: (selectedItem.category ?? "").trim(),
+
+    brand_id: selectedItem.brand_id == null ? "" : String(selectedItem.brand_id),
+    category_id: selectedItem.category_id == null ? "" : String(selectedItem.category_id),
 
     supplier_id: selectedItem.supplier_id == null ? "" : String(selectedItem.supplier_id),
 

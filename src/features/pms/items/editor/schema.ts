@@ -7,11 +7,11 @@ export type Flash = { kind: "success" | "error"; text: string } | null;
 
 export type FieldErrors = Partial<Record<keyof FormState, string>>;
 
-function parseSupplierId(v: string): number | null {
+function parseIdOrNull(v: string): number | null {
   const s = (v ?? "").trim();
   if (!s) return null;
   const n = Number(s);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : null;
 }
 
 function parsePositiveIntStrict(v: string): number | null {
@@ -72,7 +72,9 @@ export function validateCreate(
   else if (form.sku.trim().length > 128) errors.sku = "SKU 不能超过 128 个字符";
   if (!form.name.trim()) errors.name = "商品名称不能为空";
 
-  const supplierId = parseSupplierId(form.supplier_id);
+  const supplierId = parseIdOrNull(form.supplier_id);
+  const brandId = parseIdOrNull(form.brand_id);
+  const categoryId = parseIdOrNull(form.category_id);
   const shelf = resolveShelfLifeFields(form, errors);
 
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
@@ -83,8 +85,8 @@ export function validateCreate(
       sku: form.sku.trim().toUpperCase(),
       name: form.name.trim(),
       spec: normalizeText(form.spec),
-      brand: normalizeText(form.brand),
-      category: normalizeText(form.category),
+      brand_id: brandId,
+      category_id: categoryId,
       supplier_id: supplierId,
       lot_source_policy: form.lot_source_policy,
       expiry_policy: form.expiry_policy,
@@ -106,7 +108,9 @@ export function validateEdit(
 
   if (!form.name.trim()) errors.name = "商品名称不能为空";
 
-  const supplierId = parseSupplierId(form.supplier_id);
+  const supplierId = parseIdOrNull(form.supplier_id);
+  const brandId = parseIdOrNull(form.brand_id);
+  const categoryId = parseIdOrNull(form.category_id);
   const shelf = resolveShelfLifeFields(form, errors);
 
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
@@ -116,8 +120,8 @@ export function validateEdit(
     body: {
       name: form.name.trim(),
       spec: normalizeText(form.spec),
-      brand: normalizeText(form.brand),
-      category: normalizeText(form.category),
+      brand_id: brandId,
+      category_id: categoryId,
       supplier_id: supplierId,
       lot_source_policy: form.lot_source_policy,
       expiry_policy: form.expiry_policy,

@@ -1,36 +1,16 @@
 // src/features/pms/sku-coding/api/skuCodingApi.ts
 import { apiGet, apiPatch, apiPost } from "../../../../lib/api";
+import {
+  fetchPmsBrands,
+  fetchPmsCategories,
+  type PmsBrand,
+  type PmsCategory,
+} from "../../master-data/api/masterDataApi";
 
 export type ProductKind = "FOOD" | "SUPPLY";
 
-export interface SkuCodeBrand {
-  id: number;
-  name_cn: string;
-  code: string;
-  is_active: boolean;
-  is_locked: boolean;
-  sort_order: number;
-  remark: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-}
-
-export interface SkuBusinessCategory {
-  id: number;
-  parent_id: number | null;
-  level: number;
-  product_kind: ProductKind;
-  category_name: string;
-  category_code: string;
-  path_code: string;
-  is_leaf: boolean;
-  is_active: boolean;
-  is_locked: boolean;
-  sort_order: number;
-  remark: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-}
+export type SkuCodeBrand = PmsBrand;
+export type SkuBusinessCategory = PmsCategory;
 
 export interface SkuCodeTermGroup {
   id: number;
@@ -77,6 +57,8 @@ export interface SkuSimilarItem {
   sku: string;
   name: string;
   spec: string | null;
+  brand_id?: number | null;
+  category_id?: number | null;
   brand: string | null;
   category: string | null;
 }
@@ -103,78 +85,14 @@ function unwrapList<T>(resp: ListEnvelope<T>): T[] {
 }
 
 export async function fetchSkuCodeBrands(activeOnly = false): Promise<SkuCodeBrand[]> {
-  const resp = await apiGet<ListEnvelope<SkuCodeBrand>>("/pms/sku-coding/brands", {
-    active_only: activeOnly,
-  });
-  return unwrapList(resp);
-}
-
-export async function createSkuCodeBrand(payload: {
-  name_cn: string;
-  code: string;
-  sort_order?: number;
-  remark?: string | null;
-}): Promise<SkuCodeBrand> {
-  return apiPost<SkuCodeBrand>("/pms/sku-coding/brands", payload);
-}
-
-export async function updateSkuCodeBrand(
-  id: number,
-  payload: Partial<Pick<SkuCodeBrand, "name_cn" | "code" | "sort_order" | "remark">>,
-): Promise<SkuCodeBrand> {
-  return apiPatch<SkuCodeBrand>(`/pms/sku-coding/brands/${id}`, payload);
-}
-
-export async function enableSkuCodeBrand(id: number): Promise<SkuCodeBrand> {
-  return apiPost<SkuCodeBrand>(`/pms/sku-coding/brands/${id}/enable`, {});
-}
-
-export async function disableSkuCodeBrand(id: number): Promise<SkuCodeBrand> {
-  return apiPost<SkuCodeBrand>(`/pms/sku-coding/brands/${id}/disable`, {});
+  return fetchPmsBrands(activeOnly);
 }
 
 export async function fetchSkuBusinessCategories(
   productKind?: ProductKind,
   activeOnly = false,
 ): Promise<SkuBusinessCategory[]> {
-  const resp = await apiGet<ListEnvelope<SkuBusinessCategory>>(
-    "/pms/sku-coding/business-categories",
-    {
-      product_kind: productKind,
-      active_only: activeOnly,
-    },
-  );
-  return unwrapList(resp);
-}
-
-export async function createSkuBusinessCategory(payload: {
-  parent_id: number | null;
-  level: number;
-  product_kind: ProductKind;
-  category_name: string;
-  category_code: string;
-  is_leaf: boolean;
-  sort_order?: number;
-  remark?: string | null;
-}): Promise<SkuBusinessCategory> {
-  return apiPost<SkuBusinessCategory>("/pms/sku-coding/business-categories", payload);
-}
-
-export async function updateSkuBusinessCategory(
-  id: number,
-  payload: Partial<
-    Pick<SkuBusinessCategory, "category_name" | "category_code" | "is_leaf" | "sort_order" | "remark">
-  >,
-): Promise<SkuBusinessCategory> {
-  return apiPatch<SkuBusinessCategory>(`/pms/sku-coding/business-categories/${id}`, payload);
-}
-
-export async function enableSkuBusinessCategory(id: number): Promise<SkuBusinessCategory> {
-  return apiPost<SkuBusinessCategory>(`/pms/sku-coding/business-categories/${id}/enable`, {});
-}
-
-export async function disableSkuBusinessCategory(id: number): Promise<SkuBusinessCategory> {
-  return apiPost<SkuBusinessCategory>(`/pms/sku-coding/business-categories/${id}/disable`, {});
+  return fetchPmsCategories(productKind, activeOnly);
 }
 
 export async function fetchSkuCodeTermGroups(

@@ -7,9 +7,9 @@ export async function fetchItems(): Promise<Item[]> {
 }
 
 function toNumOrNull(v: unknown): number | null {
-  if (v === null || v === undefined) return null;
+  if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
 export async function createItem(input: ItemCreateInput): Promise<Item> {
@@ -24,14 +24,14 @@ export async function createItem(input: ItemCreateInput): Promise<Item> {
     sku,
     name,
     spec: typeof input.spec === "string" ? input.spec.trim() || null : input.spec ?? null,
-    brand: typeof input.brand === "string" ? input.brand.trim() || null : input.brand ?? null,
-    category: typeof input.category === "string" ? input.category.trim() || null : input.category ?? null,
+
+    brand_id: toNumOrNull(input.brand_id),
+    category_id: toNumOrNull(input.category_id),
 
     enabled: input.enabled ?? true,
 
     supplier_id: input.supplier_id ?? null,
 
-    // ---- terminal policy fields ----
     lot_source_policy: String(input.lot_source_policy ?? "").trim(),
     expiry_policy: String(input.expiry_policy ?? "").trim(),
     derivation_allowed: Boolean(input.derivation_allowed),
@@ -52,8 +52,9 @@ export async function updateItem(id: number, input: ItemUpdateInput): Promise<It
 
   if (input.name !== undefined) body.name = typeof input.name === "string" ? input.name.trim() : input.name;
   if (input.spec !== undefined) body.spec = typeof input.spec === "string" ? input.spec.trim() || null : input.spec;
-  if (input.brand !== undefined) body.brand = typeof input.brand === "string" ? input.brand.trim() || null : input.brand;
-  if (input.category !== undefined) body.category = typeof input.category === "string" ? input.category.trim() || null : input.category;
+
+  if (input.brand_id !== undefined) body.brand_id = toNumOrNull(input.brand_id);
+  if (input.category_id !== undefined) body.category_id = toNumOrNull(input.category_id);
 
   if (input.enabled !== undefined) body.enabled = Boolean(input.enabled);
 
