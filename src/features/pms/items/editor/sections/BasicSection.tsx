@@ -8,9 +8,22 @@ const FieldError: React.FC<{ msg?: string }> = ({ msg }) =>
 
 const BasicSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
   const { form, setForm, fieldErrors } = vm;
+  const skuReadonly = vm.mode === "edit";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div>
+        <input
+          className="rounded border px-3 py-2 w-full bg-white font-mono disabled:bg-slate-100 disabled:text-slate-500"
+          placeholder="SKU（必填，可从SKU编码页生成）"
+          value={form.sku}
+          onChange={(e) => setForm({ ...form, sku: e.target.value.toUpperCase() })}
+          disabled={vm.saving || skuReadonly}
+        />
+        <FieldError msg={fieldErrors.sku} />
+        {skuReadonly ? <div className="mt-1 text-xs text-slate-500">SKU 已创建后不可修改</div> : null}
+      </div>
+
       <div>
         <input
           className="rounded border px-3 py-2 w-full bg-white"

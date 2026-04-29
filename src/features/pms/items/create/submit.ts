@@ -23,10 +23,14 @@ export async function submitCreateItem(args: {
     };
   }
 
+  const sku = form.sku.trim().toUpperCase();
+  if (!sku) return { ok: false, error: "SKU 不能为空，请从 SKU编码页生成后复制，或手工输入。" };
+
   const name = form.name.trim();
   if (!name) return { ok: false, error: "商品名称不能为空" };
 
   const body: ItemCreateInput = {
+    sku,
     name,
     spec: form.spec.trim() || null,
     brand: form.brand.trim() || null,

@@ -34,19 +34,14 @@ function allowShelfLife(expiryPolicy: string): boolean {
   return expiryPolicy.trim() === "REQUIRED";
 }
 
-export function validateCreate(
+function resolveShelfLifeFields(
   form: FormState,
-):
-  | { ok: true; body: ItemCreateInput }
-  | { ok: false; fieldErrors: FieldErrors } {
-  const errors: FieldErrors = {};
-
-  if (!form.name.trim()) errors.name = "商品名称不能为空";
-
-  const supplierId = parseSupplierId(form.supplier_id);
-
-  const expiryPolicy = form.expiry_policy;
-  const needShelf = allowShelfLife(expiryPolicy);
+  errors: FieldErrors,
+): {
+  shelf_life_value: number | null;
+  shelf_life_unit: "DAY" | "WEEK" | "MONTH" | "YEAR" | null;
+} {
+  const needShelf = allowShelfLife(form.expiry_policy);
 
   let shelf_life_value: number | null = null;
   let shelf_life_unit: "DAY" | "WEEK" | "MONTH" | "YEAR" | null = null;
@@ -61,10 +56,57 @@ export function validateCreate(
         shelf_life_unit = form.shelf_life_unit;
       }
     }
-  } else {
-    shelf_life_value = null;
-    shelf_life_unit = null;
   }
+
+  return { shelf_life_value, shelf_life_unit };
+}
+
+export function validateCreate(
+  form: FormState,
+):
+  | { ok: true; body: ItemCreateInput }
+  | { ok: false; fieldErrors: FieldErrors } {
+  const errors: FieldErrors = {};
+
+  if (!form.sku.trim()) errors.sku = "SKU 不能为空";
+  if (!form.name.trim()) errors.name = "商品名称不能为空";
+
+  const supplierId = parseSupplierId(form.supplier_id);
+  const shelf = resolveShelfLifeFields(form, errors);
+
+  if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
+
+  return {
+    ok: true,
+    body: {
+      sku: form.sku.trim().toUpperCase(),
+      name: form.name.trim(),
+      spec: normalizeText(form.spec),
+      brand: normalizeText(form.brand),
+      category: normalizeText(form.category),
+      supplier_id: supplierId,
+      lot_source_policy: form.lot_source_policy,
+      expiry_policy: form.expiry_policy,
+      derivation_allowed: form.derivation_allowed,
+      uom_governance_enabled: form.uom_governance_enabled,
+      shelf_life_value: shelf.shelf_life_value,
+      shelf_life_unit: shelf.shelf_life_unit,
+      enabled: form.status === "enabled",
+    },
+  };
+}
+
+export function validateEdit(
+  form: FormState,
+):
+  | { ok: true; body: ItemUpdateInput }
+  | { ok: false; fieldErrors: FieldErrors } {
+  const errors: FieldErrors = {};
+
+  if (!form.name.trim()) errors.name = "商品名称不能为空";
+
+  const supplierId = parseSupplierId(form.supplier_id);
+  const shelf = resolveShelfLifeFields(form, errors);
 
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
 
@@ -80,19 +122,9 @@ export function validateCreate(
       expiry_policy: form.expiry_policy,
       derivation_allowed: form.derivation_allowed,
       uom_governance_enabled: form.uom_governance_enabled,
-      shelf_life_value,
-      shelf_life_unit,
+      shelf_life_value: shelf.shelf_life_value,
+      shelf_life_unit: shelf.shelf_life_unit,
       enabled: form.status === "enabled",
     },
   };
-}
-
-export function validateEdit(
-  form: FormState,
-):
-  | { ok: true; body: ItemUpdateInput }
-  | { ok: false; fieldErrors: FieldErrors } {
-  const r = validateCreate(form);
-  if (!r.ok) return r;
-  return { ok: true, body: r.body };
 }
