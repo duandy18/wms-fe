@@ -98,6 +98,8 @@ vi.mock("../lazyPages", () => {
 
     ItemsPage: page("ItemsPage mock view"),
     ItemBarcodesPage: page("ItemBarcodesPage mock view"),
+    SkuCodingGeneratorPage: page("SkuCodingGeneratorPage mock view"),
+    SkuCodingDictionariesPage: page("SkuCodingDictionariesPage mock view"),
     SuppliersListPage: page("SuppliersListPage mock view"),
 
     ShippingProvidersListPage: page("ShippingProvidersListPage mock view"),
