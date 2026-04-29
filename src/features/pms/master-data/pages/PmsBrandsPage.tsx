@@ -4,6 +4,8 @@ import {
   disablePmsBrand,
   enablePmsBrand,
   fetchPmsBrands,
+  lockPmsBrand,
+  unlockPmsBrand,
   updatePmsBrand,
   type PmsBrand,
 } from "../api/masterDataApi";
@@ -15,6 +17,13 @@ const primaryBtnCls = "rounded bg-slate-900 px-3 py-2 text-sm font-semibold text
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
+}
+
+function fmtTime(v?: string | null): string {
+  if (!v) return "-";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return v;
+  return d.toLocaleString();
 }
 
 export default function PmsBrandsPage() {
@@ -130,6 +139,26 @@ export default function PmsBrandsPage() {
     }
   }
 
+  async function toggleLock(row: PmsBrand) {
+    setSaving(true);
+    setError(null);
+    setHint(null);
+    try {
+      if (row.is_locked) {
+        await unlockPmsBrand(row.id);
+        setHint(`已解锁：${row.name_cn}`);
+      } else {
+        await lockPmsBrand(row.id);
+        setHint(`已锁定：${row.name_cn}`);
+      }
+      await reload();
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="space-y-6 p-6">
       <header>
@@ -192,6 +221,9 @@ export default function PmsBrandsPage() {
                   <th className="px-3 py-2">编码</th>
                   <th className="px-3 py-2">排序</th>
                   <th className="px-3 py-2">状态</th>
+                  <th className="px-3 py-2">锁定</th>
+                  <th className="px-3 py-2">创建时间</th>
+                  <th className="px-3 py-2">更新时间</th>
                   <th className="px-3 py-2">操作</th>
                 </tr>
               </thead>
@@ -203,18 +235,24 @@ export default function PmsBrandsPage() {
                     <td className="px-3 py-2 font-mono">{row.code}</td>
                     <td className="px-3 py-2">{row.sort_order}</td>
                     <td className="px-3 py-2">{row.is_active ? "启用" : "停用"}</td>
+                    <td className="px-3 py-2">{row.is_locked ? "已锁定" : "未锁定"}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">{fmtTime(row.created_at)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">{fmtTime(row.updated_at)}</td>
                     <td className="px-3 py-2">
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button type="button" className={btnCls} onClick={() => startEdit(row)}>编辑</button>
                         <button type="button" className={btnCls} onClick={() => void toggle(row)} disabled={saving}>
                           {row.is_active ? "停用" : "启用"}
+                        </button>
+                        <button type="button" className={btnCls} onClick={() => void toggleLock(row)} disabled={saving}>
+                          {row.is_locked ? "解锁" : "锁定"}
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
                 {sorted.length === 0 ? (
-                  <tr><td colSpan={6} className="px-3 py-8 text-center text-slate-400">暂无品牌</td></tr>
+                  <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-400">暂无品牌</td></tr>
                 ) : null}
               </tbody>
             </table>
