@@ -152,6 +152,14 @@ export async function disablePmsCategory(id: number): Promise<PmsCategory> {
   return apiPost<PmsCategory>(`/pms/categories/${id}/disable`, {});
 }
 
+export async function lockPmsCategory(id: number): Promise<PmsCategory> {
+  return apiPost<PmsCategory>(`/pms/categories/${id}/lock`, {});
+}
+
+export async function unlockPmsCategory(id: number): Promise<PmsCategory> {
+  return apiPost<PmsCategory>(`/pms/categories/${id}/unlock`, {});
+}
+
 export async function fetchItemAttributeDefs(params?: {
   product_kind?: AttributeProductKind;
   category_id?: number | null;
