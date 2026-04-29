@@ -15,7 +15,7 @@ const HeaderBar: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
           </div>
         ) : (
           <div className="mt-1 text-[11px] text-slate-500">
-            当前编辑：SKU <span className="font-mono">{vm.selectedItem?.sku ?? "-"}</span> ，商品ID{" "}
+            当前编辑：主 SKU <span className="font-mono">{vm.selectedItem?.sku ?? "-"}</span> ，商品ID{" "}
             <span className="font-mono">{vm.selectedItem?.id ?? "-"}</span>
           </div>
         )}
