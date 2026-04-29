@@ -103,9 +103,8 @@ export default function useItemEditor(args: {
   const canSubmit = useMemo(() => {
     if (saving) return false;
     if (supLoading) return false;
-    if (suppliers.length === 0) return false;
     return true;
-  }, [saving, supLoading, suppliers.length]);
+  }, [saving, supLoading]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();

@@ -33,7 +33,7 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
 
       {!vm.supLoading && vm.suppliers.length === 0 ? (
         <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          当前没有可用供货商（active=true）。请先到「系统管理 → 供应商主数据」新建并启用供应商。
+          当前没有可用供货商（active=true）。商品可以先不绑定供应商创建，后续再编辑补充。
         </div>
       ) : null}
 

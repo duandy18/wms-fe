@@ -14,14 +14,7 @@ export async function submitCreateItem(args: {
   suppliers: SupplierBasic[];
   supLoading: boolean;
 }): Promise<{ body: ItemCreateInput } | SubmitResult> {
-  const { form, suppliers, supLoading } = args;
-
-  if (!supLoading && suppliers.length === 0) {
-    return {
-      ok: false,
-      error: "没有可用供应商。请先到「系统管理 → 供应商主数据」新建供应商。",
-    };
-  }
+  const { form } = args;
 
   const sku = form.sku.trim().toUpperCase();
   if (!sku) return { ok: false, error: "SKU 不能为空，请从 SKU编码页生成后复制，或手工输入。" };
