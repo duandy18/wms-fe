@@ -111,7 +111,7 @@ const ItemsPage: React.FC = () => {
         <p className="mt-1 text-sm text-slate-500">
           Items 是全系统统一的商品来源：入库、出库、库存、批次、订单都只认{" "}
           <span className="font-mono">item_id</span> / <span className="font-mono">sku</span>。
-          商品新建必须绑定供货商（必选），否则无法创建。本页只维护商品本体主数据；
+          商品新建可以暂不绑定供货商，后续可编辑补充供应商。本页只维护商品本体主数据；
           条码、箱码、包装单位、单位换算不再由本页治理。
           当前 <span className="font-mono">/items?barcode=xxx</span> 只保留已绑定条码自动定位商品。
         </p>
