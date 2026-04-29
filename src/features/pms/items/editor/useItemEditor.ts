@@ -96,6 +96,10 @@ export default function useItemEditor(args: {
     setCreated(null);
   };
 
+  const refreshAfterExternalChange = async () => {
+    await onAfterSaved();
+  };
+
   const canSubmit = useMemo(() => {
     if (saving) return false;
     if (supLoading) return false;
@@ -198,6 +202,7 @@ export default function useItemEditor(args: {
 
     resetToCreate,
     resetToEditOriginal,
+    refreshAfterExternalChange,
     submit,
   };
 }

@@ -39,9 +39,18 @@ export const useItemsStore = create<ItemsState>((set) => ({
 
       const maps = await buildBarcodeMaps(data);
 
-      set({
-        items: data,
-        primaryBarcodes: maps.primaryBarcodes,
+      set((state) => {
+        const selectedId = state.selectedItem?.id;
+        const refreshedSelected =
+          selectedId == null
+            ? state.selectedItem
+            : data.find((item) => item.id === selectedId) ?? state.selectedItem;
+
+        return {
+          items: data,
+          primaryBarcodes: maps.primaryBarcodes,
+          selectedItem: refreshedSelected,
+        };
       });
     } catch (e: unknown) {
       const err = e as ApiErrorShape;

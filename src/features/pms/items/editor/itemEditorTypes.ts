@@ -32,5 +32,6 @@ export type ItemEditorVm = {
 
   resetToCreate: () => void;
   resetToEditOriginal: () => void;
+  refreshAfterExternalChange: () => Promise<void>;
   submit: (e: FormEvent) => Promise<void>;
 };

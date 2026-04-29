@@ -8,6 +8,7 @@ import FlashBar from "./sections/FlashBar";
 import BasicSection from "./sections/BasicSection";
 import ProductAttributesSection from "./sections/ProductAttributesSection";
 import StatusSection from "./sections/StatusSection";
+import ItemSkuCodesGovernanceSection from "../components/edit/ItemSkuCodesGovernanceSection";
 
 const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
   return (
@@ -31,6 +32,15 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
       <form onSubmit={vm.submit} className="space-y-6">
         {/* 商品本体基础字段 */}
         <BasicSection vm={vm} />
+
+        {vm.mode === "edit" && vm.selectedItem ? (
+          <ItemSkuCodesGovernanceSection
+            itemId={vm.selectedItem.id}
+            currentSku={vm.selectedItem.sku}
+            disabled={vm.saving}
+            onChanged={vm.refreshAfterExternalChange}
+          />
+        ) : null}
 
         {/* 供应商 / 批次策略 / 有效期策略 */}
         <ProductAttributesSection vm={vm} />

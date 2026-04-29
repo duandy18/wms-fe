@@ -22,7 +22,11 @@ const BasicSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
           disabled={vm.saving || skuReadonly}
         />
         <FieldError msg={fieldErrors.sku} />
-        {skuReadonly ? <div className="mt-1 text-xs text-slate-500">SKU 已创建后不可修改</div> : null}
+        {skuReadonly ? (
+          <div className="mt-1 text-xs text-slate-500">
+            当前主 SKU 需通过下方「SKU 编码管理」切换，不能在商品基础字段里直接修改。
+          </div>
+        ) : null}
       </div>
 
       <div>
