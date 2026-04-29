@@ -76,15 +76,3 @@ export async function updateItem(id: number, input: ItemUpdateInput): Promise<It
 
   return apiPatch<Item>(`/items/${id}`, body);
 }
-
-// ===========================
-// Test Set toggle (DEFAULT)
-// ===========================
-// 测试集合后续单独删除；本刀只处理 SKU 手工输入。
-export async function enableItemTest(id: number): Promise<Item> {
-  return apiPost<Item>(`/items/${id}/test:enable`, {});
-}
-
-export async function disableItemTest(id: number): Promise<Item> {
-  return apiPost<Item>(`/items/${id}/test:disable`, {});
-}

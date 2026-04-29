@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 import type { Item } from "../../../../contracts/item/contract";
-import { useItemsStore } from "../model/itemsStore";
 import { computeItemQuality } from "../quality/itemQuality";
 import {
   asRecord,
@@ -27,25 +26,11 @@ const StatusBadge: React.FC<{ enabled: boolean }> = ({ enabled }) => {
   );
 };
 
-const TestBadge: React.FC<{ isTest: boolean }> = ({ isTest }) => {
-  return isTest ? (
-    <span className="inline-flex items-center rounded px-2 py-1 text-[12px] font-semibold border border-amber-200 bg-amber-50 text-amber-800">
-      TEST
-    </span>
-  ) : (
-    <span className="inline-flex items-center rounded px-2 py-1 text-[12px] font-semibold border border-slate-200 bg-white text-slate-600">
-      PROD
-    </span>
-  );
-};
-
 export const ItemsListTable: React.FC<{
   rows: Item[];
   primaryBarcodes: Record<number, string>;
   onEdit: (it: Item) => void;
 }> = ({ rows, primaryBarcodes, onEdit }) => {
-  const toggleItemTest = useItemsStore((s) => s.toggleItemTest);
-  const [savingId, setSavingId] = useState<number | null>(null);
   const [qualityFilter, setQualityFilter] = useState<"all" | "issues">("all");
 
   const qualityRows = useMemo(() => {
@@ -70,15 +55,6 @@ export const ItemsListTable: React.FC<{
     if (qualityFilter === "all") return qualityRows;
     return qualityRows.filter((x) => x.q.issues.length > 0);
   }, [qualityRows, qualityFilter]);
-
-  async function onToggle(it: Item, next: boolean): Promise<void> {
-    setSavingId(it.id);
-    try {
-      await toggleItemTest({ itemId: it.id, next });
-    } finally {
-      setSavingId((cur) => (cur === it.id ? null : cur));
-    }
-  }
 
   return (
     <div className="space-y-3">
@@ -131,7 +107,6 @@ export const ItemsListTable: React.FC<{
             <th className="border px-4 py-3 text-left font-semibold">品牌</th>
             <th className="border px-4 py-3 text-left font-semibold">品类</th>
 
-            <th className="border px-4 py-3 text-left font-semibold">测试集合</th>
             <th className="border px-4 py-3 text-left font-semibold">质量提示</th>
 
             <th className="border px-4 py-3 text-left font-semibold">供货商</th>
@@ -153,7 +128,6 @@ export const ItemsListTable: React.FC<{
             const brand = getString(r["brand"]) ?? "—";
             const category = getString(r["category"]) ?? "—";
 
-            const isTest = Boolean(getBoolean(r["is_test"]) ?? false);
             const enabled = Boolean(getBoolean(r["enabled"]) ?? false);
 
             const lotSourcePolicy = policyCnLotSource(r["lot_source_policy"]);
@@ -162,8 +136,6 @@ export const ItemsListTable: React.FC<{
             const sv = formatShelfValue(r["shelf_life_value"]);
             const su = formatShelfUnitCn(r["shelf_life_unit"]);
             const shelfText = sv !== "—" && su !== "—" ? `${sv} ${su}` : "—";
-
-            const disabled = savingId === it.id;
 
             const issuesTitle =
               q.issues.length === 0
@@ -183,21 +155,6 @@ export const ItemsListTable: React.FC<{
                 <td className="px-4 py-3 text-slate-700 whitespace-pre-line">{spec}</td>
                 <td className="px-4 py-3">{brand}</td>
                 <td className="px-4 py-3">{category}</td>
-
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <TestBadge isTest={isTest} />
-                    <label className="inline-flex items-center gap-2 select-none">
-                      <input
-                        type="checkbox"
-                        checked={isTest}
-                        disabled={disabled}
-                        onChange={(e) => void onToggle(it, e.target.checked)}
-                      />
-                      <span className="text-[12px] text-slate-600">{disabled ? "保存中…" : "切换"}</span>
-                    </label>
-                  </div>
-                </td>
 
                 <td className="px-4 py-3">
                   {q.issues.length > 0 ? (
@@ -224,9 +181,8 @@ export const ItemsListTable: React.FC<{
 
                 <td className="px-4 py-3">
                   <button
-                    className="rounded bg-emerald-100 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
+                    className="rounded bg-emerald-100 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-200"
                     onClick={() => onEdit(it)}
-                    disabled={disabled}
                   >
                     编辑
                   </button>

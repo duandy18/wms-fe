@@ -23,9 +23,6 @@ export type ItemsState = {
   setFilter: (f: EnabledFilter) => void;
 
   loadItems: () => Promise<void>;
-
-  // ✅ 新增：切换测试集合标记（调用后端 /items/{id}/test:enable|disable）
-  toggleItemTest: (args: { itemId: number; next: boolean }) => Promise<void>;
 };
 
 export type ApiErrorShape = {
