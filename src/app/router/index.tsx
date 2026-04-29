@@ -527,6 +527,42 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
+            path="pms/brands"
+            element={
+              <RequirePermission permission="page.pms.read">
+                <P.PmsBrandsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="pms/categories"
+            element={
+              <RequirePermission permission="page.pms.read">
+                <P.PmsCategoriesPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="pms/item-attribute-defs"
+            element={
+              <RequirePermission permission="page.pms.read">
+                <P.PmsAttributeDefsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="item-uoms"
+            element={
+              <RequirePermission permission="page.pms.read">
+                <P.PmsItemUomsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
             path="item-barcodes"
             element={
               <RequirePermission permission="page.pms.read">
