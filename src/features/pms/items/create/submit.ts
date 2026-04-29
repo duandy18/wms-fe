@@ -25,6 +25,7 @@ export async function submitCreateItem(args: {
 
   const sku = form.sku.trim().toUpperCase();
   if (!sku) return { ok: false, error: "SKU 不能为空，请从 SKU编码页生成后复制，或手工输入。" };
+  if (sku.length > 128) return { ok: false, error: "SKU 不能超过 128 个字符。" };
 
   const name = form.name.trim();
   if (!name) return { ok: false, error: "商品名称不能为空" };

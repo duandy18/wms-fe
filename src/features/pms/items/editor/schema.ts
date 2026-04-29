@@ -69,6 +69,7 @@ export function validateCreate(
   const errors: FieldErrors = {};
 
   if (!form.sku.trim()) errors.sku = "SKU 不能为空";
+  else if (form.sku.trim().length > 128) errors.sku = "SKU 不能超过 128 个字符";
   if (!form.name.trim()) errors.name = "商品名称不能为空";
 
   const supplierId = parseSupplierId(form.supplier_id);

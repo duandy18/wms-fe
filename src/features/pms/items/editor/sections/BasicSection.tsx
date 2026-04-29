@@ -15,7 +15,8 @@ const BasicSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
       <div>
         <input
           className="rounded border px-3 py-2 w-full bg-white font-mono disabled:bg-slate-100 disabled:text-slate-500"
-          placeholder="SKU（必填，可从SKU编码页生成）"
+          placeholder="SKU（必填，最多128字符，可从SKU编码页生成）"
+          maxLength={128}
           value={form.sku}
           onChange={(e) => setForm({ ...form, sku: e.target.value.toUpperCase() })}
           disabled={vm.saving || skuReadonly}

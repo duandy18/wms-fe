@@ -15,6 +15,7 @@ function toNumOrNull(v: unknown): number | null {
 export async function createItem(input: ItemCreateInput): Promise<Item> {
   const sku = String(input.sku ?? "").trim().toUpperCase();
   if (!sku) throw new Error("SKU 不能为空");
+  if (sku.length > 128) throw new Error("SKU 不能超过 128 个字符");
 
   const name = String(input.name ?? "").trim();
   if (!name) throw new Error("name 不能为空");
