@@ -20,10 +20,14 @@ const StatusSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
       </select>
 
       <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 flex items-center">
-        <span className="text-slate-500">SKU：</span>
-        <span className="ml-2 font-mono text-slate-900">
-          {vm.mode === "edit" ? (vm.selectedItem?.sku ?? "-") : "保存后自动生成"}
-        </span>
+        {vm.mode === "edit" ? (
+          <>
+            <span className="text-slate-500">SKU：</span>
+            <span className="ml-2 font-mono text-slate-900">{vm.selectedItem?.sku ?? "-"}</span>
+          </>
+        ) : (
+          <span className="text-slate-600">创建商品时必须填写 SKU，可从「SKU编码」页面生成后复制。</span>
+        )}
       </div>
     </div>
   );

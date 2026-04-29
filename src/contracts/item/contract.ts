@@ -53,10 +53,12 @@ export type Item = {
   created_at?: string | null;
   updated_at?: string | null;
 
+  // 测试集合投影后续单独删除；本刀只处理 SKU 手工输入。
   is_test?: boolean;
 };
 
 export type ItemCreateInput = {
+  sku: string;
   name: string;
 
   spec?: string | null;
@@ -76,4 +78,4 @@ export type ItemCreateInput = {
   shelf_life_unit?: ShelfLifeUnit | null;
 };
 
-export type ItemUpdateInput = Partial<ItemCreateInput>;
+export type ItemUpdateInput = Partial<Omit<ItemCreateInput, "sku">>;

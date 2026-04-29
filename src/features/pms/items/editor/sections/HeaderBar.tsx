@@ -11,7 +11,7 @@ const HeaderBar: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
 
         {vm.mode === "create" ? (
           <div className="mt-1 text-[11px] text-slate-500">
-            SKU：保存后自动生成（<span className="font-mono">AKT-000001...</span>）
+            SKU：创建时手工输入，可从「SKU编码」页面生成后复制
           </div>
         ) : (
           <div className="mt-1 text-[11px] text-slate-500">

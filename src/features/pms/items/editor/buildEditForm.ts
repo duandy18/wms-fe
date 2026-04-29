@@ -16,6 +16,7 @@ export function buildEditForm(args: { selectedItem: Item; emptyForm: FormState }
   const nextForm: FormState = {
     ...emptyForm,
 
+    sku: selectedItem.sku ?? "",
     name: selectedItem.name ?? "",
     spec: (selectedItem.spec ?? "").trim(),
     brand: (selectedItem.brand ?? "").trim(),

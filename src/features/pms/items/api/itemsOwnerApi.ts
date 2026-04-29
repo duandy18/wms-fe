@@ -2,17 +2,8 @@
 import { apiGet, apiPost, apiPatch } from "../../../../lib/api";
 import type { Item, ItemCreateInput, ItemUpdateInput } from "../../../../contracts/item/contract";
 
-export interface NextSkuOut {
-  sku: string;
-}
-
 export async function fetchItems(): Promise<Item[]> {
   return apiGet<Item[]>("/items");
-}
-
-export async function fetchNextSku(): Promise<string> {
-  const res = await apiPost<NextSkuOut>("/items/sku/next", {});
-  return res.sku;
 }
 
 function toNumOrNull(v: unknown): number | null {
@@ -22,10 +13,14 @@ function toNumOrNull(v: unknown): number | null {
 }
 
 export async function createItem(input: ItemCreateInput): Promise<Item> {
+  const sku = String(input.sku ?? "").trim().toUpperCase();
+  if (!sku) throw new Error("SKU 不能为空");
+
   const name = String(input.name ?? "").trim();
   if (!name) throw new Error("name 不能为空");
 
   const body: Record<string, unknown> = {
+    sku,
     name,
     spec: typeof input.spec === "string" ? input.spec.trim() || null : input.spec ?? null,
     brand: typeof input.brand === "string" ? input.brand.trim() || null : input.brand ?? null,
@@ -85,6 +80,7 @@ export async function updateItem(id: number, input: ItemUpdateInput): Promise<It
 // ===========================
 // Test Set toggle (DEFAULT)
 // ===========================
+// 测试集合后续单独删除；本刀只处理 SKU 手工输入。
 export async function enableItemTest(id: number): Promise<Item> {
   return apiPost<Item>(`/items/${id}/test:enable`, {});
 }

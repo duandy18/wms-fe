@@ -25,6 +25,7 @@ export interface BarcodesDraft {
 }
 
 export interface FormState {
+  sku: string;
   name: string;
   spec: string;
   brand: string;
@@ -44,6 +45,7 @@ export interface FormState {
 }
 
 export const EMPTY_FORM: FormState = {
+  sku: "",
   name: "",
   spec: "",
   brand: "",
