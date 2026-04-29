@@ -125,6 +125,14 @@ export async function updateSkuCodeBrand(
   return apiPatch<SkuCodeBrand>(`/pms/sku-coding/brands/${id}`, payload);
 }
 
+export async function enableSkuCodeBrand(id: number): Promise<SkuCodeBrand> {
+  return apiPost<SkuCodeBrand>(`/pms/sku-coding/brands/${id}/enable`, {});
+}
+
+export async function disableSkuCodeBrand(id: number): Promise<SkuCodeBrand> {
+  return apiPost<SkuCodeBrand>(`/pms/sku-coding/brands/${id}/disable`, {});
+}
+
 export async function fetchSkuBusinessCategories(
   productKind?: ProductKind,
   activeOnly = false,
@@ -159,6 +167,14 @@ export async function updateSkuBusinessCategory(
   >,
 ): Promise<SkuBusinessCategory> {
   return apiPatch<SkuBusinessCategory>(`/pms/sku-coding/business-categories/${id}`, payload);
+}
+
+export async function enableSkuBusinessCategory(id: number): Promise<SkuBusinessCategory> {
+  return apiPost<SkuBusinessCategory>(`/pms/sku-coding/business-categories/${id}/enable`, {});
+}
+
+export async function disableSkuBusinessCategory(id: number): Promise<SkuBusinessCategory> {
+  return apiPost<SkuBusinessCategory>(`/pms/sku-coding/business-categories/${id}/disable`, {});
 }
 
 export async function fetchSkuCodeTermGroups(
@@ -198,6 +214,14 @@ export async function updateSkuCodeTerm(
   payload: Partial<Pick<SkuCodeTerm, "name_cn" | "code" | "sort_order" | "remark">>,
 ): Promise<SkuCodeTerm> {
   return apiPatch<SkuCodeTerm>(`/pms/sku-coding/terms/${id}`, payload);
+}
+
+export async function enableSkuCodeTerm(id: number): Promise<SkuCodeTerm> {
+  return apiPost<SkuCodeTerm>(`/pms/sku-coding/terms/${id}/enable`, {});
+}
+
+export async function disableSkuCodeTerm(id: number): Promise<SkuCodeTerm> {
+  return apiPost<SkuCodeTerm>(`/pms/sku-coding/terms/${id}/disable`, {});
 }
 
 export async function generateSkuCode(payload: SkuGenerateInput): Promise<SkuGenerateData> {
