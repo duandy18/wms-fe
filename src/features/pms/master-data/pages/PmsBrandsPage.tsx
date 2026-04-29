@@ -28,7 +28,6 @@ function fmtTime(v?: string | null): string {
 
 export default function PmsBrandsPage() {
   const [rows, setRows] = useState<PmsBrand[]>([]);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
@@ -45,14 +44,11 @@ export default function PmsBrandsPage() {
   );
 
   async function reload() {
-    setLoading(true);
     setError(null);
     try {
       setRows(await fetchPmsBrands(false));
     } catch (e) {
       setError(errMsg(e));
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -207,10 +203,7 @@ export default function PmsBrandsPage() {
         </form>
 
         <section className={cardCls}>
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-sm font-semibold">品牌列表</div>
-            <button type="button" className={btnCls} onClick={() => void reload()} disabled={loading}>刷新</button>
-          </div>
+          <div className="mb-3 text-sm font-semibold">品牌列表</div>
 
           <div className="overflow-auto rounded border border-slate-200">
             <table className="w-full text-left text-sm">
@@ -224,7 +217,7 @@ export default function PmsBrandsPage() {
                   <th className="px-3 py-2">锁定</th>
                   <th className="px-3 py-2">创建时间</th>
                   <th className="px-3 py-2">更新时间</th>
-                  <th className="px-3 py-2">操作</th>
+                  <th className="px-3 py-2 text-center">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -239,7 +232,7 @@ export default function PmsBrandsPage() {
                     <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">{fmtTime(row.created_at)}</td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">{fmtTime(row.updated_at)}</td>
                     <td className="px-3 py-2">
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap justify-center gap-2">
                         <button type="button" className={btnCls} onClick={() => startEdit(row)}>编辑</button>
                         <button type="button" className={btnCls} onClick={() => void toggle(row)} disabled={saving}>
                           {row.is_active ? "停用" : "启用"}
