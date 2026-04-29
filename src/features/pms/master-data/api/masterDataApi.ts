@@ -105,6 +105,14 @@ export async function disablePmsBrand(id: number): Promise<PmsBrand> {
   return apiPost<PmsBrand>(`/pms/brands/${id}/disable`, {});
 }
 
+export async function lockPmsBrand(id: number): Promise<PmsBrand> {
+  return apiPost<PmsBrand>(`/pms/brands/${id}/lock`, {});
+}
+
+export async function unlockPmsBrand(id: number): Promise<PmsBrand> {
+  return apiPost<PmsBrand>(`/pms/brands/${id}/unlock`, {});
+}
+
 export async function fetchPmsCategories(
   productKind?: ProductKind,
   activeOnly = false,
