@@ -9,8 +9,16 @@ import BasicSection from "./sections/BasicSection";
 import ProductAttributesSection from "./sections/ProductAttributesSection";
 import StatusSection from "./sections/StatusSection";
 import ItemSkuCodesGovernanceSection from "../components/edit/ItemSkuCodesGovernanceSection";
+import ItemAttributesSection from "../components/edit/ItemAttributesSection";
+
+function parseIdOrNull(v: string): number | null {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : null;
+}
 
 const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
+  const effectiveCategoryId = parseIdOrNull(vm.form.category_id) ?? vm.selectedItem?.category_id ?? null;
+
   return (
     <>
       <HeaderBar vm={vm} />
@@ -39,6 +47,14 @@ const ItemEditorForm: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
             currentSku={vm.selectedItem.sku}
             disabled={vm.saving}
             onChanged={vm.refreshAfterExternalChange}
+          />
+        ) : null}
+
+        {vm.mode === "edit" && vm.selectedItem ? (
+          <ItemAttributesSection
+            itemId={vm.selectedItem.id}
+            categoryId={effectiveCategoryId}
+            disabled={vm.saving}
           />
         ) : null}
 
