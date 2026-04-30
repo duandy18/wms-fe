@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { ScanConsole } from "../../../../shared/scan/ui/ScanConsole";
 import ItemBarcodesInputSection from "./ItemBarcodesInputSection";
 import ItemBarcodesListSection from "./ItemBarcodesListSection";
 import { useItemBarcodesPageModel } from "./useItemBarcodesPageModel";
@@ -24,24 +23,6 @@ const ItemBarcodesPage: React.FC = () => {
           本页统一治理商品包装与条码绑定。操作顺序：先选商品，再保存包装，最后绑定条码；下方列表只做结果展示和修改入口。
         </p>
       </header>
-
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="mb-3">
-          <div className="text-sm font-semibold text-slate-900">条码扫描入口</div>
-          <div className="text-xs text-slate-500">
-            这里统一复用 shared scan 壳。扫描后先走 PMS public barcode probe：
-            已绑定条码自动定位商品；未绑定条码会在选商品后自动带入绑定卡。
-          </div>
-        </div>
-
-        <ScanConsole
-          title="扫码定位商品 / 带入绑定卡"
-          placeholder="请在此处扫码商品条码或包装条码"
-          modeLabel="PMS 条码治理"
-          scanMode="auto"
-          onScan={m.handleProbeBarcodeInput}
-        />
-      </section>
 
       {m.error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
