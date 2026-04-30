@@ -1,20 +1,21 @@
 // src/features/pms/sku-coding/pages/SkuCodingGeneratorPage.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  fetchSkuAttributeDefs,
+  fetchSkuAttributeOptions,
   fetchSkuBusinessCategories,
   fetchSkuCodeBrands,
-  fetchSkuCodeTermGroups,
-  fetchSkuCodeTerms,
   generateSkuCode,
   type ProductKind,
+  type SkuAttributeDef,
+  type SkuAttributeOption,
   type SkuBusinessCategory,
   type SkuCodeBrand,
-  type SkuCodeTerm,
-  type SkuCodeTermGroup,
   type SkuGenerateData,
 } from "../api/skuCodingApi";
+import { skuAttributeTitleCls, skuPrimaryFieldLabelCls } from "../ui";
 
-type TermsByGroupId = Record<number, SkuCodeTerm[]>;
+type OptionsByDefId = Record<number, SkuAttributeOption[]>;
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
@@ -24,10 +25,10 @@ function productKindLabel(v: ProductKind): string {
   return v === "FOOD" ? "食品" : "用品";
 }
 
-function buildEmptyTermIds(groups: SkuCodeTermGroup[]): Record<string, number[]> {
+function buildEmptyAttributeOptionIds(defs: SkuAttributeDef[]): Record<string, number[]> {
   const out: Record<string, number[]> = {};
-  for (const group of groups) {
-    out[group.group_code] = [];
+  for (const def of defs) {
+    out[def.code] = [];
   }
   return out;
 }
@@ -41,12 +42,12 @@ export default function SkuCodingGeneratorPage() {
 
   const [brands, setBrands] = useState<SkuCodeBrand[]>([]);
   const [categories, setCategories] = useState<SkuBusinessCategory[]>([]);
-  const [groups, setGroups] = useState<SkuCodeTermGroup[]>([]);
-  const [termsByGroupId, setTermsByGroupId] = useState<TermsByGroupId>({});
+  const [attributeDefs, setAttributeDefs] = useState<SkuAttributeDef[]>([]);
+  const [optionsByDefId, setOptionsByDefId] = useState<OptionsByDefId>({});
 
   const [brandId, setBrandId] = useState<number>(0);
   const [categoryId, setCategoryId] = useState<number>(0);
-  const [termIds, setTermIds] = useState<Record<string, number[]>>({});
+  const [attributeOptionIds, setAttributeOptionIds] = useState<Record<string, number[]>>({});
   const [specText, setSpecText] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -71,24 +72,24 @@ export default function SkuCodingGeneratorPage() {
       setResult(null);
 
       try {
-        const [brandRows, categoryRows, groupRows] = await Promise.all([
+        const [brandRows, categoryRows, defRows] = await Promise.all([
           fetchSkuCodeBrands(true),
           fetchSkuBusinessCategories(productKind, true),
-          fetchSkuCodeTermGroups(productKind, true),
+          fetchSkuAttributeDefs(productKind, true),
         ]);
 
-        const nextTerms: TermsByGroupId = {};
-        for (const group of groupRows) {
-          nextTerms[group.id] = await fetchSkuCodeTerms(group.id, true);
+        const nextOptions: OptionsByDefId = {};
+        for (const def of defRows) {
+          nextOptions[def.id] = await fetchSkuAttributeOptions(def.id, true);
         }
 
         if (cancelled) return;
 
         setBrands(brandRows);
         setCategories(categoryRows);
-        setGroups(groupRows);
-        setTermsByGroupId(nextTerms);
-        setTermIds(buildEmptyTermIds(groupRows));
+        setAttributeDefs(defRows);
+        setOptionsByDefId(nextOptions);
+        setAttributeOptionIds(buildEmptyAttributeOptionIds(defRows));
 
         setBrandId((prev) => {
           if (prev > 0 && brandRows.some((x) => x.id === prev)) return prev;
@@ -113,23 +114,26 @@ export default function SkuCodingGeneratorPage() {
     };
   }, [productKind]);
 
-  function setSingleTerm(groupCode: string, termId: number) {
-    setTermIds((prev) => ({
-      ...prev,
-      [groupCode]: termId > 0 ? [termId] : [],
-    }));
+  function toggleSingleOption(attributeCode: string, optionId: number) {
+    setAttributeOptionIds((prev) => {
+      const current = prev[attributeCode] ?? [];
+      return {
+        ...prev,
+        [attributeCode]: current.includes(optionId) ? [] : [optionId],
+      };
+    });
   }
 
-  function toggleMultiTerm(groupCode: string, termId: number) {
-    setTermIds((prev) => {
-      const current = prev[groupCode] ?? [];
-      const next = current.includes(termId)
-        ? current.filter((x) => x !== termId)
-        : [...current, termId];
+  function toggleMultiOption(attributeCode: string, optionId: number) {
+    setAttributeOptionIds((prev) => {
+      const current = prev[attributeCode] ?? [];
+      const next = current.includes(optionId)
+        ? current.filter((x) => x !== optionId)
+        : [...current, optionId];
 
       return {
         ...prev,
-        [groupCode]: next,
+        [attributeCode]: next,
       };
     });
   }
@@ -144,7 +148,7 @@ export default function SkuCodingGeneratorPage() {
       return;
     }
     if (!categoryId) {
-      setError("请选择第三级内部分类");
+      setError("请选择商品分类");
       return;
     }
     if (!specText.trim()) {
@@ -158,7 +162,7 @@ export default function SkuCodingGeneratorPage() {
         product_kind: productKind,
         brand_id: brandId,
         category_id: categoryId,
-        term_ids: termIds,
+        attribute_option_ids: attributeOptionIds,
         spec_text: specText.trim(),
       });
       setResult(data);
@@ -172,10 +176,9 @@ export default function SkuCodingGeneratorPage() {
   return (
     <div className="space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-900">SKU编码 / 编码生成</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">SKU 编码</h1>
         <p className="mt-1 text-sm text-slate-500">
-          根据品牌、内部三级分类、食品/用品属性和规格生成候选 SKU。这里不直接创建商品，只辅助生成{" "}
-          <span className="font-mono">items.sku</span>。
+          根据品牌、商品分类、属性模板预设选项和规格生成候选 SKU。属性段统一使用「属性模板」里的预设选项。
         </p>
       </header>
 
@@ -191,15 +194,15 @@ export default function SkuCodingGeneratorPage() {
             <div>
               <div className="text-sm font-semibold text-slate-900">结构化输入</div>
               <div className="text-xs text-slate-500">
-                商品类型会决定可选字典和编码模板。
+                商品类型决定可选属性模板；SKU 属性段来自属性模板预设选项。
               </div>
             </div>
-            {loading ? <span className="text-xs text-slate-500">加载字典中...</span> : null}
+            {loading ? <span className="text-xs text-slate-500">加载属性选项中...</span> : null}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <label>
-              <span className={labelCls}>商品类型</span>
+              <span className={skuPrimaryFieldLabelCls}>商品类型</span>
               <select
                 className={`${inputCls} w-full`}
                 value={productKind}
@@ -211,7 +214,7 @@ export default function SkuCodingGeneratorPage() {
             </label>
 
             <label>
-              <span className={labelCls}>品牌</span>
+              <span className={skuPrimaryFieldLabelCls}>品牌</span>
               <select
                 className={`${inputCls} w-full`}
                 value={brandId}
@@ -227,13 +230,13 @@ export default function SkuCodingGeneratorPage() {
             </label>
 
             <label className="md:col-span-2">
-              <span className={labelCls}>内部三级分类</span>
+              <span className={skuPrimaryFieldLabelCls}>商品分类</span>
               <select
                 className={`${inputCls} w-full`}
                 value={categoryId}
                 onChange={(e) => setCategoryId(Number(e.target.value) || 0)}
               >
-                <option value={0}>请选择第三级叶子分类</option>
+                <option value={0}>请选择商品分类</option>
                 {leafCategories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.path_code} / {category.category_name}
@@ -242,55 +245,52 @@ export default function SkuCodingGeneratorPage() {
               </select>
             </label>
 
-            {groups.map((group) => {
-              const terms = termsByGroupId[group.id] ?? [];
-              const selected = termIds[group.group_code] ?? [];
+            {attributeDefs.map((def) => {
+              const options = optionsByDefId[def.id] ?? [];
+              const selected = attributeOptionIds[def.code] ?? [];
+              const isMulti = def.selection_mode === "MULTI";
 
               return (
-                <div key={group.id} className="md:col-span-2">
-                  <div className={labelCls}>
-                    {group.group_name}
-                    {group.is_required ? <span className="text-red-500"> *</span> : null}
-                    <span className="ml-2 text-slate-400">{group.group_code}</span>
+                <div key={def.id} className="md:col-span-2">
+                  <div className={skuAttributeTitleCls}>
+                    <span>{def.name_cn}</span>
+                    {def.is_sku_required ? <span className="text-red-500">*</span> : null}
+                    <span className="text-xs font-medium text-slate-400">{def.code}</span>
+                    <span className="text-xs font-medium text-slate-400">{isMulti ? "多选" : "单选"}</span>
                   </div>
 
-                  {group.is_multi_select ? (
-                    <div className="flex flex-wrap gap-2">
-                      {terms.length === 0 ? (
-                        <span className="text-xs text-slate-400">暂无启用字典项</span>
-                      ) : null}
-                      {terms.map((term) => (
+                  <div className="flex flex-wrap gap-2">
+                    {options.length === 0 ? (
+                      <span className="text-xs text-slate-400">暂无启用预设选项</span>
+                    ) : null}
+                    {options.map((option) => {
+                      const checked = selected.includes(option.id);
+
+                      return (
                         <label
-                          key={term.id}
+                          key={option.id}
                           className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${
-                            selected.includes(term.id)
+                            checked
                               ? "border-sky-300 bg-sky-50 text-sky-800"
                               : "border-slate-200 bg-white text-slate-700"
                           }`}
                         >
                           <input
                             type="checkbox"
-                            checked={selected.includes(term.id)}
-                            onChange={() => toggleMultiTerm(group.group_code, term.id)}
+                            checked={checked}
+                            onChange={() => {
+                              if (isMulti) {
+                                toggleMultiOption(def.code, option.id);
+                              } else {
+                                toggleSingleOption(def.code, option.id);
+                              }
+                            }}
                           />
-                          {term.name_cn} / {term.code}
+                          {option.option_name} / {option.option_code}
                         </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <select
-                      className={`${inputCls} w-full`}
-                      value={selected[0] ?? 0}
-                      onChange={(e) => setSingleTerm(group.group_code, Number(e.target.value) || 0)}
-                    >
-                      <option value={0}>不选择</option>
-                      {terms.map((term) => (
-                        <option key={term.id} value={term.id}>
-                          {term.name_cn} / {term.code}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
@@ -315,7 +315,7 @@ export default function SkuCodingGeneratorPage() {
               {generating ? "生成中..." : "生成 SKU"}
             </button>
             <span className="text-xs text-slate-500">
-              {productKindLabel(productKind)}模板：SKU-[品牌]-[分类]-[属性]-[规格]
+              {productKindLabel(productKind)}模板：SKU-[品牌]-[分类]-[属性选项]-[规格]
             </span>
           </div>
         </form>
