@@ -13,7 +13,7 @@ import {
   type SkuCodeBrand,
   type SkuGenerateData,
 } from "../api/skuCodingApi";
-import { skuAttributeTitleCls, skuPrimaryFieldLabelCls } from "../ui";
+import { skuAttributeTitleCls, skuPrimaryFieldLabelCls, skuResultCardTitleCls } from "../ui";
 
 type OptionsByDefId = Record<number, SkuAttributeOption[]>;
 
@@ -34,7 +34,6 @@ function buildEmptyAttributeOptionIds(defs: SkuAttributeDef[]): Record<string, n
 }
 
 const inputCls = "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100";
-const labelCls = "mb-1 block text-xs font-medium text-slate-600";
 const cardCls = "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm";
 
 export default function SkuCodingGeneratorPage() {
@@ -53,6 +52,7 @@ export default function SkuCodingGeneratorPage() {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copyHint, setCopyHint] = useState<string | null>(null);
   const [result, setResult] = useState<SkuGenerateData | null>(null);
 
   const leafCategories = useMemo(
@@ -141,6 +141,7 @@ export default function SkuCodingGeneratorPage() {
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setCopyHint(null);
     setResult(null);
 
     if (!brandId) {
@@ -173,6 +174,22 @@ export default function SkuCodingGeneratorPage() {
     }
   }
 
+  async function copyGeneratedSku() {
+    if (!result?.sku) return;
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("clipboard unavailable");
+      }
+      await navigator.clipboard.writeText(result.sku);
+      setCopyHint("SKU 已复制，可粘贴到商品表单。");
+      setError(null);
+    } catch {
+      setCopyHint(null);
+      setError("复制失败，请手工选中候选 SKU 后复制。");
+    }
+  }
+
   return (
     <div className="space-y-6 p-6">
       <header>
@@ -190,15 +207,7 @@ export default function SkuCodingGeneratorPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <form className={cardCls} onSubmit={handleGenerate}>
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold text-slate-900">结构化输入</div>
-              <div className="text-xs text-slate-500">
-                商品类型决定可选属性模板；SKU 属性段来自属性模板预设选项。
-              </div>
-            </div>
-            {loading ? <span className="text-xs text-slate-500">加载属性选项中...</span> : null}
-          </div>
+          {loading ? <div className="mb-4 text-xs text-slate-500">加载属性选项中...</div> : null}
 
           <div className="grid gap-4 md:grid-cols-2">
             <label>
@@ -296,7 +305,7 @@ export default function SkuCodingGeneratorPage() {
             })}
 
             <label className="md:col-span-2">
-              <span className={labelCls}>规格</span>
+              <span className={skuPrimaryFieldLabelCls}>规格</span>
               <input
                 className={`${inputCls} w-full`}
                 value={specText}
@@ -321,7 +330,7 @@ export default function SkuCodingGeneratorPage() {
         </form>
 
         <aside className={cardCls}>
-          <div className="text-sm font-semibold text-slate-900">生成结果</div>
+          <div className={skuResultCardTitleCls}>生成 SKU</div>
           <p className="mt-1 text-xs text-slate-500">
             候选 SKU 需要人工确认，最终仍由商品管理页创建商品。
           </p>
@@ -329,13 +338,23 @@ export default function SkuCodingGeneratorPage() {
           {result ? (
             <div className="mt-4 space-y-4">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <div className="text-xs text-slate-500">候选 SKU</div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs text-slate-500">候选 SKU</div>
+                  <button
+                    type="button"
+                    className="rounded border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                    onClick={() => void copyGeneratedSku()}
+                  >
+                    复制 SKU
+                  </button>
+                </div>
                 <div className="mt-1 break-all font-mono text-lg font-semibold text-slate-900">
                   {result.sku}
                 </div>
                 <div className={`mt-2 text-xs ${result.exists ? "text-red-600" : "text-emerald-700"}`}>
                   {result.exists ? "该 SKU 已存在" : "未发现同码商品"}
                 </div>
+                {copyHint ? <div className="mt-2 text-xs text-emerald-700">{copyHint}</div> : null}
               </div>
 
               <div>
