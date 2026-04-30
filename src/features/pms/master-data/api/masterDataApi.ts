@@ -70,6 +70,7 @@ export type ItemAttributeOption = {
   option_code: string;
   option_name: string;
   is_active: boolean;
+  is_locked: boolean;
   sort_order: number;
   created_at?: string | null;
   updated_at?: string | null;
@@ -260,4 +261,12 @@ export async function enableItemAttributeOption(id: number): Promise<ItemAttribu
 
 export async function disableItemAttributeOption(id: number): Promise<ItemAttributeOption> {
   return apiPost<ItemAttributeOption>(`/pms/item-attribute-options/${id}/disable`, {});
+}
+
+export async function lockItemAttributeOption(id: number): Promise<ItemAttributeOption> {
+  return apiPost<ItemAttributeOption>(`/pms/item-attribute-options/${id}/lock`, {});
+}
+
+export async function unlockItemAttributeOption(id: number): Promise<ItemAttributeOption> {
+  return apiPost<ItemAttributeOption>(`/pms/item-attribute-options/${id}/unlock`, {});
 }

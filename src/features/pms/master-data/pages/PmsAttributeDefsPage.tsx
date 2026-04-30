@@ -9,7 +9,9 @@ import {
   fetchItemAttributeDefs,
   fetchItemAttributeOptions,
   lockItemAttributeDef,
+  lockItemAttributeOption,
   unlockItemAttributeDef,
+  unlockItemAttributeOption,
   updateItemAttributeDef,
   updateItemAttributeOption,
   type AttributeProductKind,
@@ -285,6 +287,10 @@ export default function PmsAttributeDefsPage() {
       setError("请输入选项编码和选项名称");
       return;
     }
+    if (editingOption?.is_locked) {
+      setError("预设选项已锁定，不能编辑名称或排序");
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -314,6 +320,10 @@ export default function PmsAttributeDefsPage() {
   }
 
   function startEditOption(row: ItemAttributeOption) {
+    if (row.is_locked) {
+      setError("预设选项已锁定，不能编辑名称或排序");
+      return;
+    }
     setEditingOption(row);
     setOptionCode(row.option_code);
     setOptionName(row.option_name);
@@ -334,6 +344,27 @@ export default function PmsAttributeDefsPage() {
         await enableItemAttributeOption(row.id);
         setHint(`已启用预设选项：${row.option_name}`);
       }
+      await reloadOptions(row.attribute_def_id);
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleOptionLock(row: ItemAttributeOption) {
+    setSaving(true);
+    setError(null);
+    setHint(null);
+    try {
+      if (row.is_locked) {
+        await unlockItemAttributeOption(row.id);
+        setHint(`已解锁预设选项：${row.option_name}`);
+      } else {
+        await lockItemAttributeOption(row.id);
+        setHint(`已锁定预设选项：${row.option_name}`);
+      }
+      resetOptionForm();
       await reloadOptions(row.attribute_def_id);
     } catch (e) {
       setError(errMsg(e));
@@ -550,6 +581,7 @@ export default function PmsAttributeDefsPage() {
                         <th className="px-3 py-2">选项编码</th>
                         <th className="px-3 py-2">选项名称</th>
                         <th className="px-3 py-2">启用状态</th>
+                        <th className="px-3 py-2">锁定</th>
                         <th className="px-3 py-2">排序</th>
                         <th className="px-3 py-2 text-center">操作</th>
                       </tr>
@@ -560,21 +592,25 @@ export default function PmsAttributeDefsPage() {
                           <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{option.option_code}</td>
                           <td className="whitespace-nowrap px-3 py-2">{option.option_name}</td>
                           <td className="whitespace-nowrap px-3 py-2">{option.is_active ? "启用" : "停用"}</td>
+                          <td className="whitespace-nowrap px-3 py-2">{option.is_locked ? "已锁定" : "未锁定"}</td>
                           <td className="whitespace-nowrap px-3 py-2">{option.sort_order}</td>
                           <td className="px-3 py-2">
                             <div className="flex flex-wrap justify-center gap-2">
-                              <button className={btnCls} type="button" onClick={() => startEditOption(option)} disabled={saving}>
+                              <button className={btnCls} type="button" onClick={() => startEditOption(option)} disabled={saving || option.is_locked}>
                                 编辑
                               </button>
                               <button className={btnCls} type="button" onClick={() => void toggleOption(option)} disabled={saving}>
                                 {option.is_active ? "停用" : "启用"}
+                              </button>
+                              <button className={btnCls} type="button" onClick={() => void toggleOptionLock(option)} disabled={saving}>
+                                {option.is_locked ? "解锁" : "锁定"}
                               </button>
                             </div>
                           </td>
                         </tr>
                       ))}
                       {options.length === 0 ? (
-                        <tr><td colSpan={5} className="px-3 py-6 text-center text-slate-400">暂无预设选项</td></tr>
+                        <tr><td colSpan={6} className="px-3 py-6 text-center text-slate-400">暂无预设选项</td></tr>
                       ) : null}
                     </tbody>
                   </table>
