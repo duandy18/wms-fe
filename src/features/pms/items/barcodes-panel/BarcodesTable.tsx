@@ -32,7 +32,7 @@ function renderBarcodeCell(row: ItemBarcodeCompositeRow): React.ReactNode {
 
 function renderPrimaryCell(row: ItemBarcodeCompositeRow): React.ReactNode {
   if (!row.barcode.trim()) return <span className="text-slate-400">—</span>;
-  return row.is_primary ? "是" : "否";
+  return row.is_primary ? "当前主条码" : "普通条码";
 }
 
 function renderWeightCell(row: ItemBarcodeCompositeRow): React.ReactNode {
@@ -57,7 +57,7 @@ export const BarcodesTable: React.FC<{
             <th className="border-b px-4 py-3 text-left font-semibold">包装单位</th>
             <th className="border-b px-4 py-3 text-left font-semibold">重量（kg）</th>
             <th className="border-b px-4 py-3 text-left font-semibold">条码</th>
-            <th className="border-b px-4 py-3 text-left font-semibold">是否主条码</th>
+            <th className="border-b px-4 py-3 text-left font-semibold">当前主条码</th>
             <th className="border-b px-4 py-3 text-left font-semibold">操作</th>
           </tr>
         </thead>
