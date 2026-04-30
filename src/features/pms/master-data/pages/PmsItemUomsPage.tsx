@@ -14,6 +14,7 @@ const inputCls = "rounded border border-slate-300 bg-white px-3 py-2 text-sm";
 const cardCls = "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm";
 const btnCls = "rounded border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-60";
 const primaryBtnCls = "rounded bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60";
+const disabledDeleteBtnCls = "rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400 cursor-not-allowed";
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
@@ -24,6 +25,23 @@ function numOrNull(v: string): number | null {
   if (!s) return null;
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
+}
+
+function getDeleteBlockReason(row: ItemUom): string | null {
+  if (row.is_base) {
+    return "基础包装不能删除";
+  }
+
+  const defaults: string[] = [];
+  if (row.is_purchase_default) defaults.push("采购默认");
+  if (row.is_inbound_default) defaults.push("入库默认");
+  if (row.is_outbound_default) defaults.push("出库默认");
+
+  if (defaults.length > 0) {
+    return `当前包装是${defaults.join("、")}包装；请先显式调整默认包装后再删除`;
+  }
+
+  return null;
 }
 
 function buildUomPayload(params: {
@@ -220,6 +238,13 @@ export default function PmsItemUomsPage() {
   }
 
   async function remove(row: ItemUom) {
+    const blockReason = getDeleteBlockReason(row);
+    if (blockReason) {
+      setError(blockReason);
+      setHint(null);
+      return;
+    }
+
     if (!window.confirm(`确认删除包装单位 ${row.uom}？`)) return;
 
     setSaving(true);
@@ -424,42 +449,47 @@ export default function PmsItemUomsPage() {
               </thead>
 
               <tbody>
-                {sortedUoms.map((row) => (
-                  <tr key={row.id} className="border-t">
-                    <td className="px-3 py-2 font-mono">{row.uom}</td>
-                    <td className="px-3 py-2">{row.display_name ?? ""}</td>
-                    <td className="px-3 py-2">{row.ratio_to_base}</td>
-                    <td className="px-3 py-2">{row.net_weight_kg ?? ""}</td>
-                    <td className="px-3 py-2 text-xs">
-                      {[
-                        row.is_base ? "基础" : null,
-                        row.is_purchase_default ? "采购" : null,
-                        row.is_inbound_default ? "入库" : null,
-                        row.is_outbound_default ? "出库" : null,
-                      ].filter(Boolean).join(" / ")}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          className={btnCls}
-                          onClick={() => startEdit(row)}
-                        >
-                          编辑
-                        </button>
+                {sortedUoms.map((row) => {
+                  const deleteBlockReason = getDeleteBlockReason(row);
 
-                        <button
-                          type="button"
-                          className={btnCls}
-                          onClick={() => void remove(row)}
-                          disabled={saving}
-                        >
-                          删除
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                  return (
+                    <tr key={row.id} className="border-t">
+                      <td className="px-3 py-2 font-mono">{row.uom}</td>
+                      <td className="px-3 py-2">{row.display_name ?? ""}</td>
+                      <td className="px-3 py-2">{row.ratio_to_base}</td>
+                      <td className="px-3 py-2">{row.net_weight_kg ?? ""}</td>
+                      <td className="px-3 py-2 text-xs">
+                        {[
+                          row.is_base ? "基础" : null,
+                          row.is_purchase_default ? "采购" : null,
+                          row.is_inbound_default ? "入库" : null,
+                          row.is_outbound_default ? "出库" : null,
+                        ].filter(Boolean).join(" / ")}
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className={btnCls}
+                            onClick={() => startEdit(row)}
+                          >
+                            编辑
+                          </button>
+
+                          <button
+                            type="button"
+                            className={deleteBlockReason ? disabledDeleteBtnCls : btnCls}
+                            onClick={() => void remove(row)}
+                            disabled={saving || deleteBlockReason != null}
+                            title={deleteBlockReason ?? "删除包装单位"}
+                          >
+                            删除
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
 
                 {sortedUoms.length === 0 ? (
                   <tr>
