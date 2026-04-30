@@ -1,7 +1,7 @@
 // src/features/pms/suppliers/utils/suppliersHelpers.tsx
 
 import React from "react";
-import type { SupplierContact, SupplierContactRole } from "../api/suppliersApi";
+import type { SupplierContact, SupplierContactRole } from "../contracts/suppliers";
 
 type ApiErrorShape = {
   message?: string;

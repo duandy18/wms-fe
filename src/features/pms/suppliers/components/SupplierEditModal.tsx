@@ -1,7 +1,7 @@
 // src/features/pms/suppliers/components/SupplierEditModal.tsx
 
 import React from "react";
-import type { SupplierContactRole } from "../api/suppliersApi";
+import type { SupplierContactRole } from "../contracts/suppliers";
 import { type ContactDraft } from "../utils/suppliersHelpers";
 import { validateContacts } from "../utils/suppliersHelpers";
 import type { SupplierEditDraft } from "../model/useSuppliersController";
