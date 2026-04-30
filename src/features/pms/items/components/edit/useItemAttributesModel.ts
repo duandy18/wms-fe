@@ -9,8 +9,10 @@ import {
 import {
   fetchItemAttributeDefs,
   fetchItemAttributeOptions,
+  fetchPmsCategories,
   type ItemAttributeDef,
   type ItemAttributeOption,
+  type ProductKind,
 } from "../../../master-data/api/masterDataApi";
 
 type Banner = { kind: "success" | "error"; text: string } | null;
@@ -47,12 +49,7 @@ function draftFromValue(value: ItemAttributeValue | undefined): ItemAttributeDra
 }
 
 function sortDefs(defs: ItemAttributeDef[]): ItemAttributeDef[] {
-  return [...defs].sort(
-    (a, b) =>
-      Number(a.category_id ?? 0) - Number(b.category_id ?? 0) ||
-      a.sort_order - b.sort_order ||
-      a.code.localeCompare(b.code),
-  );
+  return [...defs].sort((a, b) => a.product_kind.localeCompare(b.product_kind) || a.sort_order - b.sort_order || a.code.localeCompare(b.code));
 }
 
 export function useItemAttributesModel(args: {
@@ -85,14 +82,18 @@ export function useItemAttributesModel(args: {
     setBanner(null);
 
     try {
-      const [allDefs, values] = await Promise.all([
+      const [allDefs, values, categories] = await Promise.all([
         fetchItemAttributeDefs({ active_only: true }),
         fetchItemAttributeValues(itemId),
+        fetchPmsCategories(undefined, false),
       ]);
 
+      const categoryProductKind: ProductKind | null =
+        categoryId == null ? null : categories.find((category) => category.id === categoryId)?.product_kind ?? null;
+
       const filteredDefs = allDefs.filter((def) => {
-        if (def.product_kind === "COMMON" && def.category_id == null) return true;
-        if (categoryId != null && def.category_id === categoryId) return true;
+        if (def.product_kind === "COMMON") return true;
+        if (categoryProductKind != null && def.product_kind === categoryProductKind) return true;
         return false;
       });
 
@@ -142,7 +143,7 @@ export function useItemAttributesModel(args: {
       if (def.value_type === "TEXT") {
         const text = draft.value_text.trim();
         if (!text) {
-          if (def.is_required) return { ok: false, error: `${def.name_cn} 必填` };
+          if (def.is_item_required) return { ok: false, error: `${def.name_cn} 必填` };
           continue;
         }
         values.push({ attribute_def_id: def.id, value_text: text });
@@ -152,7 +153,7 @@ export function useItemAttributesModel(args: {
       if (def.value_type === "NUMBER") {
         const raw = draft.value_number.trim();
         if (!raw) {
-          if (def.is_required) return { ok: false, error: `${def.name_cn} 必填` };
+          if (def.is_item_required) return { ok: false, error: `${def.name_cn} 必填` };
           continue;
         }
 
@@ -168,7 +169,7 @@ export function useItemAttributesModel(args: {
       if (def.value_type === "OPTION") {
         const optionId = Number(draft.value_option_id);
         if (!Number.isFinite(optionId) || optionId <= 0) {
-          if (def.is_required) return { ok: false, error: `${def.name_cn} 必填` };
+          if (def.is_item_required) return { ok: false, error: `${def.name_cn} 必填` };
           continue;
         }
 
@@ -177,7 +178,7 @@ export function useItemAttributesModel(args: {
       }
 
       if (def.value_type === "BOOL") {
-        if (def.is_required || draft.value_bool) {
+        if (def.is_item_required || draft.value_bool) {
           values.push({ attribute_def_id: def.id, value_bool: Boolean(draft.value_bool) });
         }
         continue;
