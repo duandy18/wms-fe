@@ -168,7 +168,7 @@ export const PmsAttributeDefsPage = lazy(
   () => import("../../features/pms/master-data/pages/PmsAttributeDefsPage"),
 );
 export const PmsItemUomsPage = lazy(
-  () => import("../../features/pms/master-data/pages/PmsItemUomsPage"),
+  () => import("../../features/pms/items/pages/PmsItemUomsPage"),
 );
 export const SkuCodingGeneratorPage = lazy(
   () => import("../../features/pms/sku-coding/pages/SkuCodingGeneratorPage"),
