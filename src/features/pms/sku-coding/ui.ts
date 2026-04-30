@@ -6,3 +6,6 @@ export const skuAttributeTitleCls =
 
 export const skuPrimaryFieldLabelCls =
   "mb-2 block text-base font-semibold text-slate-800";
+
+export const skuResultCardTitleCls =
+  "text-xl font-semibold text-slate-900";
