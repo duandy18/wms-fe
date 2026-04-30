@@ -1,6 +1,6 @@
 // src/features/pms/suppliers/model/useSuppliersController.ts
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   createSupplier,
   createSupplierContact,
@@ -8,9 +8,8 @@ import {
   fetchSuppliers,
   updateSupplier,
   updateSupplierContact,
-  type Supplier,
-  type SupplierContactRole,
 } from "../api/suppliersApi";
+import type { Supplier, SupplierContactRole } from "../contracts/suppliers";
 import {
   DEFAULT_CONTACT,
   errMsg,
@@ -63,7 +62,7 @@ export function useSuppliersController() {
 
       const normalized = data.map((s) => ({
         ...s,
-        contacts: normalizeContacts((s as unknown as { contacts?: unknown }).contacts),
+        contacts: normalizeContacts(s.contacts),
       }));
 
       setSuppliers(normalized);
@@ -81,7 +80,7 @@ export function useSuppliersController() {
 
   const toolbarState = useMemo(() => ({ onlyActive, search, loading }), [onlyActive, search, loading]);
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setCreateError(null);
 
@@ -198,7 +197,7 @@ export function useSuppliersController() {
     setEditing({ ...editing, contacts: setPrimaryInDraft(editing.contacts, idx) });
   }
 
-  async function saveEdit(e: React.FormEvent) {
+  async function saveEdit(e: FormEvent) {
     e.preventDefault();
     if (!editing) return;
 

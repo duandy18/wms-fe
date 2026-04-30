@@ -1,7 +1,7 @@
 // src/features/pms/suppliers/components/SuppliersTable.tsx
 
 import React from "react";
-import type { Supplier } from "../api/suppliersApi";
+import type { Supplier } from "../contracts/suppliers";
 import { getPrimary, renderLink, renderText, roleLabel } from "../utils/suppliersHelpers";
 
 export const SuppliersTable: React.FC<{

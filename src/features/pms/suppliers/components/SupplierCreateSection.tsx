@@ -1,7 +1,7 @@
 // src/features/pms/suppliers/components/SupplierCreateSection.tsx
 
 import React from "react";
-import type { SupplierContactRole } from "../api/suppliersApi";
+import type { SupplierContactRole } from "../contracts/suppliers";
 import { DEFAULT_CONTACT, setPrimaryInDraft, validateContacts, type ContactDraft } from "../utils/suppliersHelpers";
 
 export const SupplierCreateSection: React.FC<{
