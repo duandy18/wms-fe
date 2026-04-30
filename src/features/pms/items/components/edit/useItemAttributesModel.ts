@@ -21,7 +21,7 @@ export type ItemAttributeDraftValue = {
   value_text: string;
   value_number: string;
   value_bool: boolean;
-  value_option_id: string;
+  value_option_ids: string[];
 };
 
 function emptyDraft(): ItemAttributeDraftValue {
@@ -29,7 +29,7 @@ function emptyDraft(): ItemAttributeDraftValue {
     value_text: "",
     value_number: "",
     value_bool: false,
-    value_option_id: "",
+    value_option_ids: [],
   };
 }
 
@@ -44,12 +44,43 @@ function draftFromValue(value: ItemAttributeValue | undefined): ItemAttributeDra
     value_text: value.value_text ?? "",
     value_number: value.value_number == null ? "" : String(value.value_number),
     value_bool: Boolean(value.value_bool),
-    value_option_id: value.value_option_id == null ? "" : String(value.value_option_id),
+    value_option_ids: Array.isArray(value.value_option_ids)
+      ? value.value_option_ids.map((id) => String(id))
+      : [],
   };
 }
 
 function sortDefs(defs: ItemAttributeDef[]): ItemAttributeDef[] {
-  return [...defs].sort((a, b) => a.product_kind.localeCompare(b.product_kind) || a.sort_order - b.sort_order || a.code.localeCompare(b.code));
+  const productKindOrder: Record<string, number> = {
+    COMMON: 0,
+    FOOD: 1,
+    SUPPLY: 2,
+    OTHER: 3,
+  };
+
+  return [...defs].sort((a, b) => {
+    const ak = productKindOrder[a.product_kind] ?? 99;
+    const bk = productKindOrder[b.product_kind] ?? 99;
+    if (ak !== bk) return ak - bk;
+    if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+    return a.code.localeCompare(b.code);
+  });
+}
+
+function uniquePositiveIds(values: string[]): number[] {
+  const ids: number[] = [];
+  const seen = new Set<number>();
+
+  for (const raw of values) {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    const id = Math.trunc(n);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+
+  return ids;
 }
 
 export function useItemAttributesModel(args: {
@@ -76,6 +107,41 @@ export function useItemAttributesModel(args: {
       },
     }));
   }, []);
+
+  const setOptionChecked = useCallback(
+    (def: ItemAttributeDef, optionId: number, checked: boolean) => {
+      setDrafts((prev) => {
+        const current = prev[def.id] ?? emptyDraft();
+        const optionText = String(optionId);
+
+        if (def.selection_mode === "SINGLE") {
+          return {
+            ...prev,
+            [def.id]: {
+              ...current,
+              value_option_ids: checked ? [optionText] : [],
+            },
+          };
+        }
+
+        const currentSet = new Set(current.value_option_ids);
+        if (checked) {
+          currentSet.add(optionText);
+        } else {
+          currentSet.delete(optionText);
+        }
+
+        return {
+          ...prev,
+          [def.id]: {
+            ...current,
+            value_option_ids: Array.from(currentSet),
+          },
+        };
+      });
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -167,13 +233,18 @@ export function useItemAttributesModel(args: {
       }
 
       if (def.value_type === "OPTION") {
-        const optionId = Number(draft.value_option_id);
-        if (!Number.isFinite(optionId) || optionId <= 0) {
+        const optionIds = uniquePositiveIds(draft.value_option_ids);
+
+        if (optionIds.length === 0) {
           if (def.is_item_required) return { ok: false, error: `${def.name_cn} 必填` };
           continue;
         }
 
-        values.push({ attribute_def_id: def.id, value_option_id: Math.trunc(optionId) });
+        if (def.selection_mode === "SINGLE" && optionIds.length > 1) {
+          return { ok: false, error: `${def.name_cn} 只能选择一个值` };
+        }
+
+        values.push({ attribute_def_id: def.id, value_option_ids: optionIds });
         continue;
       }
 
@@ -217,6 +288,7 @@ export function useItemAttributesModel(args: {
     banner,
     refresh,
     setDraft,
+    setOptionChecked,
     save,
   };
 }

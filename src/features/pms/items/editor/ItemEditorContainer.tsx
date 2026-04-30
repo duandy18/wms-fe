@@ -1,6 +1,7 @@
 // src/features/pms/items/editor/ItemEditorContainer.tsx
 
 import React, { useEffect } from "react";
+import type { Item } from "../../../../contracts/item/contract";
 import { useItemsStore } from "../model/itemsStore";
 import { useSuppliersOptions } from "../hooks/useSuppliersOptions";
 import { EMPTY_FORM } from "../create/types";
@@ -24,6 +25,10 @@ const ItemEditorContainer: React.FC = () => {
     supError,
     emptyForm: { ...EMPTY_FORM },
     onAfterSaved: async () => {
+      await loadItems();
+    },
+    onAfterCreated: async (item: Item) => {
+      setSelectedItem(item);
       await loadItems();
     },
     onResetToCreate: () => setSelectedItem(null),

@@ -23,6 +23,7 @@ export default function useItemEditor(args: {
   emptyForm: FormState;
 
   onAfterSaved: () => Promise<void>;
+  onAfterCreated: (item: Item) => Promise<void>;
   onResetToCreate: () => void;
 }): ItemEditorVm {
   const {
@@ -32,6 +33,7 @@ export default function useItemEditor(args: {
     supError,
     emptyForm,
     onAfterSaved,
+    onAfterCreated,
     onResetToCreate,
   } = args;
 
@@ -59,7 +61,6 @@ export default function useItemEditor(args: {
     }
 
     setError(null);
-    setFlash(null);
     setFieldErrors({});
     setCreated(null);
 
@@ -132,11 +133,14 @@ export default function useItemEditor(args: {
         setSaving(true);
         try {
           const createdItem = await runCreateItem(prepared.body);
-          setCreated({ id: createdItem.id, sku: createdItem.sku });
-          setFlash({ kind: "success", text: "创建成功" });
-          setForm({ ...emptyFormRef.current });
 
-          await onAfterSaved();
+          setCreated({ id: createdItem.id, sku: createdItem.sku });
+          setFlash({
+            kind: "success",
+            text: "创建成功，已进入编辑流程。请继续完善包装单位、条码、SKU 编码和商品属性。",
+          });
+
+          await onAfterCreated(createdItem);
         } catch (ex: unknown) {
           const msg = ex instanceof Error ? ex.message : "创建商品失败";
           setError(msg);
@@ -162,12 +166,9 @@ export default function useItemEditor(args: {
       await updateItem(selectedItem.id, r.body);
 
       await onAfterSaved();
-      setFlash({ kind: "success", text: "保存成功" });
+      setFlash({ kind: "success", text: "商品本体已保存" });
 
       initialEditFormRef.current = { ...form };
-
-      onResetToCreate();
-      setForm({ ...emptyFormRef.current });
     } catch (ex: unknown) {
       const msg = errMsg(ex, "保存失败");
       setError(msg);

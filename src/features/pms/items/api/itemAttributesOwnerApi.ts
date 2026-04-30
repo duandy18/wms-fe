@@ -2,14 +2,14 @@
 import { apiGet, apiPut } from "../../../../lib/api";
 
 export type ItemAttributeValue = {
-  id: number;
+  id: number | null;
   item_id: number;
   attribute_def_id: number;
   value_text?: string | null;
   value_number?: number | null;
   value_bool?: boolean | null;
-  value_option_id?: number | null;
-  value_option_code_snapshot?: string | null;
+  value_option_ids: number[];
+  value_option_code_snapshots: string[];
   value_unit_snapshot?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -20,7 +20,7 @@ export type ItemAttributeValueInput = {
   value_text?: string | null;
   value_number?: number | null;
   value_bool?: boolean | null;
-  value_option_id?: number | null;
+  value_option_ids?: number[] | null;
 };
 
 type ListEnvelope<T> = {
