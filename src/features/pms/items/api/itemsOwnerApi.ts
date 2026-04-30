@@ -6,6 +6,11 @@ export async function fetchItems(): Promise<Item[]> {
   return apiGet<Item[]>("/items");
 }
 
+export async function fetchItemById(id: number): Promise<Item> {
+  if (!id || id <= 0) throw new Error("invalid item_id");
+  return apiGet<Item>(`/items/${id}`);
+}
+
 function toNumOrNull(v: unknown): number | null {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(v);

@@ -2,49 +2,102 @@
 // 商品列表（商品主数据核心视图）
 //
 // 职责收敛：
-// - 本文件只做：取 store 状态、过滤 rows、触发“上方编辑器进入编辑模式”、渲染表格
-// - 表格渲染交给 components/ItemsListTable
-// - 商品编辑器统一由 ItemsFormSection 承担（本文件不再弹窗编辑）
+// - 列表只消费后端 /items/list-rows owner 读模型
+// - 主表只展示商品本体与策略字段
+// - 详情展开只调用 /items/{item_id}/list-detail
+// - 编辑时按 item_id 拉完整 /items/{id}，再进入商品编辑器
 
-import React, { useMemo } from "react";
-import type { Item } from "@/contracts/item/contract";
+import React, { useMemo, useState } from "react";
+import { fetchItemById } from "../api/itemsOwnerApi";
+import { fetchItemListDetail } from "../api/itemListOwnerApi";
+import type { ItemListDetail, ItemListRow } from "../contracts/itemList";
 import { useItemsStore } from "../model/itemsStore";
 import ItemsListTable from "./ItemsListTable";
 
 const EDITOR_ANCHOR_ID = "items-editor";
 
 export const ItemsTable: React.FC = () => {
-  const items = useItemsStore((s) => s.items);
+  const listRows = useItemsStore((s) => s.listRows);
   const filter = useItemsStore((s) => s.filter);
-  const primaryBarcodes = useItemsStore((s) => s.primaryBarcodes);
   const setSelectedItem = useItemsStore((s) => s.setSelectedItem);
+  const setError = useItemsStore((s) => s.setError);
+
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [expandedItemId, setExpandedItemId] = useState<number | null>(null);
+  const [detailLoadingItemId, setDetailLoadingItemId] = useState<number | null>(null);
+  const [detailByItemId, setDetailByItemId] = useState<Record<number, ItemListDetail>>({});
 
   const rows = useMemo(() => {
-    if (filter === "enabled") return items.filter((i) => i.enabled);
-    if (filter === "disabled") return items.filter((i) => !i.enabled);
-    return items;
-  }, [items, filter]);
+    if (filter === "enabled") return listRows.filter((i) => i.enabled);
+    if (filter === "disabled") return listRows.filter((i) => !i.enabled);
+    return listRows;
+  }, [listRows, filter]);
 
   const gotoEditor = () => {
-    // 尽量滚动到编辑器锚点；没有也不报错
     const el = document.getElementById(EDITOR_ANCHOR_ID);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const onEdit = (it: Item) => {
-    // ✅ 单一入口：列表编辑只负责“切换上方编辑器状态”
-    setSelectedItem(it);
-    gotoEditor();
+  const onEdit = async (row: ItemListRow) => {
+    if (!row.item_id || row.item_id <= 0) return;
+
+    setEditingItemId(row.item_id);
+    setError(null);
+
+    try {
+      const item = await fetchItemById(row.item_id);
+      setSelectedItem(item);
+      gotoEditor();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "加载商品详情失败";
+      setError(msg);
+    } finally {
+      setEditingItemId(null);
+    }
+  };
+
+  const onToggleDetail = async (row: ItemListRow) => {
+    if (!row.item_id || row.item_id <= 0) return;
+
+    if (expandedItemId === row.item_id) {
+      setExpandedItemId(null);
+      return;
+    }
+
+    const cached = detailByItemId[row.item_id];
+    if (cached) {
+      setExpandedItemId(row.item_id);
+      return;
+    }
+
+    setDetailLoadingItemId(row.item_id);
+    setError(null);
+
+    try {
+      const detail = await fetchItemListDetail(row.item_id);
+      setDetailByItemId((prev) => ({
+        ...prev,
+        [row.item_id]: detail,
+      }));
+      setExpandedItemId(row.item_id);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "加载商品列表详情失败";
+      setError(msg);
+    } finally {
+      setDetailLoadingItemId(null);
+    }
   };
 
   return (
-    <>
-      <ItemsListTable
-        rows={rows}
-        primaryBarcodes={primaryBarcodes}
-        onEdit={(it) => void onEdit(it)}
-      />
-    </>
+    <ItemsListTable
+      rows={rows}
+      editingItemId={editingItemId}
+      expandedItemId={expandedItemId}
+      detailLoadingItemId={detailLoadingItemId}
+      detailByItemId={detailByItemId}
+      onEdit={(row) => void onEdit(row)}
+      onToggleDetail={(row) => void onToggleDetail(row)}
+    />
   );
 };
 
