@@ -40,7 +40,7 @@ const SuppliersListPage: React.FC = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <PageTitle title="供应商主数据" description="字段与列表对齐：名称/编码/官网/联系人信息/状态。状态只能在编辑中修改。" />
+      <PageTitle title="供应商主数据" description="字段与列表对齐：名称/编码/官网/联系人信息/状态。新建供应商固定为合作中，状态只能在编辑中修改。" />
 
       <SupplierCreateSection
         H2={H2}
@@ -59,8 +59,6 @@ const SuppliersListPage: React.FC = () => {
         setNewCode={c.setNewCode}
         newWebsite={c.newWebsite}
         setNewWebsite={c.setNewWebsite}
-        newActive={c.newActive}
-        setNewActive={c.setNewActive}
         newContacts={c.newContacts}
         setNewContacts={(fn) => c.setNewContacts(fn)}
         creating={c.creating}

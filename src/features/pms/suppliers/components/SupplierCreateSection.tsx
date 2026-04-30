@@ -24,8 +24,6 @@ export const SupplierCreateSection: React.FC<{
   setNewCode: (v: string) => void;
   newWebsite: string;
   setNewWebsite: (v: string) => void;
-  newActive: boolean;
-  setNewActive: (v: boolean) => void;
   newContacts: ContactDraft[];
   setNewContacts: (fn: (prev: ContactDraft[]) => ContactDraft[]) => void;
 
@@ -49,8 +47,6 @@ export const SupplierCreateSection: React.FC<{
   setNewCode,
   newWebsite,
   setNewWebsite,
-  newActive,
-  setNewActive,
   newContacts,
   setNewContacts,
   creating,
@@ -84,14 +80,6 @@ export const SupplierCreateSection: React.FC<{
           <div className="flex flex-col gap-3">
             <label className={`${BODY} text-slate-700`}>供应商编码（手动填写）*</label>
             <input className={`${INPUT} font-mono`} value={newCode} onChange={(e) => setNewCode(e.target.value)} disabled={creating} />
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <label className={`${BODY} text-slate-700`}>状态 *</label>
-            <select className={SELECT} value={newActive ? "1" : "0"} onChange={(e) => setNewActive(e.target.value === "1")} disabled={creating}>
-              <option value="1">合作中</option>
-              <option value="0">已停用</option>
-            </select>
           </div>
 
           <div className="flex flex-col gap-3 md:col-span-4">
