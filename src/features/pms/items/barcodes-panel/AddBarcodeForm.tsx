@@ -80,7 +80,7 @@ export const AddBarcodeForm: React.FC<{
               onChange={(e) => onChangeIsPrimary(e.target.checked)}
               disabled={saving}
             />
-            是否主条码
+            设为当前主条码
           </label>
 
           <div className="flex items-center gap-2">
