@@ -1,23 +1,29 @@
 // src/features/pms/items/store/types.ts
 
 import type { Item } from "../../../../contracts/item/contract";
+import type { ItemListRow } from "../contracts/itemList";
 
 export type EnabledFilter = "all" | "enabled" | "disabled";
 
 export type ItemsState = {
+  /**
+   * 完整商品合同：供编辑器、公共选择器等需要 /items 主合同的地方使用。
+   */
   items: Item[];
+
+  /**
+   * 商品列表页 owner 读模型：只供商品列表表格使用。
+   */
+  listRows: ItemListRow[];
+
   loading: boolean;
   error: string | null;
 
   selectedItem: Item | null;
 
-  primaryBarcodes: Record<number, string>;
-
   filter: EnabledFilter;
 
   setSelectedItem: (item: Item | null) => void;
-
-  setPrimaryBarcodeLocal: (itemId: number, barcode: string | null) => void;
 
   setError: (msg: string | null) => void;
   setFilter: (f: EnabledFilter) => void;
