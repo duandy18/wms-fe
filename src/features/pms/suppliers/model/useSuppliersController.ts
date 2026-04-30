@@ -41,7 +41,6 @@ export function useSuppliersController() {
   const [newName, setNewName] = useState("");
   const [newCode, setNewCode] = useState("");
   const [newWebsite, setNewWebsite] = useState("");
-  const [newActive, setNewActive] = useState(true);
   const [newContacts, setNewContacts] = useState<ContactDraft[]>([{ ...DEFAULT_CONTACT }]);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -96,7 +95,7 @@ export function useSuppliersController() {
 
     setCreating(true);
     try {
-      const s = await createSupplier({ name, code, website, active: newActive });
+      const s = await createSupplier({ name, code, website, active: true });
 
       const cleaned = newContacts
         .map((c) => ({
@@ -117,7 +116,6 @@ export function useSuppliersController() {
       setNewName("");
       setNewCode("");
       setNewWebsite("");
-      setNewActive(true);
       setNewContacts([{ ...DEFAULT_CONTACT }]);
 
       await load();
@@ -284,8 +282,6 @@ export function useSuppliersController() {
     setNewCode,
     newWebsite,
     setNewWebsite,
-    newActive,
-    setNewActive,
     newContacts,
     setNewContacts,
     creating,
