@@ -8,10 +8,10 @@ const btnCls = "rounded border border-slate-300 bg-white px-3 py-2 text-xs text-
 const primaryBtnCls = "rounded bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-60";
 
 function typeLabel(def: ItemAttributeDef): string {
-  if (def.value_type === "TEXT") return "文本";
-  if (def.value_type === "NUMBER") return def.unit ? `数值 / ${def.unit}` : "数值";
-  if (def.value_type === "OPTION") return "单选";
-  if (def.value_type === "BOOL") return "是否";
+  if (def.value_type === "TEXT") return "文本输入";
+  if (def.value_type === "NUMBER") return def.unit ? `数字输入 / ${def.unit}` : "数字输入";
+  if (def.value_type === "OPTION") return def.selection_mode === "MULTI" ? "预设选项 / 多选" : "预设选项 / 单选";
+  if (def.value_type === "BOOL") return "是/否选择";
   return def.value_type;
 }
 
@@ -29,7 +29,7 @@ export const ItemAttributesSection: React.FC<{
         <div>
           <h3 className="text-sm font-semibold text-slate-900">商品属性</h3>
           <p className="mt-1 text-xs text-slate-500">
-            根据当前内部分类加载属性模板。新建商品需先保存基础信息，生成 item_id 后再维护属性值。
+            根据当前商品分类所属商品类型加载属性模板。新建商品需先保存基础信息，生成 item_id 后再维护属性值。
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export const ItemAttributesSection: React.FC<{
         <div className="text-sm text-slate-500">商品属性加载中…</div>
       ) : m.defs.length === 0 ? (
         <div className="rounded border border-dashed border-slate-300 px-3 py-6 text-center text-sm text-slate-400">
-          当前商品分类下暂无属性模板。请先到「属性模板」页面维护 COMMON 或分类属性。
+          当前商品类型下暂无属性模板。请先到「属性模板」页面维护通用、食品、用品或其他属性模板。
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -77,7 +77,7 @@ export const ItemAttributesSection: React.FC<{
                 <span className="mb-1 flex items-center justify-between gap-2 text-xs font-medium text-slate-600">
                   <span>
                     {def.name_cn}
-                    {def.is_required ? <span className="ml-1 text-red-500">*</span> : null}
+                    {def.is_item_required ? <span className="ml-1 text-red-500">*</span> : null}
                   </span>
                   <span className="font-mono text-[11px] text-slate-400">
                     {def.code} / {typeLabel(def)}

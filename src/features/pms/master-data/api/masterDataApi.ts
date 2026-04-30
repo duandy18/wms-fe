@@ -4,6 +4,7 @@ import { apiGet, apiPatch, apiPost } from "../../../../lib/api";
 export type ProductKind = "FOOD" | "SUPPLY" | "OTHER";
 export type AttributeProductKind = ProductKind | "COMMON";
 export type AttributeValueType = "TEXT" | "NUMBER" | "OPTION" | "BOOL";
+export type AttributeSelectionMode = "SINGLE" | "MULTI";
 
 type ListEnvelope<T> = {
   ok: boolean;
@@ -49,14 +50,14 @@ export type ItemAttributeDef = {
   name_cn: string;
   name_en?: string | null;
   product_kind: AttributeProductKind;
-  category_id?: number | null;
   value_type: AttributeValueType;
+  selection_mode: AttributeSelectionMode;
   unit?: string | null;
-  is_required: boolean;
-  is_searchable: boolean;
-  is_filterable: boolean;
+  is_item_required: boolean;
+  is_sku_required: boolean;
   is_sku_segment: boolean;
   is_active: boolean;
+  is_locked: boolean;
   sort_order: number;
   remark?: string | null;
   created_at?: string | null;
@@ -162,12 +163,10 @@ export async function unlockPmsCategory(id: number): Promise<PmsCategory> {
 
 export async function fetchItemAttributeDefs(params?: {
   product_kind?: AttributeProductKind;
-  category_id?: number | null;
   active_only?: boolean;
 }): Promise<ItemAttributeDef[]> {
   const resp = await apiGet<ListEnvelope<ItemAttributeDef>>("/pms/item-attribute-defs", {
     product_kind: params?.product_kind,
-    category_id: params?.category_id ?? undefined,
     active_only: params?.active_only ?? false,
   });
   return unwrapList(resp);
@@ -178,12 +177,11 @@ export async function createItemAttributeDef(payload: {
   name_cn: string;
   name_en?: string | null;
   product_kind: AttributeProductKind;
-  category_id?: number | null;
   value_type: AttributeValueType;
+  selection_mode?: AttributeSelectionMode;
   unit?: string | null;
-  is_required?: boolean;
-  is_searchable?: boolean;
-  is_filterable?: boolean;
+  is_item_required?: boolean;
+  is_sku_required?: boolean;
   is_sku_segment?: boolean;
   sort_order?: number;
   remark?: string | null;
@@ -198,10 +196,10 @@ export async function updateItemAttributeDef(
       ItemAttributeDef,
       | "name_cn"
       | "name_en"
+      | "selection_mode"
       | "unit"
-      | "is_required"
-      | "is_searchable"
-      | "is_filterable"
+      | "is_item_required"
+      | "is_sku_required"
       | "is_sku_segment"
       | "sort_order"
       | "remark"
@@ -217,6 +215,14 @@ export async function enableItemAttributeDef(id: number): Promise<ItemAttributeD
 
 export async function disableItemAttributeDef(id: number): Promise<ItemAttributeDef> {
   return apiPost<ItemAttributeDef>(`/pms/item-attribute-defs/${id}/disable`, {});
+}
+
+export async function lockItemAttributeDef(id: number): Promise<ItemAttributeDef> {
+  return apiPost<ItemAttributeDef>(`/pms/item-attribute-defs/${id}/lock`, {});
+}
+
+export async function unlockItemAttributeDef(id: number): Promise<ItemAttributeDef> {
+  return apiPost<ItemAttributeDef>(`/pms/item-attribute-defs/${id}/unlock`, {});
 }
 
 export async function fetchItemAttributeOptions(
