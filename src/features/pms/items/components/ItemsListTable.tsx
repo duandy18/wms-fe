@@ -203,8 +203,29 @@ const AttributesTable: React.FC<{ rows: ItemListAttribute[] }> = ({ rows }) => (
   </div>
 );
 
-const DetailPanel: React.FC<{ detail: ItemListDetail }> = ({ detail }) => (
+const DetailPanel: React.FC<{
+  detail: ItemListDetail;
+  isEditing: boolean;
+  onEdit: (row: ItemListRow) => void;
+}> = ({ detail, isEditing, onEdit }) => (
   <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+    <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
+      <div>
+        <div className="text-sm font-semibold text-slate-900">只读详情</div>
+        <div className="mt-1 text-xs text-slate-500">
+          详情区只展示后端读模型；需要修改商品本体、包装、条码、SKU 编码或属性时，请进入上方编辑流程。
+        </div>
+      </div>
+      <button
+        type="button"
+        className="rounded bg-emerald-100 px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60"
+        onClick={() => onEdit(detail.row)}
+        disabled={isEditing}
+      >
+        {isEditing ? "加载中…" : "去编辑流程"}
+      </button>
+    </div>
+
     <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
       <DetailSection title="包装单位">
         <UomsTable rows={detail.uoms} />
@@ -333,7 +354,7 @@ export const ItemsListTable: React.FC<{
                     <tr className="border-t">
                       <td colSpan={11} className="bg-white px-3 py-3">
                         {detail ? (
-                          <DetailPanel detail={detail} />
+                          <DetailPanel detail={detail} isEditing={isEditing} onEdit={onEdit} />
                         ) : (
                           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500">
                             详情加载中…
