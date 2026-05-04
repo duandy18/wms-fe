@@ -259,11 +259,11 @@ export function useItemAttributesModel(args: {
     return { ok: true, values };
   }, [drafts, effectiveDefs]);
 
-  const save = useCallback(async () => {
+  const save = useCallback(async (): Promise<boolean> => {
     const payload = buildPayload();
     if (!payload.ok) {
       setBanner({ kind: "error", text: payload.error });
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -272,8 +272,10 @@ export function useItemAttributesModel(args: {
       await replaceItemAttributeValues(itemId, payload.values);
       setBanner({ kind: "success", text: "商品属性已保存" });
       await refresh();
+      return true;
     } catch (e) {
       setBanner({ kind: "error", text: errMsg(e, "保存商品属性失败") });
+      return false;
     } finally {
       setSaving(false);
     }
