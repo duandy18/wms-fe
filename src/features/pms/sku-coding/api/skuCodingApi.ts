@@ -93,3 +93,15 @@ export async function generateSkuCode(payload: SkuGenerateInput): Promise<SkuGen
   const resp = await apiPost<GenerateEnvelope>("/pms/sku-coding/generate", payload);
   return resp.data;
 }
+
+export async function generateSkuCodeFromItem(itemId: number): Promise<SkuGenerateData> {
+  if (!Number.isFinite(itemId) || itemId <= 0) {
+    throw new Error("invalid item_id");
+  }
+
+  const resp = await apiPost<GenerateEnvelope>(
+    `/pms/sku-coding/items/${Math.trunc(itemId)}/generate`,
+    {},
+  );
+  return resp.data;
+}
