@@ -37,6 +37,10 @@ export async function listPmsFskus(params: PmsFskuListParams = {}): Promise<PmsF
   return apiGet<PmsFskuListOut>(buildListPath(params));
 }
 
+export async function getPmsFskuDetail(id: number): Promise<PmsFskuDetail> {
+  return apiGet<PmsFskuDetail>(`/pms/fskus/${Math.trunc(id)}`);
+}
+
 export async function createPmsFskuDraft(input: PmsFskuCreateInput): Promise<PmsFskuDetail> {
   return apiPost<PmsFskuDetail>("/pms/fskus", {
     name: input.name.trim(),
