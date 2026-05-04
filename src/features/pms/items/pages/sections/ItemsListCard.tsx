@@ -2,10 +2,11 @@
 
 import React from "react";
 import { ItemsTable } from "../../components/ItemsTable";
+import type { EnabledFilter } from "../../model/types";
 
 export const ItemsListCard: React.FC<{
-  filter: "all" | "enabled" | "disabled";
-  onChangeFilter: (v: "all" | "enabled" | "disabled") => void;
+  filter: EnabledFilter;
+  onChangeFilter: (v: EnabledFilter) => void;
 }> = ({ filter, onChangeFilter }) => {
   const btnBase = "rounded px-2 py-1 border text-[11px] font-medium";
 
@@ -30,6 +31,13 @@ export const ItemsListCard: React.FC<{
       ? "border-red-700 bg-red-700 text-white"
       : "border-red-300 bg-red-50 text-red-800 hover:bg-red-100");
 
+  const clsIncomplete =
+    btnBase +
+    " " +
+    (filter === "incomplete"
+      ? "border-amber-700 bg-amber-700 text-white"
+      : "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100");
+
   return (
     <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between">
@@ -46,14 +54,21 @@ export const ItemsListCard: React.FC<{
               className={clsEnabled}
               onClick={() => onChangeFilter("enabled")}
             >
-              有效
+              启用
             </button>
             <button
               type="button"
               className={clsDisabled}
               onClick={() => onChangeFilter("disabled")}
             >
-              无效
+              停用
+            </button>
+            <button
+              type="button"
+              className={clsIncomplete}
+              onClick={() => onChangeFilter("incomplete")}
+            >
+              待完善
             </button>
           </div>
         </div>
