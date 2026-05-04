@@ -2,6 +2,7 @@
 
 import React from "react";
 import type {
+  ItemCompleteness,
   ItemListAttribute,
   ItemListBarcode,
   ItemListDetail,
@@ -24,6 +25,45 @@ function boolCn(v: boolean): string {
 
 function activeCn(v: boolean): string {
   return v ? "启用" : "停用";
+}
+
+function completenessLabel(status: ItemCompleteness["status"]): string {
+  if (status === "COMPLETE") return "完整";
+  if (status === "WARNING") return "有提醒";
+  return "待完善";
+}
+
+function completenessBadgeClass(status: ItemCompleteness["status"]): string {
+  if (status === "COMPLETE") {
+    return "inline-flex rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800";
+  }
+  if (status === "WARNING") {
+    return "inline-flex rounded bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800";
+  }
+  return "inline-flex rounded bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700";
+}
+
+function completenessSummary(row: ItemListRow): string {
+  const items = [...row.completeness.blocking_items, ...row.completeness.warnings];
+  if (items.length === 0) {
+    return row.completeness.can_generate_sku ? "可生成候选 SKU" : "无阻塞项";
+  }
+
+  const shown = items.slice(0, 2).join("；");
+  return items.length > 2 ? `${shown}；等 ${items.length} 项` : shown;
+}
+
+function renderCompleteness(row: ItemListRow): React.ReactNode {
+  return (
+    <div className="space-y-1">
+      <span className={completenessBadgeClass(row.completeness.status)}>
+        {completenessLabel(row.completeness.status)}
+      </span>
+      <div className="line-clamp-2 text-[11px] leading-4 text-slate-500">
+        {completenessSummary(row)}
+      </div>
+    </div>
+  );
 }
 
 function attributeValueText(row: ItemListAttribute): string {
@@ -266,13 +306,14 @@ export const ItemsListTable: React.FC<{
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="min-w-[1800px] w-full table-fixed border-collapse text-sm">
+        <table className="min-w-[2040px] w-full table-fixed border-collapse text-sm">
           <colgroup>
             <col className="w-[320px]" />
             <col className="w-[340px]" />
             <col className="w-[170px]" />
             <col className="w-[130px]" />
             <col className="w-[150px]" />
+            <col className="w-[240px]" />
             <col className="w-[280px]" />
             <col className="w-[130px]" />
             <col className="w-[130px]" />
@@ -288,6 +329,7 @@ export const ItemsListTable: React.FC<{
               <th className="border px-3 py-2 text-left font-semibold">规格</th>
               <th className="border px-3 py-2 text-left font-semibold">品牌</th>
               <th className="border px-3 py-2 text-left font-semibold">分类</th>
+              <th className="border px-3 py-2 text-left font-semibold">完整度</th>
               <th className="border px-3 py-2 text-left font-semibold">供应商</th>
               <th className="border px-3 py-2 text-left font-semibold">批次策略</th>
               <th className="border px-3 py-2 text-left font-semibold">有效期策略</th>
@@ -300,7 +342,7 @@ export const ItemsListTable: React.FC<{
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-3 py-8 text-center text-slate-400">
+                <td colSpan={12} className="px-3 py-8 text-center text-slate-400">
                   暂无商品记录
                 </td>
               </tr>
@@ -325,6 +367,7 @@ export const ItemsListTable: React.FC<{
                     <td className="px-3 py-2 align-top whitespace-pre-line break-words">{textOrDash(row.spec)}</td>
                     <td className="px-3 py-2 align-top break-words">{textOrDash(row.brand)}</td>
                     <td className="px-3 py-2 align-top break-words">{textOrDash(row.category)}</td>
+                    <td className="px-3 py-2 align-top">{renderCompleteness(row)}</td>
                     <td className="px-3 py-2 align-top break-words">{textOrDash(row.supplier_name)}</td>
                     <td className="px-3 py-2 align-top">{policyCnLotSource(row.lot_source_policy)}</td>
                     <td className="px-3 py-2 align-top">{policyCnExpiry(row.expiry_policy)}</td>
@@ -352,7 +395,7 @@ export const ItemsListTable: React.FC<{
 
                   {isExpanded ? (
                     <tr className="border-t">
-                      <td colSpan={11} className="bg-white px-3 py-3">
+                      <td colSpan={12} className="bg-white px-3 py-3">
                         {detail ? (
                           <DetailPanel detail={detail} isEditing={isEditing} onEdit={onEdit} />
                         ) : (

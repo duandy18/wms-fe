@@ -1,6 +1,9 @@
 // src/features/pms/items/api/itemListOwnerApi.ts
 import { apiGet } from "../../../../lib/api";
 import type {
+  ItemCompleteness,
+  ItemCompletenessProductKind,
+  ItemCompletenessStatus,
   ItemListAttribute,
   ItemListBarcode,
   ItemListDetail,
@@ -14,6 +17,34 @@ export type ItemListRowsParams = {
   supplierId?: number | null;
   q?: string | null;
   limit?: number | null;
+};
+
+type RawItemCompleteness = {
+  status?: string | null;
+  is_complete?: boolean | null;
+
+  product_kind?: string | null;
+
+  has_brand?: boolean | null;
+  has_active_leaf_category?: boolean | null;
+  has_base_uom?: boolean | null;
+  has_active_primary_barcode?: boolean | null;
+  has_active_primary_sku?: boolean | null;
+
+  item_required_attributes_complete?: boolean | null;
+  sku_required_attributes_complete?: boolean | null;
+  sku_segment_attributes_present?: boolean | null;
+
+  sku_generation_applicable?: boolean | null;
+  can_generate_sku?: boolean | null;
+
+  missing_item_required_attribute_codes?: Array<string | null> | null;
+  missing_sku_required_attribute_codes?: Array<string | null> | null;
+  missing_sku_segment_attribute_codes?: Array<string | null> | null;
+
+  missing_items?: Array<string | null> | null;
+  blocking_items?: Array<string | null> | null;
+  warnings?: Array<string | null> | null;
 };
 
 type RawItemListRow = {
@@ -43,6 +74,8 @@ type RawItemListRow = {
   barcode_count?: number | string | null;
   sku_code_count?: number | string | null;
   attribute_count?: number | string | null;
+
+  completeness?: RawItemCompleteness | null;
 
   updated_at?: string | null;
 };
@@ -179,6 +212,46 @@ function stringList(value: unknown): string[] {
   return out;
 }
 
+function normalizeCompletenessStatus(value: unknown): ItemCompletenessStatus {
+  if (value === "COMPLETE" || value === "WARNING" || value === "BLOCKED") return value;
+  return "BLOCKED";
+}
+
+function normalizeProductKind(value: unknown): ItemCompletenessProductKind | null {
+  if (value === "FOOD" || value === "SUPPLY" || value === "OTHER") return value;
+  return null;
+}
+
+function normalizeCompleteness(raw: RawItemCompleteness | null | undefined): ItemCompleteness {
+  return {
+    status: normalizeCompletenessStatus(raw?.status),
+    is_complete: raw?.is_complete === true,
+
+    product_kind: normalizeProductKind(raw?.product_kind),
+
+    has_brand: raw?.has_brand === true,
+    has_active_leaf_category: raw?.has_active_leaf_category === true,
+    has_base_uom: raw?.has_base_uom === true,
+    has_active_primary_barcode: raw?.has_active_primary_barcode === true,
+    has_active_primary_sku: raw?.has_active_primary_sku === true,
+
+    item_required_attributes_complete: raw?.item_required_attributes_complete === true,
+    sku_required_attributes_complete: raw?.sku_required_attributes_complete === true,
+    sku_segment_attributes_present: raw?.sku_segment_attributes_present === true,
+
+    sku_generation_applicable: raw?.sku_generation_applicable === true,
+    can_generate_sku: raw?.can_generate_sku === true,
+
+    missing_item_required_attribute_codes: stringList(raw?.missing_item_required_attribute_codes),
+    missing_sku_required_attribute_codes: stringList(raw?.missing_sku_required_attribute_codes),
+    missing_sku_segment_attribute_codes: stringList(raw?.missing_sku_segment_attribute_codes),
+
+    missing_items: stringList(raw?.missing_items),
+    blocking_items: stringList(raw?.blocking_items),
+    warnings: stringList(raw?.warnings),
+  };
+}
+
 function normalizeRow(raw: RawItemListRow): ItemListRow {
   return {
     item_id: intValue(raw.item_id),
@@ -207,6 +280,8 @@ function normalizeRow(raw: RawItemListRow): ItemListRow {
     barcode_count: intValue(raw.barcode_count),
     sku_code_count: intValue(raw.sku_code_count),
     attribute_count: intValue(raw.attribute_count),
+
+    completeness: normalizeCompleteness(raw.completeness),
 
     updated_at: cleanString(raw.updated_at),
   };
