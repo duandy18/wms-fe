@@ -27,8 +27,10 @@ function activeCn(v: boolean): string {
 }
 
 function attributeValueText(row: ItemListAttribute): string {
-  if (row.value_option_name) return row.value_option_name;
-  if (row.value_option_code_snapshot) return row.value_option_code_snapshot;
+  if (row.value_option_names.length > 0) return row.value_option_names.join(" / ");
+  if (row.value_option_code_snapshots.length > 0) {
+    return row.value_option_code_snapshots.join(" / ");
+  }
   if (row.value_text) return row.value_text;
   if (typeof row.value_number === "number" && Number.isFinite(row.value_number)) {
     return String(row.value_number);
