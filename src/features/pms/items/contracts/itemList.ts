@@ -86,9 +86,9 @@ export type ItemListAttribute = {
   value_text: string | null;
   value_number: number | null;
   value_bool: boolean | null;
-  value_option_id: number | null;
-  value_option_code_snapshot: string | null;
-  value_option_name: string | null;
+  value_option_ids: number[];
+  value_option_code_snapshots: string[];
+  value_option_names: string[];
   value_unit_snapshot: string | null;
   updated_at: string | null;
 };

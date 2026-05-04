@@ -102,9 +102,9 @@ type RawItemListAttribute = {
   value_text?: string | null;
   value_number?: number | string | null;
   value_bool?: boolean | null;
-  value_option_id?: number | string | null;
-  value_option_code_snapshot?: string | null;
-  value_option_name?: string | null;
+  value_option_ids?: Array<number | string | null> | null;
+  value_option_code_snapshots?: Array<string | null> | null;
+  value_option_names?: Array<string | null> | null;
   value_unit_snapshot?: string | null;
   updated_at?: string | null;
 };
@@ -143,6 +143,40 @@ function numberOrNull(value: unknown): number | null {
 function intValue(value: unknown): number {
   const n = numberOrNull(value);
   return n == null ? 0 : Math.trunc(n);
+}
+
+function numberList(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+
+  const out: number[] = [];
+  const seen = new Set<number>();
+
+  for (const item of value) {
+    const n = numberOrNull(item);
+    if (n == null || n <= 0) continue;
+    const id = Math.trunc(n);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+
+  return out;
+}
+
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  const out: string[] = [];
+  const seen = new Set<string>();
+
+  for (const item of value) {
+    const text = cleanString(item);
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    out.push(text);
+  }
+
+  return out;
 }
 
 function normalizeRow(raw: RawItemListRow): ItemListRow {
@@ -240,9 +274,9 @@ function normalizeAttribute(raw: RawItemListAttribute): ItemListAttribute {
     value_text: cleanString(raw.value_text),
     value_number: numberOrNull(raw.value_number),
     value_bool: typeof raw.value_bool === "boolean" ? raw.value_bool : null,
-    value_option_id: numberOrNull(raw.value_option_id),
-    value_option_code_snapshot: cleanString(raw.value_option_code_snapshot),
-    value_option_name: cleanString(raw.value_option_name),
+    value_option_ids: numberList(raw.value_option_ids),
+    value_option_code_snapshots: stringList(raw.value_option_code_snapshots),
+    value_option_names: stringList(raw.value_option_names),
     value_unit_snapshot: cleanString(raw.value_unit_snapshot),
     updated_at: cleanString(raw.updated_at),
   };
