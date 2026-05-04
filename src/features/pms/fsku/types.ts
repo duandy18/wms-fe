@@ -2,6 +2,7 @@
 
 export type PmsFskuStatus = "draft" | "published" | "retired";
 export type PmsFskuShape = "single" | "bundle";
+export type PmsFskuExprType = "DIRECT" | "SEGMENT_GROUP";
 
 export type PmsFskuComponent = {
   component_sku_code: string;
@@ -23,6 +24,9 @@ export type PmsFskuListItem = {
   shape: PmsFskuShape;
   status: PmsFskuStatus;
   fsku_expr: string;
+  normalized_expr: string;
+  expr_type: PmsFskuExprType;
+  component_count: number;
   components_summary: string;
   components_summary_name: string;
   published_at: string | null;
