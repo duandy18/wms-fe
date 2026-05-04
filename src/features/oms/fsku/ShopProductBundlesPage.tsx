@@ -19,7 +19,7 @@ function normalizeErrMsg(raw: unknown): string {
   const low = s.toLowerCase();
 
   if (low === "not found" || low.includes("http 404") || low.includes("404")) {
-    return "接口未找到（404）。请确认后端已更新并重启：/oms/fskus/{id}/unretire";
+    return "接口未找到（404）。请确认后端已更新并重启：/pms/fskus/{id}/unretire";
   }
   return s || "发生未知错误";
 }

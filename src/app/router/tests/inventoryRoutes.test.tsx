@@ -103,6 +103,7 @@ vi.mock("../lazyPages", () => {
     PmsAttributeDefsPage: page("PmsAttributeDefsPage mock view"),
     PmsItemUomsPage: page("PmsItemUomsPage mock view"),
     SkuCodingGeneratorPage: page("SkuCodingGeneratorPage mock view"),
+    PmsFskuRulesPage: page("PmsFskuRulesPage mock view"),
     SuppliersListPage: page("SuppliersListPage mock view"),
 
     ShippingProvidersListPage: page("ShippingProvidersListPage mock view"),
@@ -347,6 +348,13 @@ describe("AppRouter inventory routes", () => {
   ])("falls back to /inventory after old platform route %s is retired", async (route) => {
     renderWithRoute(route);
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
+  });
+
+  it("renders PmsFskuRulesPage on /pms/fskus", async () => {
+    renderWithRoute("/pms/fskus");
+    expect(
+      await screen.findByText("PmsFskuRulesPage mock view"),
+    ).toBeInTheDocument();
   });
 
   it("falls back to /inventory for unknown route", async () => {

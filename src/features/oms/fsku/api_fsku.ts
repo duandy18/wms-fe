@@ -1,11 +1,8 @@
 // src/features/oms/fsku/api_fsku.ts
+// FSKU 主数据已迁移到 PMS：本文件仅保留 OMS 映射页读取 PMS FSKU 列表的 adapter。
 import type { Fsku, FskuComponent } from "./types";
 import { apiFetchJson } from "./http";
 import { asInt, asStr, asStrOrNull, isObject, kindOf } from "./api_utils";
-
-function asRole(v: unknown): "primary" | "gift" | null {
-  return v === "primary" || v === "gift" ? v : null;
-}
 
 function asShape(v: unknown): "single" | "bundle" | null {
   return v === "single" || v === "bundle" ? v : null;
@@ -17,36 +14,33 @@ function asStatus(v: unknown): "draft" | "published" | "retired" | null {
 
 function parseFskuRow(r: unknown, idx: number): Fsku {
   if (!isObject(r)) {
-    throw new Error(`合同不匹配：/oms/fskus.items[${idx}] 为 ${kindOf(r)}，期望对象`);
+    throw new Error(`合同不匹配：/pms/fskus.items[${idx}] 为 ${kindOf(r)}，期望对象`);
   }
 
   const id = asInt(r.id);
-  if (id == null) throw new Error(`合同不匹配：/oms/fskus.items[${idx}].id 非法`);
+  if (id == null) throw new Error(`合同不匹配：/pms/fskus.items[${idx}].id 非法`);
 
   const code = asStr(r.code);
-  if (!code) throw new Error(`合同不匹配：/oms/fskus.items[${idx}].code 缺失或非法`);
+  if (!code) throw new Error(`合同不匹配：/pms/fskus.items[${idx}].code 缺失或非法`);
 
   const name = asStr(r.name);
-  if (!name) throw new Error(`合同不匹配：/oms/fskus.items[${idx}].name 缺失或非法`);
+  if (!name) throw new Error(`合同不匹配：/pms/fskus.items[${idx}].name 缺失或非法`);
 
   const shape = asShape(r.shape);
-  if (shape == null) throw new Error(`合同不匹配：/oms/fskus.items[${idx}].shape 非法（仅允许 single/bundle）`);
+  if (shape == null) throw new Error(`合同不匹配：/pms/fskus.items[${idx}].shape 非法（仅允许 single/bundle）`);
 
   const status = asStatus(r.status);
-  if (status == null) throw new Error(`合同不匹配：/oms/fskus.items[${idx}].status 非法（draft/published/retired）`);
+  if (status == null) throw new Error(`合同不匹配：/pms/fskus.items[${idx}].status 非法（draft/published/retired）`);
 
-  const componentsSummary = asStr(r.components_summary);
-  if (componentsSummary == null) throw new Error(`合同不匹配：/oms/fskus.items[${idx}].components_summary 缺失或非法`);
-
+  const fskuExpr = asStr((r as { fsku_expr?: unknown }).fsku_expr);
+  const componentsSummary = asStr(r.components_summary) ?? fskuExpr ?? "";
   const componentsSummaryName = asStr((r as { components_summary_name?: unknown }).components_summary_name) ?? undefined;
 
   const publishedAt = asStrOrNull(r.published_at);
   const retiredAt = asStrOrNull(r.retired_at);
 
   const updatedAt = asStr(r.updated_at);
-  if (!updatedAt) throw new Error(`合同不匹配：/oms/fskus.items[${idx}].updated_at 缺失或非法`);
-
-  const unitLabel = asStr((r as { unit_label?: unknown }).unit_label) ?? undefined;
+  if (!updatedAt) throw new Error(`合同不匹配：/pms/fskus.items[${idx}].updated_at 缺失或非法`);
 
   return {
     id,
@@ -59,7 +53,6 @@ function parseFskuRow(r: unknown, idx: number): Fsku {
     published_at: publishedAt,
     retired_at: retiredAt,
     updated_at: updatedAt,
-    unit_label: unitLabel,
   };
 }
 
@@ -67,56 +60,34 @@ function unwrapFskusList(data: unknown): Fsku[] {
   const arr: unknown[] | null = Array.isArray(data)
     ? data
     : isObject(data) && Array.isArray((data as { items?: unknown }).items)
-      ? ((data as { items: unknown[] }).items as unknown[])
+      ? (data as { items: unknown[] }).items
       : null;
 
   if (arr == null) {
-    throw new Error(`合同不匹配：GET /oms/fskus 返回 ${kindOf(data)}，期望数组或 { items: [...] }`);
+    throw new Error(`合同不匹配：GET /pms/fskus 返回 ${kindOf(data)}，期望数组或 { items: [...] }`);
   }
 
-  const out: Fsku[] = [];
-  for (let i = 0; i < arr.length; i += 1) {
-    out.push(parseFskuRow(arr[i], i));
-  }
-  return out;
+  return arr.map((row, idx) => parseFskuRow(row, idx));
 }
 
-function buildGlobalFskusListUrl(args?: {
+function buildPmsFskusListUrl(args?: {
   query?: string | null;
   status?: "draft" | "published" | "retired" | null;
+  storeId?: number | null;
   limit?: number;
   offset?: number;
 }): string {
   const sp = new URLSearchParams();
   if (args?.query && args.query.trim()) sp.set("query", args.query.trim());
   if (args?.status) sp.set("status", args.status);
+  if (typeof args?.storeId === "number" && Number.isFinite(args.storeId) && args.storeId > 0) {
+    sp.set("store_id", String(Math.trunc(args.storeId)));
+  }
   if (typeof args?.limit === "number") sp.set("limit", String(args.limit));
   if (typeof args?.offset === "number") sp.set("offset", String(args.offset));
   const qs = sp.toString();
-  return qs ? `/oms/fskus?${qs}` : "/oms/fskus";
+  return qs ? `/pms/fskus?${qs}` : "/pms/fskus";
 }
-
-function buildStoreFskusListUrl(args: {
-  storeId: number;
-  query?: string | null;
-  status?: "draft" | "published" | "retired" | null;
-  limit?: number;
-  offset?: number;
-}): string {
-  const sid = Math.trunc(args.storeId);
-  if (!Number.isFinite(sid) || sid <= 0) {
-    throw new Error("storeId 非法：apiListStoreFskus 需要有效 storeId");
-  }
-  const sp = new URLSearchParams();
-  if (args.query && args.query.trim()) sp.set("query", args.query.trim());
-  if (args.status) sp.set("status", args.status);
-  if (typeof args.limit === "number") sp.set("limit", String(args.limit));
-  if (typeof args.offset === "number") sp.set("offset", String(args.offset));
-  const qs = sp.toString();
-  return qs ? `/oms/stores/${sid}/fskus?${qs}` : `/oms/stores/${sid}/fskus`;
-}
-
-// -------- FSKU（终态 C：两类数据源，严禁混用） --------
 
 export async function apiListFskusGlobal(args?: {
   query?: string | null;
@@ -124,8 +95,7 @@ export async function apiListFskusGlobal(args?: {
   limit?: number;
   offset?: number;
 }): Promise<Fsku[]> {
-  const url = buildGlobalFskusListUrl(args);
-  const raw = await apiFetchJson<unknown>(url, { method: "GET" });
+  const raw = await apiFetchJson<unknown>(buildPmsFskusListUrl(args), { method: "GET" });
   return unwrapFskusList(raw);
 }
 
@@ -136,91 +106,62 @@ export async function apiListStoreFskus(args: {
   limit?: number;
   offset?: number;
 }): Promise<Fsku[]> {
-  const url = buildStoreFskusListUrl(args);
-  const raw = await apiFetchJson<unknown>(url, { method: "GET" });
+  const raw = await apiFetchJson<unknown>(
+    buildPmsFskusListUrl({
+      query: args.query,
+      status: args.status,
+      storeId: args.storeId,
+      limit: args.limit,
+      offset: args.offset,
+    }),
+    { method: "GET" },
+  );
   return unwrapFskusList(raw);
 }
 
-// Deprecated：历史兼容（后续可删除）
 export async function apiListFskus(): Promise<Fsku[]> {
   return apiListFskusGlobal();
 }
 
-export async function apiCreateFskuDraft(args: {
-  name: string;
-  shape: "single" | "bundle";
-  code?: string | null;
-  unit_label: string;
-}): Promise<Fsku> {
-  return apiFetchJson<Fsku>("/oms/fskus", {
-    method: "POST",
-    body: JSON.stringify({
-      name: args.name,
-      code: args.code ?? null,
-      shape: args.shape,
-      unit_label: args.unit_label,
-    }),
-  });
-}
-
 export async function apiPatchFskuName(id: number, name: string): Promise<Fsku> {
-  return apiFetchJson<Fsku>(`/oms/fskus/${id}`, {
+  return apiFetchJson<Fsku>(`/pms/fskus/${Math.trunc(id)}`, {
     method: "PATCH",
     body: JSON.stringify({ name }),
   });
 }
 
 export async function apiPublishFsku(id: number): Promise<Fsku> {
-  return apiFetchJson<Fsku>(`/oms/fskus/${id}/publish`, { method: "POST" });
+  return apiFetchJson<Fsku>(`/pms/fskus/${Math.trunc(id)}/publish`, { method: "POST" });
 }
 
 export async function apiRetireFsku(id: number): Promise<Fsku> {
-  return apiFetchJson<Fsku>(`/oms/fskus/${id}/retire`, { method: "POST" });
+  return apiFetchJson<Fsku>(`/pms/fskus/${Math.trunc(id)}/retire`, { method: "POST" });
 }
 
 export async function apiUnretireFsku(id: number): Promise<Fsku> {
-  return apiFetchJson<Fsku>(`/oms/fskus/${id}/unretire`, { method: "POST" });
+  return apiFetchJson<Fsku>(`/pms/fskus/${Math.trunc(id)}/unretire`, { method: "POST" });
 }
 
-export async function apiReplaceFskuComponents(id: number, components: FskuComponent[]): Promise<unknown> {
-  return apiFetchJson<unknown>(`/oms/fskus/${id}/components`, {
-    method: "POST",
-    body: JSON.stringify({ components }),
-  });
+export async function apiCreateFskuDraft(args?: {
+  name?: string;
+  shape?: "single" | "bundle";
+  code?: string | null;
+  unit_label?: string;
+}): Promise<Fsku> {
+  void args;
+  throw new Error("旧 OMS FSKU 创建入口已退役；请使用 PMS「FSKU 组合规则」页面。");
 }
 
-type FskuComponentsReadResp = { components: FskuComponent[] };
+export async function apiReplaceFskuComponents(
+  id: number,
+  components: FskuComponent[],
+): Promise<unknown> {
+  void id;
+  void components;
+  throw new Error("旧 components 手工编辑合同已退役；PMS FSKU 只接受 fsku_expr。");
+}
 
 export async function apiGetFskuComponents(id: number): Promise<FskuComponent[]> {
-  const data = await apiFetchJson<unknown>(`/oms/fskus/${id}/components`, { method: "GET" });
-
-  if (typeof data !== "object" || data === null) {
-    throw new Error(`合同不匹配：GET /oms/fskus/${id}/components 返回 ${kindOf(data)}，期望对象 { components: [...] }`);
-  }
-
-  const compsUnknown = (data as FskuComponentsReadResp).components;
-  if (!Array.isArray(compsUnknown)) {
-    throw new Error(`合同不匹配：GET /oms/fskus/${id}/components.components 返回 ${kindOf(compsUnknown)}，期望 components: []`);
-  }
-
-  const out: FskuComponent[] = [];
-  for (let i = 0; i < compsUnknown.length; i += 1) {
-    const c = compsUnknown[i] as unknown;
-
-    if (typeof c !== "object" || c === null) {
-      throw new Error(`合同不匹配：components[${i}] 返回 ${kindOf(c)}，期望对象`);
-    }
-
-    const itemId = asInt((c as { item_id?: unknown }).item_id);
-    const qty = asInt((c as { qty?: unknown }).qty);
-    const role = asRole((c as { role?: unknown }).role);
-
-    if (itemId == null) throw new Error(`合同不匹配：components[${i}].item_id 非法`);
-    if (qty == null) throw new Error(`合同不匹配：components[${i}].qty 非法（必须为正整数）`);
-    if (role == null) throw new Error(`合同不匹配：components[${i}].role 非法（仅允许 primary/gift）`);
-
-    out.push({ item_id: itemId, qty, role });
-  }
-
-  return out;
+  void id;
+  throw new Error("旧 components 读取合同已退役；请读取 /pms/fskus 的表达式与组件摘要。");
 }

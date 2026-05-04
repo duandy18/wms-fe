@@ -174,6 +174,10 @@ export const SkuCodingGeneratorPage = lazy(
   () => import("../../features/pms/sku-coding/pages/SkuCodingGeneratorPage"),
 );
 
+export const PmsFskuRulesPage = lazy(
+  () => import("../../features/pms/fsku/pages/PmsFskuRulesPage"),
+);
+
 // 系统管理：admin/users
 export const UsersManagePage = lazy(
   () => import("../../features/admin/users/UsersManagePage"),
