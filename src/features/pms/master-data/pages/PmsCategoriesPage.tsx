@@ -51,6 +51,23 @@ function productKindRank(v: ProductKind): number {
   return 3;
 }
 
+function levelLeafText(row: PmsCategory): string {
+  return `第${row.level}级 / ${row.is_leaf ? "叶子分类" : "非叶子分类"}`;
+}
+
+function productKindBadgeCls(v: ProductKind): string {
+  if (v === "FOOD") return "inline-flex rounded bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700";
+  if (v === "SUPPLY") return "inline-flex rounded bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700";
+  return "inline-flex rounded bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600";
+}
+
+function governanceHint(editing: PmsCategory | null, productKind: ProductKind): string {
+  if (editing) {
+    return `编辑态商品类型只读：当前分类属于${productKindLabel(editing.product_kind)}。如果商品类型错误，应新建正确分类、改绑商品后再停用旧分类。`;
+  }
+  return `新增分类会写入${productKindLabel(productKind)}类型；该类型决定商品属性模板范围，并影响 SKU 编码属性段候选。`;
+}
+
 export default function PmsCategoriesPage() {
   const [rows, setRows] = useState<PmsCategory[]>([]);
   const [editing, setEditing] = useState<PmsCategory | null>(null);
@@ -87,7 +104,7 @@ export default function PmsCategoriesPage() {
 
   const parentOptions = useMemo(() => {
     const lv = parseIntOrZero(level);
-    return rows.filter((x) => x.product_kind === productKind && x.level === lv - 1 && x.is_active);
+    return rows.filter((x) => x.product_kind === productKind && x.level === lv - 1 && x.is_active && !x.is_leaf);
   }, [rows, productKind, level]);
 
   function resolveHierarchy(row: PmsCategory): CategoryHierarchy {
@@ -240,7 +257,7 @@ export default function PmsCategoriesPage() {
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">商品分类编码</h1>
         <p className="mt-1 text-sm text-slate-500">
-          维护 PMS 商品分类树和分类编码。商品通常绑定三级叶子分类。
+          维护 PMS 商品分类树、商品类型和分类编码。商品类型决定属性模板范围，并影响 SKU 编码候选；商品通常绑定启用的叶子分类。
         </p>
       </header>
 
@@ -257,11 +274,19 @@ export default function PmsCategoriesPage() {
           <div className="grid gap-3 md:grid-cols-2">
             <label>
               <span className="mb-1 block text-xs text-slate-600">商品类型</span>
-              <select className={`${inputCls} w-full`} value={productKind} disabled={Boolean(editing)} onChange={(e) => setProductKind(e.target.value as ProductKind)}>
+              <select
+                className={`${inputCls} w-full`}
+                value={productKind}
+                disabled={Boolean(editing)}
+                onChange={(e) => setProductKind(e.target.value as ProductKind)}
+              >
                 <option value="FOOD">食品</option>
                 <option value="SUPPLY">用品</option>
                 <option value="OTHER">其他</option>
               </select>
+              <div className="mt-1 text-xs text-slate-500">
+                {editing ? "编辑分类时商品类型只读" : "先选商品类型，再维护对应分类树"}
+              </div>
             </label>
 
             <label>
@@ -282,13 +307,19 @@ export default function PmsCategoriesPage() {
             </label>
           </div>
 
+          <div className="mt-3 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            {governanceHint(editing, productKind)}
+          </div>
+
           {parseIntOrZero(level) > 1 ? (
             <label className="mt-3 block">
               <span className="mb-1 block text-xs text-slate-600">父级分类</span>
               <select className={`${inputCls} w-full`} value={parentId} disabled={Boolean(editing)} onChange={(e) => setParentId(e.target.value)}>
                 <option value="0">请选择父级</option>
                 {parentOptions.map((row) => (
-                  <option key={row.id} value={String(row.id)}>{row.path_code} / {row.category_name}</option>
+                  <option key={row.id} value={String(row.id)}>
+                    {productKindLabel(row.product_kind)} / 第{row.level}级 / {row.path_code} / {row.category_name}
+                  </option>
                 ))}
               </select>
             </label>
@@ -327,6 +358,7 @@ export default function PmsCategoriesPage() {
               <thead className="bg-slate-50 text-xs text-slate-500">
                 <tr>
                   <th className="px-3 py-2">商品类型</th>
+                  <th className="px-3 py-2">层级/叶子</th>
                   <th className="px-3 py-2">一级分类名称</th>
                   <th className="w-[6rem] px-3 py-2">一级代码</th>
                   <th className="px-3 py-2">二级分类名称</th>
@@ -345,7 +377,10 @@ export default function PmsCategoriesPage() {
 
                   return (
                     <tr key={row.id} className="border-t">
-                      <td className="whitespace-nowrap px-3 py-2">{productKindLabel(row.product_kind)}</td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <span className={productKindBadgeCls(row.product_kind)}>{productKindLabel(row.product_kind)}</span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{levelLeafText(row)}</td>
                       <td className="whitespace-nowrap px-3 py-2">{categoryName(hierarchy.level1)}</td>
                       <td className="px-3 py-2 font-mono text-xs"><span className="inline-block max-w-[6rem] truncate align-bottom" title={categoryCode(hierarchy.level1)}>{categoryCode(hierarchy.level1)}</span></td>
                       <td className="whitespace-nowrap px-3 py-2">{categoryName(hierarchy.level2)}</td>
@@ -370,7 +405,7 @@ export default function PmsCategoriesPage() {
                   );
                 })}
                 {sorted.length === 0 ? (
-                  <tr><td colSpan={11} className="px-3 py-8 text-center text-slate-400">暂无商品分类编码</td></tr>
+                  <tr><td colSpan={12} className="px-3 py-8 text-center text-slate-400">暂无商品分类编码</td></tr>
                 ) : null}
               </tbody>
             </table>
