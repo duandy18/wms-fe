@@ -3,7 +3,7 @@
 import type { Item } from "../../../../contracts/item/contract";
 import type { ItemListRow } from "../contracts/itemList";
 
-export type EnabledFilter = "all" | "enabled" | "disabled";
+export type EnabledFilter = "all" | "enabled" | "disabled" | "incomplete";
 
 export type ItemsState = {
   /**

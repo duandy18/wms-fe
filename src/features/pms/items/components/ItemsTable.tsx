@@ -30,6 +30,9 @@ export const ItemsTable: React.FC = () => {
   const rows = useMemo(() => {
     if (filter === "enabled") return listRows.filter((i) => i.enabled);
     if (filter === "disabled") return listRows.filter((i) => !i.enabled);
+    if (filter === "incomplete") {
+      return listRows.filter((i) => i.completeness.status !== "COMPLETE");
+    }
     return listRows;
   }, [listRows, filter]);
 
