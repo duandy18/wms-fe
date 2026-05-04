@@ -1,6 +1,7 @@
 // src/features/pms/items/components/edit/ItemSkuCodesGovernanceSection.tsx
 import React from "react";
 import type { ItemSkuCode, ItemSkuCodeType } from "../../api/itemSkuCodesOwnerApi";
+import { generateSkuCodeFromItem, type SkuGenerateData } from "../../../sku-coding/api/skuCodingApi";
 import { useItemSkuCodesGovernanceModel } from "./useItemSkuCodesGovernanceModel";
 
 function typeLabel(t: ItemSkuCodeType): string {
@@ -26,6 +27,14 @@ function dateText(v?: string | null): string {
   return String(v).slice(0, 10);
 }
 
+function errorText(e: unknown, fallback: string): string {
+  return e instanceof Error && e.message ? e.message : fallback;
+}
+
+function generatedSegmentText(data: SkuGenerateData): string {
+  return data.segments.map((segment) => `${segment.segment_key}:${segment.code}`).join(" / ");
+}
+
 const inputCls = "rounded border border-slate-300 bg-white px-3 py-2 text-sm";
 const btnCls = "rounded border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60";
 const primaryBtnCls = "rounded bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-60";
@@ -39,6 +48,29 @@ export const ItemSkuCodesGovernanceSection: React.FC<{
 }> = ({ itemId, currentSku, disabled = false, onChanged }) => {
   const m = useItemSkuCodesGovernanceModel({ itemId, currentSku, onChanged });
   const busy = disabled || m.saving || m.loading;
+  const [generatedSku, setGeneratedSku] = React.useState<SkuGenerateData | null>(null);
+  const [generateError, setGenerateError] = React.useState<string | null>(null);
+  const [generatingSku, setGeneratingSku] = React.useState(false);
+
+  async function handleGenerateFromItem() {
+    setGeneratingSku(true);
+    setGenerateError(null);
+    setGeneratedSku(null);
+
+    try {
+      setGeneratedSku(await generateSkuCodeFromItem(itemId));
+    } catch (e) {
+      setGenerateError(errorText(e, "根据当前商品属性生成 SKU 失败"));
+    } finally {
+      setGeneratingSku(false);
+    }
+  }
+
+  function fillGeneratedSkuToPrimaryInput() {
+    if (!generatedSku?.sku) return;
+    m.setPrimaryCode(generatedSku.sku);
+    m.setPrimaryRemark("根据当前商品属性生成候选 SKU 后切换");
+  }
 
   return (
     <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -67,6 +99,58 @@ export const ItemSkuCodesGovernanceSection: React.FC<{
           {m.banner.text}
         </div>
       ) : null}
+
+      <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-xs font-semibold text-slate-700">根据当前商品属性生成候选 SKU</div>
+            <p className="mt-1 text-xs text-slate-500">
+              从当前商品真实品牌、分类、规格和已保存的 SKU 段属性值生成候选 SKU；最终是否切换主 SKU 仍需人工确认。
+            </p>
+          </div>
+          <button
+            type="button"
+            className={btnCls}
+            onClick={() => void handleGenerateFromItem()}
+            disabled={busy || generatingSku}
+          >
+            {generatingSku ? "生成中…" : "根据当前商品生成"}
+          </button>
+        </div>
+
+        {generateError ? (
+          <div className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {generateError}
+          </div>
+        ) : null}
+
+        {generatedSku ? (
+          <div className="mt-3 space-y-2 rounded border border-slate-200 bg-slate-50 px-3 py-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="text-xs text-slate-500">候选 SKU</div>
+                <div className="mt-1 break-all font-mono text-sm font-semibold text-slate-900">
+                  {generatedSku.sku}
+                </div>
+              </div>
+              <button
+                type="button"
+                className={primaryBtnCls}
+                onClick={fillGeneratedSkuToPrimaryInput}
+                disabled={busy}
+              >
+                填入主 SKU 切换框
+              </button>
+            </div>
+            <div className={generatedSku.exists ? "text-xs text-red-600" : "text-xs text-emerald-700"}>
+              {generatedSku.exists ? "该 SKU 已存在，请谨慎切换。" : "未发现同码商品。"}
+            </div>
+            <div className="break-all text-[11px] text-slate-500">
+              {generatedSegmentText(generatedSku)}
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div className="rounded-lg border border-slate-200 bg-white p-3">
