@@ -1,5 +1,36 @@
 // src/features/pms/items/contracts/itemList.ts
 
+export type ItemCompletenessStatus = "COMPLETE" | "WARNING" | "BLOCKED";
+export type ItemCompletenessProductKind = "FOOD" | "SUPPLY" | "OTHER";
+
+export type ItemCompleteness = {
+  status: ItemCompletenessStatus;
+  is_complete: boolean;
+
+  product_kind: ItemCompletenessProductKind | null;
+
+  has_brand: boolean;
+  has_active_leaf_category: boolean;
+  has_base_uom: boolean;
+  has_active_primary_barcode: boolean;
+  has_active_primary_sku: boolean;
+
+  item_required_attributes_complete: boolean;
+  sku_required_attributes_complete: boolean;
+  sku_segment_attributes_present: boolean;
+
+  sku_generation_applicable: boolean;
+  can_generate_sku: boolean;
+
+  missing_item_required_attribute_codes: string[];
+  missing_sku_required_attribute_codes: string[];
+  missing_sku_segment_attribute_codes: string[];
+
+  missing_items: string[];
+  blocking_items: string[];
+  warnings: string[];
+};
+
 export type ItemListRow = {
   item_id: number;
   sku: string;
@@ -27,6 +58,8 @@ export type ItemListRow = {
   barcode_count: number;
   sku_code_count: number;
   attribute_count: number;
+
+  completeness: ItemCompleteness;
 
   updated_at: string | null;
 };

@@ -92,30 +92,37 @@ function buildFlowStatuses(args: {
     };
   }
 
-  const detail = args.detail;
-  const uoms = detail?.uoms ?? [];
-  const barcodes = detail?.barcodes ?? [];
-  const skuCodes = detail?.sku_codes ?? [];
-  const attributes = detail?.attributes ?? [];
+  const completeness = args.detail?.row.completeness;
+  if (!completeness) {
+    const error: FlowStatus = { text: "完整度读取失败", tone: "error" };
+    return {
+      item: { text: "已进入编辑流程", tone: "done" },
+      uom: error,
+      barcode: error,
+      sku: error,
+      attributes: error,
+    };
+  }
 
-  const hasBaseUom = uoms.some((row) => row.is_base);
-  const hasPrimaryBarcode = barcodes.some((row) => row.is_primary && row.active);
-  const hasPrimarySku = skuCodes.some((row) => row.is_primary && row.is_active);
+  const attributesStatus: FlowStatus =
+    !completeness.item_required_attributes_complete || !completeness.sku_required_attributes_complete
+      ? { text: "待完善：补充必填属性", tone: "warning" }
+      : !completeness.sku_segment_attributes_present
+        ? { text: "建议完善：补充 SKU 段属性", tone: "warning" }
+        : { text: "必填属性已完整", tone: "done" };
 
   return {
     item: { text: "已创建商品本体", tone: "done" },
-    uom: hasBaseUom
+    uom: completeness.has_base_uom
       ? { text: "已维护基础包装", tone: "done" }
       : { text: "待完善：先维护基础包装", tone: "warning" },
-    barcode: hasPrimaryBarcode
+    barcode: completeness.has_active_primary_barcode
       ? { text: "已绑定主条码", tone: "done" }
       : { text: "待完善：至少绑定一个主条码", tone: "warning" },
-    sku: hasPrimarySku
+    sku: completeness.has_active_primary_sku
       ? { text: "已维护主 SKU", tone: "done" }
       : { text: "待完善：维护主 SKU", tone: "warning" },
-    attributes: attributes.length > 0
-      ? { text: `已维护 ${attributes.length} 项`, tone: "done" }
-      : { text: "待完善：补充商品属性", tone: "warning" },
+    attributes: attributesStatus,
   };
 }
 
