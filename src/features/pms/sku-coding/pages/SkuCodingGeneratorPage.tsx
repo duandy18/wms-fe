@@ -182,7 +182,7 @@ export default function SkuCodingGeneratorPage() {
         throw new Error("clipboard unavailable");
       }
       await navigator.clipboard.writeText(result.sku);
-      setCopyHint("SKU 已复制，可粘贴到商品表单。");
+      setCopyHint("候选 SKU 已复制，可粘贴到商品创建或商品编辑流程中人工确认。");
       setError(null);
     } catch {
       setCopyHint(null);
@@ -193,9 +193,9 @@ export default function SkuCodingGeneratorPage() {
   return (
     <div className="space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-900">SKU 编码</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">SKU 编码工具</h1>
         <p className="mt-1 text-sm text-slate-500">
-          根据品牌、商品分类、属性模板预设选项和规格生成候选 SKU。属性段统一使用「属性模板」里的预设选项。
+          用于预演 SKU 编码规则并生成候选 SKU。商品真实主 SKU 仍以商品编辑流程中的人工确认为准。
         </p>
       </header>
 
@@ -321,7 +321,7 @@ export default function SkuCodingGeneratorPage() {
               disabled={generating || loading}
               className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {generating ? "生成中..." : "生成 SKU"}
+              {generating ? "生成中..." : "生成候选 SKU"}
             </button>
             <span className="text-xs text-slate-500">
               {productKindLabel(productKind)}模板：SKU-[品牌]-[分类]-[属性选项]-[规格]
@@ -330,9 +330,9 @@ export default function SkuCodingGeneratorPage() {
         </form>
 
         <aside className={cardCls}>
-          <div className={skuResultCardTitleCls}>生成 SKU</div>
+          <div className={skuResultCardTitleCls}>候选 SKU</div>
           <p className="mt-1 text-xs text-slate-500">
-            候选 SKU 需要人工确认，最终仍由商品管理页创建商品。
+            本页只做编码规则预演；候选 SKU 需要复制到商品创建或编辑流程中人工确认。
           </p>
 
           {result ? (
@@ -404,7 +404,7 @@ export default function SkuCodingGeneratorPage() {
             </div>
           ) : (
             <div className="mt-4 rounded-lg border border-dashed border-slate-300 px-3 py-8 text-center text-sm text-slate-400">
-              填写左侧字段后生成 SKU。
+              填写左侧字段后生成候选 SKU。
             </div>
           )}
         </aside>
