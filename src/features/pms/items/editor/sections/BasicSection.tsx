@@ -7,13 +7,26 @@ import {
   fetchPmsCategories,
   type PmsBrand,
   type PmsCategory,
+  type ProductKind,
 } from "../../../master-data/api/masterDataApi";
 
 const FieldError: React.FC<{ msg?: string }> = ({ msg }) =>
   msg ? <div className="mt-1 text-xs text-red-600">{msg}</div> : null;
 
+function productKindLabel(v: ProductKind): string {
+  if (v === "FOOD") return "食品";
+  if (v === "SUPPLY") return "用品";
+  return "其他";
+}
+
+function productKindRank(v: ProductKind): number {
+  if (v === "FOOD") return 1;
+  if (v === "SUPPLY") return 2;
+  return 3;
+}
+
 function optionLabelForCategory(category: PmsCategory): string {
-  return `${category.path_code} / ${category.category_name}`;
+  return `${productKindLabel(category.product_kind)} / ${category.path_code} / ${category.category_name}`;
 }
 
 const BasicSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
@@ -60,8 +73,17 @@ const BasicSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
     () =>
       categories
         .filter((x) => x.is_leaf && x.is_active)
-        .sort((a, b) => a.path_code.localeCompare(b.path_code)),
+        .sort(
+          (a, b) =>
+            productKindRank(a.product_kind) - productKindRank(b.product_kind) ||
+            a.path_code.localeCompare(b.path_code),
+        ),
     [categories],
+  );
+
+  const selectedCategory = useMemo(
+    () => leafCategories.find((category) => String(category.id) === form.category_id) ?? null,
+    [leafCategories, form.category_id],
   );
 
   return (
@@ -144,6 +166,11 @@ const BasicSection: React.FC<{ vm: ItemEditorVm }> = ({ vm }) => {
             ))}
           </select>
           <FieldError msg={fieldErrors.category_id} />
+          <div className="mt-1 text-xs text-slate-500">
+            {selectedCategory
+              ? `当前分类类型：${productKindLabel(selectedCategory.product_kind)}；将加载通用属性 + ${productKindLabel(selectedCategory.product_kind)}属性。`
+              : "分类决定商品属性模板范围，并影响 SKU 编码候选。"}
+          </div>
         </div>
       </div>
     </div>
