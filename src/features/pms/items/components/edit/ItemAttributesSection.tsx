@@ -159,10 +159,18 @@ export const ItemAttributesSection: React.FC<{
   itemId: number;
   categoryId?: number | null;
   disabled?: boolean;
-}> = ({ itemId, categoryId, disabled = false }) => {
+  onSaved?: () => Promise<void> | void;
+}> = ({ itemId, categoryId, disabled = false, onSaved }) => {
   const m = useItemAttributesModel({ itemId, categoryId });
   const busy = disabled || m.loading || m.saving;
   const groups = groupedDefs(m.defs);
+
+  async function handleSave() {
+    const ok = await m.save();
+    if (ok) {
+      await onSaved?.();
+    }
+  }
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
@@ -178,7 +186,7 @@ export const ItemAttributesSection: React.FC<{
           <button type="button" className={btnCls} onClick={() => void m.refresh()} disabled={busy}>
             刷新属性
           </button>
-          <button type="button" className={primaryBtnCls} onClick={() => void m.save()} disabled={busy || m.defs.length === 0}>
+          <button type="button" className={primaryBtnCls} onClick={() => void handleSave()} disabled={busy || m.defs.length === 0}>
             {m.saving ? "保存中…" : "保存属性"}
           </button>
         </div>
