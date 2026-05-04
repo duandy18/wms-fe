@@ -581,6 +581,15 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
+            path="pms/fskus"
+            element={
+              <RequirePermission permission="page.pms.read">
+                <P.PmsFskuRulesPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
             path="suppliers"
             element={
               <RequirePermission permission="page.pms.read">
