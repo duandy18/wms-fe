@@ -58,14 +58,11 @@ vi.mock("../lazyPages", () => {
     OutboundManualDocsPage: page("OutboundManualDocsPage mock view"),
     OutboundManualPage: page("OutboundManualPage mock view"),
     OmsPddPlatformOrderMirrorPage: page("OmsPddPlatformOrderMirrorPage mock view"),
-    OmsPddFskuMappingPage: page("OmsPddFskuMappingPage mock view"),
-    OmsPddFulfillmentOrderConversionPage: page("OmsPddFulfillmentOrderConversionPage mock view"),
+    OmsPddCodeMappingPage: page("OmsPddCodeMappingPage mock view"),
     OmsTaobaoPlatformOrderMirrorPage: page("OmsTaobaoPlatformOrderMirrorPage mock view"),
-    OmsTaobaoFskuMappingPage: page("OmsTaobaoFskuMappingPage mock view"),
-    OmsTaobaoFulfillmentOrderConversionPage: page("OmsTaobaoFulfillmentOrderConversionPage mock view"),
+    OmsTaobaoCodeMappingPage: page("OmsTaobaoCodeMappingPage mock view"),
     OmsJdPlatformOrderMirrorPage: page("OmsJdPlatformOrderMirrorPage mock view"),
-    OmsJdFskuMappingPage: page("OmsJdFskuMappingPage mock view"),
-    OmsJdFulfillmentOrderConversionPage: page("OmsJdFulfillmentOrderConversionPage mock view"),
+    OmsJdCodeMappingPage: page("OmsJdCodeMappingPage mock view"),
 
     AnalyticsPage: page("AnalyticsPage mock view"),
 
@@ -103,7 +100,7 @@ vi.mock("../lazyPages", () => {
     PmsAttributeDefsPage: page("PmsAttributeDefsPage mock view"),
     PmsItemUomsPage: page("PmsItemUomsPage mock view"),
     SkuCodingGeneratorPage: page("SkuCodingGeneratorPage mock view"),
-    PmsFskuRulesPage: page("PmsFskuRulesPage mock view"),
+    OmsFskuRulesPage: page("OmsFskuRulesPage mock view"),
     SuppliersListPage: page("SuppliersListPage mock view"),
 
     ShippingProvidersListPage: page("ShippingProvidersListPage mock view"),
@@ -257,14 +254,9 @@ describe("AppRouter inventory routes", () => {
     expect(await screen.findByText("OmsPddPlatformOrderMirrorPage mock view")).toBeInTheDocument();
   });
 
-  it("renders OmsPddFskuMappingPage on /oms/pdd/fsku-mapping", async () => {
-    renderWithRoute("/oms/pdd/fsku-mapping");
-    expect(await screen.findByText("OmsPddFskuMappingPage mock view")).toBeInTheDocument();
-  });
-
-  it("renders OmsPddFulfillmentOrderConversionPage on /oms/pdd/fulfillment-order-conversion", async () => {
-    renderWithRoute("/oms/pdd/fulfillment-order-conversion");
-    expect(await screen.findByText("OmsPddFulfillmentOrderConversionPage mock view")).toBeInTheDocument();
+  it("renders OmsPddCodeMappingPage on /oms/pdd/code-mapping", async () => {
+    renderWithRoute("/oms/pdd/code-mapping");
+    expect(await screen.findByText("OmsPddCodeMappingPage mock view")).toBeInTheDocument();
   });
 
   it("renders OmsTaobaoPlatformOrderMirrorPage on /oms/taobao", async () => {
@@ -350,11 +342,27 @@ describe("AppRouter inventory routes", () => {
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
-  it("renders PmsFskuRulesPage on /pms/fskus", async () => {
-    renderWithRoute("/pms/fskus");
+  it("renders OmsFskuRulesPage on /oms/fskus", async () => {
+    renderWithRoute("/oms/fskus");
     expect(
-      await screen.findByText("PmsFskuRulesPage mock view"),
+      await screen.findByText("OmsFskuRulesPage mock view"),
     ).toBeInTheDocument();
+  });
+
+
+  it("falls back to /inventory after old OMS fulfillment conversion route /oms/pdd/fulfillment-order-conversion is retired", async () => {
+    renderWithRoute("/oms/pdd/fulfillment-order-conversion");
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
+  });
+
+  it("falls back to /inventory after old OMS fulfillment conversion route /oms/taobao/fulfillment-order-conversion is retired", async () => {
+    renderWithRoute("/oms/taobao/fulfillment-order-conversion");
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
+  });
+
+  it("falls back to /inventory after old OMS fulfillment conversion route /oms/jd/fulfillment-order-conversion is retired", async () => {
+    renderWithRoute("/oms/jd/fulfillment-order-conversion");
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
   it("falls back to /inventory for unknown route", async () => {

@@ -202,18 +202,10 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="oms/pdd/fsku-mapping"
+            path="oms/pdd/code-mapping"
             element={
               <RequirePermission permission="page.oms.read">
-                <P.OmsPddFskuMappingPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/pdd/fulfillment-order-conversion"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsPddFulfillmentOrderConversionPage />
+                <P.OmsPddCodeMappingPage />
               </RequirePermission>
             }
           />
@@ -235,18 +227,10 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="oms/taobao/fsku-mapping"
+            path="oms/taobao/code-mapping"
             element={
               <RequirePermission permission="page.oms.read">
-                <P.OmsTaobaoFskuMappingPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/taobao/fulfillment-order-conversion"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsTaobaoFulfillmentOrderConversionPage />
+                <P.OmsTaobaoCodeMappingPage />
               </RequirePermission>
             }
           />
@@ -268,18 +252,10 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="oms/jd/fsku-mapping"
+            path="oms/jd/code-mapping"
             element={
               <RequirePermission permission="page.oms.read">
-                <P.OmsJdFskuMappingPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/jd/fulfillment-order-conversion"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsJdFulfillmentOrderConversionPage />
+                <P.OmsJdCodeMappingPage />
               </RequirePermission>
             }
           />
@@ -581,10 +557,10 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="pms/fskus"
+            path="oms/fskus"
             element={
-              <RequirePermission permission="page.pms.read">
-                <P.PmsFskuRulesPage />
+              <RequirePermission permission="page.oms.read">
+                <P.OmsFskuRulesPage />
               </RequirePermission>
             }
           />

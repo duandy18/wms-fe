@@ -89,35 +89,3 @@ export type StoreLite = {
   store_name: string;
 };
 
-export type MerchantCodeBindingRow = {
-  id: number;
-  platform: string;
-  store_code: string;
-
-  store: StoreLite;
-
-  merchant_code: string;
-  fsku_id: number;
-  fsku: FskuLite;
-
-  reason: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type MerchantCodeBindingsList = {
-  items: MerchantCodeBindingRow[];
-  total: number;
-  limit: number;
-  offset: number;
-};
-
-export type MerchantCodeBindingsListResp = {
-  ok: boolean;
-  data: MerchantCodeBindingsList;
-};
-
-export type MerchantCodeBindResp = {
-  ok: boolean;
-  data: MerchantCodeBindingRow;
-};

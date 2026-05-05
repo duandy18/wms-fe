@@ -1,18 +1,18 @@
-// src/features/pms/fsku/pages/PmsFskuRulesPage.tsx
+// src/features/oms/fsku-rules/pages/OmsFskuRulesPage.tsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { fetchItemListRows } from "../../items/api/itemListOwnerApi";
-import type { ItemListRow } from "../../items/contracts/itemList";
+import { fetchItemListRows } from "../../../pms/items/api/itemListOwnerApi";
+import type { ItemListRow } from "../../../pms/items/contracts/itemList";
 import {
-  createPmsFskuDraft,
-  getPmsFskuDetail,
-  listPmsFskus,
-  patchPmsFskuName,
-  publishPmsFsku,
-  replacePmsFskuExpression,
-  retirePmsFsku,
+  createOmsFskuDraft,
+  getOmsFskuDetail,
+  listOmsFskus,
+  patchOmsFskuName,
+  publishOmsFsku,
+  replaceOmsFskuExpression,
+  retireOmsFsku,
 } from "../api/fskuApi";
-import type { PmsFskuDetail, PmsFskuListItem, PmsFskuStatus } from "../types";
+import type { OmsFskuDetail, OmsFskuListItem, OmsFskuStatus } from "../types";
 
 type Banner = { kind: "success" | "error"; text: string } | null;
 
@@ -66,13 +66,13 @@ function formatDecimal(value: number | string): string {
   return String(n);
 }
 
-function statusLabel(status: PmsFskuStatus): string {
+function statusLabel(status: OmsFskuStatus): string {
   if (status === "draft") return "草稿";
   if (status === "published") return "已发布";
   return "已归档";
 }
 
-function statusCls(status: PmsFskuStatus): string {
+function statusCls(status: OmsFskuStatus): string {
   if (status === "draft") return "border-amber-200 bg-amber-50 text-amber-700";
   if (status === "published") return "border-emerald-200 bg-emerald-50 text-emerald-700";
   return "border-slate-200 bg-slate-50 text-slate-500";
@@ -111,15 +111,15 @@ function makeEmptyComponent(): DraftComponent {
   };
 }
 
-export default function PmsFskuRulesPage() {
+export default function OmsFskuRulesPage() {
   const [skuRows, setSkuRows] = useState<ItemListRow[]>([]);
-  const [fskuRows, setFskuRows] = useState<PmsFskuListItem[]>([]);
-  const [detailByFskuId, setDetailByFskuId] = useState<Record<number, PmsFskuDetail>>({});
+  const [fskuRows, setFskuRows] = useState<OmsFskuListItem[]>([]);
+  const [detailByFskuId, setDetailByFskuId] = useState<Record<number, OmsFskuDetail>>({});
   const [expandedFskuId, setExpandedFskuId] = useState<number | null>(null);
   const [detailLoadingId, setDetailLoadingId] = useState<number | null>(null);
   const [total, setTotal] = useState(0);
 
-  const [statusFilter, setStatusFilter] = useState<PmsFskuStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<OmsFskuStatus | "all">("all");
   const [query, setQuery] = useState("");
 
   const [name, setName] = useState("");
@@ -158,7 +158,7 @@ export default function PmsFskuRulesPage() {
     setBanner(null);
 
     try {
-      const data = await listPmsFskus({
+      const data = await listOmsFskus({
         query,
         status: statusFilter,
         limit: 200,
@@ -192,7 +192,7 @@ export default function PmsFskuRulesPage() {
     setComponents([makeEmptyComponent()]);
   }
 
-  function selectFsku(row: PmsFskuListItem): void {
+  function selectFsku(row: OmsFskuListItem): void {
     setSelectedFskuId(row.id);
     setName(row.name);
     setCode(row.code);
@@ -200,7 +200,7 @@ export default function PmsFskuRulesPage() {
     setBanner(null);
   }
 
-  async function toggleFskuDetail(row: PmsFskuListItem): Promise<void> {
+  async function toggleFskuDetail(row: OmsFskuListItem): Promise<void> {
     if (expandedFskuId === row.id) {
       setExpandedFskuId(null);
       return;
@@ -216,7 +216,7 @@ export default function PmsFskuRulesPage() {
     setBanner(null);
 
     try {
-      const detail = await getPmsFskuDetail(row.id);
+      const detail = await getOmsFskuDetail(row.id);
       setDetailByFskuId((prev) => ({
         ...prev,
         [row.id]: detail,
@@ -265,13 +265,13 @@ export default function PmsFskuRulesPage() {
 
     try {
       if (selectedFsku && selectedFsku.status === "draft") {
-        await replacePmsFskuExpression(selectedFsku.id, { fsku_expr: expr });
+        await replaceOmsFskuExpression(selectedFsku.id, { fsku_expr: expr });
         if (nm !== selectedFsku.name) {
-          await patchPmsFskuName(selectedFsku.id, nm);
+          await patchOmsFskuName(selectedFsku.id, nm);
         }
         setBanner({ kind: "success", text: `草稿已更新：#${selectedFsku.id}` });
       } else {
-        const created = await createPmsFskuDraft({
+        const created = await createOmsFskuDraft({
           name: nm,
           code: code.trim() || null,
           shape,
@@ -289,14 +289,14 @@ export default function PmsFskuRulesPage() {
     }
   }
 
-  async function publishRow(row: PmsFskuListItem): Promise<void> {
+  async function publishRow(row: OmsFskuListItem): Promise<void> {
     if (row.status !== "draft") return;
 
     setSaving(true);
     setBanner(null);
 
     try {
-      await publishPmsFsku(row.id);
+      await publishOmsFsku(row.id);
       setBanner({ kind: "success", text: `FSKU 已发布：#${row.id}` });
       await loadFskus();
     } catch (err) {
@@ -306,7 +306,7 @@ export default function PmsFskuRulesPage() {
     }
   }
 
-  async function retireRow(row: PmsFskuListItem): Promise<void> {
+  async function retireRow(row: OmsFskuListItem): Promise<void> {
     if (row.status !== "published") return;
 
     const ok = window.confirm(`确认归档 FSKU「${row.code}」？已绑定店铺商品代码时后端会拒绝。`);
@@ -316,7 +316,7 @@ export default function PmsFskuRulesPage() {
     setBanner(null);
 
     try {
-      await retirePmsFsku(row.id);
+      await retireOmsFsku(row.id);
       setBanner({ kind: "success", text: `FSKU 已归档：#${row.id}` });
       await loadFskus();
     } catch (err) {
@@ -331,7 +331,7 @@ export default function PmsFskuRulesPage() {
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">FSKU 组合规则</h1>
         <p className="mt-1 text-sm text-slate-500">
-          FSKU 属于 PMS 商品主数据。页面只维护表达式：仓库 SKU × 数量 × 分摊单价；后端负责解析表达式并生成组件快照。
+          FSKU 属于 OMS 销售规格主数据；组件引用 PMS 商品 / SKU / 包装单位。页面只维护表达式：仓库 SKU × 数量 × 分摊单价；后端负责解析表达式并生成组件快照。
         </p>
       </header>
 
@@ -350,7 +350,7 @@ export default function PmsFskuRulesPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">编辑区：选择 SKU 生成 FSKU</h2>
+            <h2 className="text-base font-semibold text-slate-900">编辑区：选择仓库 SKU 生成 FSKU</h2>
             <p className="mt-1 text-xs text-slate-500">
               示例：SKU123*2*0.15 + SKU456*3*0.20。0.15 / 0.20 表示该 SKU 在 FSKU 中的分摊单价。
             </p>
@@ -490,8 +490,8 @@ export default function PmsFskuRulesPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">列表区：FSKU 对应 SKU 组合</h2>
-            <p className="mt-1 text-xs text-slate-500">草稿可继续编辑表达式；已发布只能归档；已归档只读。</p>
+            <h2 className="text-base font-semibold text-slate-900">列表区：销售规格 FSKU → 仓库 SKU 组合</h2>
+            <p className="mt-1 text-xs text-slate-500">草稿可继续编辑表达式；已发布可被订单解析引用，只能归档；已归档只读。</p>
           </div>
 
           <div className="flex flex-wrap items-end gap-2">
@@ -500,7 +500,7 @@ export default function PmsFskuRulesPage() {
               <select
                 className={inputCls}
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as PmsFskuStatus | "all")}
+                onChange={(e) => setStatusFilter(e.target.value as OmsFskuStatus | "all")}
               >
                 <option value="all">全部</option>
                 <option value="draft">草稿</option>

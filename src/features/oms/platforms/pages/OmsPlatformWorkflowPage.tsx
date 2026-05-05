@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-import { FskuMappingStage } from "../components/FskuMappingStage";
-import { FulfillmentConversionStage } from "../components/FulfillmentConversionStage";
+import { CodeMappingStage } from "../components/CodeMappingStage";
+import { OrderSkuResolutionCard } from "../components/OrderSkuResolutionCard";
 
 import {
   getPlatformOrderMirrorDetail,
@@ -16,8 +16,7 @@ type PlatformKey = OmsPlatformKey;
 
 type StageKey =
   | "platform_order_mirror"
-  | "fsku_mapping"
-  | "fulfillment_order_conversion";
+  | "code_mapping";
 
 const PLATFORM_LABELS: Record<PlatformKey, string> = {
   pdd: "拼多多",
@@ -389,7 +388,7 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
         </details>
       </div>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <section className="grid gap-6 xl:grid-cols-[minmax(520px,1fr)_380px_minmax(560px,1.15fr)]">
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
@@ -526,6 +525,15 @@ const MirrorListStage: React.FC<{ platform: PlatformKey }> = ({ platform }) => {
             <p className="mt-4 text-sm text-slate-500">请选择一条镜像记录。</p>
           )}
         </aside>
+
+        {selected ? (
+          <OrderSkuResolutionCard platform={platform} mirrorId={selected.id} />
+        ) : (
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <h2 className="text-lg font-semibold text-slate-950">订单 SKU 映射</h2>
+            <p className="mt-4 text-sm text-slate-500">请选择一条镜像记录。</p>
+          </section>
+        )}
       </section>
     </section>
   );
@@ -537,14 +545,11 @@ export const OmsPlatformWorkflowPage: React.FC<OmsPlatformWorkflowPageProps> = (
 }) => {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-6 text-slate-900">
-      <section className="mx-auto max-w-7xl space-y-6">
+      <section className="mx-auto w-full max-w-none space-y-6">
         {stage === "platform_order_mirror" ? (
           <MirrorListStage platform={platform} />
         ) : null}
-        {stage === "fsku_mapping" ? <FskuMappingStage platform={platform} /> : null}
-        {stage === "fulfillment_order_conversion" ? (
-          <FulfillmentConversionStage platform={platform} />
-        ) : null}
+        {stage === "code_mapping" ? <CodeMappingStage platform={platform} /> : null}
       </section>
     </main>
   );

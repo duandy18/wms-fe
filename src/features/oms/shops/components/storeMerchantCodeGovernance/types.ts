@@ -1,6 +1,7 @@
 // src/features/oms/shops/components/storeMerchantCodeGovernance/types.ts
 
-import type { Fsku, MerchantCodeBindingRow, Platform } from "../../../fsku/types";
+import type { Fsku, Platform } from "../../../fsku/types";
+import type { PlatformCodeMappingRow } from "../../../fsku/api_platform_code_mappings";
 
 export type Banner = { kind: "success" | "error"; message: string } | null;
 
@@ -18,7 +19,7 @@ export type GovernanceProps = {
   canWrite: boolean;
 };
 
-export type CurrentBindingsIndex = Map<string, MerchantCodeBindingRow>;
+export type CurrentBindingsIndex = Map<string, PlatformCodeMappingRow>;
 
 export type GovernanceActions = {
   refreshFskus: () => Promise<void>;

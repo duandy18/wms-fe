@@ -1,7 +1,8 @@
 // src/features/oms/shops/components/storeMerchantCodeGovernance/StoreMerchantCodeFskuGovernanceTable.tsx
 
 import React, { useMemo } from "react";
-import type { Fsku, MerchantCodeBindingRow } from "../../../fsku/types";
+import type { Fsku } from "../../../fsku/types";
+import type { PlatformCodeMappingRow } from "../../../fsku/api_platform_code_mappings";
 import type { CurrentBindingsIndex, RowState } from "./types";
 
 function splitComponentsSummaryText(raw: string): string[] {
@@ -49,18 +50,18 @@ export const StoreMerchantCodeFskuGovernanceTable: React.FC<{
   onMerchantCodeChange,
   onCloseByMerchantCode,
 }) => {
-  // ✅ 顺化：解绑目标必须来自“绑定事实”，而不是输入框
-  // current-only（一码一对一）下，merchant_code ↔ fsku_id 可做反向索引
+  // ✅ 顺化：解除映射目标必须来自“映射关系”，而不是输入框
+  // current-only（一码一对一）下，平台编码 ↔ fsku_id 可做反向索引
   const currentByFskuId = useMemo(() => {
-    const m = new Map<number, MerchantCodeBindingRow>();
+    const m = new Map<number, PlatformCodeMappingRow>();
     for (const r of currentByMerchantCode.values()) {
-      // 一码一对一：同一 fsku_id 理论上不会出现多个 merchant_code；如出现，保留最后一个（但这本身是脏数据，后端应护栏）
+      // 一码一对一：同一 fsku_id 理论上不会出现多个 平台编码；如出现，保留最后一个（但这本身是脏数据，后端应护栏）
       m.set(Number(r.fsku_id), r);
     }
     return m;
   }, [currentByMerchantCode]);
 
-  function isAlreadyBoundToThisFsku(f: Fsku, binding?: MerchantCodeBindingRow): boolean {
+  function isAlreadyBoundToThisFsku(f: Fsku, binding?: PlatformCodeMappingRow): boolean {
     return !!binding && Number(binding.fsku_id) === f.id;
   }
 
@@ -74,8 +75,8 @@ export const StoreMerchantCodeFskuGovernanceTable: React.FC<{
             <th className="px-3 py-2 text-left">FSKU.code</th>
             <th className="px-3 py-2 text-left">FSKU.name</th>
             <th className="px-3 py-2 text-left">组件（主数据商品名）</th>
-            <th className="px-3 py-2 text-left">店铺商品代码（merchant_code）</th>
-            <th className="px-3 py-2 text-left">当前绑定</th>
+            <th className="px-3 py-2 text-left">店铺商品代码（平台编码）</th>
+            <th className="px-3 py-2 text-left">当前映射</th>
             <th className="px-3 py-2 text-left">操作</th>
           </tr>
         </thead>
@@ -93,7 +94,7 @@ export const StoreMerchantCodeFskuGovernanceTable: React.FC<{
 
               const mcDraft = (s.merchantCode || "").trim();
 
-              // ✅ 当前绑定事实（按 fsku_id 反查）
+              // ✅ 当前映射关系（按 fsku_id 反查）
               const binding = currentByFskuId.get(f.id);
               const already = isAlreadyBoundToThisFsku(f, binding);
 
@@ -101,7 +102,7 @@ export const StoreMerchantCodeFskuGovernanceTable: React.FC<{
               const compLines = splitComponentsSummaryText(compText);
 
               const canUnbind = !!binding && canWrite && !loading;
-              const unbindMerchantCode = (binding?.merchant_code ?? "").trim();
+              const unbindMerchantCode = (binding?.identity_value ?? "").trim();
 
               return (
                 <tr key={k} className="border-b border-slate-100">
@@ -111,7 +112,7 @@ export const StoreMerchantCodeFskuGovernanceTable: React.FC<{
                       checked={!!s.checked}
                       onChange={(e) => onRowChecked(f.id, e.target.checked)}
                       disabled={loading || already}
-                      title={already ? "该 FSKU 已存在绑定（无需重复勾选）" : ""}
+                      title={already ? "该 FSKU 已存在映射（无需重复勾选）" : ""}
                     />
                   </td>
 
@@ -151,13 +152,13 @@ export const StoreMerchantCodeFskuGovernanceTable: React.FC<{
 
                     {binding ? (
                       <div className="mt-1 text-[10px] text-slate-500">
-                        已绑定 merchant_code：<span className="font-mono">{binding.merchant_code}</span>
+                        已映射 平台编码：<span className="font-mono">{binding.identity_value}</span>
                       </div>
                     ) : null}
 
                     {binding && mcDraft && mcDraft !== unbindMerchantCode ? (
                       <div className="mt-1 text-[10px] text-amber-700">
-                        提示：输入框已改为 <span className="font-mono">{mcDraft}</span>，但尚未绑定；解绑将针对已绑定的{" "}
+                        提示：输入框已改为 <span className="font-mono">{mcDraft}</span>，但尚未映射；解除映射将针对已映射的{" "}
                         <span className="font-mono">{unbindMerchantCode}</span>。
                       </div>
                     ) : null}
@@ -166,10 +167,10 @@ export const StoreMerchantCodeFskuGovernanceTable: React.FC<{
                   <td className="px-3 py-2 text-[11px]">
                     {binding ? (
                       <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] text-emerald-700">
-                        已绑定：{binding.merchant_code} → FSKU #{binding.fsku_id}（{binding.fsku.code}）
+                        已映射：{binding.identity_value} → FSKU #{binding.fsku_id}（{binding.fsku.code}）
                       </span>
                     ) : mcDraft ? (
-                      <span className="text-slate-500">未绑定</span>
+                      <span className="text-slate-500">未映射</span>
                     ) : (
                       <span className="text-slate-500">—</span>
                     )}
@@ -182,13 +183,13 @@ export const StoreMerchantCodeFskuGovernanceTable: React.FC<{
                         className="rounded-md border border-red-300 bg-red-50 px-2 py-1 text-[11px] text-red-700 hover:bg-red-100 disabled:opacity-60"
                         onClick={() => onCloseByMerchantCode(unbindMerchantCode)}
                         disabled={!canUnbind || !unbindMerchantCode}
-                        title={!canWrite ? "无写权限" : loading ? "处理中…" : "解绑（删除绑定事实）"}
+                        title={!canWrite ? "无写权限" : loading ? "处理中…" : "解除映射（删除映射关系）"}
                       >
-                        解绑
+                        解除映射
                       </button>
                     ) : (
-                      <span className="text-[11px] text-slate-400" title="当前无绑定事实，无需解绑">
-                        未绑定，无需解绑
+                      <span className="text-[11px] text-slate-400" title="当前无映射关系，无需解除映射">
+                        未映射，无需解除映射
                       </span>
                     )}
                   </td>

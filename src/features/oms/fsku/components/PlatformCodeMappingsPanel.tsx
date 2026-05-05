@@ -1,8 +1,13 @@
-// src/features/oms/fsku/components/MerchantCodeBindingsPanel.tsx
+// src/features/oms/fsku/components/PlatformCodeMappingsPanel.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import type { Fsku, Platform, MerchantCodeBindingRow } from "../types";
-import { apiBindMerchantCode, apiListMerchantCodeBindings, apiUnbindMerchantCodeBinding } from "../api_merchant_code_bindings";
-import { MerchantCodeBindingsTable } from "./merchant-code-bindings/MerchantCodeBindingsTable";
+import type { Fsku, Platform } from "../types";
+import {
+  apiBindPlatformCodeMapping,
+  apiDeletePlatformCodeMapping,
+  apiListPlatformCodeMappings,
+  type PlatformCodeMappingRow,
+} from "../api_platform_code_mappings";
+import { PlatformCodeMappingsTable } from "./platform-code-mappings/PlatformCodeMappingsTable";
 
 type Banner = { kind: "success" | "error"; message: string } | null;
 
@@ -34,7 +39,7 @@ type PropsStore = {
 
 type Props = PropsGlobal | PropsStore;
 
-export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
+export const PlatformCodeMappingsPanel: React.FC<Props> = (props) => {
   const isStoreMode = props.mode === "store";
 
   const platform: Platform = props.platform;
@@ -48,7 +53,7 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
   const [banner, setBanner] = useState<Banner>(null);
   const [loading, setLoading] = useState(false);
 
-  const [rows, setRows] = useState<MerchantCodeBindingRow[]>([]);
+  const [rows, setRows] = useState<PlatformCodeMappingRow[]>([]);
   const [total, setTotal] = useState(0);
 
   const [newMerchantCode, setNewMerchantCode] = useState("");
@@ -86,11 +91,11 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
   async function load(args?: { offset?: number }) {
     setLoading(true);
     try {
-      const data = await apiListMerchantCodeBindings({
+      const data = await apiListPlatformCodeMappings({
+        identity_kind: "merchant_code",
         platform,
         store_code: shopId.trim() ? shopId.trim() : undefined,
-        merchant_code: qMerchantCode.trim() ? qMerchantCode.trim() : undefined,
-        current_only: currentOnly,
+        identity_value: qMerchantCode.trim() ? qMerchantCode.trim() : undefined,
         fsku_id: qFskuIdNum ?? undefined,
         fsku_code: qFskuCode.trim() ? qFskuCode.trim() : undefined,
         limit,
@@ -114,7 +119,7 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
 
   async function handleBind() {
     const mc = newMerchantCode.trim();
-    if (!mc) return setBanner({ kind: "error", message: "商家后端规格编码为必填。" });
+    if (!mc) return setBanner({ kind: "error", message: "平台编码为必填。" });
     if (!shopId.trim()) return setBanner({ kind: "error", message: "store_code 为必填（字符串）。" });
     if (!newReason.trim()) return setBanner({ kind: "error", message: "reason 为必填。" });
 
@@ -123,26 +128,27 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
     if (fskuId == null) {
       return setBanner({
         kind: "error",
-        message: isStoreMode ? "请输入要绑定的 fsku_id。" : "请先在上方选择一个 FSKU。",
+        message: isStoreMode ? "请输入要映射的 fsku_id。" : "请先在上方选择一个 FSKU。",
       });
     }
 
     if (!isStoreMode) {
       const canBindSelected = (props as PropsGlobal).canBindSelected;
-      if (!canBindSelected) return setBanner({ kind: "error", message: "仅 published FSKU 允许绑定（请先发布）。" });
+      if (!canBindSelected) return setBanner({ kind: "error", message: "仅 published FSKU 允许映射（请先发布）。" });
     }
 
     setBanner(null);
     setLoading(true);
     try {
-      await apiBindMerchantCode({
+      await apiBindPlatformCodeMapping({
+        identity_kind: "merchant_code",
         platform,
         store_code: shopId,
-        merchant_code: mc,
+        identity_value: mc,
         fsku_id: fskuId,
         reason: newReason.trim(),
       });
-      setBanner({ kind: "success", message: "绑定已写入：upsert 覆盖生效（无历史版本/无时间轴）。" });
+      setBanner({ kind: "success", message: "映射已写入：upsert 覆盖生效（无历史版本/无时间轴）。" });
 
       setQMerchantCode(mc);
       setCurrentOnly(true);
@@ -155,16 +161,17 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
     }
   }
 
-  async function handleCloseRow(r: MerchantCodeBindingRow) {
+  async function handleCloseRow(r: PlatformCodeMappingRow) {
     setBanner(null);
     setLoading(true);
     try {
-      await apiUnbindMerchantCodeBinding({
+      await apiDeletePlatformCodeMapping({
+        identity_kind: "merchant_code",
         platform: r.platform,
         store_code: r.store_code,
-        merchant_code: r.merchant_code,
+        identity_value: r.identity_value,
       });
-      setBanner({ kind: "success", message: "已解绑：绑定已删除（delete）。" });
+      setBanner({ kind: "success", message: "已解除映射：映射已删除（delete）。" });
       await load();
     } catch (e: unknown) {
       setBanner({ kind: "error", message: toMsg(e) });
@@ -179,7 +186,7 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
       <div className="text-sm font-semibold text-slate-800">
-        {isStoreMode ? "解析绑定治理：商家后端规格编码 ↔ FSKU" : "③ 商家后端规格编码 ↔ FSKU 绑定表（治理事实）"}
+        {isStoreMode ? "解析映射治理：平台编码 → OMS FSKU" : "③ 平台编码 → OMS FSKU 映射表（治理事实）"}
       </div>
 
       {isStoreMode ? (
@@ -200,7 +207,7 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
         </div>
       ) : null}
 
-      <MerchantCodeBindingsTable
+      <PlatformCodeMappingsTable
         mode={isStoreMode ? "store" : "global"}
         platform={platform}
         setPlatform={setPlatform}
@@ -246,7 +253,7 @@ export const MerchantCodeBindingsPanel: React.FC<Props> = (props) => {
       />
 
       <div className="text-[11px] text-slate-500">
-        说明：此表仅维护“商家后端规格编码 ↔ FSKU”的治理事实（current-only：bind=upsert / 解绑=delete）。解析失败原因请在拣货页 Explain 查看。
+        说明：此表仅维护“平台编码 → OMS FSKU”的治理事实（current-only：bind=upsert / 解除映射=delete）。解析失败原因请在拣货页 Explain 查看。
       </div>
     </section>
   );

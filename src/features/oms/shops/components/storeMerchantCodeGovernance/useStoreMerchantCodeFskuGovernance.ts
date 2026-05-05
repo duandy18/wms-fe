@@ -1,15 +1,20 @@
 // src/features/oms/shops/components/storeMerchantCodeGovernance/useStoreMerchantCodeFskuGovernance.ts
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Fsku, MerchantCodeBindingRow } from "../../../fsku/types";
+import type { Fsku } from "../../../fsku/types";
 import { apiListStoreFskus } from "../../../fsku/api_fsku";
-import { apiBindMerchantCode, apiListMerchantCodeBindings, apiUnbindMerchantCodeBinding } from "../../../fsku/api_merchant_code_bindings";
+import {
+  apiBindPlatformCodeMapping,
+  apiDeletePlatformCodeMapping,
+  apiListPlatformCodeMappings,
+  type PlatformCodeMappingRow,
+} from "../../../fsku/api_platform_code_mappings";
 import type { GovernanceActions, GovernanceProps, GovernanceState, RowState } from "./types";
 import { toMsg } from "./types";
 
-function buildCurrentIndex(rows: MerchantCodeBindingRow[]): Map<string, MerchantCodeBindingRow> {
-  const m = new Map<string, MerchantCodeBindingRow>();
-  for (const r of rows) m.set(r.merchant_code, r);
+function buildCurrentIndex(rows: PlatformCodeMappingRow[]): Map<string, PlatformCodeMappingRow> {
+  const m = new Map<string, PlatformCodeMappingRow>();
+  for (const r of rows) m.set(r.identity_value, r);
   return m;
 }
 
@@ -25,10 +30,10 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
   const [banner, setBanner] = useState<GovernanceState["banner"]>(null);
   const [loading, setLoading] = useState(false);
 
-  const [currentBindings, setCurrentBindings] = useState<MerchantCodeBindingRow[]>([]);
+  const [currentBindings, setCurrentBindings] = useState<PlatformCodeMappingRow[]>([]);
   const currentByMerchantCode = useMemo(() => buildCurrentIndex(currentBindings), [currentBindings]);
 
-  const [reason, setReason] = useState("store governance: merchant_code defaults to fsku.code");
+  const [reason, setReason] = useState("store governance: 平台编码 defaults to fsku.code");
 
   const [rowState, setRowState] = useState<Record<string, RowState>>({});
 
@@ -84,17 +89,17 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
   const refreshBindings = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiListMerchantCodeBindings({
+      const data = await apiListPlatformCodeMappings({
+        identity_kind: "merchant_code",
         platform,
         store_code: shopId,
-        current_only: true,
         limit: 200,
         offset: 0,
       });
       setCurrentBindings(data.items);
     } catch (e: unknown) {
       setCurrentBindings([]);
-      setBanner({ kind: "error", message: `加载绑定失败：${toMsg(e)}` });
+      setBanner({ kind: "error", message: `加载映射失败：${toMsg(e)}` });
     } finally {
       setLoading(false);
     }
@@ -143,13 +148,13 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
 
   async function bindOne(f: Fsku) {
     if (!canWrite) {
-      setBanner({ kind: "error", message: "当前账号无写权限（config.store.write），不能写入绑定。" });
+      setBanner({ kind: "error", message: "当前账号无写权限（config.store.write），不能写入映射。" });
       return;
     }
     const s = rowState[String(f.id)];
     const mc = (s?.merchantCode ?? "").trim();
     if (!mc) {
-      setBanner({ kind: "error", message: `FSKU #${f.id} 缺少 merchant_code（店铺商品代码）。` });
+      setBanner({ kind: "error", message: `FSKU #${f.id} 缺少 平台编码（店铺商品代码）。` });
       return;
     }
     if (!reason.trim()) {
@@ -160,14 +165,15 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     setBanner(null);
     setLoading(true);
     try {
-      await apiBindMerchantCode({
+      await apiBindPlatformCodeMapping({
+        identity_kind: "merchant_code",
         platform,
         store_code: shopId,
-        merchant_code: mc,
+        identity_value: mc,
         fsku_id: f.id,
         reason: reason.trim(),
       });
-      setBanner({ kind: "success", message: `已绑定：${mc} → FSKU #${f.id}` });
+      setBanner({ kind: "success", message: `已映射：${mc} → FSKU #${f.id}` });
       await refreshBindings();
     } catch (e: unknown) {
       setBanner({ kind: "error", message: toMsg(e) });
@@ -178,7 +184,7 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
 
   async function bindSelected() {
     if (!canWrite) {
-      setBanner({ kind: "error", message: "当前账号无写权限（config.store.write），不能写入绑定。" });
+      setBanner({ kind: "error", message: "当前账号无写权限（config.store.write），不能写入映射。" });
       return;
     }
     if (!reason.trim()) {
@@ -187,13 +193,13 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     }
     const selected = fskus.filter((f) => rowState[String(f.id)]?.checked);
     if (!selected.length) {
-      setBanner({ kind: "error", message: "请先勾选要绑定的 FSKU 行。" });
+      setBanner({ kind: "error", message: "请先勾选要映射的 FSKU 行。" });
       return;
     }
     for (const f of selected) {
       const mc = (rowState[String(f.id)]?.merchantCode ?? "").trim();
       if (!mc) {
-        setBanner({ kind: "error", message: `FSKU #${f.id} 缺少 merchant_code（店铺商品代码）。` });
+        setBanner({ kind: "error", message: `FSKU #${f.id} 缺少 平台编码（店铺商品代码）。` });
         return;
       }
     }
@@ -203,19 +209,20 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     try {
       for (const f of selected) {
         const mc = (rowState[String(f.id)]?.merchantCode ?? "").trim();
-        await apiBindMerchantCode({
+        await apiBindPlatformCodeMapping({
+        identity_kind: "merchant_code",
           platform,
           store_code: shopId,
-          merchant_code: mc,
+          identity_value: mc,
           fsku_id: f.id,
           reason: reason.trim(),
         });
       }
-      setBanner({ kind: "success", message: `批量绑定完成：${selected.length} 行已写入。` });
+      setBanner({ kind: "success", message: `批量映射完成：${selected.length} 行已写入。` });
       await refreshBindings();
       setCheckedAll(false);
     } catch (e: unknown) {
-      setBanner({ kind: "error", message: `批量绑定失败：${toMsg(e)}` });
+      setBanner({ kind: "error", message: `批量映射失败：${toMsg(e)}` });
     } finally {
       setLoading(false);
     }
@@ -223,7 +230,7 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
 
   async function closeCurrentByMerchantCode(merchantCode: string) {
     if (!canWrite) {
-      setBanner({ kind: "error", message: "当前账号无写权限（config.store.write），不能解绑。" });
+      setBanner({ kind: "error", message: "当前账号无写权限（config.store.write），不能解除映射。" });
       return;
     }
     const mc = merchantCode.trim();
@@ -232,12 +239,13 @@ export function useStoreMerchantCodeFskuGovernance(props: GovernanceProps): {
     setBanner(null);
     setLoading(true);
     try {
-      await apiUnbindMerchantCodeBinding({
+      await apiDeletePlatformCodeMapping({
+        identity_kind: "merchant_code",
         platform,
         store_code: shopId,
-        merchant_code: mc,
+        identity_value: mc,
       });
-      setBanner({ kind: "success", message: `已解绑：${mc}` });
+      setBanner({ kind: "success", message: `已解除映射：${mc}` });
       await refreshBindings();
     } catch (e: unknown) {
       setBanner({ kind: "error", message: toMsg(e) });
