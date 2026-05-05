@@ -30,11 +30,6 @@ const AppRouter: React.FC = () => {
         <Route path="/forbidden" element={<ForbiddenPage />} />
 
         <Route
-          path="/print/shipping-label"
-          element={<P.ShippingLabelPrintPage />}
-        />
-
-        <Route
           path="/"
           element={
             <RequireAuth>
@@ -104,15 +99,6 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="page.wms.read">
                 <P.OutboundManualPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="outbound/ship"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <Navigate to="/shipping-assist/shipping/quote" replace />
               </RequirePermission>
             }
           />
@@ -260,22 +246,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          <Route
-            path="shipping-assist/shipping/quote"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.ShipmentPreparePage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="shipping-assist/shipping/quote/workbench"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.ShipmentCockpitPage />
-              </RequirePermission>
-            }
-          />
           <Route
             path="shipping-assist/pricing/bindings"
             element={
@@ -579,15 +549,6 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="page.shipping_assist.read">
                 <P.ShippingProvidersListPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="shipping-assist/settings/waybill"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.ElectronicWaybillConfigPage />
               </RequirePermission>
             }
           />
