@@ -45,16 +45,6 @@ export const OutboundManualPage = lazy(
   () => import("../../features/wms/outbound/pages/OutboundManualPage"),
 );
 
-export const ShipmentPreparePage = lazy(
-  () => import("../../features/shipping-assist/shipment/pages/ShipmentPreparePage"),
-);
-export const ShipmentCockpitPage = lazy(
-  () => import("../../features/shipping-assist/shipment/pages/ShipmentCockpitPage"),
-);
-export const ShippingLabelPrintPage = lazy(
-  () => import("../../features/shipping-assist/shipment/pages/ShippingLabelPrintPage"),
-);
-
 // 库存 & 报表
 export const InventoryPage = lazy(
   () => import("../../features/wms/inventory/inventory/pages/InventoryPage"),
@@ -203,11 +193,6 @@ export const ShippingProviderEditPage = lazy(
 // 快递网点详情页（当前收敛到编辑页入口）
 export const ShippingProviderDetailPage = lazy(
   () => import("../../features/shipping-assist/providers/pages/ShippingProviderDetailPage"),
-);
-
-// 电子面单配置
-export const ElectronicWaybillConfigPage = lazy(
-  () => import("../../features/shipping-assist/waybillConfigs/pages/ElectronicWaybillConfigPage"),
 );
 
 // 采购系统

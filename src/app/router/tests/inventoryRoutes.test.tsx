@@ -28,7 +28,6 @@ vi.mock("../lazyPages", () => {
     __esModule: true,
 
     LoginPage: page("LoginPage mock view"),
-    ShippingLabelPrintPage: page("ShippingLabelPrintPage mock view"),
 
     InventoryPage: page("InventoryPage mock view"),
     InventoryLedgerPage: page("InventoryLedgerPage mock view"),
@@ -66,8 +65,6 @@ vi.mock("../lazyPages", () => {
 
     AnalyticsPage: page("AnalyticsPage mock view"),
 
-    ShipmentPreparePage: page("ShipmentPreparePage mock view"),
-    ShipmentCockpitPage: page("ShipmentCockpitPage mock view"),
     PricingPage: page("PricingPage mock view"),
     TemplatesPage: page("TemplatesPage mock view"),
     TemplateWorkbenchPage: page("TemplateWorkbenchPage mock view"),
@@ -104,7 +101,6 @@ vi.mock("../lazyPages", () => {
     SuppliersListPage: page("SuppliersListPage mock view"),
 
     ShippingProvidersListPage: page("ShippingProvidersListPage mock view"),
-    ElectronicWaybillConfigPage: page("ElectronicWaybillConfigPage mock view"),
     ShippingProviderEditPage: page("ShippingProviderEditPage mock view"),
   };
 });
@@ -315,6 +311,17 @@ describe("AppRouter inventory routes", () => {
 
   it("falls back to /inventory after old /inbound-receipts/returns route is retired", async () => {
     renderWithRoute("/inbound-receipts/returns");
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
+  });
+
+  it.each([
+    "/print/shipping-label",
+    "/outbound/ship",
+    "/shipping-assist/shipping/quote",
+    "/shipping-assist/shipping/quote/workbench",
+    "/shipping-assist/settings/waybill",
+  ])("falls back to /inventory after retired WMS shipping route %s is removed", async (route) => {
+    renderWithRoute(route);
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
