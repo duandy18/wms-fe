@@ -1,10 +1,10 @@
-// src/features/pms/fsku/types.ts
+// src/features/oms/fsku-rules/types.ts
 
-export type PmsFskuStatus = "draft" | "published" | "retired";
-export type PmsFskuShape = "single" | "bundle";
-export type PmsFskuExprType = "DIRECT" | "SEGMENT_GROUP";
+export type OmsFskuStatus = "draft" | "published" | "retired";
+export type OmsFskuShape = "single" | "bundle";
+export type OmsFskuExprType = "DIRECT" | "SEGMENT_GROUP";
 
-export type PmsFskuComponent = {
+export type OmsFskuComponent = {
   component_sku_code: string;
   qty_per_fsku: number | string;
   alloc_unit_price: number | string;
@@ -17,15 +17,15 @@ export type PmsFskuComponent = {
   sort_order: number;
 };
 
-export type PmsFskuListItem = {
+export type OmsFskuListItem = {
   id: number;
   code: string;
   name: string;
-  shape: PmsFskuShape;
-  status: PmsFskuStatus;
+  shape: OmsFskuShape;
+  status: OmsFskuStatus;
   fsku_expr: string;
   normalized_expr: string;
-  expr_type: PmsFskuExprType;
+  expr_type: OmsFskuExprType;
   component_count: number;
   components_summary: string;
   components_summary_name: string;
@@ -34,25 +34,25 @@ export type PmsFskuListItem = {
   updated_at: string;
 };
 
-export type PmsFskuDetail = PmsFskuListItem & {
+export type OmsFskuDetail = OmsFskuListItem & {
   created_at?: string;
-  components: PmsFskuComponent[];
+  components: OmsFskuComponent[];
 };
 
-export type PmsFskuListOut = {
-  items: PmsFskuListItem[];
+export type OmsFskuListOut = {
+  items: OmsFskuListItem[];
   total: number;
   limit: number;
   offset: number;
 };
 
-export type PmsFskuCreateInput = {
+export type OmsFskuCreateInput = {
   name: string;
   code?: string | null;
-  shape: PmsFskuShape;
+  shape: OmsFskuShape;
   fsku_expr: string;
 };
 
-export type PmsFskuExpressionInput = {
+export type OmsFskuExpressionInput = {
   fsku_expr: string;
 };

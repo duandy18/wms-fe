@@ -1,9 +1,10 @@
-// src/features/oms/fsku/components/merchant-code-bindings/MerchantCodeBindingsTable.tsx
+// src/features/oms/fsku/components/platform-code-mappings/PlatformCodeMappingsTable.tsx
 import React from "react";
-import type { Fsku, Platform, MerchantCodeBindingRow } from "../../types";
+import type { Fsku, Platform } from "../../types";
+import type { PlatformCodeMappingRow } from "../../api_platform_code_mappings";
 import { PLATFORM_OPTIONS, fmtIso } from "../../ui";
 
-export const MerchantCodeBindingsTable: React.FC<{
+export const PlatformCodeMappingsTable: React.FC<{
   mode: "global" | "store";
 
   platform: Platform;
@@ -48,12 +49,12 @@ export const MerchantCodeBindingsTable: React.FC<{
   canBindSelected: boolean;
 
   // data
-  rows: MerchantCodeBindingRow[];
+  rows: PlatformCodeMappingRow[];
 
   // actions
   loading: boolean;
   onBind: () => void; // 历史遗留
-  onClose: (row: MerchantCodeBindingRow) => void;
+  onClose: (row: PlatformCodeMappingRow) => void;
 }> = (props) => {
   const {
     mode,
@@ -93,7 +94,7 @@ export const MerchantCodeBindingsTable: React.FC<{
               {showContextCols ? <th className="px-3 py-2 text-left">platform</th> : null}
               {showContextCols ? <th className="px-3 py-2 text-left">store_code</th> : null}
               {showContextCols ? <th className="px-3 py-2 text-left">店铺名称</th> : null}
-              <th className="px-3 py-2 text-left">商家后端规格编码</th>
+              <th className="px-3 py-2 text-left">平台编码</th>
               <th className="px-3 py-2 text-left">fsku_id</th>
               <th className="px-3 py-2 text-left">FSKU 名称</th>
               <th className="px-3 py-2 text-left">reason</th>
@@ -228,7 +229,7 @@ export const MerchantCodeBindingsTable: React.FC<{
                     {showContextCols ? <td className="px-3 py-2 font-mono text-[11px] text-slate-800">{b.store_code}</td> : null}
                     {showContextCols ? <td className="px-3 py-2 text-[11px] text-slate-700">{b.store.store_name}</td> : null}
 
-                    <td className="px-3 py-2 font-mono text-[11px] text-slate-900">{b.merchant_code}</td>
+                    <td className="px-3 py-2 font-mono text-[11px] text-slate-900">{b.identity_value}</td>
                     <td className="px-3 py-2 font-mono text-[11px] text-slate-900">{b.fsku_id}</td>
                     <td className="px-3 py-2 text-[11px] text-slate-700">{b.fsku.name}</td>
                     <td className="px-3 py-2 text-[11px] text-slate-700">{b.reason ?? "—"}</td>
@@ -240,9 +241,9 @@ export const MerchantCodeBindingsTable: React.FC<{
                         className="rounded-md border border-red-300 bg-red-50 px-2 py-1 text-[11px] text-red-700 hover:bg-red-100 disabled:opacity-60"
                         disabled={loading}
                         onClick={() => onClose(b)}
-                        title="解绑（删除绑定）"
+                        title="解除映射（删除映射）"
                       >
-                        解绑
+                        解除映射
                       </button>
                     </td>
                   </tr>

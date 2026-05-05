@@ -120,31 +120,22 @@ export const ReconciliationPage = lazy(
 export const OmsPddPlatformOrderMirrorPage = lazy(
   () => import("../../features/oms/platforms/pages/OmsPddPlatformOrderMirrorPage"),
 );
-export const OmsPddFskuMappingPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsPddFskuMappingPage"),
-);
-export const OmsPddFulfillmentOrderConversionPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsPddFulfillmentOrderConversionPage"),
+export const OmsPddCodeMappingPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsPddCodeMappingPage"),
 );
 
 export const OmsTaobaoPlatformOrderMirrorPage = lazy(
   () => import("../../features/oms/platforms/pages/OmsTaobaoPlatformOrderMirrorPage"),
 );
-export const OmsTaobaoFskuMappingPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsTaobaoFskuMappingPage"),
-);
-export const OmsTaobaoFulfillmentOrderConversionPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsTaobaoFulfillmentOrderConversionPage"),
+export const OmsTaobaoCodeMappingPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsTaobaoCodeMappingPage"),
 );
 
 export const OmsJdPlatformOrderMirrorPage = lazy(
   () => import("../../features/oms/platforms/pages/OmsJdPlatformOrderMirrorPage"),
 );
-export const OmsJdFskuMappingPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsJdFskuMappingPage"),
-);
-export const OmsJdFulfillmentOrderConversionPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsJdFulfillmentOrderConversionPage"),
+export const OmsJdCodeMappingPage = lazy(
+  () => import("../../features/oms/platforms/pages/OmsJdCodeMappingPage"),
 );
 
 export const AnalyticsPage = lazy(
@@ -174,8 +165,8 @@ export const SkuCodingGeneratorPage = lazy(
   () => import("../../features/pms/sku-coding/pages/SkuCodingGeneratorPage"),
 );
 
-export const PmsFskuRulesPage = lazy(
-  () => import("../../features/pms/fsku/pages/PmsFskuRulesPage"),
+export const OmsFskuRulesPage = lazy(
+  () => import("../../features/oms/fsku-rules/pages/OmsFskuRulesPage"),
 );
 
 // 系统管理：admin/users
