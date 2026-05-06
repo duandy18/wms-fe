@@ -14,89 +14,22 @@ export interface ShippingLedgerWarehouseOption {
   name: string;
 }
 
-interface ProvidersListResponseItem {
-  id?: number;
-  shipping_provider_id?: number;
-  shipping_provider_code?: string | null;
-  name?: string;
+interface ShippingRecordsOptionsResponse {
+  ok: boolean;
+  providers: ShippingLedgerProviderOption[];
+  warehouses: ShippingLedgerWarehouseOption[];
 }
 
-interface ProvidersListResponse {
-  ok?: boolean;
-  data?: ProvidersListResponseItem[];
-  items?: ProvidersListResponseItem[];
-  rows?: ProvidersListResponseItem[];
+function toProviderOptions(
+  payload: ShippingRecordsOptionsResponse,
+): ShippingLedgerProviderOption[] {
+  return Array.isArray(payload.providers) ? payload.providers : [];
 }
 
-interface WarehousesListResponseItem {
-  id?: number;
-  name?: string;
-}
-
-interface WarehousesListResponse {
-  ok?: boolean;
-  data?: WarehousesListResponseItem[];
-  items?: WarehousesListResponseItem[];
-  rows?: WarehousesListResponseItem[];
-}
-
-function toProviderOptions(payload: ProvidersListResponse): ShippingLedgerProviderOption[] {
-  const raw = Array.isArray(payload.data)
-    ? payload.data
-    : Array.isArray(payload.items)
-      ? payload.items
-      : Array.isArray(payload.rows)
-        ? payload.rows
-        : [];
-
-  return raw
-    .map((item) => {
-      const id =
-        typeof item.id === "number"
-          ? item.id
-          : typeof item.shipping_provider_id === "number"
-            ? item.shipping_provider_id
-            : null;
-      const name = typeof item.name === "string" ? item.name.trim() : "";
-      const code = typeof item.shipping_provider_code === "string" ? item.shipping_provider_code.trim() : "";
-
-      if (id == null || !name) {
-        return null;
-      }
-
-      return {
-        id,
-        name,
-        shipping_provider_code: code,
-      };
-    })
-    .filter((item): item is ShippingLedgerProviderOption => item !== null);
-}
-
-function toWarehouseOptions(payload: WarehousesListResponse): ShippingLedgerWarehouseOption[] {
-  const raw = Array.isArray(payload.data)
-    ? payload.data
-    : Array.isArray(payload.items)
-      ? payload.items
-      : Array.isArray(payload.rows)
-        ? payload.rows
-        : [];
-
-  return raw
-    .map((item) => {
-      const id = typeof item.id === "number" ? item.id : null;
-      const name = typeof item.name === "string" ? item.name.trim() : "";
-
-      if (id == null || !name) {
-        return null;
-      }
-
-      return {
-        id,
-        name,
-      };
-    })
-    .filter((item): item is ShippingLedgerWarehouseOption => item !== null);
+function toWarehouseOptions(
+  payload: ShippingRecordsOptionsResponse,
+): ShippingLedgerWarehouseOption[] {
+  return Array.isArray(payload.warehouses) ? payload.warehouses : [];
 }
 
 export function useShippingLedgerOptions() {
@@ -110,13 +43,12 @@ export function useShippingLedgerOptions() {
     setError("");
 
     try {
-      const [providersRes, warehousesRes] = await Promise.all([
-        apiGet<ProvidersListResponse>("/shipping-assist/pricing/providers"),
-        apiGet<WarehousesListResponse>("/warehouses"),
-      ]);
+      const res = await apiGet<ShippingRecordsOptionsResponse>(
+        "/shipping-assist/records/options",
+      );
 
-      setProviders(toProviderOptions(providersRes));
-      setWarehouses(toWarehouseOptions(warehousesRes));
+      setProviders(toProviderOptions(res));
+      setWarehouses(toWarehouseOptions(res));
     } catch (err) {
       const message = err instanceof Error ? err.message : "加载筛选选项失败";
       setError(message);
