@@ -7,13 +7,11 @@ import { usePermissionRuntime } from "../../../shared/runtime";
 import { WarehouseBasicInfoCard } from "./detail/WarehouseBasicInfoCard";
 import { WarehouseServiceProvincesCard } from "./detail/WarehouseServiceProvincesCard";
 import { WarehouseServiceCitiesCard } from "./detail/WarehouseServiceCitiesCard";
-import { WarehouseShippingProvidersCard } from "./detail/WarehouseShippingProvidersCard";
 import { UI } from "./detail/ui";
 import { useWarehouseDetailModel } from "./detail/useWarehouseDetailModel";
 import { useWarehouseServiceProvincesModel } from "./detail/useWarehouseServiceProvincesModel";
 import { useWarehouseServiceCitiesModel } from "./detail/useWarehouseServiceCitiesModel";
 import { useWarehouseServiceCitySplitProvincesModel } from "./detail/useWarehouseServiceCitySplitProvincesModel";
-import { useWarehouseShippingProvidersModel } from "./detail/useWarehouseShippingProvidersModel";
 
 const WarehouseDetailPage: React.FC = () => {
   const { warehouseId } = useParams<{ warehouseId: string }>();
@@ -32,7 +30,6 @@ const WarehouseDetailPage: React.FC = () => {
 
   const split = useWarehouseServiceCitySplitProvincesModel({ canWrite });
 
-  const carriers = useWarehouseShippingProvidersModel({ warehouseId: id, canWrite });
 
   function jumpToCities() {
     const el = document.getElementById("service-cities-card");
@@ -107,23 +104,6 @@ const WarehouseDetailPage: React.FC = () => {
             areaSqm={m.areaSqm}
             setAreaSqm={m.setAreaSqm}
             onSubmit={m.save}
-          />
-
-          <WarehouseShippingProvidersCard
-            canWrite={canWrite}
-            warehouseId={id}
-            loading={carriers.loading}
-            busy={carriers.busy}
-            togglingProviderId={carriers.togglingProviderId}
-            error={carriers.error}
-            saveOk={carriers.saveOk}
-            items={carriers.items}
-            providerOptions={carriers.providerOptions}
-            selectedProviderId={carriers.selectedProviderId}
-            setSelectedProviderId={carriers.setSelectedProviderId}
-            onBindSelected={carriers.bindSelected}
-            onToggleActive={carriers.toggleActive}
-            onRemove={carriers.remove}
           />
 
           <WarehouseServiceProvincesCard

@@ -1,5 +1,5 @@
 // src/features/wms/warehouses/api.ts
-import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from "../../../lib/api";
+import { apiGet, apiPost, apiPatch, apiPut } from "../../../lib/api";
 import type {
   WarehouseListResponse,
   WarehouseCreatePayload,
@@ -14,15 +14,6 @@ import type {
   WarehouseServiceCityOccupancyOut,
   WarehouseServiceCitySplitProvincesOut,
   WarehouseServiceCitySplitProvincesPutIn,
-  ShippingProviderListOut,
-  ShippingProviderListItem,
-  WarehouseShippingProviderListOut,
-  WarehouseShippingProviderListItem,
-  WarehouseShippingProviderBindPayload,
-  WarehouseShippingProviderBindOut,
-  WarehouseShippingProviderPatchPayload,
-  WarehouseShippingProviderPatchOut,
-  WarehouseShippingProviderDeleteOut,
 } from "./types";
 
 function unwrapOk<T>(resp: unknown, op: string): T {
@@ -104,55 +95,3 @@ export async function putWarehouseServiceCitySplitProvinces(
   return apiPut<WarehouseServiceCitySplitProvincesPutIn>("/warehouses/service-provinces/city-split", payload);
 }
 
-// =========================================
-// Phase 1：仓库 × 快递公司（事实绑定）
-// =========================================
-
-export async function fetchShippingProviders(): Promise<ShippingProviderListItem[]> {
-  const res = await apiGet<ShippingProviderListOut>("/shipping-providers");
-  return unwrapOk<ShippingProviderListItem[]>(res, "GET /shipping-providers");
-}
-
-export async function fetchWarehouseShippingProviders(warehouseId: number): Promise<WarehouseShippingProviderListItem[]> {
-  const res = await apiGet<WarehouseShippingProviderListOut>(`/warehouses/${warehouseId}/shipping-providers`);
-  return unwrapOk<WarehouseShippingProviderListItem[]>(res, "GET /warehouses/{warehouse_id}/shipping-providers");
-}
-
-export async function bindWarehouseShippingProvider(
-  warehouseId: number,
-  payload: WarehouseShippingProviderBindPayload,
-): Promise<WarehouseShippingProviderListItem> {
-  const res = await apiPost<WarehouseShippingProviderBindOut>(
-    `/warehouses/${warehouseId}/shipping-providers/bind`,
-    payload,
-  );
-  return unwrapOk<WarehouseShippingProviderListItem>(res, "POST /warehouses/{warehouse_id}/shipping-providers/bind");
-}
-
-export async function patchWarehouseShippingProvider(
-  warehouseId: number,
-  shippingProviderId: number,
-  payload: WarehouseShippingProviderPatchPayload,
-): Promise<WarehouseShippingProviderListItem> {
-  const res = await apiPatch<WarehouseShippingProviderPatchOut>(
-    `/warehouses/${warehouseId}/shipping-providers/${shippingProviderId}`,
-    payload,
-  );
-  return unwrapOk<WarehouseShippingProviderListItem>(
-    res,
-    "PATCH /warehouses/{warehouse_id}/shipping-providers/{shipping_provider_id}",
-  );
-}
-
-export async function unbindWarehouseShippingProvider(
-  warehouseId: number,
-  shippingProviderId: number,
-): Promise<{ warehouse_id: number; shipping_provider_id: number }> {
-  const res = await apiDelete<WarehouseShippingProviderDeleteOut>(
-    `/warehouses/${warehouseId}/shipping-providers/${shippingProviderId}`,
-  );
-  return unwrapOk<{ warehouse_id: number; shipping_provider_id: number }>(
-    res,
-    "DELETE /warehouses/{warehouse_id}/shipping-providers/{shipping_provider_id}",
-  );
-}
