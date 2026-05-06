@@ -40,7 +40,7 @@ export async function fetchShippingLedger(
   query: ShippingLedgerQuery,
 ): Promise<ShippingLedgerListResponse> {
   return await apiGet<ShippingLedgerListResponse>(
-    "/shipping-assist/shipping/records",
+    "/shipping-assist/records",
     query,
   );
 }
@@ -50,8 +50,8 @@ export async function exportShippingLedgerCsv(
 ): Promise<Blob> {
   const qs = buildExportQueryString(query);
   const path = qs
-    ? `/shipping-assist/shipping/records/export?${qs}`
-    : "/shipping-assist/shipping/records/export";
+    ? `/shipping-assist/records/export?${qs}`
+    : "/shipping-assist/records/export";
 
   return await apiRequestBlob(path, {
     method: "GET",
@@ -65,7 +65,7 @@ export async function syncLogisticsShippingRecords(
   payload: SyncLogisticsShippingRecordsInput = { limit: 100 },
 ): Promise<SyncLogisticsShippingRecordsResponse> {
   return await apiPost<SyncLogisticsShippingRecordsResponse>(
-    "/shipping-assist/shipping/records/sync-from-logistics",
+    "/shipping-assist/records/sync-from-logistics",
     payload,
   );
 }

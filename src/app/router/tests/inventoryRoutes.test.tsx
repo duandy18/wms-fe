@@ -313,6 +313,7 @@ describe("AppRouter inventory routes", () => {
     "/shipping-assist/shipping/quote",
     "/shipping-assist/shipping/quote/workbench",
     "/shipping-assist/settings/waybill",
+    "/shipping-assist/shipping/records",
     "/shipping-assist/pricing/providers",
     "/shipping-assist/pricing/providers/1",
     "/shipping-assist/pricing/providers/new",

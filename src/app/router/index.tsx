@@ -240,7 +240,7 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="shipping-assist/shipping/records"
+            path="shipping-assist/records"
             element={
               <RequirePermission permission="page.shipping_assist.read">
                 <P.ShippingLedgerPage />
