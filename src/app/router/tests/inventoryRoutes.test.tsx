@@ -65,12 +65,7 @@ vi.mock("../lazyPages", () => {
 
     AnalyticsPage: page("AnalyticsPage mock view"),
 
-    PricingPage: page("PricingPage mock view"),
-    TemplatesPage: page("TemplatesPage mock view"),
-    TemplateWorkbenchPage: page("TemplateWorkbenchPage mock view"),
     ShippingLedgerPage: page("ShippingLedgerPage mock view"),
-    BillingItemsPage: page("BillingItemsPage mock view"),
-    ReconciliationPage: page("ReconciliationPage mock view"),
 
     FinanceOverviewPage: page("FinanceOverviewPage mock view"),
     FinanceOrderSalesPage: page("FinanceOrderSalesPage mock view"),
@@ -100,8 +95,6 @@ vi.mock("../lazyPages", () => {
     OmsFskuRulesPage: page("OmsFskuRulesPage mock view"),
     SuppliersListPage: page("SuppliersListPage mock view"),
 
-    ShippingProvidersListPage: page("ShippingProvidersListPage mock view"),
-    ShippingProviderEditPage: page("ShippingProviderEditPage mock view"),
   };
 });
 
@@ -320,6 +313,15 @@ describe("AppRouter inventory routes", () => {
     "/shipping-assist/shipping/quote",
     "/shipping-assist/shipping/quote/workbench",
     "/shipping-assist/settings/waybill",
+    "/shipping-assist/pricing/providers",
+    "/shipping-assist/pricing/providers/1",
+    "/shipping-assist/pricing/providers/new",
+    "/shipping-assist/pricing/providers/1/edit",
+    "/shipping-assist/pricing/bindings",
+    "/shipping-assist/pricing/templates",
+    "/shipping-assist/pricing/templates/1",
+    "/shipping-assist/billing/items",
+    "/shipping-assist/billing/reconciliation",
   ])("falls back to /inventory after retired WMS shipping route %s is removed", async (route) => {
     renderWithRoute(route);
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();

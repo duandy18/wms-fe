@@ -1,8 +1,15 @@
 // src/features/shipping-assist/records/hooks/useShippingLedgerPage.ts
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { exportShippingLedgerCsv, fetchShippingLedger } from "../api";
-import type { ShippingLedgerRow } from "../types";
+import {
+  exportShippingLedgerCsv,
+  fetchShippingLedger,
+  syncLogisticsShippingRecords,
+} from "../api";
+import type {
+  ShippingLedgerRow,
+  SyncLogisticsShippingRecordsResponse,
+} from "../types";
 import { useShippingLedgerQuery } from "./useShippingLedgerQuery";
 
 export function useShippingLedgerPage() {
@@ -12,6 +19,9 @@ export function useShippingLedgerPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] =
+    useState<SyncLogisticsShippingRecordsResponse | null>(null);
   const [error, setError] = useState<string>("");
 
   const reload = useCallback(async (): Promise<void> => {
@@ -54,6 +64,24 @@ export function useShippingLedgerPage() {
     }
   }, [query]);
 
+  const syncFromLogistics = useCallback(async (): Promise<void> => {
+    setSyncing(true);
+    setError("");
+    setSyncResult(null);
+
+    try {
+      const res = await syncLogisticsShippingRecords({ limit: 100 });
+      setSyncResult(res);
+      await reload();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "同步物流事实失败";
+      setError(message);
+    } finally {
+      setSyncing(false);
+    }
+  }, [reload]);
+
   const currentPage = useMemo(() => {
     if (query.limit <= 0) return 1;
     return Math.floor(query.offset / query.limit) + 1;
@@ -70,6 +98,8 @@ export function useShippingLedgerPage() {
     total,
     loading,
     exporting,
+    syncing,
+    syncResult,
     error,
     currentPage,
     totalPages,
@@ -78,5 +108,6 @@ export function useShippingLedgerPage() {
     setOffset,
     reload,
     exportCsv,
+    syncFromLogistics,
   };
 }

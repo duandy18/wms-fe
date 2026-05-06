@@ -40,3 +40,18 @@ export interface ShippingLedgerQuery {
   limit: number;
   offset: number;
 }
+
+export interface SyncLogisticsShippingRecordsInput {
+  after_id?: number | null;
+  limit?: number;
+  platform?: string | null;
+  store_code?: string | null;
+}
+
+export interface SyncLogisticsShippingRecordsResponse {
+  ok: boolean;
+  fetched: number;
+  upserted: number;
+  last_cursor: number;
+  has_more: boolean;
+}

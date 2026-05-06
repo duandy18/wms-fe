@@ -16,6 +16,8 @@ const ShippingLedgerPage: React.FC = () => {
     total,
     loading,
     exporting,
+    syncing,
+    syncResult,
     error,
     currentPage,
     totalPages,
@@ -24,6 +26,7 @@ const ShippingLedgerPage: React.FC = () => {
     setOffset,
     reload,
     exportCsv,
+    syncFromLogistics,
   } = useShippingLedgerPage();
 
   const {
@@ -37,20 +40,23 @@ const ShippingLedgerPage: React.FC = () => {
     <div className="space-y-4 p-6">
       <PageTitle
         title="发货记录"
-        description="基于运输事实台帐浏览发货记录，展示快递网点、仓库、预估费用结构、尺寸与寄件人，不承载状态和对账结果。"
+        description="基于 WMS 本地物流台帐浏览发货事实；物流执行由独立 Logistics 系统负责，本页可手动同步 Logistics 发货事实。"
       />
 
       <ShippingLedgerToolbar
         total={total}
         loading={loading}
         exporting={exporting}
+        syncing={syncing}
+        syncResult={syncResult}
         onReload={() => void reload()}
         onExport={() => void exportCsv()}
+        onSync={() => void syncFromLogistics()}
       />
 
       <ShippingLedgerFilters
         query={query}
-        loading={loading}
+        loading={loading || syncing}
         providers={providers}
         warehouses={warehouses}
         optionsLoading={optionsLoading}
