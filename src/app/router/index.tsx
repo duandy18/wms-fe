@@ -2,7 +2,7 @@
 // 应用路由总表：挂载业务页面与主数据页面
 
 import React, { Suspense } from "react";
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import { AppLayout } from "../layout/AppLayout";
 import {
@@ -12,13 +12,6 @@ import {
   RouteLoading,
 } from "./guards";
 import * as P from "./lazyPages";
-
-/* 统一入口：收敛到“编辑快递网点”页 */
-function RedirectToProviderEdit() {
-  const { providerId } = useParams();
-  if (!providerId) return <Navigate to="/shipping-assist/pricing/providers" replace />;
-  return <Navigate to={`/shipping-assist/pricing/providers/${providerId}/edit`} replace />;
-}
 
 /* 路由入口 */
 const AppRouter: React.FC = () => {
@@ -247,30 +240,6 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="shipping-assist/pricing/bindings"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.PricingPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="shipping-assist/pricing/templates"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.TemplatesPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="shipping-assist/pricing/templates/:templateId"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.TemplateWorkbenchPage />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="shipping-assist/shipping/records"
             element={
               <RequirePermission permission="page.shipping_assist.read">
@@ -279,22 +248,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          <Route
-            path="shipping-assist/billing/items"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.BillingItemsPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="shipping-assist/billing/reconciliation"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.ReconciliationPage />
-              </RequirePermission>
-            }
-          />
 
           <Route
             path="finance"
@@ -544,41 +497,9 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          <Route
-            path="shipping-assist/pricing/providers"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.ShippingProvidersListPage />
-              </RequirePermission>
-            }
-          />
 
-          <Route
-            path="shipping-assist/pricing/providers/:providerId"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <RedirectToProviderEdit />
-              </RequirePermission>
-            }
-          />
 
-          <Route
-            path="shipping-assist/pricing/providers/new"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.ShippingProviderEditPage />
-              </RequirePermission>
-            }
-          />
 
-          <Route
-            path="shipping-assist/pricing/providers/:providerId/edit"
-            element={
-              <RequirePermission permission="page.shipping_assist.read">
-                <P.ShippingProviderEditPage />
-              </RequirePermission>
-            }
-          />
         </Route>
 
         <Route path="*" element={<Navigate to="/inventory" replace />} />

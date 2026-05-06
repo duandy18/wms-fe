@@ -1,9 +1,11 @@
 // src/features/shipping-assist/records/api.ts
 
-import { apiGet, apiRequestBlob } from "../../../lib/api";
+import { apiGet, apiPost, apiRequestBlob } from "../../../lib/api";
 import type {
   ShippingLedgerListResponse,
   ShippingLedgerQuery,
+  SyncLogisticsShippingRecordsInput,
+  SyncLogisticsShippingRecordsResponse,
 } from "./types";
 
 function buildExportQueryString(query: ShippingLedgerQuery): string {
@@ -37,14 +39,19 @@ function buildExportQueryString(query: ShippingLedgerQuery): string {
 export async function fetchShippingLedger(
   query: ShippingLedgerQuery,
 ): Promise<ShippingLedgerListResponse> {
-  return await apiGet<ShippingLedgerListResponse>("/shipping-assist/shipping/records", query);
+  return await apiGet<ShippingLedgerListResponse>(
+    "/shipping-assist/shipping/records",
+    query,
+  );
 }
 
 export async function exportShippingLedgerCsv(
   query: ShippingLedgerQuery,
 ): Promise<Blob> {
   const qs = buildExportQueryString(query);
-  const path = qs ? `/shipping-assist/shipping/records/export?${qs}` : "/shipping-assist/shipping/records/export";
+  const path = qs
+    ? `/shipping-assist/shipping/records/export?${qs}`
+    : "/shipping-assist/shipping/records/export";
 
   return await apiRequestBlob(path, {
     method: "GET",
@@ -52,4 +59,13 @@ export async function exportShippingLedgerCsv(
       Accept: "text/csv",
     },
   });
+}
+
+export async function syncLogisticsShippingRecords(
+  payload: SyncLogisticsShippingRecordsInput = { limit: 100 },
+): Promise<SyncLogisticsShippingRecordsResponse> {
+  return await apiPost<SyncLogisticsShippingRecordsResponse>(
+    "/shipping-assist/shipping/records/sync-from-logistics",
+    payload,
+  );
 }
