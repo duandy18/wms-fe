@@ -105,17 +105,83 @@ const OutboundManualDocsPage: React.FC = () => {
           </div>
 
           <div>
-            <div className="mb-1 text-xs text-slate-500">领用/收件人</div>
+            <div className="mb-1 text-xs text-slate-500">收件人</div>
             <input
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
               value={m.recipientName}
               onChange={(e) => m.setRecipientName(e.target.value)}
               disabled={m.creating}
-              placeholder="请输入领用/收件人"
+              placeholder="请输入收件人"
             />
           </div>
 
           <div>
+            <div className="mb-1 text-xs text-slate-500">收件电话</div>
+            <input
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={m.receiverPhone}
+              onChange={(e) => m.setReceiverPhone(e.target.value)}
+              disabled={m.creating}
+              placeholder="请输入收件电话"
+            />
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs text-slate-500">省</div>
+            <input
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={m.receiverProvince}
+              onChange={(e) => m.setReceiverProvince(e.target.value)}
+              disabled={m.creating}
+              placeholder="例如：浙江省"
+            />
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs text-slate-500">市</div>
+            <input
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={m.receiverCity}
+              onChange={(e) => m.setReceiverCity(e.target.value)}
+              disabled={m.creating}
+              placeholder="例如：杭州市"
+            />
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs text-slate-500">区/县</div>
+            <input
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={m.receiverDistrict}
+              onChange={(e) => m.setReceiverDistrict(e.target.value)}
+              disabled={m.creating}
+              placeholder="可选"
+            />
+          </div>
+
+          <div className="xl:col-span-2">
+            <div className="mb-1 text-xs text-slate-500">详细地址</div>
+            <input
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={m.receiverAddress}
+              onChange={(e) => m.setReceiverAddress(e.target.value)}
+              disabled={m.creating}
+              placeholder="请输入详细地址"
+            />
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs text-slate-500">邮编</div>
+            <input
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={m.receiverPostcode}
+              onChange={(e) => m.setReceiverPostcode(e.target.value)}
+              disabled={m.creating}
+              placeholder="可选"
+            />
+          </div>
+
+          <div className="xl:col-span-3">
             <div className="mb-1 text-xs text-slate-500">单据备注</div>
             <input
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -307,9 +373,9 @@ const OutboundManualDocsPage: React.FC = () => {
             <thead className="bg-slate-50 text-slate-600">
               <tr>
                 <th className="px-3 py-2 text-left">单据号</th>
-                <th className="px-3 py-2 text-left">类型</th>
                 <th className="px-3 py-2 text-left">仓库</th>
-                <th className="px-3 py-2 text-left">领用/收件人</th>
+                <th className="px-3 py-2 text-left">收件人 / 电话</th>
+                <th className="px-3 py-2 text-left">收件地址</th>
                 <th className="px-3 py-2 text-left">状态</th>
                 <th className="px-3 py-2 text-left">创建时间</th>
                 <th className="px-3 py-2 text-right">行数</th>
@@ -338,9 +404,18 @@ const OutboundManualDocsPage: React.FC = () => {
                     }
                   >
                     <td className="px-3 py-2 font-mono">{row.doc_no}</td>
-                    <td className="px-3 py-2">{row.doc_type}</td>
                     <td className="px-3 py-2">仓库 {row.warehouse_id}</td>
-                    <td className="px-3 py-2">{row.recipient_name || "-"}</td>
+                    <td className="px-3 py-2">
+                      <div>{row.recipient_name || "-"}</div>
+                      <div className="font-mono text-xs text-slate-500">
+                        {row.receiver_phone || "-"}
+                      </div>
+                    </td>
+                    <td className="min-w-[320px] max-w-[520px] break-words px-3 py-2 text-xs">
+                      {[row.receiver_province, row.receiver_city, row.receiver_district, row.receiver_address]
+                        .filter(Boolean)
+                        .join(" ") || "-"}
+                    </td>
                     <td className="px-3 py-2">
                       {formatManualOutboundDocStatus(row.status)}
                     </td>
@@ -458,15 +533,36 @@ const OutboundManualDocsPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <div className="text-xs text-slate-500">领用/收件人</div>
+                <div className="text-xs text-slate-500">创建时间</div>
+                <div className="text-sm text-slate-900">
+                  {formatDateTime(m.detail.created_at)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">收件人</div>
                 <div className="text-sm text-slate-900">
                   {m.detail.recipient_name || "-"}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-slate-500">创建时间</div>
+                <div className="text-xs text-slate-500">收件电话</div>
+                <div className="font-mono text-sm text-slate-900">
+                  {m.detail.receiver_phone || "-"}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">省 / 市 / 区</div>
                 <div className="text-sm text-slate-900">
-                  {formatDateTime(m.detail.created_at)}
+                  {[m.detail.receiver_province, m.detail.receiver_city, m.detail.receiver_district]
+                    .filter(Boolean)
+                    .join(" / ") || "-"}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <div className="text-xs text-slate-500">详细地址</div>
+                <div className="text-sm text-slate-900">
+                  {m.detail.receiver_address || "-"}
+                  {m.detail.receiver_postcode ? `（${m.detail.receiver_postcode}）` : ""}
                 </div>
               </div>
             </div>
