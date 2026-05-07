@@ -11,9 +11,9 @@ import {
 } from "../contracts/receiving";
 import { useReceivingFixedRowsReceiptPage } from "../model/useReceivingFixedRowsReceiptPage";
 
+import { formatDateTimeMinute } from "../../../../lib/dateTime";
 function formatDateTime(value: string | null): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 const ReceivingManualPage: React.FC = () => {

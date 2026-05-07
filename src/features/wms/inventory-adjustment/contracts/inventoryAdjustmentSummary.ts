@@ -1,3 +1,4 @@
+import { formatDateTimeMinute } from "../../../../lib/dateTime";
 export type InventoryAdjustmentSummaryType =
   | "COUNT"
   | "INBOUND_REVERSAL"
@@ -178,8 +179,7 @@ export function formatLedgerAction(value: string | null | undefined): string {
 }
 
 export function formatDateTime(value: string | null | undefined): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 export function formatQty(value: number | string | null | undefined): string {

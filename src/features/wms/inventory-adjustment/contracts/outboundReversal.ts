@@ -1,3 +1,4 @@
+import { formatDateTimeMinute } from "../../../../lib/dateTime";
 export type OutboundReversalRangeDays = 1 | 3 | 7 | 15 | 30;
 export type OutboundReversalSourceType = "ORDER" | "MANUAL";
 
@@ -97,8 +98,7 @@ export interface OutboundReversalOut {
 }
 
 export function formatDateTime(value: string | null): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 export function formatQty(value: number | string | null | undefined): string {

@@ -1,3 +1,4 @@
+import { formatDateTimeMinute } from "../../../../lib/dateTime";
 export type CountDocStatus = "DRAFT" | "FROZEN" | "COUNTED" | "POSTED" | "VOIDED";
 
 export interface CountDocExecutionLineOut {
@@ -141,8 +142,7 @@ export function formatCountDocStatus(status: CountDocStatus): string {
 }
 
 export function formatDateTime(value: string | null): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 export function formatQty(value: number | string | null | undefined): string {

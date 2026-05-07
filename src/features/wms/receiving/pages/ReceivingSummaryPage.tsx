@@ -8,9 +8,9 @@ import {
 import { useReceivingSummaryPage } from "../model/useReceivingSummaryPage";
 import { formatQty } from "../utils/fixedRows";
 
+import { formatDateTimeMinute } from "../../../../lib/dateTime";
 function formatDateTime(value: string | null): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 const ReceivingSummaryPage: React.FC = () => {

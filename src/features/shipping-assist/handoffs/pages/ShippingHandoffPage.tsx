@@ -19,43 +19,74 @@ function getActiveTab(pathname: string): HandoffTab {
   return pathname.endsWith("/payload") ? "payload" : "status";
 }
 
-function statusBadgeClass(value: string): string {
-  if (value === "COMPLETED" || value === "EXPORTED" || value === "IMPORTED") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+function deriveHandoffStage(row: ShippingHandoffRow): string {
+  if (row.export_status === "CANCELLED") return "已取消";
+
+  if (row.export_status === "PENDING" && row.logistics_status === "NOT_IMPORTED") {
+    return "待 Logistics 导入";
   }
-  if (value === "FAILED") {
+
+  if (row.export_status === "FAILED" && row.logistics_status === "FAILED") {
+    return "导出物流失败";
+  }
+
+  if (row.export_status === "EXPORTED" && row.logistics_status === "IMPORTED") {
+    return "已导出，待物流处理";
+  }
+
+  if (row.export_status === "EXPORTED" && row.logistics_status === "IN_PROGRESS") {
+    return "物流处理中";
+  }
+
+  if (row.export_status === "EXPORTED" && row.logistics_status === "COMPLETED") {
+    return "物流已完成";
+  }
+
+  if (row.export_status === "FAILED") return "导出物流失败";
+  if (row.logistics_status === "COMPLETED") return "物流已完成";
+  if (row.logistics_status === "IN_PROGRESS") return "物流处理中";
+
+  return `${row.export_status} / ${row.logistics_status}`;
+}
+
+function handoffStageClass(row: ShippingHandoffRow): string {
+  if (row.export_status === "CANCELLED") {
+    return "border-slate-300 bg-slate-100 text-slate-700";
+  }
+
+  if (row.export_status === "FAILED" || row.logistics_status === "FAILED") {
     return "border-rose-200 bg-rose-50 text-rose-700";
   }
-  if (value === "IN_PROGRESS") {
+
+  if (row.logistics_status === "COMPLETED") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (row.logistics_status === "IN_PROGRESS") {
     return "border-sky-200 bg-sky-50 text-sky-700";
   }
-  return "border-slate-200 bg-slate-50 text-slate-700";
+
+  if (row.export_status === "EXPORTED") {
+    return "border-indigo-200 bg-indigo-50 text-indigo-700";
+  }
+
+  return "border-amber-200 bg-amber-50 text-amber-700";
 }
 
-function formatStatusLabel(value: string): string {
-  const labels: Record<string, string> = {
-    PENDING: "待导入",
-    FAILED: "失败",
-    EXPORTED: "已导出",
-    CANCELLED: "已取消",
-    NOT_IMPORTED: "未导入",
-    IMPORTED: "已导入",
-    IN_PROGRESS: "处理中",
-    COMPLETED: "已完成",
-  };
-
-  return labels[value] ?? value;
-}
-
-function StatusBadge({ value }: { value: string }) {
+function HandoffStageBadge({ row }: { row: ShippingHandoffRow }) {
   return (
-    <span
-      className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${statusBadgeClass(
-        value,
-      )}`}
-    >
-      {formatStatusLabel(value)}
-    </span>
+    <div className="space-y-1">
+      <span
+        className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${handoffStageClass(
+          row,
+        )}`}
+      >
+        {deriveHandoffStage(row)}
+      </span>
+      <div className="font-mono text-[11px] text-slate-500">
+        {row.export_status} / {row.logistics_status}
+      </div>
+    </div>
   );
 }
 
@@ -65,7 +96,7 @@ function HandoffTabs({ active }: { active: HandoffTab }) {
       key: "status" as const,
       label: "交接状态",
       to: "/shipping-assist/handoffs/status",
-      hint: "观察 WMS 与 Logistics 的导入、处理和回写状态。",
+      hint: "观察 WMS 与 Logistics 的导出、处理和回写状态。",
     },
     {
       key: "payload" as const,
@@ -118,15 +149,17 @@ function HandoffToolbar({
 }) {
   const summary = useMemo(() => {
     const pending = rows.filter((row) => row.export_status === "PENDING").length;
-    const imported = rows.filter((row) =>
-      ["IMPORTED", "IN_PROGRESS"].includes(row.logistics_status),
+    const exported = rows.filter(
+      (row) =>
+        row.export_status === "EXPORTED" &&
+        ["IMPORTED", "IN_PROGRESS"].includes(row.logistics_status),
     ).length;
     const completed = rows.filter((row) => row.logistics_status === "COMPLETED").length;
     const failed = rows.filter(
       (row) => row.export_status === "FAILED" || row.logistics_status === "FAILED",
     ).length;
 
-    return { pending, imported, completed, failed };
+    return { pending, exported, completed, failed };
   }, [rows]);
 
   return (
@@ -144,8 +177,8 @@ function HandoffToolbar({
             <div className="font-semibold text-slate-900">{summary.pending}</div>
           </div>
           <div>
-            <div className="text-xs text-slate-500">处理中</div>
-            <div className="font-semibold text-slate-900">{summary.imported}</div>
+            <div className="text-xs text-slate-500">已导出/处理中</div>
+            <div className="font-semibold text-slate-900">{summary.exported}</div>
           </div>
           <div>
             <div className="text-xs text-slate-500">已完成</div>
@@ -206,13 +239,11 @@ function StatusTable({
                 <th className="px-3 py-2 text-left">来源</th>
                 <th className="px-3 py-2 text-left">来源单号</th>
                 <th className="px-3 py-2 text-left">交接键</th>
-                <th className="px-3 py-2 text-left">导出状态</th>
-                <th className="px-3 py-2 text-left">物流状态</th>
-                <th className="px-3 py-2 text-left">Logistics请求</th>
-                <th className="px-3 py-2 text-left">导入时间</th>
-                <th className="px-3 py-2 text-left">完成时间</th>
-                <th className="px-3 py-2 text-left">最近尝试</th>
-                <th className="px-3 py-2 text-left">失败原因</th>
+                <th className="px-3 py-2 text-left">当前阶段</th>
+                <th className="px-3 py-2 text-left">物流请求单</th>
+                <th className="px-3 py-2 text-left">导出回写时间</th>
+                <th className="px-3 py-2 text-left">物流完成时间</th>
+                <th className="px-3 py-2 text-left">异常信息</th>
               </tr>
             </thead>
 
@@ -237,10 +268,7 @@ function StatusTable({
                     {row.source_ref}
                   </td>
                   <td className="px-3 py-2">
-                    <StatusBadge value={row.export_status} />
-                  </td>
-                  <td className="px-3 py-2">
-                    <StatusBadge value={row.logistics_status} />
+                    <HandoffStageBadge row={row} />
                   </td>
                   <td className="px-3 py-2 text-xs">
                     <div className="font-mono">
@@ -256,10 +284,7 @@ function StatusTable({
                   <td className="px-3 py-2 font-mono text-xs">
                     {formatDateTime(row.logistics_completed_at)}
                   </td>
-                  <td className="px-3 py-2 font-mono text-xs">
-                    {formatDateTime(row.last_attempt_at)}
-                  </td>
-                  <td className="max-w-[320px] break-words px-3 py-2 text-xs text-rose-700">
+                  <td className="max-w-[360px] break-words px-3 py-2 text-xs text-rose-700">
                     {row.last_error || "-"}
                   </td>
                 </tr>

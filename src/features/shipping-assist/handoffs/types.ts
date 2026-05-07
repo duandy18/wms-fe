@@ -78,7 +78,15 @@ export interface ShippingHandoffQuery {
 
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+
+  const normalized = value.replace("T", " ").replace("Z", "");
+  const currentYear = String(new Date().getFullYear());
+
+  if (normalized.startsWith(currentYear)) {
+    return normalized.slice(5, 16);
+  }
+
+  return normalized.slice(0, 16);
 }
 
 export function formatText(value: string | number | null | undefined): string {

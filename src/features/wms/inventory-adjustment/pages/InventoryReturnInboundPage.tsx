@@ -9,9 +9,9 @@ import { formatReceivingStatus } from "../../receiving/contracts/receiving";
 import { formatQty } from "../../receiving/utils/fixedRows";
 import { useInventoryReturnInboundPage } from "../model/useInventoryReturnInboundPage";
 
+import { formatDateTimeMinute } from "../../../../lib/dateTime";
 function formatDateTime(value: string | null | undefined): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 const InventoryReturnInboundPage: React.FC = () => {

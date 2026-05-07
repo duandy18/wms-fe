@@ -17,6 +17,7 @@ import {
 } from "../contracts/inboundReceipt";
 import { useInboundReceiptDetailPage } from "../model/useInboundReceiptDetailPage";
 
+import { formatDateTimeMinute } from "../../../lib/dateTime";
 type PurchaseOption = {
   poId: number;
   poNo: string;
@@ -34,8 +35,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 function formatDateTime(value: string | null): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 function buildPurchaseOptions(rows: PurchaseOrderCompletionListItem[]): PurchaseOption[] {
