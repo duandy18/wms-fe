@@ -353,26 +353,30 @@ function PayloadTable({
           <table className="min-w-full border-collapse text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-3 py-2 text-left">出库事件ID</th>
+                <th className="px-3 py-2 text-left">来源</th>
                 <th className="px-3 py-2 text-left">来源单号</th>
                 <th className="px-3 py-2 text-left">平台 / 店铺</th>
                 <th className="px-3 py-2 text-left">订单引用</th>
                 <th className="px-3 py-2 text-left">仓库</th>
                 <th className="px-3 py-2 text-left">收件人</th>
                 <th className="px-3 py-2 text-left">收件地址</th>
-                <th className="px-3 py-2 text-left">出库事件</th>
                 <th className="px-3 py-2 text-left">商品行</th>
-                <th className="px-3 py-2 text-left">更新时间</th>
+                <th className="px-3 py-2 text-left">出库时间</th>
               </tr>
             </thead>
 
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-t align-top">
+                  <td className="px-3 py-2 font-mono text-xs">
+                    {row.outbound_event_id ?? "-"}
+                  </td>
                   <td className="px-3 py-2 text-xs">
-                    <div className="font-mono">{row.source_doc_no}</div>
-                    <div className="text-slate-500">
-                      {formatSourceType(row.source_doc_type)}
-                    </div>
+                    {formatSourceType(row.source_doc_type)}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-xs">
+                    {row.source_doc_no}
                   </td>
                   <td className="px-3 py-2 text-xs">
                     <div>{formatText(row.platform)}</div>
@@ -395,23 +399,14 @@ function PayloadTable({
                       {formatText(row.receiver_phone)}
                     </div>
                   </td>
-                  <td className="max-w-[260px] break-words px-3 py-2 text-xs">
+                  <td className="min-w-[360px] max-w-[560px] break-words px-3 py-2 text-xs">
                     {formatAddress(row)}
                   </td>
-                  <td className="px-3 py-2 text-xs">
-                    <div className="font-mono">{row.outbound_event_id ?? "-"}</div>
-                    <div className="max-w-[220px] break-all font-mono text-slate-500">
-                      {formatText(row.outbound_source_ref)}
-                    </div>
-                    <div className="font-mono text-slate-500">
-                      {formatDateTime(row.outbound_completed_at)}
-                    </div>
-                  </td>
-                  <td className="min-w-[280px] px-3 py-2">
+                  <td className="min-w-[320px] px-3 py-2">
                     <ItemList items={row.shipment_items} />
                   </td>
                   <td className="px-3 py-2 font-mono text-xs">
-                    {formatDateTime(row.updated_at)}
+                    {formatDateTime(row.outbound_completed_at)}
                   </td>
                 </tr>
               ))}
@@ -422,6 +417,7 @@ function PayloadTable({
     </section>
   );
 }
+
 
 const ShippingHandoffPage: React.FC = () => {
   const location = useLocation();
