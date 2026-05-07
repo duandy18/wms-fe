@@ -393,7 +393,7 @@ export function useOutboundManualDocsPage() {
 
     const payload: ManualOutboundDocCreateIn = {
       warehouse_id: Number(warehouseId),
-      doc_type: "MANUAL_OUTBOUND",
+      doc_type: MANUAL_OUTBOUND_DOC_TYPE,
       recipient_name: recipient,
       receiver_phone: phone,
       receiver_province: province,
@@ -426,8 +426,14 @@ export function useOutboundManualDocsPage() {
     remark,
     resetCreateForm,
     selectedWarehouse,
+    receiverAddress,
+    receiverCity,
+    receiverDistrict,
+    receiverPhone,
+    receiverPostcode,
+    receiverProvince,
+    warehouseId,
   ]);
-
   const releaseDoc = useCallback(async (docId: number) => {
     setDetailError("");
     try {
