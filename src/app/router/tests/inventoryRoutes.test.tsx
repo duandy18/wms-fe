@@ -263,8 +263,22 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders ShippingHandoffPage on /shipping-assist/handoffs", async () => {
+  it("redirects /shipping-assist/handoffs to status tab route", async () => {
     renderWithRoute("/shipping-assist/handoffs");
+    expect(
+      await screen.findByText("ShippingHandoffPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders ShippingHandoffPage on /shipping-assist/handoffs/status", async () => {
+    renderWithRoute("/shipping-assist/handoffs/status");
+    expect(
+      await screen.findByText("ShippingHandoffPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders ShippingHandoffPage on /shipping-assist/handoffs/payload", async () => {
+    renderWithRoute("/shipping-assist/handoffs/payload");
     expect(
       await screen.findByText("ShippingHandoffPage mock view"),
     ).toBeInTheDocument();
