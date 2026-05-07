@@ -116,7 +116,20 @@ const OutboundManualPage: React.FC = () => {
                   value: formatManualOutboundDocStatus(detail.status),
                 },
                 { label: "执行仓库", value: `仓库 ${detail.warehouse_id}` },
-                { label: "领用 / 收件人", value: detail.recipient_name || "-" },
+                { label: "收件人", value: detail.recipient_name || "-" },
+                { label: "收件电话", value: detail.receiver_phone || "-" },
+                {
+                  label: "收件地址",
+                  value:
+                    [
+                      detail.receiver_province,
+                      detail.receiver_city,
+                      detail.receiver_district,
+                      detail.receiver_address,
+                    ]
+                      .filter(Boolean)
+                      .join(" ") || "-",
+                },
                 {
                   label: "发布时间",
                   value: formatDateTime(detail.released_at),

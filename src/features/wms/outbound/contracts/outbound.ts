@@ -187,6 +187,12 @@ export interface ManualOutboundDocOut {
   status: ManualOutboundDocStatus | string;
   recipient_name: string | null;
   recipient_id: number | null;
+  receiver_phone: string | null;
+  receiver_province: string | null;
+  receiver_city: string | null;
+  receiver_district: string | null;
+  receiver_address: string | null;
+  receiver_postcode: string | null;
   remark: string | null;
   created_by: number | null;
   created_at: string;
@@ -211,6 +217,12 @@ export interface ManualOutboundDocCreateIn {
   warehouse_id: number;
   doc_type: string;
   recipient_name: string;
+  receiver_phone: string;
+  receiver_province: string;
+  receiver_city: string;
+  receiver_district?: string | null;
+  receiver_address: string;
+  receiver_postcode?: string | null;
   remark?: string | null;
   lines: ManualOutboundDocCreateLineIn[];
 }

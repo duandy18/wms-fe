@@ -85,6 +85,12 @@ export function useOutboundManualDocsPage() {
 
   const [warehouseId, setWarehouseId] = useState("");
   const [recipientName, setRecipientName] = useState("");
+  const [receiverPhone, setReceiverPhone] = useState("");
+  const [receiverProvince, setReceiverProvince] = useState("");
+  const [receiverCity, setReceiverCity] = useState("");
+  const [receiverDistrict, setReceiverDistrict] = useState("");
+  const [receiverAddress, setReceiverAddress] = useState("");
+  const [receiverPostcode, setReceiverPostcode] = useState("");
   const [remark, setRemark] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [itemQuery, setItemQuery] = useState("");
@@ -266,6 +272,12 @@ export function useOutboundManualDocsPage() {
   const resetCreateForm = useCallback(() => {
     setWarehouseId("");
     setRecipientName("");
+    setReceiverPhone("");
+    setReceiverProvince("");
+    setReceiverCity("");
+    setReceiverDistrict("");
+    setReceiverAddress("");
+    setReceiverPostcode("");
     setRemark("");
     setSupplierId("");
     setItemQuery("");
@@ -305,7 +317,31 @@ export function useOutboundManualDocsPage() {
 
     const recipient = recipientName.trim();
     if (!recipient) {
-      setCreateError("请填写领用/收件人");
+      setCreateError("请填写收件人");
+      return;
+    }
+
+    const phone = receiverPhone.trim();
+    if (!phone) {
+      setCreateError("请填写收件电话");
+      return;
+    }
+
+    const province = receiverProvince.trim();
+    if (!province) {
+      setCreateError("请填写收件省份");
+      return;
+    }
+
+    const city = receiverCity.trim();
+    if (!city) {
+      setCreateError("请填写收件城市");
+      return;
+    }
+
+    const address = receiverAddress.trim();
+    if (!address) {
+      setCreateError("请填写收件详细地址");
       return;
     }
 
@@ -356,9 +392,15 @@ export function useOutboundManualDocsPage() {
     }
 
     const payload: ManualOutboundDocCreateIn = {
-      warehouse_id: selectedWarehouse.id,
-      doc_type: MANUAL_OUTBOUND_DOC_TYPE,
+      warehouse_id: Number(warehouseId),
+      doc_type: "MANUAL_OUTBOUND",
       recipient_name: recipient,
+      receiver_phone: phone,
+      receiver_province: province,
+      receiver_city: city,
+      receiver_district: receiverDistrict.trim() || null,
+      receiver_address: address,
+      receiver_postcode: receiverPostcode.trim() || null,
       remark: remark.trim() || null,
       lines,
     };
@@ -451,6 +493,18 @@ export function useOutboundManualDocsPage() {
     setWarehouseId,
     recipientName,
     setRecipientName,
+    receiverPhone,
+    setReceiverPhone,
+    receiverProvince,
+    setReceiverProvince,
+    receiverCity,
+    setReceiverCity,
+    receiverDistrict,
+    setReceiverDistrict,
+    receiverAddress,
+    setReceiverAddress,
+    receiverPostcode,
+    setReceiverPostcode,
     remark,
     setRemark,
 
