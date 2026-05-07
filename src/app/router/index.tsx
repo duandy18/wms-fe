@@ -240,6 +240,15 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
+            path="shipping-assist/handoffs"
+            element={
+              <RequirePermission permission="page.shipping_assist.read">
+                <P.ShippingHandoffPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
             path="shipping-assist/records"
             element={
               <RequirePermission permission="page.shipping_assist.read">
