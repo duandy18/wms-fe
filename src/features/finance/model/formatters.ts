@@ -1,3 +1,4 @@
+import { formatDateTimeMinute } from "../../../lib/dateTime";
 export const formatCurrency = (value: number | null | undefined): string => {
   const n = typeof value === "number" && Number.isFinite(value) ? value : 0;
   return `￥${n.toFixed(2)}`;
@@ -14,6 +15,5 @@ export const formatNumber = (value: number | null | undefined): string => {
 };
 
 export const formatDateTime = (value: string | null | undefined): string => {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 };

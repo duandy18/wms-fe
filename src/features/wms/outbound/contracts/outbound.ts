@@ -1,3 +1,4 @@
+import { formatDateTimeMinute } from "../../../../lib/dateTime";
 export type OutboundSourceType = "ORDER" | "MANUAL";
 
 export interface OutboundSummaryRowOut {
@@ -279,8 +280,7 @@ export function formatOutboundStatus(value: string): string {
 }
 
 export function formatDateTime(value: string | null): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 export function formatDate(value: string | null): string {

@@ -4,9 +4,9 @@ import React from "react";
 import type { ShippingLedgerRow } from "../types";
 import type { ShippingLedgerWarehouseOption } from "../hooks/useShippingLedgerOptions";
 
+import { formatDateTimeMinute } from "../../../../lib/dateTime";
 function formatDateTime(value: string | null | undefined): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 function formatMoney(value: number | null | undefined): string {

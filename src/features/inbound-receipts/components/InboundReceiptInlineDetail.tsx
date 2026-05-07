@@ -11,9 +11,9 @@ import {
   type InboundReceiptReadOut,
 } from "../contracts/inboundReceipt";
 
+import { formatDateTimeMinute } from "../../../lib/dateTime";
 function formatDateTime(value: string | null): string {
-  if (!value) return "-";
-  return value.replace("T", " ").replace("Z", "");
+  return formatDateTimeMinute(value);
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
