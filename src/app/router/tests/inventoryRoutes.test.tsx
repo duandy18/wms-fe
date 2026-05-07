@@ -65,6 +65,7 @@ vi.mock("../lazyPages", () => {
 
     AnalyticsPage: page("AnalyticsPage mock view"),
 
+    ShippingHandoffPage: page("ShippingHandoffPage mock view"),
     ShippingLedgerPage: page("ShippingLedgerPage mock view"),
 
     FinanceOverviewPage: page("FinanceOverviewPage mock view"),
@@ -259,6 +260,20 @@ describe("AppRouter inventory routes", () => {
     renderWithRoute("/oms/jd");
     expect(
       await screen.findByText("OmsJdPlatformOrderMirrorPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders ShippingHandoffPage on /shipping-assist/handoffs", async () => {
+    renderWithRoute("/shipping-assist/handoffs");
+    expect(
+      await screen.findByText("ShippingHandoffPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders ShippingLedgerPage on /shipping-assist/records", async () => {
+    renderWithRoute("/shipping-assist/records");
+    expect(
+      await screen.findByText("ShippingLedgerPage mock view"),
     ).toBeInTheDocument();
   });
 

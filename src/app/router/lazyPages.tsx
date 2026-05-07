@@ -84,6 +84,11 @@ export const InventoryReturnInboundPage = lazy(
     ),
 );
 
+// 发货辅助：发货交接
+export const ShippingHandoffPage = lazy(
+  () => import("../../features/shipping-assist/handoffs/pages/ShippingHandoffPage"),
+);
+
 // 发货辅助：发货记录
 export const ShippingLedgerPage = lazy(
   () => import("../../features/shipping-assist/records/pages/ShippingLedgerPage"),
