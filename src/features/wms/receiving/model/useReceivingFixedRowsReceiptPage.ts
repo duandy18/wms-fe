@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { PublicAggregateUom } from "../../../../domains/pms/export/contracts/itemAggregate";
-import { fetchItemAggregate } from "../../../../domains/pms/export/itemAggregateClient";
+import {
+  fetchPmsExportUomsByItems,
+  type PmsExportUom,
+} from "../../../../domains/pms/export";
 import {
   probeReceivingTaskBarcode,
   submitReceiving,
@@ -114,18 +116,20 @@ export function useReceivingFixedRowsReceiptPage(options: Options) {
 
     async function loadLineUomOptions() {
       const itemIds = [...new Set(detail.lines.map((line) => line.item_id))];
-      const aggregateMap = new Map<number, PublicAggregateUom[]>();
+      const uomMap = new Map<number, PmsExportUom[]>();
 
-      await Promise.all(
-        itemIds.map(async (itemId) => {
-          try {
-            const aggregate = await fetchItemAggregate(itemId);
-            aggregateMap.set(itemId, aggregate.uoms ?? []);
-          } catch {
-            aggregateMap.set(itemId, []);
-          }
-        }),
-      );
+      try {
+        const rows = await fetchPmsExportUomsByItems(itemIds);
+        for (const uom of rows) {
+          const list = uomMap.get(uom.item_id) ?? [];
+          list.push(uom);
+          uomMap.set(uom.item_id, list);
+        }
+      } catch {
+        for (const itemId of itemIds) {
+          uomMap.set(itemId, []);
+        }
+      }
 
       if (cancelled) return;
 
@@ -133,7 +137,7 @@ export function useReceivingFixedRowsReceiptPage(options: Options) {
       for (const line of detail.lines) {
         next[line.line_no] = buildLineUomOptions(
           line,
-          aggregateMap.get(line.item_id),
+          uomMap.get(line.item_id),
         );
       }
       setUomOptionsByLineNo(next);
