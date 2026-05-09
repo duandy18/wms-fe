@@ -111,34 +111,6 @@ export interface PublicItemBasicOut {
   category?: string | null;
 }
 
-export interface PublicItemAggregateUomOut {
-  id: number;
-  uom: string;
-  ratio_to_base: number;
-  display_name?: string | null;
-}
-
-export interface PublicItemAggregateItemOut {
-  id: number;
-  sku: string;
-  name: string;
-  spec?: string | null;
-}
-
-export interface PublicItemAggregateOut {
-  item: PublicItemAggregateItemOut;
-  uoms: PublicItemAggregateUomOut[];
-  barcodes: Array<{
-    id: number;
-    item_id: number;
-    item_uom_id: number;
-    barcode: string;
-    symbology: string;
-    active: boolean;
-    is_primary: boolean;
-  }>;
-}
-
 export interface OrderOutboundSubmitLineIn {
   order_line_id: number;
   item_id: number;
