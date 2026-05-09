@@ -1,4 +1,4 @@
-// src/features/pms/suppliers/components/SuppliersTable.tsx
+// src/features/partners/suppliers/components/SuppliersTable.tsx
 
 import React from "react";
 import type { Supplier } from "../contracts/suppliers";

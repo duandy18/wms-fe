@@ -1,4 +1,4 @@
-// src/domains/pms/public/contracts/supplierBasic.ts
+// src/domains/partners/export/contracts/supplierBasic.ts
 
 export interface SupplierBasic {
   id: number;

@@ -1,7 +1,7 @@
 // src/features/pms/items/editor/itemEditorTypes.ts
 
 import type { FormEvent } from "react";
-import type { SupplierBasic } from "@/domains/pms/public/contracts/supplierBasic";
+import type { SupplierBasic } from "@/domains/partners/export/contracts/supplierBasic";
 import type { Item } from "../../../../contracts/item/contract";
 import type { FormState } from "../create/types";
 import type { Flash, FieldErrors } from "./schema";

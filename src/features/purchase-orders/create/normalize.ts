@@ -1,6 +1,6 @@
 // src/features/purchase-orders/create/normalize.ts
 
-import type { SupplierBasic } from "../../../domains/pms/public/contracts/supplierBasic";
+import type { SupplierBasic } from "../../../domains/partners/export/contracts/supplierBasic";
 
 export function normalizeSupplierOptions(
   list: SupplierBasic[],

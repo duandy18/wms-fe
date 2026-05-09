@@ -1,6 +1,6 @@
 // src/features/pms/items/create/submit.ts
 
-import type { SupplierBasic } from "@/domains/pms/public/contracts/supplierBasic";
+import type { SupplierBasic } from "@/domains/partners/export/contracts/supplierBasic";
 import type { Item, ItemCreateInput } from "../../../../contracts/item/contract";
 import { createItem } from "../api/itemsOwnerApi";
 import type { FormState } from "./types";

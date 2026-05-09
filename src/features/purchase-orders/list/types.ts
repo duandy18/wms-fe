@@ -1,5 +1,5 @@
 import type { PurchaseOrderCompletionListItem } from "../api";
-import type { SupplierBasic } from "../../../domains/pms/public/contracts/supplierBasic";
+import type { SupplierBasic } from "../../../domains/partners/export/contracts/supplierBasic";
 
 export type StatusFilter = "ALL" | "NOT_RECEIVED" | "PARTIAL" | "RECEIVED";
 

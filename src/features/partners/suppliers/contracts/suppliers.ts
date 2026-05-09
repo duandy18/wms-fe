@@ -1,4 +1,4 @@
-// src/features/pms/suppliers/contracts/suppliers.ts
+// src/features/partners/suppliers/contracts/suppliers.ts
 
 /**
  * 联系人角色。

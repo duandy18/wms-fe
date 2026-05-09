@@ -164,9 +164,9 @@ export const WarehouseDetailPage = lazy(
   () => import("../../features/wms/warehouses/WarehouseDetailPage"),
 );
 
-// 供应商主数据
+// 合作方：供应商
 export const SuppliersListPage = lazy(
-  () => import("../../features/pms/suppliers/pages/SuppliersListPage"),
+  () => import("../../features/partners/suppliers/pages/SuppliersListPage"),
 );
 
 
