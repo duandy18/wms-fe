@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchActiveWarehouses } from "../../warehouses/api";
 import type { WarehouseListItem } from "../../warehouses/types";
+import { fetchPmsExportItemUoms, type PmsExportUom } from "../../../../domains/pms/export";
 import {
   createManualOutboundDoc,
   fetchManualDocItemOptions,
   fetchManualOutboundDoc,
   fetchManualOutboundDocs,
-  fetchPublicItemAggregate,
   fetchPublicSuppliers,
   releaseManualOutboundDoc,
   voidManualOutboundDoc,
@@ -15,7 +15,6 @@ import type {
   ManualOutboundDocCreateIn,
   ManualOutboundDocCreateLineIn,
   ManualOutboundDocOut,
-  PublicItemAggregateUomOut,
   PublicItemBasicOut,
   PublicSupplierBasicOut,
 } from "../contracts/outbound";
@@ -44,8 +43,8 @@ function createEmptyLineDraft(): ManualDocLineDraft {
 }
 
 function pickDefaultUom(
-  uoms: PublicItemAggregateUomOut[],
-): PublicItemAggregateUomOut | null {
+  uoms: PmsExportUom[],
+): PmsExportUom | null {
   if (!uoms.length) return null;
   return uoms[0] ?? null;
 }
@@ -71,7 +70,7 @@ export function useOutboundManualDocsPage() {
     Record<number, PublicItemBasicOut>
   >({});
   const [itemUomsByItemId, setItemUomsByItemId] = useState<
-    Record<number, PublicItemAggregateUomOut[]>
+    Record<number, PmsExportUom[]>
   >({});
 
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
@@ -208,8 +207,7 @@ export function useOutboundManualDocsPage() {
       if (itemUomsByItemId[itemId]) {
         return itemUomsByItemId[itemId];
       }
-      const aggregate = await fetchPublicItemAggregate(itemId);
-      const uoms = Array.isArray(aggregate.uoms) ? aggregate.uoms : [];
+      const uoms = await fetchPmsExportItemUoms(itemId);
       setItemUomsByItemId((prev) => ({
         ...prev,
         [itemId]: uoms,
@@ -298,7 +296,7 @@ export function useOutboundManualDocsPage() {
   const getUomOptionsByItemId = useCallback(
     (
       itemIdValue: string | number | null | undefined,
-    ): PublicItemAggregateUomOut[] => {
+    ): PmsExportUom[] => {
       const id = Number(itemIdValue);
       if (!Number.isFinite(id) || id <= 0) return [];
       return itemUomsByItemId[id] ?? [];
@@ -382,7 +380,7 @@ export function useOutboundManualDocsPage() {
         item_name_snapshot: item?.name ?? null,
         item_sku_snapshot: item?.sku ?? null,
         item_spec_snapshot: item?.spec ?? null,
-        uom_name_snapshot: uom?.display_name ?? uom?.uom ?? null,
+        uom_name_snapshot: uom?.uom_name ?? uom?.display_name ?? uom?.uom ?? null,
       });
     }
 
