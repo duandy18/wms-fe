@@ -108,7 +108,7 @@ export interface ManualDocItemOptionsQuery {
 export async function fetchManualDocItemOptions(
   query: ManualDocItemOptionsQuery = {},
 ): Promise<PublicItemBasicOut[]> {
-  return apiGet<PublicItemBasicOut[]>("/public/items", {
+  return apiGet<PublicItemBasicOut[]>("/pms/export/items", {
     enabled: true,
     supplier_id: query.supplier_id,
     q: query.q,
@@ -146,14 +146,14 @@ export interface BarcodeProbeOut {
 }
 
 export async function fetchBarcodeProbe(barcode: string): Promise<BarcodeProbeOut> {
-  return apiPost<BarcodeProbeOut>("/items/barcode-probe", { barcode });
+  return apiPost<BarcodeProbeOut>("/pms/export/items/barcode-probe", { barcode });
 }
 
 export async function fetchPublicItemAggregate(
   itemId: number,
 ): Promise<PublicItemAggregateOut> {
   return apiGet<PublicItemAggregateOut>(
-    `/public/items/${encodeURIComponent(String(itemId))}/aggregate`,
+    `/pms/export/items/${encodeURIComponent(String(itemId))}/aggregate`,
   );
 }
 

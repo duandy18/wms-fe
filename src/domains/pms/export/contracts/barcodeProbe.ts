@@ -1,4 +1,4 @@
-// src/domains/pms/public/contracts/barcodeProbe.ts
+// src/domains/pms/export/contracts/barcodeProbe.ts
 import type { ItemBasic } from "./itemBasic";
 
 export type BarcodeProbeStatus = "BOUND" | "UNBOUND" | "ERROR";

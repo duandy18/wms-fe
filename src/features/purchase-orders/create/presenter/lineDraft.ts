@@ -6,7 +6,7 @@
 // - 前端不再保留任何 case_* / snapshot 字段
 
 import type { PurchaseOrderLineCreatePayload } from "../../api";
-import type { ItemBasic } from "../../../../domains/pms/public/contracts/itemBasic";
+import type { ItemBasic } from "../../../../domains/pms/export/contracts/itemBasic";
 
 export type LineDraft = {
   id: number;

@@ -1,4 +1,4 @@
-// src/domains/pms/public/index.ts
+// src/domains/pms/export/index.ts
 
 export type { ItemBasic } from "./contracts/itemBasic";
 export type { FetchItemsBasicParams } from "./contracts/itemsQuery";

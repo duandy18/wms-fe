@@ -1,4 +1,4 @@
-// src/domains/pms/public/itemsClient.ts
+// src/domains/pms/export/itemsClient.ts
 import { apiGet } from "../../../lib/api";
 import type { ItemBasic } from "./contracts/itemBasic";
 import type { FetchItemsBasicParams } from "./contracts/itemsQuery";
@@ -47,7 +47,7 @@ export async function fetchItemsBasic(
     qs.set("limit", String(params.limit));
   }
 
-  const path = qs.toString() ? `/public/items?${qs.toString()}` : "/public/items";
+  const path = qs.toString() ? `/pms/export/items?${qs.toString()}` : "/pms/export/items";
   const raw = await apiGet<unknown>(path);
   if (!Array.isArray(raw)) return [];
 
