@@ -10,9 +10,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { LineDraft } from "./create/presenter/lineDraft";
 import type { ItemBasic } from "../../domains/pms/export/contracts/itemBasic";
-import type { PublicItemAggregate } from "../../domains/pms/export/contracts/itemAggregate";
 import type { PmsExportUom } from "../../domains/pms/export/contracts/uom";
-import { fetchItemAggregate } from "../../domains/pms/export/itemAggregateClient";
+import { fetchPmsExportPrimaryBarcodesByItems } from "../../domains/pms/export/barcodesClient";
 import { fetchPmsExportUomsByItems } from "../../domains/pms/export/uomsClient";
 import { PurchaseOrderCreateLineRow } from "./create/linesEditor/LineRow";
 import { PurchaseOrderCreateLinesTableHead } from "./create/linesEditor/columns/TableHead";
@@ -28,7 +27,7 @@ interface PurchaseOrderCreateLinesEditorProps {
   onRemoveLine: (lineId: number) => void;
 }
 
-type AggregatesByItemId = Record<number, PublicItemAggregate>;
+type PrimaryBarcodeByItemId = Record<number, string>;
 type UomsByItemId = Record<number, PmsExportUom[]>;
 
 function sortUoms(uoms: PmsExportUom[]): PmsExportUom[] {
@@ -40,17 +39,6 @@ function sortUoms(uoms: PmsExportUom[]): PmsExportUom[] {
   return [...uoms].sort((a, b) => score(a) - score(b) || a.id - b.id);
 }
 
-function pickPrimaryBarcodeText(
-  aggregate: PublicItemAggregate | undefined,
-  loading: boolean,
-): string {
-  if (!aggregate) return loading ? "加载中…" : "—";
-  const primary =
-    aggregate.barcodes.find((x) => x.is_primary && x.active) ??
-    aggregate.barcodes.find((x) => x.active) ??
-    aggregate.barcodes[0];
-  return primary?.barcode?.trim() ? primary.barcode : "—";
-}
 
 export const PurchaseOrderCreateLinesEditor: React.FC<
   PurchaseOrderCreateLinesEditorProps
@@ -69,7 +57,7 @@ export const PurchaseOrderCreateLinesEditor: React.FC<
     return m;
   }, [items]);
 
-  const [aggregatesByItemId, setAggregatesByItemId] = useState<AggregatesByItemId>({});
+  const [primaryBarcodeByItemId, setPrimaryBarcodeByItemId] = useState<PrimaryBarcodeByItemId>({});
   const [uomsByItemId, setUomsByItemId] = useState<UomsByItemId>({});
   const [aggregatesLoading, setAggregatesLoading] = useState(false);
   const [aggregatesError, setAggregatesError] = useState<string | null>(null);
@@ -86,7 +74,7 @@ export const PurchaseOrderCreateLinesEditor: React.FC<
 
     async function run() {
       if (selectedItemIds.length === 0) {
-        setAggregatesByItemId({});
+        setPrimaryBarcodeByItemId({});
         setUomsByItemId({});
         setAggregatesError(null);
         return;
@@ -96,21 +84,18 @@ export const PurchaseOrderCreateLinesEditor: React.FC<
       setAggregatesError(null);
 
       try {
-        const [aggregateEntries, uomRows] = await Promise.all([
-          Promise.all(
-            selectedItemIds.map(async (itemId) => {
-              const aggregate = await fetchItemAggregate(itemId);
-              return [itemId, aggregate] as const;
-            }),
-          ),
+        const [barcodeRows, uomRows] = await Promise.all([
+          fetchPmsExportPrimaryBarcodesByItems(selectedItemIds),
           fetchPmsExportUomsByItems(selectedItemIds),
         ]);
 
         if (!alive) return;
 
-        const nextAggregates: AggregatesByItemId = {};
-        for (const [itemId, aggregate] of aggregateEntries) {
-          nextAggregates[itemId] = aggregate;
+        const nextPrimaryBarcodes: PrimaryBarcodeByItemId = {};
+        for (const row of barcodeRows) {
+          if (!nextPrimaryBarcodes[row.item_id] && row.barcode.trim()) {
+            nextPrimaryBarcodes[row.item_id] = row.barcode.trim();
+          }
         }
 
         const nextUoms: UomsByItemId = {};
@@ -123,13 +108,13 @@ export const PurchaseOrderCreateLinesEditor: React.FC<
           nextUoms[itemId] = sortUoms(nextUoms[itemId] ?? []);
         }
 
-        setAggregatesByItemId(nextAggregates);
+        setPrimaryBarcodeByItemId(nextPrimaryBarcodes);
         setUomsByItemId(nextUoms);
       } catch (e) {
         if (!alive) return;
-        console.error("fetch item aggregate or export uoms failed:", e);
-        setAggregatesError("商品详情或包装单位加载失败");
-        setAggregatesByItemId({});
+        console.error("fetch export barcodes or export uoms failed:", e);
+        setAggregatesError("主条码或包装单位加载失败");
+        setPrimaryBarcodeByItemId({});
         setUomsByItemId({});
       } finally {
         if (alive) {
@@ -193,13 +178,6 @@ export const PurchaseOrderCreateLinesEditor: React.FC<
                 const selectedItemId = line.item_id ? Number(line.item_id) : null;
                 const selectedItem =
                   selectedItemId != null ? itemMap.get(selectedItemId) : undefined;
-                const aggregate =
-                  selectedItemId != null &&
-                  Number.isFinite(selectedItemId) &&
-                  selectedItemId > 0
-                    ? aggregatesByItemId[selectedItemId]
-                    : undefined;
-
                 const uomsForSelectedItem =
                   selectedItemId != null &&
                   Number.isFinite(selectedItemId) &&
@@ -210,7 +188,8 @@ export const PurchaseOrderCreateLinesEditor: React.FC<
                   selectedItemId != null &&
                   Number.isFinite(selectedItemId) &&
                   selectedItemId > 0
-                    ? pickPrimaryBarcodeText(aggregate, aggregatesLoading)
+                    ? primaryBarcodeByItemId[selectedItemId] ??
+                      (aggregatesLoading ? "加载中…" : "—")
                     : "—";
 
                 return (
