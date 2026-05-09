@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchPmsExportUom } from "../../../../domains/pms/export";
 import {
   fetchBarcodeProbe,
   fetchManualOutboundDoc,
   fetchManualOutboundDocs,
   fetchOutboundLotCandidates,
-  fetchPublicItemAggregate,
   submitManualOutbound,
 } from "../api/outboundApi";
 import type {
@@ -277,12 +277,13 @@ export function useOutboundManualPage() {
         let uomName: string | null = line.uom_name_snapshot || null;
         if (probe.item_uom_id != null) {
           try {
-            const aggregate = await fetchPublicItemAggregate(probe.item_id);
-            const matchedUom =
-              aggregate.uoms.find((uom) => uom.id === probe.item_uom_id) ?? null;
-            if (matchedUom) {
-              uomName = matchedUom.display_name || matchedUom.uom || null;
-            }
+            const matchedUom = await fetchPmsExportUom(probe.item_uom_id);
+            uomName =
+              matchedUom.uom_name ||
+              matchedUom.display_name ||
+              matchedUom.uom ||
+              line.uom_name_snapshot ||
+              null;
           } catch {
             uomName = line.uom_name_snapshot || null;
           }
