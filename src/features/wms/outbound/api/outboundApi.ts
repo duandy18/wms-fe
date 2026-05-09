@@ -10,7 +10,6 @@ import type {
   OutboundLotCandidatesOut,
   OutboundSummaryDetailOut,
   OutboundSummaryListOut,
-  PublicItemAggregateOut,
   PublicItemBasicOut,
   PublicSupplierBasicOut,
 } from "../contracts/outbound";
@@ -147,14 +146,6 @@ export interface BarcodeProbeOut {
 
 export async function fetchBarcodeProbe(barcode: string): Promise<BarcodeProbeOut> {
   return apiPost<BarcodeProbeOut>("/pms/export/items/barcode-probe", { barcode });
-}
-
-export async function fetchPublicItemAggregate(
-  itemId: number,
-): Promise<PublicItemAggregateOut> {
-  return apiGet<PublicItemAggregateOut>(
-    `/pms/export/items/${encodeURIComponent(String(itemId))}/aggregate`,
-  );
 }
 
 export interface ManualOutboundDocsQuery {
