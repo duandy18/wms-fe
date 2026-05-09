@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageTitle from "../../../components/ui/PageTitle";
 import {
-  fetchItemAggregate,
   fetchItemsBasic,
+  fetchPmsExportItemUoms,
   type ItemBasic,
-  type PublicAggregateUom,
+  type PmsExportUom,
 } from "../../../domains/pms/export";
 import {
   fetchSuppliersBasic,
@@ -55,11 +55,13 @@ function supplierLabel(supplier: SupplierBasic): string {
   return code ? `${supplier.name}（${code}）` : supplier.name;
 }
 
-function rawUomName(uom: PublicAggregateUom): string {
-  return uom.display_name?.trim() ? uom.display_name.trim() : uom.uom;
+function rawUomName(uom: PmsExportUom): string {
+  if (uom.uom_name?.trim()) return uom.uom_name.trim();
+  if (uom.display_name?.trim()) return uom.display_name.trim();
+  return uom.uom;
 }
 
-function sortUoms(rows: PublicAggregateUom[]): PublicAggregateUom[] {
+function sortUoms(rows: PmsExportUom[]): PmsExportUom[] {
   return [...rows].sort((a, b) => {
     const rankA = a.is_inbound_default ? 0 : a.is_base ? 1 : 2;
     const rankB = b.is_inbound_default ? 0 : b.is_base ? 1 : 2;
@@ -73,7 +75,7 @@ function sortUoms(rows: PublicAggregateUom[]): PublicAggregateUom[] {
   });
 }
 
-function uomLabel(uom: PublicAggregateUom): string {
+function uomLabel(uom: PmsExportUom): string {
   const name = rawUomName(uom);
   if (uom.is_inbound_default) return `${name}（入库默认）`;
   if (uom.is_base) return `${name}（基础包装）`;
@@ -82,7 +84,7 @@ function uomLabel(uom: PublicAggregateUom): string {
 
 function computeExpectedBaseQty(
   plannedQty: string,
-  selectedUom: PublicAggregateUom | null,
+  selectedUom: PmsExportUom | null,
 ): string {
   if (!selectedUom) return "-";
   const qty = Number(plannedQty);
@@ -269,7 +271,7 @@ const InboundReceiptsManualPage: React.FC = () => {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState("");
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const [selectedItemId, setSelectedItemId] = useState("");
-  const [uoms, setUoms] = useState<PublicAggregateUom[]>([]);
+  const [uoms, setUoms] = useState<PmsExportUom[]>([]);
   const [uomsLoading, setUomsLoading] = useState(false);
   const [uomsError, setUomsError] = useState("");
   const [selectedUomId, setSelectedUomId] = useState("");
@@ -399,7 +401,7 @@ const InboundReceiptsManualPage: React.FC = () => {
   useEffect(() => {
     let alive = true;
 
-    async function loadItemAggregate() {
+    async function loadItemUoms() {
       if (!selectedItem) {
         setUoms([]);
         setSelectedUomId("");
@@ -412,10 +414,9 @@ const InboundReceiptsManualPage: React.FC = () => {
       setUomsError("");
 
       try {
-        const aggregate = await fetchItemAggregate(selectedItem.id);
+        const rows = sortUoms(await fetchPmsExportItemUoms(selectedItem.id));
         if (!alive) return;
 
-        const rows = sortUoms(Array.isArray(aggregate.uoms) ? aggregate.uoms : []);
         setUoms(rows);
 
         setSelectedUomId((prev) => {
@@ -437,7 +438,7 @@ const InboundReceiptsManualPage: React.FC = () => {
       }
     }
 
-    void loadItemAggregate();
+    void loadItemUoms();
 
     return () => {
       alive = false;
