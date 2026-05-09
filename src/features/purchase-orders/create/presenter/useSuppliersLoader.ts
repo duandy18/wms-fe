@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   fetchSuppliersBasic,
   type SupplierBasic,
-} from "../../../../domains/pms/public";
+} from "../../../../domains/partners/export";
 import { getErrorMessage } from "../utils";
 import { normalizeSupplierOptions } from "../normalize";
 

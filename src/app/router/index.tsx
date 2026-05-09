@@ -516,9 +516,9 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="suppliers"
+            path="partners/suppliers"
             element={
-              <RequirePermission permission="page.pms.read">
+              <RequirePermission permission="page.partners.read">
                 <P.SuppliersListPage />
               </RequirePermission>
             }

@@ -1,4 +1,4 @@
-// src/features/pms/suppliers/model/useSuppliersController.ts
+// src/features/partners/suppliers/model/useSuppliersController.ts
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {

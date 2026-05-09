@@ -1,4 +1,4 @@
-// src/features/pms/suppliers/components/SuppliersToolbar.tsx
+// src/features/partners/suppliers/components/SuppliersToolbar.tsx
 
 import React from "react";
 

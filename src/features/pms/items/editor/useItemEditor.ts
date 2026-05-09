@@ -1,7 +1,7 @@
 // src/features/pms/items/editor/useItemEditor.ts
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import type { SupplierBasic } from "@/domains/pms/public/contracts/supplierBasic";
+import type { SupplierBasic } from "@/domains/partners/export/contracts/supplierBasic";
 import type { Item } from "../../../../contracts/item/contract";
 import { updateItem } from "../api/itemsOwnerApi";
 import { runCreateItem, submitCreateItem } from "../create/submit";

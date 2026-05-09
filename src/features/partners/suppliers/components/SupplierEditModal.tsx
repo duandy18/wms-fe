@@ -1,4 +1,4 @@
-// src/features/pms/suppliers/components/SupplierEditModal.tsx
+// src/features/partners/suppliers/components/SupplierEditModal.tsx
 
 import React from "react";
 import type { SupplierContactRole } from "../contracts/suppliers";

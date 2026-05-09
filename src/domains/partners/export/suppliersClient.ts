@@ -1,4 +1,4 @@
-// src/domains/pms/public/suppliersClient.ts
+// src/domains/partners/export/suppliersClient.ts
 import { apiGet } from "../../../lib/api";
 import type { SupplierBasic } from "./contracts/supplierBasic";
 
@@ -23,8 +23,8 @@ export async function fetchSuppliersBasic(params?: {
   }
 
   const path = qs.toString()
-    ? `/public/suppliers?${qs.toString()}`
-    : "/public/suppliers";
+    ? `/partners/export/suppliers?${qs.toString()}`
+    : "/partners/export/suppliers";
 
   const raw = await apiGet<unknown>(path);
   if (!Array.isArray(raw)) return [];

@@ -4,11 +4,13 @@ import PageTitle from "../../../components/ui/PageTitle";
 import {
   fetchItemAggregate,
   fetchItemsBasic,
-  fetchSuppliersBasic,
   type ItemBasic,
   type PublicAggregateUom,
-  type SupplierBasic,
 } from "../../../domains/pms/public";
+import {
+  fetchSuppliersBasic,
+  type SupplierBasic,
+} from "../../../domains/partners/export";
 import { fetchActiveWarehouses } from "../../wms/warehouses/api";
 import {
   createInboundReceiptManual,

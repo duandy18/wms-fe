@@ -93,7 +93,7 @@ export interface PublicSuppliersQuery {
 export async function fetchPublicSuppliers(
   query: PublicSuppliersQuery = {},
 ): Promise<PublicSupplierBasicOut[]> {
-  return apiGet<PublicSupplierBasicOut[]>("/public/suppliers", {
+  return apiGet<PublicSupplierBasicOut[]>("/partners/export/suppliers", {
     active: true,
     q: query.q,
   });

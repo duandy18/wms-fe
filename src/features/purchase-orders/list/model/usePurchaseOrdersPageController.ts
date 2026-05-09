@@ -6,7 +6,7 @@ import {
 import {
   fetchSuppliersBasic,
   type SupplierBasic,
-} from "../../../../domains/pms/public";
+} from "../../../../domains/partners/export";
 import type {
   PurchaseOrdersPageController,
   StatusFilter,
