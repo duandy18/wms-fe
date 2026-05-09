@@ -1,14 +1,14 @@
 // src/features/purchase-orders/create/linesEditor/LineRow.tsx
 //
 // 当前 PO Create 行编辑：
-// - 输入单位：uom_id（来自 public aggregate.uoms）
+// - 输入单位：uom_id（来自 PMS export uoms）
 // - 输入数量：qty_input
 // - 商业字段：supply_price / discount_amount / discount_note / remark
 // - qty_base 由后端推导
 
 import React, { useEffect, useMemo } from "react";
 import type { ItemBasic } from "../../../../domains/pms/export/contracts/itemBasic";
-import type { PublicAggregateUom } from "../../../../domains/pms/export/contracts/itemAggregate";
+import type { PmsExportUom } from "../../../../domains/pms/export/contracts/uom";
 import type { LineDraft } from "../presenter/lineDraft";
 import { calcEstAmount } from "./calc";
 
@@ -21,7 +21,7 @@ export type PurchaseOrderLineRowProps = {
 
   selectedItem: ItemBasic | undefined;
 
-  uomsForSelectedItem: PublicAggregateUom[];
+  uomsForSelectedItem: PmsExportUom[];
   primaryBarcodeText?: string;
   uomsLoading?: boolean;
 
@@ -156,7 +156,7 @@ export const PurchaseOrderCreateLineRow: React.FC<PurchaseOrderLineRowProps> = (
           </option>
 
           {uomsForSelectedItem.map((u) => {
-            const name = u.display_name?.trim() ? u.display_name : u.uom;
+            const name = u.uom_name?.trim() ? u.uom_name : u.display_name?.trim() ? u.display_name : u.uom;
             const tag = u.is_purchase_default ? "默认" : u.is_base ? "基准" : "";
             const label = `${name}（×${u.ratio_to_base}）${tag ? ` · ${tag}` : ""}`;
             return (
