@@ -1,4 +1,4 @@
-import type { PublicAggregateUom } from "../../../../domains/pms/export/contracts/itemAggregate";
+import type { PmsExportUom } from "../../../../domains/pms/export/contracts/uom";
 import {
   createEmptyReceivingEntryDraft,
   type ReceivingActualUomOption,
@@ -52,10 +52,10 @@ export function incrementQtyText(value: string): string {
   return String(safe + 1);
 }
 
-export function sortAggregateUoms(
-  uoms: PublicAggregateUom[],
-): PublicAggregateUom[] {
-  const score = (u: PublicAggregateUom): number => {
+export function sortExportUoms(
+  uoms: PmsExportUom[],
+): PmsExportUom[] {
+  const score = (u: PmsExportUom): number => {
     const inbound = u.is_inbound_default ? 0 : 10;
     const base = u.is_base ? 0 : 1;
     return inbound + base;
@@ -71,7 +71,7 @@ export function sortAggregateUoms(
 
 export function buildLineUomOptions(
   line: ReceivingTaskReadOut["lines"][number],
-  aggregateUoms: PublicAggregateUom[] | undefined,
+  exportUoms: PmsExportUom[] | undefined,
 ): ReceivingActualUomOption[] {
   const fallback: ReceivingActualUomOption = {
     actual_item_uom_id: line.item_uom_id,
@@ -83,8 +83,8 @@ export function buildLineUomOptions(
   };
 
   const source =
-    aggregateUoms && aggregateUoms.length > 0
-      ? sortAggregateUoms(aggregateUoms)
+    exportUoms && exportUoms.length > 0
+      ? sortExportUoms(exportUoms)
       : [];
 
   const map = new Map<number, ReceivingActualUomOption>();
