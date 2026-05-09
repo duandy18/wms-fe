@@ -6,7 +6,7 @@ import {
   fetchItemsBasic,
   type ItemBasic,
   type PublicAggregateUom,
-} from "../../../domains/pms/public";
+} from "../../../domains/pms/export";
 import {
   fetchSuppliersBasic,
   type SupplierBasic,

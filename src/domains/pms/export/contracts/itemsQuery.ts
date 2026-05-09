@@ -1,4 +1,4 @@
-// src/domains/pms/public/contracts/itemsQuery.ts
+// src/domains/pms/export/contracts/itemsQuery.ts
 
 export type FetchItemsBasicParams = {
   /**

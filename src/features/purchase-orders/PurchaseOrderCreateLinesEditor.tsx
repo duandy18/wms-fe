@@ -9,12 +9,12 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import type { LineDraft } from "./create/presenter/lineDraft";
-import type { ItemBasic } from "../../domains/pms/public/contracts/itemBasic";
+import type { ItemBasic } from "../../domains/pms/export/contracts/itemBasic";
 import type {
   PublicItemAggregate,
   PublicAggregateUom,
-} from "../../domains/pms/public/contracts/itemAggregate";
-import { fetchItemAggregate } from "../../domains/pms/public/itemAggregateClient";
+} from "../../domains/pms/export/contracts/itemAggregate";
+import { fetchItemAggregate } from "../../domains/pms/export/itemAggregateClient";
 import { PurchaseOrderCreateLineRow } from "./create/linesEditor/LineRow";
 import { PurchaseOrderCreateLinesTableHead } from "./create/linesEditor/columns/TableHead";
 import { PO_CREATE_LINE_COLSPAN } from "./create/linesEditor/columns/defs";

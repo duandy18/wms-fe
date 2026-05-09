@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import type { Item } from "../../../../contracts/item/contract";
-import { probeItemBarcode } from "../../../../domains/pms/public/barcodeProbeClient";
+import { probeItemBarcode } from "../../../../domains/pms/export/barcodeProbeClient";
 import type { ItemBarcodeCompositeRow } from "../api/itemBarcodesOwnerApi";
 import { fetchItemUomRowsByItems } from "../api/itemUomsOwnerApi";
 import { fetchItems } from "../api/itemsOwnerApi";

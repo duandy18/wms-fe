@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import type { PublicAggregateUom } from "../../../../domains/pms/public/contracts/itemAggregate";
-import { fetchItemAggregate } from "../../../../domains/pms/public/itemAggregateClient";
+import type { PublicAggregateUom } from "../../../../domains/pms/export/contracts/itemAggregate";
+import { fetchItemAggregate } from "../../../../domains/pms/export/itemAggregateClient";
 import {
   fetchReceivingTask,
   probeReceivingTaskBarcode,

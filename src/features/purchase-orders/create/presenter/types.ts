@@ -1,7 +1,7 @@
 // src/features/purchase-orders/create/presenter/types.ts
 
 import type { SupplierBasic } from "../../../../domains/partners/export/contracts/supplierBasic";
-import type { ItemBasic } from "../../../../domains/pms/public/contracts/itemBasic";
+import type { ItemBasic } from "../../../../domains/pms/export/contracts/itemBasic";
 import type { LineDraft } from "./lineDraft";
 
 export interface PurchaseOrderCreateState {

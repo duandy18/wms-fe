@@ -1,4 +1,4 @@
-import type { PublicAggregateUom } from "../../../../domains/pms/public/contracts/itemAggregate";
+import type { PublicAggregateUom } from "../../../../domains/pms/export/contracts/itemAggregate";
 import {
   createEmptyReceivingEntryDraft,
   type ReceivingActualUomOption,

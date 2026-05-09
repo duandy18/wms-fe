@@ -1,4 +1,4 @@
-// src/domains/pms/public/contracts/itemAggregate.ts
+// src/domains/pms/export/contracts/itemAggregate.ts
 
 export interface PublicAggregateItem {
   id: number;
