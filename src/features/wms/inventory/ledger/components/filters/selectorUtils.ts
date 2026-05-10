@@ -1,6 +1,6 @@
 // src/features/wms/inventory/ledger/components/filters/selectorUtils.ts
 import { useMemo } from "react";
-import type { ItemOut, WarehouseOut } from "./api";
+import type { InventoryLedgerItemOption, WarehouseOut } from "./api";
 
 function safeNumPrefix(s: string): number | null {
   const m = String(s ?? "").trim().match(/^(\d+)/);
@@ -20,7 +20,7 @@ export function useWarehouseDisplayValue(warehouseId: string, warehouses: Wareho
   }, [warehouseId, warehouses]);
 }
 
-export function useItemDisplayValue(itemId: string, items: ItemOut[]): string {
+export function useItemDisplayValue(itemId: string, items: InventoryLedgerItemOption[]): string {
   return useMemo(() => {
     const iid = safeNumPrefix(itemId);
     if (!iid) return itemId;
