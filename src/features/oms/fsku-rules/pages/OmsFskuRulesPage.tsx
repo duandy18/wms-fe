@@ -1,8 +1,8 @@
 // src/features/oms/fsku-rules/pages/OmsFskuRulesPage.tsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { fetchItemListRows } from "../../../pms/items/api/itemListOwnerApi";
-import type { ItemListRow } from "../../../pms/items/contracts/itemList";
+import { fetchItemsBasic } from "../../../../domains/pms/export";
+import type { ItemBasic } from "../../../../domains/pms/export";
 import {
   createOmsFskuDraft,
   getOmsFskuDetail,
@@ -112,7 +112,7 @@ function makeEmptyComponent(): DraftComponent {
 }
 
 export default function OmsFskuRulesPage() {
-  const [skuRows, setSkuRows] = useState<ItemListRow[]>([]);
+  const [skuRows, setSkuRows] = useState<ItemBasic[]>([]);
   const [fskuRows, setFskuRows] = useState<OmsFskuListItem[]>([]);
   const [detailByFskuId, setDetailByFskuId] = useState<Record<number, OmsFskuDetail>>({});
   const [expandedFskuId, setExpandedFskuId] = useState<number | null>(null);
@@ -149,7 +149,7 @@ export default function OmsFskuRulesPage() {
   const canEditExpression = selectedFsku == null || selectedFsku.status === "draft";
 
   const loadReference = useCallback(async () => {
-    const rows = await fetchItemListRows({ limit: 500 });
+    const rows = await fetchItemsBasic({ enabledOnly: true, limit: 500 });
     setSkuRows(rows);
   }, []);
 
@@ -418,7 +418,7 @@ export default function OmsFskuRulesPage() {
                     >
                       <option value="">选择 SKU</option>
                       {activeSkuRows.map((skuRow) => (
-                        <option key={`${skuRow.item_id}-${skuRow.sku}`} value={skuRow.sku}>
+                        <option key={`${skuRow.id}-${skuRow.sku}`} value={skuRow.sku}>
                           {skuRow.sku} · {skuRow.name}
                         </option>
                       ))}

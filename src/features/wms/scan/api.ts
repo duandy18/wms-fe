@@ -1,5 +1,6 @@
 // src/features/wms/scan/api.ts
 import { apiGet, apiPost } from "../../../lib/api";
+import type { ItemBasic } from "../../../domains/pms/export/contracts/itemBasic";
 
 // 仅保留：拣货驾驶舱用的 pick probe 客户端。
 // 语义：调用后端 /scan，但只用于 probe=true 的商品/包装识别，不承担落账。
@@ -48,22 +49,14 @@ export async function probePickBarcode(
 }
 
 // =======================
-// Items 主数据（驾驶舱统一使用）
+// PMS export 商品基础读模型（驾驶舱统一使用）
 // =======================
 
-export interface ItemMeta {
-  id: number;
-  sku: string;
-  name: string;
-  spec?: string | null;
-  uom?: string | null;
-  enabled?: boolean;
-  [key: string]: unknown;
-}
+export type ItemMeta = ItemBasic;
 
 export async function fetchItemMeta(itemId: number): Promise<ItemMeta> {
   if (!itemId || itemId <= 0) {
     throw new Error("invalid item_id");
   }
-  return apiGet<ItemMeta>(`/items/${itemId}`);
+  return apiGet<ItemMeta>(`/pms/export/items/${itemId}`);
 }
