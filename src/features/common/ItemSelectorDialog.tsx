@@ -2,18 +2,18 @@
 //
 // SKU 选择对话框：
 // - 支持输入关键词（name / sku）本地过滤
-// - 使用简化表格
+// - 使用 PMS export ItemBasic 最小读模型
 // - 点击一行回调 (item)
-// - 打开时若本地无商品数据，则自动加载 items
+// - 打开时若本地无商品数据，则自动加载 PMS export items
 
 import React, { useEffect, useMemo, useState } from "react";
-import type { Item } from "@/contracts/item/contract";
-import { useItemsStore } from "@/features/pms/items/model/itemsStore";
+import { fetchItemsBasic } from "@/domains/pms/export";
+import type { ItemBasic } from "@/domains/pms/export";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSelect: (item: Item) => void;
+  onSelect: (item: ItemBasic) => void;
 };
 
 export const ItemSelectorDialog: React.FC<Props> = ({
@@ -21,9 +21,9 @@ export const ItemSelectorDialog: React.FC<Props> = ({
   onClose,
   onSelect,
 }) => {
-  const items = useItemsStore((s) => s.items);
-  const loading = useItemsStore((s) => s.loading);
-  const loadItems = useItemsStore((s) => s.loadItems);
+  const [items, setItems] = useState<ItemBasic[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [keyword, setKeyword] = useState("");
 
@@ -31,8 +31,35 @@ export const ItemSelectorDialog: React.FC<Props> = ({
     if (!open) return;
     if (loading) return;
     if (items.length > 0) return;
+
+    let cancelled = false;
+
+    async function loadItems(): Promise<void> {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const rows = await fetchItemsBasic({ enabledOnly: true, limit: 500 });
+        if (!cancelled) {
+          setItems(rows);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "加载商品失败");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
     void loadItems();
-  }, [open, loading, items.length, loadItems]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, loading, items.length]);
 
   const filtered = useMemo(() => {
     const k = keyword.trim().toLowerCase();
@@ -84,6 +111,10 @@ export const ItemSelectorDialog: React.FC<Props> = ({
           {loading ? (
             <div className="px-4 py-3 text-sm text-slate-500">
               商品加载中…
+            </div>
+          ) : error ? (
+            <div className="px-4 py-3 text-sm text-red-600">
+              {error}
             </div>
           ) : filtered.length === 0 ? (
             <div className="px-4 py-3 text-sm text-slate-500">
