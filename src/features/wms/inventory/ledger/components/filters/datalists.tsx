@@ -1,6 +1,6 @@
 // src/features/wms/inventory/ledger/components/filters/datalists.tsx
 import React from "react";
-import type { ItemOut, WarehouseOut } from "./api";
+import type { InventoryLedgerItemOption, WarehouseOut } from "./api";
 
 export const WarehouseDatalist: React.FC<{ id: string; warehouses: WarehouseOut[] }> = ({
   id,
@@ -17,7 +17,7 @@ export const WarehouseDatalist: React.FC<{ id: string; warehouses: WarehouseOut[
   );
 };
 
-export const ItemDatalist: React.FC<{ id: string; items: ItemOut[]; limit?: number }> = ({
+export const ItemDatalist: React.FC<{ id: string; items: InventoryLedgerItemOption[]; limit?: number }> = ({
   id,
   items,
   limit = 500,

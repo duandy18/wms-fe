@@ -12,7 +12,7 @@ export type WarehouseOut = {
   active: boolean;
 };
 
-export type ItemOut = {
+export type InventoryLedgerItemOption = {
   id: number;
   sku: string;
   name: string;
@@ -27,7 +27,7 @@ function mapWarehouse(x: InventoryWarehouseOption): WarehouseOut {
   };
 }
 
-function mapItem(x: InventoryItemOption): ItemOut {
+function mapItem(x: InventoryItemOption): InventoryLedgerItemOption {
   return {
     id: x.id,
     sku: x.sku,
@@ -48,7 +48,7 @@ export async function fetchActiveWarehouses(): Promise<WarehouseOut[]> {
   return res.warehouses.map(mapWarehouse);
 }
 
-export async function fetchItems(): Promise<ItemOut[]> {
+export async function fetchInventoryItems(): Promise<InventoryLedgerItemOption[]> {
   const res = await fetchInventoryOptions({
     warehouses_active_only: true,
     item_limit: 200,

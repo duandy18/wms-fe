@@ -1,7 +1,7 @@
 // src/features/wms/inventory/ledger/components/LedgerFiltersPanel.tsx
 import React, { useEffect, useMemo, useState } from "react";
 
-import { fetchActiveWarehouses, fetchItems, type ItemOut, type WarehouseOut } from "./filters/api";
+import { fetchActiveWarehouses, fetchInventoryItems, type InventoryLedgerItemOption, type WarehouseOut } from "./filters/api";
 import { isoToDateOnly, dateOnlyToIsoEndZ, dateOnlyToIsoStartZ } from "./filters/dateRange";
 import { applyIdFromInput, useWarehouseDisplayValue, useItemDisplayValue } from "./filters/selectorUtils";
 
@@ -46,7 +46,7 @@ export const LedgerFiltersPanel: React.FC<Props> = (p) => {
   const [collapsed, setCollapsed] = useState(false);
 
   const [warehouses, setWarehouses] = useState<WarehouseOut[]>([]);
-  const [items, setItems] = useState<ItemOut[]>([]);
+  const [items, setItems] = useState<InventoryLedgerItemOption[]>([]);
   const [optsErr, setOptsErr] = useState<string | null>(null);
 
   // 日期范围（可选）
@@ -61,7 +61,7 @@ export const LedgerFiltersPanel: React.FC<Props> = (p) => {
       setOptsErr(null);
       try {
         const w = await fetchActiveWarehouses();
-        const i = await fetchItems();
+        const i = await fetchInventoryItems();
         if (!alive) return;
         setWarehouses(w);
         setItems(i);

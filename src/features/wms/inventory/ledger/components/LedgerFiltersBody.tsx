@@ -1,13 +1,13 @@
 // src/features/wms/inventory/ledger/components/LedgerFiltersBody.tsx
 import React from "react";
 
-import type { ItemOut, WarehouseOut } from "./filters/api";
+import type { InventoryLedgerItemOption, WarehouseOut } from "./filters/api";
 import { CANON_OPTIONS, SUB_REASON_OPTIONS } from "./filters/options";
 import { WarehouseDatalist, ItemDatalist } from "./filters/datalists";
 
 type Props = {
   warehouses: WarehouseOut[];
-  items: ItemOut[];
+  items: InventoryLedgerItemOption[];
 
   whListId: string;
   itemListId: string;
