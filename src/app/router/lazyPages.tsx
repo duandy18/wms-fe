@@ -94,7 +94,6 @@ export const ShippingLedgerPage = lazy(
   () => import("../../features/shipping-assist/records/pages/ShippingLedgerPage"),
 );
 
-
 // 平台订单采集
 export const OmsPddPlatformOrderMirrorPage = lazy(
   () => import("../../features/oms/platforms/pages/OmsPddPlatformOrderMirrorPage"),
@@ -121,29 +120,6 @@ export const AnalyticsPage = lazy(
   () => import("../../features/oms/analytics/AnalyticsPage"),
 );
 
-// 主数据
-export const ItemsPage = lazy(
-  () => import("../../features/pms/items/pages/ItemsPage"),
-);
-export const ItemBarcodesPage = lazy(
-  () => import("../../features/pms/items/pages/ItemBarcodesPage"),
-);
-export const PmsBrandsPage = lazy(
-  () => import("../../features/pms/master-data/pages/PmsBrandsPage"),
-);
-export const PmsCategoriesPage = lazy(
-  () => import("../../features/pms/master-data/pages/PmsCategoriesPage"),
-);
-export const PmsAttributeDefsPage = lazy(
-  () => import("../../features/pms/master-data/pages/PmsAttributeDefsPage"),
-);
-export const PmsItemUomsPage = lazy(
-  () => import("../../features/pms/items/pages/PmsItemUomsPage"),
-);
-export const SkuCodingGeneratorPage = lazy(
-  () => import("../../features/pms/sku-coding/pages/SkuCodingGeneratorPage"),
-);
-
 export const OmsFskuRulesPage = lazy(
   () => import("../../features/oms/fsku-rules/pages/OmsFskuRulesPage"),
 );
@@ -151,6 +127,29 @@ export const OmsFskuRulesPage = lazy(
 // 系统管理：admin/users
 export const UsersManagePage = lazy(
   () => import("../../features/admin/users/UsersManagePage"),
+);
+
+// 系统管理：PMS 接入管理
+export const PmsIntegrationOverviewPage = lazy(
+  () =>
+    import(
+      "../../features/admin/pms-integration/PmsIntegrationOverviewPage"
+    ),
+);
+export const PmsItemProjectionPage = lazy(
+  () => import("../../features/admin/pms-integration/PmsItemProjectionPage"),
+);
+export const PmsSupplierProjectionPage = lazy(
+  () => import("../../features/admin/pms-integration/PmsSupplierProjectionPage"),
+);
+export const PmsUomProjectionPage = lazy(
+  () => import("../../features/admin/pms-integration/PmsUomProjectionPage"),
+);
+export const PmsSkuCodeProjectionPage = lazy(
+  () => import("../../features/admin/pms-integration/PmsSkuCodeProjectionPage"),
+);
+export const PmsBarcodeProjectionPage = lazy(
+  () => import("../../features/admin/pms-integration/PmsBarcodeProjectionPage"),
 );
 
 // 仓库管理
@@ -168,9 +167,6 @@ export const WarehouseDetailPage = lazy(
 export const SuppliersListPage = lazy(
   () => import("../../features/partners/suppliers/pages/SuppliersListPage"),
 );
-
-
-
 
 // 采购系统
 export const PurchaseOrdersPage = lazy(
