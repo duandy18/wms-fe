@@ -275,7 +275,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-
           <Route
             path="finance"
             element={
@@ -314,6 +313,54 @@ const AppRouter: React.FC = () => {
             element={
               <RequirePermission permission="page.admin.read">
                 <P.UsersManagePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="admin/pms-integration"
+            element={
+              <RequirePermission permission="page.admin.read">
+                <P.PmsIntegrationOverviewPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="admin/pms-integration/items"
+            element={
+              <RequirePermission permission="page.admin.read">
+                <P.PmsItemProjectionPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="admin/pms-integration/suppliers"
+            element={
+              <RequirePermission permission="page.admin.read">
+                <P.PmsSupplierProjectionPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="admin/pms-integration/uoms"
+            element={
+              <RequirePermission permission="page.admin.read">
+                <P.PmsUomProjectionPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="admin/pms-integration/sku-codes"
+            element={
+              <RequirePermission permission="page.admin.read">
+                <P.PmsSkuCodeProjectionPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="admin/pms-integration/barcodes"
+            element={
+              <RequirePermission permission="page.admin.read">
+                <P.PmsBarcodeProjectionPage />
               </RequirePermission>
             }
           />
@@ -444,69 +491,6 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="items"
-            element={
-              <RequirePermission permission="page.pms.read">
-                <P.ItemsPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="pms/brands"
-            element={
-              <RequirePermission permission="page.pms.read">
-                <P.PmsBrandsPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="pms/categories"
-            element={
-              <RequirePermission permission="page.pms.read">
-                <P.PmsCategoriesPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="pms/item-attribute-defs"
-            element={
-              <RequirePermission permission="page.pms.read">
-                <P.PmsAttributeDefsPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="item-uoms"
-            element={
-              <RequirePermission permission="page.pms.read">
-                <P.PmsItemUomsPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="item-barcodes"
-            element={
-              <RequirePermission permission="page.pms.read">
-                <P.ItemBarcodesPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="items/sku-coding"
-            element={
-              <RequirePermission permission="page.pms.read">
-                <P.SkuCodingGeneratorPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
             path="oms/fskus"
             element={
               <RequirePermission permission="page.oms.read">
@@ -523,10 +507,6 @@ const AppRouter: React.FC = () => {
               </RequirePermission>
             }
           />
-
-
-
-
         </Route>
 
         <Route path="*" element={<Navigate to="/inventory" replace />} />

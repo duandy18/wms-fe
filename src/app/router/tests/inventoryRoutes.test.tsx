@@ -56,11 +56,18 @@ vi.mock("../lazyPages", () => {
     OutboundOrderPage: page("OutboundOrderPage mock view"),
     OutboundManualDocsPage: page("OutboundManualDocsPage mock view"),
     OutboundManualPage: page("OutboundManualPage mock view"),
-    OmsPddPlatformOrderMirrorPage: page("OmsPddPlatformOrderMirrorPage mock view"),
+
+    OmsPddPlatformOrderMirrorPage: page(
+      "OmsPddPlatformOrderMirrorPage mock view",
+    ),
     OmsPddCodeMappingPage: page("OmsPddCodeMappingPage mock view"),
-    OmsTaobaoPlatformOrderMirrorPage: page("OmsTaobaoPlatformOrderMirrorPage mock view"),
+    OmsTaobaoPlatformOrderMirrorPage: page(
+      "OmsTaobaoPlatformOrderMirrorPage mock view",
+    ),
     OmsTaobaoCodeMappingPage: page("OmsTaobaoCodeMappingPage mock view"),
-    OmsJdPlatformOrderMirrorPage: page("OmsJdPlatformOrderMirrorPage mock view"),
+    OmsJdPlatformOrderMirrorPage: page(
+      "OmsJdPlatformOrderMirrorPage mock view",
+    ),
     OmsJdCodeMappingPage: page("OmsJdCodeMappingPage mock view"),
 
     AnalyticsPage: page("AnalyticsPage mock view"),
@@ -75,6 +82,13 @@ vi.mock("../lazyPages", () => {
 
     UsersManagePage: page("UsersManagePage mock view"),
 
+    PmsIntegrationOverviewPage: page("PmsIntegrationOverviewPage mock view"),
+    PmsItemProjectionPage: page("PmsItemProjectionPage mock view"),
+    PmsSupplierProjectionPage: page("PmsSupplierProjectionPage mock view"),
+    PmsUomProjectionPage: page("PmsUomProjectionPage mock view"),
+    PmsSkuCodeProjectionPage: page("PmsSkuCodeProjectionPage mock view"),
+    PmsBarcodeProjectionPage: page("PmsBarcodeProjectionPage mock view"),
+
     PurchaseOrdersPage: page("PurchaseOrdersPage mock view"),
     PurchaseOrderCreatePage: page("PurchaseOrderCreatePage mock view"),
     PurchaseOrderViewPage: page("PurchaseOrderViewPage mock view"),
@@ -86,16 +100,8 @@ vi.mock("../lazyPages", () => {
     WarehouseCreatePage: page("WarehouseCreatePage mock view"),
     WarehouseDetailPage: page("WarehouseDetailPage mock view"),
 
-    ItemsPage: page("ItemsPage mock view"),
-    ItemBarcodesPage: page("ItemBarcodesPage mock view"),
-    PmsBrandsPage: page("PmsBrandsPage mock view"),
-    PmsCategoriesPage: page("PmsCategoriesPage mock view"),
-    PmsAttributeDefsPage: page("PmsAttributeDefsPage mock view"),
-    PmsItemUomsPage: page("PmsItemUomsPage mock view"),
-    SkuCodingGeneratorPage: page("SkuCodingGeneratorPage mock view"),
     OmsFskuRulesPage: page("OmsFskuRulesPage mock view"),
     SuppliersListPage: page("SuppliersListPage mock view"),
-
   };
 });
 
@@ -241,7 +247,9 @@ describe("AppRouter inventory routes", () => {
 
   it("renders OmsPddPlatformOrderMirrorPage on /oms/pdd/platform-order-mirror", async () => {
     renderWithRoute("/oms/pdd/platform-order-mirror");
-    expect(await screen.findByText("OmsPddPlatformOrderMirrorPage mock view")).toBeInTheDocument();
+    expect(
+      await screen.findByText("OmsPddPlatformOrderMirrorPage mock view"),
+    ).toBeInTheDocument();
   });
 
   it("renders OmsPddCodeMappingPage on /oms/pdd/code-mapping", async () => {
@@ -326,6 +334,24 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders PmsIntegrationOverviewPage on /admin/pms-integration", async () => {
+    renderWithRoute("/admin/pms-integration");
+    expect(
+      await screen.findByText("PmsIntegrationOverviewPage mock view"),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["/admin/pms-integration/items", "PmsItemProjectionPage mock view"],
+    ["/admin/pms-integration/suppliers", "PmsSupplierProjectionPage mock view"],
+    ["/admin/pms-integration/uoms", "PmsUomProjectionPage mock view"],
+    ["/admin/pms-integration/sku-codes", "PmsSkuCodeProjectionPage mock view"],
+    ["/admin/pms-integration/barcodes", "PmsBarcodeProjectionPage mock view"],
+  ])("renders PMS projection page %s", async (route, expectedText) => {
+    renderWithRoute(route);
+    expect(await screen.findByText(expectedText)).toBeInTheDocument();
+  });
+
   it("falls back to /inventory after old /count route is retired", async () => {
     renderWithRoute("/count");
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
@@ -353,6 +379,19 @@ describe("AppRouter inventory routes", () => {
     "/shipping-assist/billing/items",
     "/shipping-assist/billing/reconciliation",
   ])("falls back to /inventory after retired WMS shipping route %s is removed", async (route) => {
+    renderWithRoute(route);
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
+  });
+
+  it.each([
+    "/items",
+    "/pms/brands",
+    "/pms/categories",
+    "/pms/item-attribute-defs",
+    "/item-uoms",
+    "/item-barcodes",
+    "/items/sku-coding",
+  ])("falls back to /inventory after retired PMS owner route %s is removed", async (route) => {
     renderWithRoute(route);
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
@@ -387,7 +426,6 @@ describe("AppRouter inventory routes", () => {
       await screen.findByText("OmsFskuRulesPage mock view"),
     ).toBeInTheDocument();
   });
-
 
   it("falls back to /inventory after old OMS fulfillment conversion route /oms/pdd/fulfillment-order-conversion is retired", async () => {
     renderWithRoute("/oms/pdd/fulfillment-order-conversion");
