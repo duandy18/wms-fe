@@ -10,7 +10,6 @@ import {
 } from "./api";
 import type {
   PmsProjectionIntegrationStatus,
-  PmsProjectionResourceStatus,
   PmsProjectionSyncRun,
 } from "./types";
 import {
