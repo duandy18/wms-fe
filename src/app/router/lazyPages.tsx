@@ -94,34 +94,20 @@ export const ShippingLedgerPage = lazy(
   () => import("../../features/shipping-assist/records/pages/ShippingLedgerPage"),
 );
 
-// 平台订单采集
-export const OmsPddPlatformOrderMirrorPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsPddPlatformOrderMirrorPage"),
-);
-export const OmsPddCodeMappingPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsPddCodeMappingPage"),
-);
 
-export const OmsTaobaoPlatformOrderMirrorPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsTaobaoPlatformOrderMirrorPage"),
-);
-export const OmsTaobaoCodeMappingPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsTaobaoCodeMappingPage"),
-);
 
-export const OmsJdPlatformOrderMirrorPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsJdPlatformOrderMirrorPage"),
-);
-export const OmsJdCodeMappingPage = lazy(
-  () => import("../../features/oms/platforms/pages/OmsJdCodeMappingPage"),
-);
 
-export const AnalyticsPage = lazy(
-  () => import("../../features/oms/analytics/AnalyticsPage"),
-);
 
-export const OmsFskuRulesPage = lazy(
-  () => import("../../features/oms/fsku-rules/pages/OmsFskuRulesPage"),
+
+// 订单管理：OMS fulfillment projection
+export const OmsOrderProjectionPage = lazy(
+  () => import("../../features/oms/projections/pages/OmsOrderProjectionPage"),
+);
+export const OmsLineProjectionPage = lazy(
+  () => import("../../features/oms/projections/pages/OmsLineProjectionPage"),
+);
+export const OmsComponentProjectionPage = lazy(
+  () => import("../../features/oms/projections/pages/OmsComponentProjectionPage"),
 );
 
 // 系统管理：admin/users
@@ -129,27 +115,21 @@ export const UsersManagePage = lazy(
   () => import("../../features/admin/users/UsersManagePage"),
 );
 
-// 系统管理：PMS 接入管理
-export const PmsIntegrationOverviewPage = lazy(
-  () =>
-    import(
-      "../../features/admin/pms-integration/PmsIntegrationOverviewPage"
-    ),
-);
+// 商品管理：PMS projection
 export const PmsItemProjectionPage = lazy(
-  () => import("../../features/admin/pms-integration/PmsItemProjectionPage"),
+  () => import("../../features/pms/projections/pages/PmsItemProjectionPage"),
 );
 export const PmsSupplierProjectionPage = lazy(
-  () => import("../../features/admin/pms-integration/PmsSupplierProjectionPage"),
+  () => import("../../features/pms/projections/pages/PmsSupplierProjectionPage"),
 );
 export const PmsUomProjectionPage = lazy(
-  () => import("../../features/admin/pms-integration/PmsUomProjectionPage"),
+  () => import("../../features/pms/projections/pages/PmsUomProjectionPage"),
 );
 export const PmsSkuCodeProjectionPage = lazy(
-  () => import("../../features/admin/pms-integration/PmsSkuCodeProjectionPage"),
+  () => import("../../features/pms/projections/pages/PmsSkuCodeProjectionPage"),
 );
 export const PmsBarcodeProjectionPage = lazy(
-  () => import("../../features/admin/pms-integration/PmsBarcodeProjectionPage"),
+  () => import("../../features/pms/projections/pages/PmsBarcodeProjectionPage"),
 );
 
 // 仓库管理
