@@ -36,6 +36,16 @@ function formatDateTime(value: string | null): string {
   return formatDateTimeMinute(value);
 }
 
+function formatQty(value: string | number | null | undefined): string {
+  const n = typeof value === "number" ? value : Number(value ?? 0);
+
+  if (!Number.isFinite(n)) {
+    return "-";
+  }
+
+  return n.toFixed(6).replace(/\.?0+$/, "");
+}
+
 function buildPurchaseOptions(rows: InboundReceiptPurchaseSourceOptionOut[]): PurchaseOption[] {
   return rows.map((row) => {
     const warehouseId = row.target_warehouse_id;
@@ -211,12 +221,12 @@ const PurchaseInboundReceiptSheet: React.FC<{
                     </td>
                     <td className="px-3 py-2">{line.item_spec_snapshot || "-"}</td>
                     <td className="px-3 py-2">{line.uom_name_snapshot || "-"}</td>
-                    <td className="px-3 py-2 text-right font-mono">{line.planned_qty}</td>
+                    <td className="px-3 py-2 text-right font-mono">{formatQty(line.planned_qty)}</td>
                     <td className="px-3 py-2 text-right font-mono">
-                      {progress?.received_qty ?? "0"}
+                      {formatQty(progress?.received_qty ?? "0")}
                     </td>
                     <td className="px-3 py-2 text-right font-mono">
-                      {progress?.remaining_qty ?? line.planned_qty}
+                      {formatQty(progress?.remaining_qty ?? line.planned_qty)}
                     </td>
                   </tr>
                 );
