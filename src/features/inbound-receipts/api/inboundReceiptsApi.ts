@@ -90,3 +90,64 @@ export async function releaseInboundReceipt(
 ): Promise<InboundReceiptReleaseOut> {
   return apiPost<InboundReceiptReleaseOut>(`/inbound-receipts/${receiptId}/release`, {});
 }
+
+
+export type InboundReceiptPurchaseSourceCompletionStatus =
+  | "NOT_RECEIVED"
+  | "PARTIAL"
+  | "RECEIVED";
+
+export interface InboundReceiptPurchaseSourceOptionOut {
+  po_id: number;
+  po_no: string;
+  target_warehouse_id: number;
+  target_warehouse_code_snapshot: string | null;
+  target_warehouse_name_snapshot: string | null;
+  supplier_id: number;
+  supplier_code_snapshot: string;
+  supplier_name_snapshot: string;
+  purchase_time: string;
+  order_status: string;
+  completion_status: InboundReceiptPurchaseSourceCompletionStatus;
+  last_received_at: string | null;
+}
+
+export interface InboundReceiptPurchaseSourceOptionsOut {
+  items: InboundReceiptPurchaseSourceOptionOut[];
+}
+
+export interface FetchInboundReceiptPurchaseSourceOptionsParams {
+  target_warehouse_id?: number | null;
+  q?: string | null;
+  limit?: number;
+}
+
+export async function fetchInboundReceiptPurchaseSourceOptions(
+  params: FetchInboundReceiptPurchaseSourceOptionsParams = {},
+): Promise<InboundReceiptPurchaseSourceOptionsOut> {
+  const qs = new URLSearchParams();
+
+  if (
+    params.target_warehouse_id != null &&
+    Number.isFinite(params.target_warehouse_id) &&
+    params.target_warehouse_id > 0
+  ) {
+    qs.set("target_warehouse_id", String(Math.trunc(params.target_warehouse_id)));
+  }
+
+  const queryText = params.q?.trim();
+  if (queryText) {
+    qs.set("q", queryText);
+  }
+
+  if (params.limit != null && Number.isFinite(params.limit) && params.limit > 0) {
+    qs.set("limit", String(Math.trunc(params.limit)));
+  }
+
+  const query = qs.toString();
+  const path = query
+    ? `/inbound-receipts/purchase-source-options?${query}`
+    : "/inbound-receipts/purchase-source-options";
+
+  return apiGet<InboundReceiptPurchaseSourceOptionsOut>(path);
+}

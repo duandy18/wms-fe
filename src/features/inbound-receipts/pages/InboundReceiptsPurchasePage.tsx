@@ -2,12 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageTitle from "../../../components/ui/PageTitle";
 import {
-  fetchPurchaseOrdersCompletion,
-  type PurchaseOrderCompletionListItem,
-} from "../../purchase-orders/api";
-import {
   createInboundReceiptFromPurchase,
+  fetchInboundReceiptPurchaseSourceOptions,
   fetchInboundReceipts,
+  type InboundReceiptPurchaseSourceOptionOut,
 } from "../api/inboundReceiptsApi";
 import {
   formatInboundSourceType,
@@ -38,23 +36,24 @@ function formatDateTime(value: string | null): string {
   return formatDateTimeMinute(value);
 }
 
-function buildPurchaseOptions(rows: PurchaseOrderCompletionListItem[]): PurchaseOption[] {
-  const map = new Map<number, PurchaseOption>();
+function buildPurchaseOptions(rows: InboundReceiptPurchaseSourceOptionOut[]): PurchaseOption[] {
+  return rows.map((row) => {
+    const warehouseId = row.target_warehouse_id;
+    const warehouseLabel =
+      row.target_warehouse_name_snapshot ||
+      row.target_warehouse_code_snapshot ||
+      String(warehouseId);
+    const supplierName = row.supplier_name_snapshot || null;
 
-  for (const row of rows) {
-    if (map.has(row.po_id)) continue;
-    const warehouseId = Number(row.warehouse_id ?? 0);
-    map.set(row.po_id, {
+    return {
       poId: row.po_id,
       poNo: row.po_no,
       warehouseId,
-      warehouseLabel: warehouseId > 0 ? `仓库 ${warehouseId}` : "-",
-      supplierName: row.supplier_name ?? null,
-      label: `${row.po_no} · ${row.supplier_name ?? "未知供应商"} · 仓库 ${warehouseId || "-"}`,
-    });
-  }
-
-  return Array.from(map.values());
+      warehouseLabel,
+      supplierName,
+      label: `${row.po_no} · ${supplierName || "未知供应商"} · 仓库 ${warehouseLabel}`,
+    };
+  });
 }
 
 function tryParseExistingReceiptNo(message: string): string | null {
@@ -251,7 +250,8 @@ const InboundReceiptsPurchasePage: React.FC = () => {
       setOptionsError("");
 
       try {
-        const rows = await fetchPurchaseOrdersCompletion({ limit: 200, skip: 0 });
+        const data = await fetchInboundReceiptPurchaseSourceOptions({ limit: 200 });
+        const rows = data.items;
         if (!alive) return;
         setOptions(buildPurchaseOptions(rows));
       } catch (err) {
