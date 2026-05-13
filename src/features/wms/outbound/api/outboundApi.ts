@@ -39,7 +39,7 @@ export async function fetchOutboundSummaryDetail(
 export interface OrderOutboundOptionOut {
   id: number;
   platform: string;
-  shop_id: string;
+  store_code: string;
   ext_order_no: string;
   status?: string | null;
   buyer_name?: string | null;
@@ -56,7 +56,7 @@ export interface OrderOutboundOptionsOut {
 export interface OrderOutboundOptionsQuery {
   q?: string;
   platform?: string;
-  shop_id?: string;
+  store_code?: string;
   limit?: number;
   offset?: number;
 }
@@ -64,14 +64,14 @@ export interface OrderOutboundOptionsQuery {
 export async function fetchOrderOutboundOptions(
   query: OrderOutboundOptionsQuery = {},
 ): Promise<OrderOutboundOptionsOut> {
-  return apiGet<OrderOutboundOptionsOut>("/oms/orders/outbound-options", query);
+  return apiGet<OrderOutboundOptionsOut>("/wms/outbound/orders/options", query);
 }
 
 export async function fetchOrderOutboundView(
   orderId: number,
 ): Promise<OrderOutboundViewResponse> {
   return apiGet<OrderOutboundViewResponse>(
-    `/oms/orders/${encodeURIComponent(String(orderId))}/outbound-view`,
+    `/wms/outbound/orders/${encodeURIComponent(String(orderId))}/view`,
   );
 }
 
