@@ -32,7 +32,7 @@ const OutboundOrderPage: React.FC = () => {
             options={m.orders.map((order) => ({
               key: order.id,
               value: String(order.id),
-              label: `${order.ext_order_no} · ${order.platform} · ${order.shop_id}`,
+              label: `${order.ext_order_no} · ${order.platform} · ${order.store_code}`,
             }))}
             onChange={m.selectOrderId}
           />
@@ -99,7 +99,7 @@ const OutboundOrderPage: React.FC = () => {
                 <div>
                   <div className="text-xs text-slate-500">平台 / 店铺</div>
                   <div className="text-sm text-slate-900">
-                    {m.detail.order.platform} · {m.detail.order.shop_id}
+                    {m.detail.order.platform} · {m.detail.order.store_code}
                   </div>
                 </div>
 

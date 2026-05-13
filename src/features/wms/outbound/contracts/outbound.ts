@@ -50,7 +50,7 @@ export interface OutboundSummaryDetailOut {
 export interface OrderOutboundViewOrderOut {
   id: number;
   platform: string;
-  shop_id: string;
+  store_code: string;
   ext_order_no: string;
   status: string | null;
   created_at: string;
