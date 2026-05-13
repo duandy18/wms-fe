@@ -57,20 +57,6 @@ vi.mock("../lazyPages", () => {
     OutboundManualDocsPage: page("OutboundManualDocsPage mock view"),
     OutboundManualPage: page("OutboundManualPage mock view"),
 
-    OmsPddPlatformOrderMirrorPage: page(
-      "OmsPddPlatformOrderMirrorPage mock view",
-    ),
-    OmsPddCodeMappingPage: page("OmsPddCodeMappingPage mock view"),
-    OmsTaobaoPlatformOrderMirrorPage: page(
-      "OmsTaobaoPlatformOrderMirrorPage mock view",
-    ),
-    OmsTaobaoCodeMappingPage: page("OmsTaobaoCodeMappingPage mock view"),
-    OmsJdPlatformOrderMirrorPage: page(
-      "OmsJdPlatformOrderMirrorPage mock view",
-    ),
-    OmsJdCodeMappingPage: page("OmsJdCodeMappingPage mock view"),
-
-    AnalyticsPage: page("AnalyticsPage mock view"),
 
     ShippingHandoffPage: page("ShippingHandoffPage mock view"),
     ShippingLedgerPage: page("ShippingLedgerPage mock view"),
@@ -82,7 +68,10 @@ vi.mock("../lazyPages", () => {
 
     UsersManagePage: page("UsersManagePage mock view"),
 
-    PmsIntegrationOverviewPage: page("PmsIntegrationOverviewPage mock view"),
+    OmsOrderProjectionPage: page("OmsOrderProjectionPage mock view"),
+    OmsLineProjectionPage: page("OmsLineProjectionPage mock view"),
+    OmsComponentProjectionPage: page("OmsComponentProjectionPage mock view"),
+
     PmsItemProjectionPage: page("PmsItemProjectionPage mock view"),
     PmsSupplierProjectionPage: page("PmsSupplierProjectionPage mock view"),
     PmsUomProjectionPage: page("PmsUomProjectionPage mock view"),
@@ -99,8 +88,6 @@ vi.mock("../lazyPages", () => {
     WarehousesListPage: page("WarehousesListPage mock view"),
     WarehouseCreatePage: page("WarehouseCreatePage mock view"),
     WarehouseDetailPage: page("WarehouseDetailPage mock view"),
-
-    OmsFskuRulesPage: page("OmsFskuRulesPage mock view"),
     SuppliersListPage: page("SuppliersListPage mock view"),
   };
 });
@@ -231,44 +218,18 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("redirects /oms to PDD platform mirror", async () => {
+  it("redirects /oms to OMS order projection", async () => {
     renderWithRoute("/oms");
-    expect(
-      await screen.findByText("OmsPddPlatformOrderMirrorPage mock view"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("OmsOrderProjectionPage mock view")).toBeInTheDocument();
   });
 
-  it("renders OmsPddPlatformOrderMirrorPage on /oms/pdd", async () => {
-    renderWithRoute("/oms/pdd");
-    expect(
-      await screen.findByText("OmsPddPlatformOrderMirrorPage mock view"),
-    ).toBeInTheDocument();
-  });
-
-  it("renders OmsPddPlatformOrderMirrorPage on /oms/pdd/platform-order-mirror", async () => {
-    renderWithRoute("/oms/pdd/platform-order-mirror");
-    expect(
-      await screen.findByText("OmsPddPlatformOrderMirrorPage mock view"),
-    ).toBeInTheDocument();
-  });
-
-  it("renders OmsPddCodeMappingPage on /oms/pdd/code-mapping", async () => {
-    renderWithRoute("/oms/pdd/code-mapping");
-    expect(await screen.findByText("OmsPddCodeMappingPage mock view")).toBeInTheDocument();
-  });
-
-  it("renders OmsTaobaoPlatformOrderMirrorPage on /oms/taobao", async () => {
-    renderWithRoute("/oms/taobao");
-    expect(
-      await screen.findByText("OmsTaobaoPlatformOrderMirrorPage mock view"),
-    ).toBeInTheDocument();
-  });
-
-  it("renders OmsJdPlatformOrderMirrorPage on /oms/jd", async () => {
-    renderWithRoute("/oms/jd");
-    expect(
-      await screen.findByText("OmsJdPlatformOrderMirrorPage mock view"),
-    ).toBeInTheDocument();
+  it.each([
+    ["/oms/order-projection", "OmsOrderProjectionPage mock view"],
+    ["/oms/line-projection", "OmsLineProjectionPage mock view"],
+    ["/oms/component-projection", "OmsComponentProjectionPage mock view"],
+  ])("renders OMS projection page %s", async (route, expectedText) => {
+    renderWithRoute(route);
+    expect(await screen.findByText(expectedText)).toBeInTheDocument();
   });
 
   it("redirects /shipping-assist/handoffs to status tab route", async () => {
@@ -334,19 +295,12 @@ describe("AppRouter inventory routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders PmsIntegrationOverviewPage on /admin/pms-integration", async () => {
-    renderWithRoute("/admin/pms-integration");
-    expect(
-      await screen.findByText("PmsIntegrationOverviewPage mock view"),
-    ).toBeInTheDocument();
-  });
-
   it.each([
-    ["/admin/pms-integration/items", "PmsItemProjectionPage mock view"],
-    ["/admin/pms-integration/suppliers", "PmsSupplierProjectionPage mock view"],
-    ["/admin/pms-integration/uoms", "PmsUomProjectionPage mock view"],
-    ["/admin/pms-integration/sku-codes", "PmsSkuCodeProjectionPage mock view"],
-    ["/admin/pms-integration/barcodes", "PmsBarcodeProjectionPage mock view"],
+    ["/pms/item-projection", "PmsItemProjectionPage mock view"],
+    ["/pms/supplier-projection", "PmsSupplierProjectionPage mock view"],
+    ["/pms/uom-projection", "PmsUomProjectionPage mock view"],
+    ["/pms/sku-code-projection", "PmsSkuCodeProjectionPage mock view"],
+    ["/pms/barcode-projection", "PmsBarcodeProjectionPage mock view"],
   ])("renders PMS projection page %s", async (route, expectedText) => {
     renderWithRoute(route);
     expect(await screen.findByText(expectedText)).toBeInTheDocument();
@@ -403,6 +357,21 @@ describe("AppRouter inventory routes", () => {
     "/platforms/1",
     "/shop-bundles",
     "/parsing",
+    "/oms/fskus",
+    "/oms/platform-code-mappings",
+    "/oms/pdd",
+    "/oms/pdd/platform-order-mirror",
+    "/oms/pdd/code-mapping",
+    "/oms/taobao",
+    "/oms/taobao/platform-order-mirror",
+    "/oms/taobao/code-mapping",
+    "/oms/jd",
+    "/oms/jd/platform-order-mirror",
+    "/oms/jd/code-mapping",
+    "/oms/fulfillment-projection",
+    "/oms/fulfillment-projection/orders",
+    "/oms/fulfillment-projection/lines",
+    "/oms/fulfillment-projection/components",
     "/oms/pdd/import",
     "/oms/taobao/import",
     "/oms/jd/import",
@@ -418,13 +387,6 @@ describe("AppRouter inventory routes", () => {
   ])("falls back to /inventory after old platform route %s is retired", async (route) => {
     renderWithRoute(route);
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
-  });
-
-  it("renders OmsFskuRulesPage on /oms/fskus", async () => {
-    renderWithRoute("/oms/fskus");
-    expect(
-      await screen.findByText("OmsFskuRulesPage mock view"),
-    ).toBeInTheDocument();
   });
 
   it("falls back to /inventory after old OMS fulfillment conversion route /oms/pdd/fulfillment-order-conversion is retired", async () => {

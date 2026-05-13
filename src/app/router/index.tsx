@@ -146,98 +146,10 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          <Route
-            path="analytics"
-            element={
-              <RequirePermission permission="operations.outbound">
-                <P.AnalyticsPage />
-              </RequirePermission>
-            }
-          />
 
-          <Route
-            path="oms"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <Navigate to="/oms/pdd" replace />
-              </RequirePermission>
-            }
-          />
 
-          <Route
-            path="oms/pdd"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsPddPlatformOrderMirrorPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/pdd/platform-order-mirror"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsPddPlatformOrderMirrorPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/pdd/code-mapping"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsPddCodeMappingPage />
-              </RequirePermission>
-            }
-          />
 
-          <Route
-            path="oms/taobao"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsTaobaoPlatformOrderMirrorPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/taobao/platform-order-mirror"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsTaobaoPlatformOrderMirrorPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/taobao/code-mapping"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsTaobaoCodeMappingPage />
-              </RequirePermission>
-            }
-          />
 
-          <Route
-            path="oms/jd"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsJdPlatformOrderMirrorPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/jd/platform-order-mirror"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsJdPlatformOrderMirrorPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="oms/jd/code-mapping"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsJdCodeMappingPage />
-              </RequirePermission>
-            }
-          />
 
           <Route
             path="shipping-assist/handoffs"
@@ -309,6 +221,35 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
+            path="oms"
+            element={<Navigate to="/oms/order-projection" replace />}
+          />
+          <Route
+            path="oms/order-projection"
+            element={
+              <RequirePermission permission="page.oms.read">
+                <P.OmsOrderProjectionPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="oms/line-projection"
+            element={
+              <RequirePermission permission="page.oms.read">
+                <P.OmsLineProjectionPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="oms/component-projection"
+            element={
+              <RequirePermission permission="page.oms.read">
+                <P.OmsComponentProjectionPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
             path="admin/users"
             element={
               <RequirePermission permission="page.admin.read">
@@ -317,49 +258,41 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route
-            path="admin/pms-integration"
+            path="pms/item-projection"
             element={
-              <RequirePermission permission="page.admin.read">
-                <P.PmsIntegrationOverviewPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="admin/pms-integration/items"
-            element={
-              <RequirePermission permission="page.admin.read">
+              <RequirePermission permission="page.pms.read">
                 <P.PmsItemProjectionPage />
               </RequirePermission>
             }
           />
           <Route
-            path="admin/pms-integration/suppliers"
+            path="pms/supplier-projection"
             element={
-              <RequirePermission permission="page.admin.read">
+              <RequirePermission permission="page.pms.read">
                 <P.PmsSupplierProjectionPage />
               </RequirePermission>
             }
           />
           <Route
-            path="admin/pms-integration/uoms"
+            path="pms/uom-projection"
             element={
-              <RequirePermission permission="page.admin.read">
+              <RequirePermission permission="page.pms.read">
                 <P.PmsUomProjectionPage />
               </RequirePermission>
             }
           />
           <Route
-            path="admin/pms-integration/sku-codes"
+            path="pms/sku-code-projection"
             element={
-              <RequirePermission permission="page.admin.read">
+              <RequirePermission permission="page.pms.read">
                 <P.PmsSkuCodeProjectionPage />
               </RequirePermission>
             }
           />
           <Route
-            path="admin/pms-integration/barcodes"
+            path="pms/barcode-projection"
             element={
-              <RequirePermission permission="page.admin.read">
+              <RequirePermission permission="page.pms.read">
                 <P.PmsBarcodeProjectionPage />
               </RequirePermission>
             }
@@ -490,14 +423,6 @@ const AppRouter: React.FC = () => {
             }
           />
 
-          <Route
-            path="oms/fskus"
-            element={
-              <RequirePermission permission="page.oms.read">
-                <P.OmsFskuRulesPage />
-              </RequirePermission>
-            }
-          />
 
           <Route
             path="partners/suppliers"
