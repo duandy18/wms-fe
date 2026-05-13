@@ -4,6 +4,9 @@ import type {
   ManualOutboundDocOut,
   ManualOutboundSubmitIn,
   ManualOutboundSubmitOut,
+  OmsProjectionOrderImportCandidatesOut,
+  OmsProjectionOrderImportIn,
+  OmsProjectionOrderImportOut,
   OrderOutboundSubmitIn,
   OrderOutboundSubmitOut,
   OrderOutboundViewResponse,
@@ -72,6 +75,30 @@ export async function fetchOrderOutboundView(
 ): Promise<OrderOutboundViewResponse> {
   return apiGet<OrderOutboundViewResponse>(
     `/wms/outbound/orders/${encodeURIComponent(String(orderId))}/view`,
+  );
+}
+
+export interface OmsProjectionImportCandidatesQuery {
+  q?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export async function fetchOmsProjectionImportCandidates(
+  query: OmsProjectionImportCandidatesQuery = {},
+): Promise<OmsProjectionOrderImportCandidatesOut> {
+  return apiGet<OmsProjectionOrderImportCandidatesOut>(
+    "/wms/outbound/orders/oms-projection-candidates",
+    query,
+  );
+}
+
+export async function importOmsProjectionOrders(
+  payload: OmsProjectionOrderImportIn,
+): Promise<OmsProjectionOrderImportOut> {
+  return apiPost<OmsProjectionOrderImportOut>(
+    "/wms/outbound/orders/import-from-oms-projection",
+    payload,
   );
 }
 

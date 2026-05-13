@@ -125,6 +125,60 @@ export interface OrderOutboundSubmitIn {
   lines: OrderOutboundSubmitLineIn[];
 }
 
+export interface OmsProjectionOrderImportCandidateOut {
+  ready_order_id: string;
+  platform: string;
+  store_code: string;
+  store_name: string | null;
+  platform_order_no: string;
+  platform_status: string | null;
+  receiver_name: string | null;
+  receiver_phone: string | null;
+  ready_status: string;
+  ready_at: string | null;
+  synced_at: string | null;
+  line_count: number;
+  component_count: number;
+  total_required_qty: string | null;
+  import_status: string;
+  imported_order_id: number | null;
+  imported_at: string | null;
+  can_import: boolean;
+}
+
+export interface OmsProjectionOrderImportCandidatesOut {
+  items: OmsProjectionOrderImportCandidateOut[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface OmsProjectionOrderImportIn {
+  ready_order_ids: string[];
+  dry_run: boolean;
+}
+
+export interface OmsProjectionOrderImportRowOut {
+  ready_order_id: string;
+  status: string;
+  order_id: number | null;
+  platform: string | null;
+  store_code: string | null;
+  platform_order_no: string | null;
+  order_line_count: number;
+  component_count: number;
+  message: string | null;
+}
+
+export interface OmsProjectionOrderImportOut {
+  dry_run: boolean;
+  requested: number;
+  imported: number;
+  already_imported: number;
+  failed: number;
+  results: OmsProjectionOrderImportRowOut[];
+}
+
 export interface OrderOutboundSubmitOut {
   status: string;
   event_id: number;

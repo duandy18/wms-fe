@@ -4,13 +4,16 @@ import { fetchActiveWarehouses } from "../../warehouses/api";
 import type { WarehouseListItem } from "../../warehouses/types";
 import {
   fetchBarcodeProbe,
+  fetchOmsProjectionImportCandidates,
   fetchOrderOutboundOptions,
   fetchOrderOutboundView,
   fetchOutboundLotCandidates,
+  importOmsProjectionOrders,
   submitOrderOutbound,
   type OrderOutboundOptionOut,
 } from "../api/outboundApi";
 import type {
+  OmsProjectionOrderImportCandidateOut,
   OrderOutboundViewResponse,
   OutboundLotCandidateOut,
 } from "../contracts/outbound";
@@ -76,6 +79,16 @@ export function useOutboundOrderPage() {
   const [orders, setOrders] = useState<OrderOutboundOptionOut[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState("");
+
+  const [omsCandidates, setOmsCandidates] = useState<
+    OmsProjectionOrderImportCandidateOut[]
+  >([]);
+  const [omsCandidatesLoading, setOmsCandidatesLoading] = useState(false);
+  const [omsCandidatesError, setOmsCandidatesError] = useState("");
+  const [omsImportMessage, setOmsImportMessage] = useState("");
+  const [importingReadyOrderId, setImportingReadyOrderId] = useState<string | null>(
+    null,
+  );
 
   const [warehouses, setWarehouses] = useState<WarehouseListItem[]>([]);
   const [warehousesLoading, setWarehousesLoading] = useState(false);
@@ -146,10 +159,28 @@ export function useOutboundOrderPage() {
     }
   }, []);
 
+  const loadOmsCandidates = useCallback(async () => {
+    setOmsCandidatesLoading(true);
+    setOmsCandidatesError("");
+    try {
+      const data = await fetchOmsProjectionImportCandidates({
+        limit: 20,
+        offset: 0,
+      });
+      setOmsCandidates(Array.isArray(data.items) ? data.items : []);
+    } catch (error) {
+      setOmsCandidates([]);
+      setOmsCandidatesError(getErrorMessage(error, "加载 OMS 待接入订单失败"));
+    } finally {
+      setOmsCandidatesLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadOrders();
     void loadWarehouses();
-  }, [loadOrders, loadWarehouses]);
+    void loadOmsCandidates();
+  }, [loadOrders, loadWarehouses, loadOmsCandidates]);
 
   const loadDetail = useCallback(async (orderId: number) => {
     setDetailLoading(true);
@@ -215,6 +246,55 @@ export function useOutboundOrderPage() {
       void loadDetail(id);
     },
     [loadDetail],
+  );
+
+  const importOmsCandidate = useCallback(
+    async (readyOrderId: string) => {
+      const readyId = readyOrderId.trim();
+      if (!readyId) return;
+
+      setImportingReadyOrderId(readyId);
+      setOmsImportMessage("");
+
+      try {
+        const data = await importOmsProjectionOrders({
+          ready_order_ids: [readyId],
+          dry_run: false,
+        });
+        const result = data.results[0] ?? null;
+
+        if (!result) {
+          setOmsImportMessage("导入完成，但后端未返回结果明细。");
+          return;
+        }
+
+        if (result.status === "IMPORTED" || result.status === "ALREADY_IMPORTED") {
+          const orderId = result.order_id;
+          setOmsImportMessage(
+            result.status === "IMPORTED"
+              ? `导入成功：已生成 WMS 出库订单 #${orderId ?? "-"}。`
+              : `该 OMS 订单已接入 WMS 出库订单 #${orderId ?? "-"}。`,
+          );
+
+          await loadOmsCandidates();
+          await loadOrders();
+
+          if (orderId != null) {
+            setSelectedOrderId(String(orderId));
+            await loadDetail(orderId);
+          }
+          return;
+        }
+
+        setOmsImportMessage(result.message || "导入失败，请查看后端返回。");
+        await loadOmsCandidates();
+      } catch (error) {
+        setOmsImportMessage(getErrorMessage(error, "导入 OMS 待接入订单失败"));
+      } finally {
+        setImportingReadyOrderId(null);
+      }
+    },
+    [loadDetail, loadOmsCandidates, loadOrders],
   );
 
   const selectWarehouseId = useCallback(
@@ -555,6 +635,13 @@ export function useOutboundOrderPage() {
     ordersLoading,
     ordersError,
 
+    omsCandidates,
+    omsCandidatesLoading,
+    omsCandidatesError,
+    omsImportMessage,
+    importingReadyOrderId,
+    importOmsCandidate,
+
     warehouses,
     warehousesLoading,
     warehousesError,
@@ -588,6 +675,9 @@ export function useOutboundOrderPage() {
     submitMessage,
     handleSubmitPlaceholder,
 
+    reloadOmsCandidates: () => {
+      void loadOmsCandidates();
+    },
     reloadOrders: () => {
       void loadOrders();
     },
