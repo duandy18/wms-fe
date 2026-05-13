@@ -280,6 +280,33 @@ const InboundReceiptsPurchasePage: React.FC = () => {
     };
   }, []);
 
+  async function reloadPurchaseOptions() {
+    setOptionsLoading(true);
+    setOptionsError("");
+
+    try {
+      const data = await fetchInboundReceiptPurchaseSourceOptions({ limit: 200 });
+      const nextOptions = buildPurchaseOptions(data.items);
+
+      setOptions(nextOptions);
+      setSelectedPoId((current) => {
+        if (!current) return current;
+
+        const currentId = Number(current);
+        if (!Number.isFinite(currentId) || currentId <= 0) return "";
+
+        return nextOptions.some((item) => item.poId === currentId) ? current : "";
+      });
+    } catch (err) {
+      setOptions([]);
+      setSelectedPoId("");
+      setOptionsError(getErrorMessage(err, "刷新采购来源失败"));
+    } finally {
+      setOptionsLoading(false);
+    }
+  }
+
+
   useEffect(() => {
     let alive = true;
 
@@ -373,7 +400,20 @@ const InboundReceiptsPurchasePage: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <label className="space-y-1 text-xs text-slate-600 xl:col-span-2">
-            <span>采购单</span>
+            <div className="flex items-center justify-between gap-2">
+              <span>采购单</span>
+              <button
+                type="button"
+                className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                disabled={optionsLoading}
+                onClick={(e) => {
+                  e.preventDefault();
+                  void reloadPurchaseOptions();
+                }}
+              >
+                {optionsLoading ? "刷新中…" : "刷新采购来源"}
+              </button>
+            </div>
             <select
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
               value={selectedPoId}
