@@ -299,41 +299,6 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="purchase-orders"
-            element={
-              <RequirePermission permission="page.procurement.read">
-                <P.PurchaseOrdersPage />
-              </RequirePermission>
-            }
-          />
-          <Route
-            path="purchase-orders/new"
-            element={
-              <RequirePermission permission="page.procurement.read">
-                <P.PurchaseOrderCreatePage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="purchase-orders/:poId"
-            element={
-              <RequirePermission permission="page.procurement.read">
-                <P.PurchaseOrderViewPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
-            path="purchase-reports"
-            element={
-              <RequirePermission permission="page.procurement.read">
-                <P.PurchaseReportsPage />
-              </RequirePermission>
-            }
-          />
-
-          <Route
             path="inbound-receipts"
             element={
               <RequirePermission permission="page.inbound.read">

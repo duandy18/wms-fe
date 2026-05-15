@@ -78,10 +78,6 @@ vi.mock("../lazyPages", () => {
     PmsSkuCodeProjectionPage: page("PmsSkuCodeProjectionPage mock view"),
     PmsBarcodeProjectionPage: page("PmsBarcodeProjectionPage mock view"),
 
-    PurchaseOrdersPage: page("PurchaseOrdersPage mock view"),
-    PurchaseOrderCreatePage: page("PurchaseOrderCreatePage mock view"),
-    PurchaseOrderViewPage: page("PurchaseOrderViewPage mock view"),
-    PurchaseReportsPage: page("PurchaseReportsPage mock view"),
 
     ReturnTaskDetailPage: page("ReturnTaskDetailPage mock view"),
 
@@ -304,6 +300,16 @@ describe("AppRouter inventory routes", () => {
   ])("renders PMS projection page %s", async (route, expectedText) => {
     renderWithRoute(route);
     expect(await screen.findByText(expectedText)).toBeInTheDocument();
+  });
+
+  it.each([
+    "/purchase-orders",
+    "/purchase-orders/new",
+    "/purchase-orders/1",
+    "/purchase-reports",
+  ])("falls back to /inventory after retired WMS procurement management route %s is removed", async (route) => {
+    renderWithRoute(route);
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
   it("falls back to /inventory after old /count route is retired", async () => {
