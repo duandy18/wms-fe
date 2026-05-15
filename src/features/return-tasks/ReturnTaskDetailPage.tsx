@@ -94,9 +94,9 @@ const ReturnTaskDetailPage: React.FC = () => {
         <button
           type="button"
           className="mb-2 text-xs text-slate-600 hover:text-slate-900"
-          onClick={() => navigate("/purchase-orders")}
+          onClick={() => navigate("/inventory-adjustment/inbound-reversal")}
         >
-          ← 返回采购单列表
+          ← 返回退货回仓
         </button>
         <div className="text-sm text-red-600">无效的任务 ID（URL 中的 :taskId 不是数字）。</div>
       </div>
@@ -110,9 +110,9 @@ const ReturnTaskDetailPage: React.FC = () => {
       <button
         type="button"
         className="mb-2 text-xs text-slate-600 hover:text-slate-900"
-        onClick={() => navigate("/purchase-orders")}
+        onClick={() => navigate("/inventory-adjustment/inbound-reversal")}
       >
-        ← 返回采购单列表
+        ← 返回退货回仓
       </button>
 
       {loading && <div className="text-sm text-slate-500">加载中…</div>}

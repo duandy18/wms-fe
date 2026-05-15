@@ -148,19 +148,6 @@ export const SuppliersListPage = lazy(
   () => import("../../features/partners/suppliers/pages/SuppliersListPage"),
 );
 
-// 采购系统
-export const PurchaseOrdersPage = lazy(
-  () => import("../../features/purchase-orders/PurchaseOrdersPage"),
-);
-export const PurchaseOrderCreatePage = lazy(
-  () => import("../../features/purchase-orders/PurchaseOrderCreatePage"),
-);
-export const PurchaseOrderViewPage = lazy(
-  () => import("../../features/purchase-orders/PurchaseOrderViewPage"),
-);
-export const PurchaseReportsPage = lazy(
-  () => import("../../features/purchase-orders/PurchaseReportsPage"),
-);
 
 // 退货任务详情
 export const ReturnTaskDetailPage = lazy(
