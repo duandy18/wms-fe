@@ -15,7 +15,8 @@
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
     "sync:openapi": "python3 -m json.tool ../wms-api/openapi/_current.json > openapi/_current.json && cp openapi/_current.json openapi/v1.json",
-    "gen:contracts": "openapi-zod-client \"openapi/_current.json\" -o \"src/contracts/generated/api.ts\" --export-schemas --export-types && python3 scripts/contracts/postprocess_openapi_zod_client.py"
+    "gen:contracts": "openapi-zod-client \"openapi/_current.json\" -o \"src/contracts/generated/api.ts\" --export-schemas --export-types && python3 scripts/contracts/postprocess_openapi_zod_client.py",
+    "dev:gateway": "VITE_APP_BASE_PATH=/wms/ VITE_API_BASE_URL=/api/wms vite --host 0.0.0.0 --port 5173 --strictPort"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

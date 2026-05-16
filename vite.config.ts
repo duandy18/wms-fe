@@ -1,10 +1,26 @@
-// vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from "vite";
+
+const rawBasePath = process.env.VITE_APP_BASE_PATH || "/";
+
+function normalizeBasePath(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed || trimmed === "/") {
+    return "/";
+  }
+
+  const withLeadingSlash = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return withLeadingSlash.endsWith("/") ? withLeadingSlash : `${withLeadingSlash}/`;
+}
+
+const appBasePath = normalizeBasePath(rawBasePath);
+
 export default defineConfig({
+  base: appBasePath,
   plugins: [react(), tailwindcss()],
 
   resolve: {
@@ -14,6 +30,7 @@ export default defineConfig({
   },
 
   server: {
+    host: "0.0.0.0",
     port: 5173,
     strictPort: true,
 
@@ -102,14 +119,11 @@ export default defineConfig({
   },
 
   build: {
-    // 1) 提高 chunk 大小告警阈值（不再啰嗦）
-    chunkSizeWarningLimit: 2000, // kB，= 2MB
+    chunkSizeWarningLimit: 2000,
 
-    // 2) 手动切块：按 vendor / features 维度拆
     rollupOptions: {
       output: {
         manualChunks(id: string) {
-          // node_modules 先大致拆三类：React 栈 / router / 其它 vendor
           if (id.includes("node_modules")) {
             if (id.includes("react-router")) {
               return "vendor-react-router";
@@ -120,7 +134,6 @@ export default defineConfig({
             return "vendor";
           }
 
-          // 按功能目录拆：诊断工具、DevConsole、Admin、作业区、库存
           if (id.includes("/src/features/diagnostics/")) {
             return "diagnostics";
           }
@@ -140,14 +153,12 @@ export default defineConfig({
             return "finance";
           }
 
-          // 其它走默认策略（打进入口 chunk）
           return undefined;
         },
       },
     },
   },
 
-  // ================== Vitest 配置 ==================
   test: {
     globals: true,
     environment: "jsdom",

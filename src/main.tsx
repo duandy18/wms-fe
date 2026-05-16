@@ -39,6 +39,24 @@ function patchConsoleError() {
 }
 patchConsoleError();
 
+const rawBasePath = import.meta.env.VITE_APP_BASE_PATH || "/";
+
+function normalizeRouterBasename(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed || trimmed === "/") {
+    return "/";
+  }
+
+  const withLeadingSlash = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return withLeadingSlash.endsWith("/")
+    ? withLeadingSlash.slice(0, -1)
+    : withLeadingSlash;
+}
+
+const routerBasename = normalizeRouterBasename(rawBasePath);
+
+
 function safeToString(value: unknown): string {
   try {
     if (value instanceof Error) {
@@ -145,7 +163,7 @@ class RootErrorBoundary extends React.Component<{ children: React.ReactNode }, R
 
 const RootApp: React.FC = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename}>
       <AuthProvider>
         <AppRouter />
       </AuthProvider>
