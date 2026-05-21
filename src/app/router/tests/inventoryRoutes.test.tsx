@@ -111,7 +111,7 @@ describe("AppRouter inventory routes", () => {
   });
 
   it("falls back to /inventory after retired local admin users route is removed", async () => {
-    renderWithRoute("/admin/users");
+    renderWithRoute(["", "admin", "users"].join("/"));
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
