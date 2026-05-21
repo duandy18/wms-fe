@@ -19,6 +19,7 @@ const AppRouter: React.FC = () => {
     <Suspense fallback={<RouteLoading />}>
       <Routes>
         <Route path="/login" element={<P.LoginPage />} />
+        <Route path="/sso/callback" element={<P.SsoCallbackPage />} />
 
         <Route path="/forbidden" element={<ForbiddenPage />} />
 

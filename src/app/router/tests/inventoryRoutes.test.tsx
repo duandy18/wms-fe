@@ -28,6 +28,7 @@ vi.mock("../lazyPages", () => {
     __esModule: true,
 
     LoginPage: page("LoginPage mock view"),
+    SsoCallbackPage: page("SsoCallbackPage mock view"),
 
     InventoryPage: page("InventoryPage mock view"),
     InventoryLedgerPage: page("InventoryLedgerPage mock view"),
@@ -104,6 +105,11 @@ describe("AppRouter inventory routes", () => {
   it("renders InventoryPage on root index", async () => {
     renderWithRoute("/");
     expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
+  });
+
+  it("renders public SSO callback route without auth guard", async () => {
+    renderWithRoute("/sso/callback?code=code-value&state=state-value");
+    expect(await screen.findByText("SsoCallbackPage mock view")).toBeInTheDocument();
   });
 
   it("renders InventoryPage on /inventory", async () => {
