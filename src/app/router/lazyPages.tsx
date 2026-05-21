@@ -113,10 +113,6 @@ export const OmsComponentProjectionPage = lazy(
   () => import("../../features/oms/projections/pages/OmsComponentProjectionPage"),
 );
 
-// 系统管理：admin/users
-export const UsersManagePage = lazy(
-  () => import("../../features/admin/users/UsersManagePage"),
-);
 
 // 商品管理：PMS projection
 export const PmsItemProjectionPage = lazy(

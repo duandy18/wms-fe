@@ -67,8 +67,6 @@ vi.mock("../lazyPages", () => {
     FinancePurchaseCostPage: page("FinancePurchaseCostPage mock view"),
     FinanceShippingCostPage: page("FinanceShippingCostPage mock view"),
 
-    UsersManagePage: page("UsersManagePage mock view"),
-
     OmsOrderProjectionPage: page("OmsOrderProjectionPage mock view"),
     OmsLineProjectionPage: page("OmsLineProjectionPage mock view"),
     OmsComponentProjectionPage: page("OmsComponentProjectionPage mock view"),
@@ -110,6 +108,11 @@ describe("AppRouter inventory routes", () => {
   it("renders public SSO callback route without auth guard", async () => {
     renderWithRoute("/sso/callback?code=code-value&state=state-value");
     expect(await screen.findByText("SsoCallbackPage mock view")).toBeInTheDocument();
+  });
+
+  it("falls back to /inventory after retired local admin users route is removed", async () => {
+    renderWithRoute("/admin/users");
+    expect(await screen.findByText("InventoryPage mock view")).toBeInTheDocument();
   });
 
   it("renders InventoryPage on /inventory", async () => {
