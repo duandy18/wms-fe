@@ -83,25 +83,28 @@ export function Topbar() {
         })}
       </div>
 
-      <div className="flex items-center gap-6 text-slate-800">
+      <div className="flex items-center gap-5 text-slate-800">
         <button title="通知">🔔</button>
         <button title="帮助">❔</button>
 
-        <div className="group relative">
-          <button className="flex items-center gap-1 font-semibold text-slate-900">
-            <span>{user?.username ?? "未登录"}</span>
-            <span className="text-sm">▼</span>
-          </button>
+        <span className="font-semibold text-slate-900">
+          {user?.username ?? "未登录"}
+        </span>
 
-          <div className="absolute right-0 z-20 mt-1 hidden rounded border bg-white shadow group-hover:block">
-            <button
-              className="block w-full px-4 py-2 hover:bg-slate-100"
-              onClick={logout}
-            >
-              退出登录
-            </button>
-          </div>
-        </div>
+        <a
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          href="/"
+        >
+          返回 ERP
+        </a>
+
+        <button
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          type="button"
+          onClick={logout}
+        >
+          退出 WMS
+        </button>
       </div>
     </header>
   );
