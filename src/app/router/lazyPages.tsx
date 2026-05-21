@@ -8,7 +8,7 @@ import { lazy } from "react";
 // 登录页
 export const LoginPage = lazy(() => import("../../features/auth/LoginPage"));
 export const SsoCallbackPage = lazy(
-  () => import("../../features/auth/SsoCallbackPage"),
+  () => import("../../features/auth/sso/SsoCallbackPage"),
 );
 
 // 作业台 (Cockpits)

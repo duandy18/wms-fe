@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { setAccessToken } from "../../lib/api";
+import { setAccessToken } from "../../../lib/api";
 import { exchangeWmsSsoAuthorizationCode } from "./ssoCallbackApi";
 
 type CallbackStatus = "loading" | "exchanging" | "failed";

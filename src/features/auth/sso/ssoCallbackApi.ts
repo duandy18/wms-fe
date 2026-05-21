@@ -1,4 +1,4 @@
-import { apiPost } from "../../lib/api";
+import { apiPost } from "../../../lib/api";
 
 export interface WmsSsoExchangeIn {
   code: string;
