@@ -251,14 +251,6 @@ const AppRouter: React.FC = () => {
           />
 
           <Route
-            path="admin/users"
-            element={
-              <RequirePermission permission="page.admin.read">
-                <P.UsersManagePage />
-              </RequirePermission>
-            }
-          />
-          <Route
             path="pms/item-projection"
             element={
               <RequirePermission permission="page.pms.read">

@@ -63,7 +63,7 @@ const LoginPage: React.FC = () => {
     setSubmitting(true);
     try {
       await login({ username: username.trim(), password });
-      navigate("/admin/users", { replace: true });
+      navigate("/inventory", { replace: true });
     } catch (err: unknown) {
       const e = err as ApiErrorShape | undefined;
       const msg =
